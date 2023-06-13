@@ -177,7 +177,7 @@ YSRESULT FsApplyNonScreenOption(const FsOption &opt)
 	FsGuiObject::defHScrollBar=opt.fontHeight;
 	FsGuiObject::defHAnnotation=opt.fontHeight*9/10;
 
-	FsGuiObject::scheme=FsGuiObject::MODERN;
+	FsGuiObject::scheme=FsGuiObject::PLAIN;
 
 	FsGuiObject::defDialogBgCol.SetDoubleRGB(0.75,0.75,0.75);
 
