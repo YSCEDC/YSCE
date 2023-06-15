@@ -2483,7 +2483,6 @@ void FsRunLoop::DrawMenu(void) const
 	if((nullptr==mainCanvas || YSTRUE!=mainCanvas->ShowConsole()) &&
 	   titleBmpPtr!=NULL && titleBmpPtr->GetWidth()>0 && titleBmpPtr->GetHeight()>0)
 	{
-		
 		FsDrawTitleBmp(*titleBmpPtr,YSTRUE);
 	}
 	else

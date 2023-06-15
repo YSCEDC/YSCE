@@ -824,23 +824,14 @@ void FsDrawTitleBmp(const YsBitmap &bmp,YSBOOL tile)
 	bmpWid=bmp.GetWidth();
 	bmpHei=bmp.GetHeight();
 
-	YsBitmap scaledBmp;
-	
-	float xScale = (float)wid/(float)bmpWid;
-	float yScale = (float)hei/(float)bmpHei;
-	float scale = (xScale>yScale ? xScale : yScale);
-
-	scaledBmp.ScaleCopy(bmpWid*scale,bmpHei*scale,bmp);
-
-
 	if(tile==YSTRUE)
 	{
-		for(x=0; x<wid; x+=bmpWid*scale)
+		for(x=0; x<wid; x+=bmpWid)
 		{
-			for(y=hei-1; y>0; y-=bmpHei*scale)
+			for(y=hei-1; y>0; y-=bmpHei)
 			{
 				glRasterPos2i(x,y);
-				glDrawPixels(bmpWid*scale,bmpHei*scale,GL_RGBA,GL_UNSIGNED_BYTE,scaledBmp.GetRGBABitmapPointer());
+				glDrawPixels(bmpWid,bmpHei,GL_RGBA,GL_UNSIGNED_BYTE,bmp.GetRGBABitmapPointer());
 			}
 		}
 	}

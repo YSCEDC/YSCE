@@ -63,10 +63,10 @@
 
 #include <ysbitmap.h>
 
-const wchar_t *FsProgramName=L"YSFlight CE";  // Different names for screen saver programs
+const wchar_t *FsProgramName=L"YSFLIGHT";  // Different names for screen saver programs
 
 #ifndef YSFS_TESTVERSION
-const char *FsProgramTitle="YS Flight Simulator: Community Edition";  // Different names for screen saver programs
+const char *FsProgramTitle="YS FLIGHT SIMULATOR";  // Different names for screen saver programs
 #else
 const char *FsProgramTitle="YS FLIGHT SIMULATOR - Untested";  // Different names for screen saver programs
 #endif

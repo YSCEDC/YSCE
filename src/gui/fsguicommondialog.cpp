@@ -110,15 +110,15 @@ void FsGuiAboutDialog::Make(void)
 	str.Printf(" %d (Rev.%s)",YSFLIGHT_VERSION,YsSvnRevisionString);
 	AddStaticText(0,FSKEY_NULL,str,YSFALSE);
 
-	AddStaticText(0,FSKEY_NULL,"by Captain YS - Compiled by Skipper",YSTRUE);
+	AddStaticText(0,FSKEY_NULL,"by Captain YS",YSTRUE);
 	AddStaticText(0,FSKEY_NULL,L" (\u5c71\u5ddd\u6a5f\u9577)",YSFALSE);
-	AddStaticText(0,FSKEY_NULL,"Please visit YSFQ.COM for more information",48,1,YSTRUE);
-	openURLBtn=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,"Open YSFHQ.COM",YSTRUE);
+	AddStaticText(0,FSKEY_NULL,"Please visit YSFLIGHT.COM for more information",48,1,YSTRUE);
+	openURLBtn=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,"Open YSFLIGHT.COM",YSTRUE);
 	okBtn=AddTextButton(0,FSKEY_ENTER,FSGUI_PUSHBUTTON,FSGUI_COMMON_CLOSE,YSFALSE);
 
 	YsBitmap bmp;
 	bmp.LoadPng(FSGUI_ABOUTDLG_BANNER);
-	bannerBtn=AddBmpButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,bmp,L"YSFHQ.COM",YSTRUE);
+	bannerBtn=AddBmpButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,bmp,L"YSFLIGHT.COM",YSTRUE);
 
 	SetFocus(openURLBtn);
 
@@ -145,7 +145,7 @@ void FsGuiAboutDialog::OnButtonClick(FsGuiButton *btn)
 		}
 		else if(btn==openURLBtn || btn==bannerBtn)
 		{
-		    YsOpenURL("https://ysfhq.com/");
+		    YsOpenURL("http://www.ysflight.com");
 		}
 	}
 }

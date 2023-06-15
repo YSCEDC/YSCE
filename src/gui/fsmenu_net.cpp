@@ -28,10 +28,7 @@
 #include <unistd.h>
 #endif
 
-
-
 #include <ysbitmap.h>
-
 
 #include "fsgui.h"
 #include "fsguiselectiondialogbase.h"
