@@ -351,6 +351,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_DELFLTDLG_MESSAGE                           FsGetTextResource("deletefltdlg/message",L"Delete Current Flight?")
 #define FSGUI_DELFLTDLG_DELETE                            FsGetTextResource("deletefltdlg/delete",L"Yes (Y)")
 #define FSGUI_DELFLTDLG_NODELETE                          FsGetTextResource("deletefltdlg/notdelete",L"No (N)")
+#define FSGUI_MAINDLG_JOIN								  FsGetTextResource("maindlg/join",L"Join Server")
 
 #define FSGUI_FIRSTDLG_1STLINE                            FsGetTextResource("firstdlg/1stline",L"(This message is shown automatically when the program is launched \nfor the first time after the installation.)")
 #define FSGUI_FIRSTDLG_2NDLINE                            FsGetTextResource("firstdlg/2ndline",L"Thank you very much for downloading YS FLIGHT SIMULATOR. \nPlease also visit my Web site.  The URL is:")
