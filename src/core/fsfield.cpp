@@ -116,16 +116,6 @@ void FsField::DrawProtectPolygon(const YsVec3 &viewPos,const YsAtt3 &viewAtt,con
 	}
 }
 
-void FsField::DrawVisual(const YsVec3 &viewPos,const YsAtt3 &viewAtt,const YsMatrix4x4 &projMat,YSBOOL forShadowMap) const
-{
-	YsMatrix4x4 viewTfm;
-	viewTfm.RotateXY(-viewAtt.b());
-	viewTfm.RotateZY(-viewAtt.p());
-	viewTfm.RotateXZ(-viewAtt.h());
-	viewTfm.Translate(-viewPos);
-	DrawVisual(viewTfm,projMat,forShadowMap);
-}
-
 void FsField::DrawVisual(const YsVec3& viewPos, const YsAtt3& viewAtt, const YsMatrix4x4& projMat, YSBOOL forShadowMap, YSBOOL useOpenGlGroundTexture) const
 {
 	YsMatrix4x4 viewTfm;
@@ -147,7 +137,6 @@ void FsField::DrawVisual(const YsMatrix4x4& viewMat, const YsMatrix4x4& projMat,
 	else
 	{
 		commonTexture.UnloadGroundTileTexture();
-		//YsScenery::commonGroundTexHd = nullptr;
 	}
 
 	commonTexture.LoadRunwayLightTexture();
@@ -162,11 +151,6 @@ void FsField::DrawVisual(const YsMatrix4x4& viewMat, const YsMatrix4x4& projMat,
 		fld->att = att;
 		fld->DrawVisual(viewMat, YsIdentity4x4(), projMat, -1.0, forShadowMap);
 	}
-}
-
-void FsField::DrawVisual(const YsMatrix4x4 &viewMat,const YsMatrix4x4 &projMat,YSBOOL forShadowMap) const
-{
-	DrawVisual(viewMat, projMat, forShadowMap, YSTRUE);
 }
 
 void FsField::GetMapElevationCache(int &nCache,const double *&cache) const

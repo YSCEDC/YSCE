@@ -41,9 +41,7 @@ public:
 	void CacheMapDrawingOrder(void) const;
 	void DrawProtectPolygon
 	 (const YsVec3 &viewPos,const YsAtt3 &viewAtt,const YsMatrix4x4 &projMat,const double &nearZ) const;
-	void DrawVisual(const YsVec3 &viewPos,const YsAtt3 &viewAtt,const YsMatrix4x4 &projMat,YSBOOL forShadowMap) const;
 	void DrawVisual(const YsVec3& viewPos, const YsAtt3& viewAtt, const YsMatrix4x4& projMat, YSBOOL forShadowMap, YSBOOL useOpenGlGroundTexture) const;
-	void DrawVisual(const YsMatrix4x4 &viewMat,const YsMatrix4x4 &projMat,YSBOOL forShadowMap) const;
 	void DrawVisual(const YsMatrix4x4& viewMat, const YsMatrix4x4& projMat, YSBOOL forShadowMa, YSBOOL useOpenGlGroundTexture) const;
 	void DrawMapVisual
 	 (FSENVIRONMENT env,
