@@ -28,6 +28,10 @@ void FsGroundSky::DrawGroundMesh(const YsVec3 &,const YsAtt3 &,const YsColor &,i
 {
 }
 
+void FsGroundSky::DrawGroundMesh(const YsVec3&, const YsAtt3&, const YsColor&, int, YSBOOL, YSBOOL)
+{
+}
+
 void FsGroundSky::DrawCrappy(const YsVec3 &,const YsColor &,const YsColor &,const double &,YSBOOL)
 {
 }
