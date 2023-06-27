@@ -7040,7 +7040,7 @@ void FsSimulation::SimDrawBackground(const ActualViewMode &actualViewMode,const 
 		{
 			div=50;
 		}
-		groundSky->DrawGroundMesh(actualViewMode.viewPoint,actualViewMode.viewAttitude,gnd,div,gndSpecular);
+		groundSky->DrawGroundMesh(actualViewMode.viewPoint,actualViewMode.viewAttitude,gnd,div,gndSpecular, cfgPtr->useOpenGlGroundTexture);
 	}
 }
 
