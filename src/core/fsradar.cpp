@@ -66,11 +66,11 @@ void FsHorizontalRadar::Draw(
 			const int y =(int)wc.y();
 			int xx=(int)wr.x();
 			int yy=(int)wr.y();
-			FsDrawLine(x,y,xx,yy,YsGreen());
+			FsDrawLine(x - 10,y - 10,xx,yy,YsGreen());
 			wr.Set(wc.x()+dx,w1.y());
 			xx=(int)wr.x();
 			yy=(int)wr.y();
-			FsDrawLine(x,y,xx,yy,YsGreen());
+			FsDrawLine(x + 10,y - 10,xx,yy,YsGreen());
 		}
 		break;
 	case 2:
@@ -140,10 +140,9 @@ void FsHorizontalRadar::DrawBasic(
 
 	x=(int)wc.x();
 	y=(int)wc.y();
-	FsDrawLine(x-5,y  ,x+5,y  ,YsGreen());
-	FsDrawPoint(x+5,y,YsGreen());
-	FsDrawLine(x  ,y-5,x  ,y+5,YsGreen());
-	FsDrawPoint(x,y+5,YsGreen());
+	FsDrawLine(x - 6, y - 5, x + 6, y - 5,YsGreen());
+	FsDrawLine(x  ,y-8,x  ,y+8,YsGreen());
+	FsDrawLine(x - 4, y + 5, x + 4, y + 5, YsGreen());
 
 
 	const FsGround *gnd;
