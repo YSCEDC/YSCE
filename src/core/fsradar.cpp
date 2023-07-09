@@ -107,28 +107,34 @@ void FsHorizontalRadar::DrawBasic(
 {
 	const double mag=double(YsAbs(x2-x1))/(rangeInX*1852); // Conversion from meters to n miles
 	int x,y,xx,yy;
-	YsAtt3 attH;
-	YsMatrix4x4 ref;
-	YsVec2 w1,w2,wc;
+	YsAtt3 attH; //radar heading
+	YsMatrix4x4 ref; //4x4 transform matrix of aircraft
+	YsVec2 w1,w2,wc; //w1: upper left coordinate, wc: center coordinate, w2: lower right coordinate
 	YsColor col;
 	const int mkSize=3;
 
+	//draw radar bounding box
 	FsDrawRect(x1,y1,x2,y2,YsGreen(),YSFALSE);
 
+	//draw radar range string
 	char str[256];
 	sprintf(str,"%d NM",int(rangeInX));
 	FsDrawString(x1+8,y1+24,str,YsGreen());
 
-
+	//get heading
 	attH=att;
 	attH.SetP(0.0);
 	attH.SetB(0.0);
 
+	//init 4x4 transform matrix
 	ref.Translate(pos);
 	ref.Rotate(attH);
 
+	//set w1 and w2
 	w1.Set(x1,y1);
 	w2.Set(x2,y2);
+
+	//set wc based on mode (center of screen or bottom-quarter-center)
 	if(mode==0)
 	{
 		wc=(w1+w2)/2.0;
@@ -138,13 +144,14 @@ void FsHorizontalRadar::DrawBasic(
 		wc.Set((w1.x()+w2.x())/2.0,(w1.y()+w2.y()*3.0)/4.0);
 	}
 
+	//draw aircraft indicator centered at wc
 	x=(int)wc.x();
 	y=(int)wc.y();
 	FsDrawLine(x - 6, y - 5, x + 6, y - 5,YsGreen());
 	FsDrawLine(x  ,y-8,x  ,y+8,YsGreen());
 	FsDrawLine(x - 4, y + 5, x + 4, y + 5, YsGreen());
 
-
+	//draw indicators for ground objects (cross)
 	const FsGround *gnd;
 	gnd=NULL;
 	while((gnd=sim->FindNextGround(gnd))!=NULL)
@@ -177,6 +184,7 @@ void FsHorizontalRadar::DrawBasic(
 		}
 	}
 
+	//draw aircraft indicators
 	const FsAirplane *air;
 	air=NULL;
 	while((air=sim->FindNextAirplane(air))!=NULL)
@@ -193,17 +201,21 @@ void FsHorizontalRadar::DrawBasic(
 
 				air->Prop().GetVelocity(vel);
 
+				//get relative position and velocity
 				ref.MulInverse(pos,air->GetPosition(),1.0);
 				ref.MulInverse(vel,vel,0.0);
 
+				//scale velocity by 8
 				if(vel.Normalize()==YSOK)
 				{
 					vel*=8.0;
 				}
 
+				//scale position to radar scale
 				pos*=mag;
 				vel+=pos;
 
+				//invert Z for proper Y position in radar coordinate system
 				prj1.Set(pos.x(),-pos.z());
 				prj2.Set(vel.x(),-vel.z());
 
@@ -225,15 +237,23 @@ void FsHorizontalRadar::DrawBasic(
 						col=YsGreen();
 					}
 
+					//draw rectangle for each plane
 					x=(int)prj1.x();
 					y=(int)prj1.y();
 					FsDrawRect(x-mkSize+1,y-mkSize+1,x+mkSize-1,y+mkSize-1,col,YSTRUE);
 
+					//draw heading line for each plane (normalized and scaled velocity vector)
 					if(YsCheckInsideBoundingBox2(prj2,w1,w2)==YSTRUE)
 					{
 						xx=(int)prj2.x();
 						yy=(int)prj2.y();
 						FsDrawLine(x,y,xx,yy,col);
+					}
+
+					//if the plane is locked onto us, draw a yellow line to indicate
+					if (air->Prop().GetAirTargetKey() == FsExistence::GetSearchKey(&withRespectTo))
+					{
+						FsDrawLine((int)wc.x(), (int)wc.y(), (int)prj1.x(), (int)prj1.y(), YsYellow());
 					}
 				}
 			}
