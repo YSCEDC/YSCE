@@ -292,7 +292,8 @@ void FsHorizontalRadar::DrawBasic(
 
 			if(YsCheckInsideBoundingBox2(prj,w1,w2)==YSTRUE)
 			{
-				FsDrawPoint2Pix((int)prj.x(),(int)prj.y(),col);
+				//FsDrawPoint2Pix((int)prj.x(),(int)prj.y(),col);
+				FsDrawCircle((int)prj.x(), (int)prj.y(), mkSize, col, YSTRUE);
 			}
 		}
 	}
