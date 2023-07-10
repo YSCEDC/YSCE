@@ -205,10 +205,10 @@ void FsHorizontalRadar::DrawBasic(
 				ref.MulInverse(pos,air->GetPosition(),1.0);
 				ref.MulInverse(vel,vel,0.0);
 
-				//scale velocity by 8
+				//scale velocity by 12
 				if(vel.Normalize()==YSOK)
 				{
-					vel*=8.0;
+					vel*=12.0;
 				}
 
 				//scale position to radar scale
@@ -240,7 +240,7 @@ void FsHorizontalRadar::DrawBasic(
 					//draw rectangle for each plane
 					x=(int)prj1.x();
 					y=(int)prj1.y();
-					FsDrawRect(x-mkSize+1,y-mkSize+1,x+mkSize-1,y+mkSize-1,col,YSTRUE);
+					FsDrawDiamond(x, y, 5, col, YSFALSE);
 
 					//draw heading line for each plane (normalized and scaled velocity vector)
 					if(YsCheckInsideBoundingBox2(prj2,w1,w2)==YSTRUE)
