@@ -266,13 +266,9 @@ void FsHorizontalRadar::DrawBasic(
 	{
 		if(wpn->lifeRemain>YsTolerance && wpn->timeRemain>YsTolerance)
 		{
-			if(wpn->type==FSWEAPON_AIM9 || wpn->type==FSWEAPON_AIM120)
+			if(wpn->type==FSWEAPON_AIM9 || wpn->type==FSWEAPON_AIM120 || wpn->type == FSWEAPON_AIM9X)
 			{
 				col=YsRed();
-			}
-			else if(wpn->type==FSWEAPON_AIM9X)
-			{
-				col=YsBlue();
 			}
 			else if(wpn->type==FSWEAPON_AGM65 || wpn->type==FSWEAPON_ROCKET)
 			{
