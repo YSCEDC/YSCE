@@ -477,20 +477,24 @@ void FsHorizontalRadar::DrawCircular(const FsSimulation* sim, int x, int y, int 
 					}
 
 					//draw rectangle for each plane
-					x = (int)prj1.x();
-					y = (int)prj1.y();
-					FsDrawDiamond(x, y, 5, col, YSFALSE);
+					FsDrawDiamond((int)prj1.x(), (int)prj1.y(), 5, col, YSFALSE);
 
 					//draw heading line for each plane (normalized and scaled velocity vector)
 					if (IsInsideCircle(prj2, YsVec2(x, y), radius) == YSTRUE)
 					{
-						FsDrawLine(x, y, (int)prj2.x(), (int)prj2.y(), col);
+						FsDrawLine((int)prj1.x(), (int)prj1.y(), (int)prj2.x(), (int)prj2.y(), col);
 					}
 
 					//if the plane is locked onto us, draw a yellow line to indicate
 					if (air->Prop().GetAirTargetKey() == FsExistence::GetSearchKey(&withRespectTo))
 					{
 						FsDrawLine((int)wc.x(), (int)wc.y(), (int)prj1.x(), (int)prj1.y(), YsYellow());
+					}
+
+					//if we're locked onto this plane, draw a green line to indicate
+					if (withRespectTo.Prop().GetAirTargetKey() == FsExistence::GetSearchKey(air))
+					{
+						FsDrawLine((int)wc.x(), (int)wc.y(), (int)prj1.x(), (int)prj1.y(), YsGreen());
 					}
 				}
 			}
@@ -541,7 +545,7 @@ void FsHorizontalRadar::DrawCircular(const FsSimulation* sim, int x, int y, int 
 YSBOOL FsHorizontalRadar::IsInsideCircle(YsVec2 point, YsVec2 circleCenter, int radius)
 {
 	point -= circleCenter;
-	if (point.GetLength() > radius)
+	if (point.GetSquareLength() > radius * radius)
 	{
 		return YSFALSE;
 	}
