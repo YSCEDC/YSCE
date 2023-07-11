@@ -8035,17 +8035,19 @@ void FsSimulation::SimDrawRadar(const ActualViewMode &actualViewMode) const
 			case FSWEAPON_AIM9:
 			case FSWEAPON_AIM9X:
 			case FSWEAPON_AIM120:
-				radar.Draw(this,x1,y1,x2,y2,radarRange,*GetPlayerAirplane(),0,cfgPtr->radarAltitudeLimit);
+				//radar.Draw(this,x1,y1,x2,y2,radarRange,*GetPlayerAirplane(),0,cfgPtr->radarAltitudeLimit);
+				radar.DrawCircular(this, (x1 + x2) / 2, (y1 + y2) / 2, radarSize / 2, radarRange, *GetPlayerAirplane(), 0, cfgPtr->radarAltitudeLimit);
 				break;
 			case FSWEAPON_AGM65:
-				radar.Draw(this,x1,y1,x2,y2,radarRange,*GetPlayerAirplane(),1,cfgPtr->radarAltitudeLimit);
+				//radar.Draw(this,x1,y1,x2,y2,radarRange,*GetPlayerAirplane(),1,cfgPtr->radarAltitudeLimit);
+				radar.DrawCircular(this, (x1 + x2) / 2, (y1 + y2) / 2, radarSize / 2, radarRange, *GetPlayerAirplane(), 1, cfgPtr->radarAltitudeLimit);
 				break;
 			case FSWEAPON_BOMB:
 			case FSWEAPON_BOMB250:
-				radar.Draw(this,x1,y1,x2,y2,radarRange,*GetPlayerAirplane(),2,cfgPtr->radarAltitudeLimit);
+				radar.DrawCircular(this, (x1 + x2) / 2, (y1 + y2) / 2, radarSize / 2, radarRange, *GetPlayerAirplane(), 2, cfgPtr->radarAltitudeLimit);
 				break;
 			case FSWEAPON_BOMB500HD:
-				radar.Draw(this,x1,y1,x2,y2,radarRange,*GetPlayerAirplane(),1,cfgPtr->radarAltitudeLimit);
+				radar.DrawCircular(this, (x1 + x2) / 2, (y1 + y2) / 2, radarSize / 2, radarRange, *GetPlayerAirplane(), 2, cfgPtr->radarAltitudeLimit);
 				break;
 			}
 		}
