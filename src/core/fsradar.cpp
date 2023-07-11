@@ -325,7 +325,7 @@ void FsHorizontalRadar::DrawCircular(const FsSimulation* sim, int x, int y, int 
 	//draw radar range string
 	char str[256];
 	sprintf(str, "%d NM", int(rangeInX));
-	FsDrawString(x - radius, y + radius, str, YsGreen());
+	FsDrawString(x - radius * 0.9, y - radius * 0.9, str, YsGreen());
 
 	//draw radar circle
 	FsDrawCircle(x, y, radius, YsGreen(), YSFALSE);

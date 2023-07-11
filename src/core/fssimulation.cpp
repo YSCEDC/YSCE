@@ -8023,9 +8023,9 @@ void FsSimulation::SimDrawRadar(const ActualViewMode &actualViewMode) const
 
 			long radarSize=wid/5;
 
-			long x1=wid-radarSize-10;
+			long x1=wid * 3 / 4 - radarSize;
 			long y1=10;
-			long x2=wid-10;
+			long x2=wid * 3 / 4 + radarSize;
 			long y2=10+radarSize;
 
 			switch(playerPlane->Prop().GetWeaponOfChoice())
