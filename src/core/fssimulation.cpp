@@ -8297,7 +8297,7 @@ void FsSimulation::SimDrawHud3d(const YsVec3 &fakeViewPos,const YsAtt3 &instView
 
 			if (YsEqual(radarRange, 0.0) != YSTRUE)
 			{
-				hud2->DrawRWRHUD(this, GetPlayerAirplane(), cfgPtr->radarAltitudeLimit, 0.0, 0.0, 0.3);
+				hud2->DrawRWRHUD(this, GetPlayerAirplane(), cfgPtr->radarAltitudeLimit, 0.0, 0.0, 0.4);
 			}
 		}
 		hud2->EndDrawHud();

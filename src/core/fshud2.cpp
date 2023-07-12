@@ -1888,20 +1888,30 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 					default:
 						idString = "U";
 						break;
+
 					case FSAC_NORMAL:
 						idString = "N";
+						break;
+
 					case FSAC_AEROBATIC:
 					case FSAC_FIGHTER:
 					case FSAC_WW2FIGHTER:
 						idString = "F";
+						break;
+
 					case FSAC_ATTACKER:
 					case FSAC_WW2ATTACKER:
 						idString = "A";
+						break;
+
 					case FSAC_HEAVYBOMBER:
 					case FSAC_WW2BOMBER:
 						idString = "B";
+						break;
+
 					case FSAC_UTILITY:
 						idString = "C";
+						break;
 				}
 
 				double fontX = radius * cos(radarAngle);
