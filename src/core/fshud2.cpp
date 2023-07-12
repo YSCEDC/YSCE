@@ -1857,23 +1857,36 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			&& currAir->GetPosition().y() > altLimit
 			&& (currAir->GetPosition() - withRespectTo->GetPosition()).GetSquareLengthXZ() <= searchRadius * searchRadius)
 		{
+			//if the plane is locked onto us, draw in yellow
+			YsColor currColor;
+			if (currAir->Prop().GetAirTargetKey() == FsExistence::GetSearchKey(withRespectTo))
+			{
+				currColor = YsYellow();
+			}
+			else
+			{
+				currColor = hudCol;
+			}
+
 			//get relative position of current aircraft
 			YsVec3 relPosition;
 			ref.MulInverse(relPosition, currAir->Prop().GetPosition(), 1.0);
 
+			//calculate relative angle in XZ plane
 			double radarAngle = atan2(relPosition.z(), relPosition.x());
-			printf("%lf\n", YsRadToDeg(radarAngle));
 
+			//calculate start and end screen coordinates of current RWR line
 			double startX = radius * 0.25 * cos(radarAngle);
 			double startY = radius * 0.25 * sin(radarAngle);
 			double endX = radius * 0.85 * cos(radarAngle);
 			double endY = radius * 0.85 * sin(radarAngle);
 
 			lineVtxBuf.Add<double>(startX, startY, zPlane);
-			lineColBuf.Add(hudCol);
+			lineColBuf.Add(currColor);
 			lineVtxBuf.Add<double>(endX, endY, zPlane);
-			lineColBuf.Add(hudCol);
+			lineColBuf.Add(currColor);
 
+			//determine RWR identifier based on aircraft category
 			std::string idString = "";
 			switch (currAir->Prop().GetAirplaneCategory())
 			{
@@ -1907,12 +1920,13 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 					break;
 			}
 
+			//determine position of identifier letter and draw
 			double fontX = radius * cos(radarAngle);
 			double fontY = radius * sin(radarAngle);
 			YsMatrix4x4 tfm;
 			tfm.Translate(fontX - fontWidth / 2.0, fontY, zPlane);
 			tfm.Scale(fontWidth, fontHeight, 1.0);
-			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), hudCol);
+			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), currColor);
 		}
 	}
 }
