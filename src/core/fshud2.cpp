@@ -1853,7 +1853,7 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 	{
 		double altLimit = airAltLimit + 1000.0 * (1.0 - currAir->Prop().GetRadarCrossSection());
 		if (currAir != withRespectTo 
-			&& currAir->IsAlive() == YSTRUE 
+			&& currAir->IsActive() == YSTRUE
 			&& currAir->GetPosition().y() > altLimit
 			&& (currAir->GetPosition() - withRespectTo->GetPosition()).GetSquareLengthXZ() <= searchRadius * searchRadius)
 		{
