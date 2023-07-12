@@ -3,6 +3,8 @@
 /* { */
 
 #include <ysglcpp.h>
+#include "fsexistence.h"
+#include "fssimulation.h"
 
 class FsHud2
 {
@@ -96,6 +98,8 @@ public:
 	void DrawVelocityVectorIndicator(const YsVec3 &viewPos,const YsAtt3 &viewAtt,const YsVec3 &vel);
 
 	void DrawTurnAndSlipIndicator(const double cx,const double cy,const double rad,const double ssa,const double turnRate);
+
+	void DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo, const double& airAltLimit, const double& x0, const double& y0, const double& radius);
 };
 
 /* } */

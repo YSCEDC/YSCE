@@ -1832,3 +1832,86 @@ void FsHud2::DrawNav(
 	    isDme,dme,
 	    selected,inop);
 }
+
+void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo, const double& airAltLimit, const double& x0, const double& y0, const double& radius) 
+{
+	//for (int i = 0; i < 90; i += 15)
+	//{
+	//	double currX = radius * cos(YsDegToRad(i));
+	//	double currY = radius * sin(YsDegToRad(i));
+	//	lineVtxBuf.Add<double>(currX, currY, zPlane);
+	//	lineColBuf.Add(hudCol);
+	//}
+
+	YsAtt3 attH;
+	attH = withRespectTo->GetAttitude();
+	attH.SetP(0.0);
+	attH.SetB(0.0);
+
+	YsMatrix4x4 ref;
+	ref.Translate(withRespectTo->GetPosition());
+	ref.Rotate(attH);
+
+	double fontWidth = 0.02;
+	double fontHeight = 0.03;
+
+	FsAirplane* currAir = NULL;
+	while ((currAir = sim->FindNextAirplane(currAir)) != NULL)
+	{
+		if (currAir != withRespectTo && currAir->IsAlive() == YSTRUE)
+		{
+			double altLimit = airAltLimit + 1000.0 * (1.0 - currAir->Prop().GetRadarCrossSection());
+			if (currAir->GetPosition().y() > altLimit)
+			{
+				//get relative position of current aircraft
+				YsVec3 relPosition;
+				ref.MulInverse(relPosition, currAir->Prop().GetPosition(), 1.0);
+
+				//double radarAngle = atan2( sqrt(relPosition.x() * relPosition.x() + relPosition.y() * relPosition.y()), YsAbs(relPosition.z()) );
+				double radarAngle = atan2(relPosition.z(), relPosition.x());
+				printf("%lf\n", YsRadToDeg(radarAngle));
+
+				double startX = radius * 0.25 * cos(radarAngle);
+				double startY = radius * 0.25 * sin(radarAngle);
+				double endX = radius * 0.85 * cos(radarAngle);
+				double endY = radius * 0.85 * sin(radarAngle);
+
+				lineVtxBuf.Add<double>(startX, startY, zPlane);
+				lineColBuf.Add(hudCol);
+				lineVtxBuf.Add<double>(endX, endY, zPlane);
+				lineColBuf.Add(hudCol);
+
+				std::string idString = "";
+				switch (currAir->Prop().GetAirplaneCategory())
+				{
+					case FSAC_UNKNOWN:
+					default:
+						idString = "U";
+						break;
+					case FSAC_NORMAL:
+						idString = "N";
+					case FSAC_AEROBATIC:
+					case FSAC_FIGHTER:
+					case FSAC_WW2FIGHTER:
+						idString = "F";
+					case FSAC_ATTACKER:
+					case FSAC_WW2ATTACKER:
+						idString = "A";
+					case FSAC_HEAVYBOMBER:
+					case FSAC_WW2BOMBER:
+						idString = "B";
+					case FSAC_UTILITY:
+						idString = "C";
+				}
+
+				double fontX = radius * cos(radarAngle);
+				double fontY = radius * sin(radarAngle);
+				YsMatrix4x4 tfm;
+				tfm.Translate(fontX - fontWidth / 2.0, fontY, zPlane);
+				tfm.Scale(fontWidth, fontHeight, 1.0);
+				FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), hudCol);
+			}
+		}
+	}
+}
+
