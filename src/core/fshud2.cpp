@@ -1943,5 +1943,63 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), currColor);
 		}
 	}
+
+	//draw active weapons
+	const FsWeapon* currWeapon = NULL;
+	while ((currWeapon = sim->FindNextActiveWeapon(currWeapon)) != NULL)
+	{
+		YsColor currCol;
+		if (currWeapon->lifeRemain > YsTolerance && currWeapon->timeRemain > YsTolerance)
+		{
+			if (currWeapon->target == withRespectTo
+				 && (currWeapon->type == FSWEAPON_AIM9 || currWeapon->type == FSWEAPON_AIM120 || currWeapon->type == FSWEAPON_AIM9X))
+			{
+
+				//get relative position of current weapon
+				YsVec3 relPosition;
+				ref.MulInverse(relPosition, currWeapon->pos, 1.0);
+
+				//calculate relative angle in XZ plane
+				double radarAngle = atan2(relPosition.z(), relPosition.x());
+
+				//calculate start and end screen coordinates of current RWR line
+				double startX = radius * 0.05 * cos(radarAngle);
+				double startY = radius * 0.05 * sin(radarAngle);
+				double endX = radius * 0.85 * cos(radarAngle);
+				double endY = radius * 0.85 * sin(radarAngle);
+
+				lineVtxBuf.Add<double>(startX, startY, zPlane);
+				lineColBuf.Add(YsRed());
+				lineVtxBuf.Add<double>(endX, endY, zPlane);
+				lineColBuf.Add(YsRed());
+
+				//determine RWR identifier based on aircraft category
+				std::string idString = "";
+				switch (currWeapon->type)
+				{
+				case FSWEAPON_AIM9:
+					idString = "9";
+					break;
+
+				case FSWEAPON_AIM9X:
+					idString = "9X";
+					break;
+
+				case FSWEAPON_AIM120:
+					idString = "120";
+					break;
+				}
+
+				//determine position of identifier letter and draw
+				double fontX = radius * cos(radarAngle);
+				double fontY = radius * sin(radarAngle);
+				double fontXOffset = idString.length() % 2 == 0 ? fontWidth * idString.length() + fontWidth / 2.0 : fontWidth * idString.length();
+				YsMatrix4x4 tfm;
+				tfm.Translate(fontX - fontXOffset, fontY, zPlane);
+				tfm.Scale(fontWidth, fontHeight, 1.0);
+				FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), YsRed());
+			}
+		}
+	}
 }
 
