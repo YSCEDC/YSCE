@@ -1857,9 +1857,12 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			&& currAir->GetPosition().y() > altLimit
 			&& (currAir->GetPosition() - withRespectTo->GetPosition()).GetSquareLengthXZ() <= searchRadius * searchRadius)
 		{
+			//check if current aircraft is locking onto us
+			bool isLocking = currAir->Prop().GetAirTargetKey() == FsExistence::GetSearchKey(withRespectTo);
+
 			//if the plane is locked onto us, draw in yellow
 			YsColor currColor;
-			if (currAir->Prop().GetAirTargetKey() == FsExistence::GetSearchKey(withRespectTo))
+			if (isLocking)
 			{
 				currColor = YsYellow();
 			}
@@ -1875,9 +1878,20 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			//calculate relative angle in XZ plane
 			double radarAngle = atan2(relPosition.z(), relPosition.x());
 
+			//draw a longer RWR line marker if locking 
+			double startRadiusOffset;
+			if (isLocking)
+			{
+				startRadiusOffset = 0.05;
+			}
+			else
+			{
+				startRadiusOffset = 0.25;
+			}
+
 			//calculate start and end screen coordinates of current RWR line
-			double startX = radius * 0.25 * cos(radarAngle);
-			double startY = radius * 0.25 * sin(radarAngle);
+			double startX = radius * startRadiusOffset * cos(radarAngle);
+			double startY = radius * startRadiusOffset * sin(radarAngle);
 			double endX = radius * 0.85 * cos(radarAngle);
 			double endY = radius * 0.85 * sin(radarAngle);
 
