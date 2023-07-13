@@ -99,7 +99,7 @@ public:
 
 	void DrawTurnAndSlipIndicator(const double cx,const double cy,const double rad,const double ssa,const double turnRate);
 
-	void DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo, const double& airAltLimit, const double& maxRadarRange, const double& x0, const double& y0, const double& radius);
+	void DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo, const double& airAltLimit, const double& maxRadarRange, const double& x0, const double& y0, const double& radius, const int& maxNumThreatsToDraw = 8);
 };
 
 /* } */

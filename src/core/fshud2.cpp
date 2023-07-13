@@ -1833,7 +1833,7 @@ void FsHud2::DrawNav(
 	    selected,inop);
 }
 
-void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo, const double& airAltLimit, const double& maxRadarRange, const double& x0, const double& y0, const double& radius)
+void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo, const double& airAltLimit, const double& maxRadarRange, const double& x0, const double& y0, const double& radius, const int& maxNumThreatsToDraw)
 {
 	YsAtt3 attH;
 	attH = withRespectTo->GetAttitude();
@@ -1844,12 +1844,77 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 	ref.Translate(withRespectTo->GetPosition());
 	ref.Rotate(attH);
 
+	int numThreatsDrawn = 0;
+
 	double fontWidth = 0.02;
 	double fontHeight = 0.03;
 
 	double searchRadius = maxRadarRange / 2.0;
+
+	//draw RWR indicators for missiles which are targeting us 
+	const FsWeapon* currWeapon = NULL;
+	while ((currWeapon = sim->FindNextActiveWeapon(currWeapon)) != NULL && numThreatsDrawn < maxNumThreatsToDraw)
+	{
+		YsColor currCol;
+		if (currWeapon->lifeRemain > YsTolerance
+			&& currWeapon->timeRemain > YsTolerance
+			&& (currWeapon->pos - withRespectTo->GetPosition()).GetSquareLength() <= searchRadius * searchRadius
+			&& currWeapon->target == withRespectTo
+			&& (currWeapon->type == FSWEAPON_AIM9 || currWeapon->type == FSWEAPON_AIM120 || currWeapon->type == FSWEAPON_AIM9X))
+		{
+			//get relative position of current weapon
+			YsVec3 relPosition;
+			ref.MulInverse(relPosition, currWeapon->pos, 1.0);
+
+			//calculate relative angle in XZ plane
+			double radarAngle = atan2(relPosition.z(), relPosition.x());
+
+			//calculate start and end screen coordinates of current RWR line
+			double startX = radius * 0.05 * cos(radarAngle);
+			double startY = radius * 0.05 * sin(radarAngle);
+			double endX = radius * 0.85 * cos(radarAngle);
+			double endY = radius * 0.85 * sin(radarAngle);
+
+			lineVtxBuf.Add<double>(startX, startY, zPlane);
+			lineColBuf.Add(YsRed());
+			lineVtxBuf.Add<double>(endX, endY, zPlane);
+			lineColBuf.Add(YsRed());
+
+			//determine RWR identifier based on aircraft category
+			std::string idString = "";
+			switch (currWeapon->type)
+			{
+			case FSWEAPON_AIM9:
+				idString = "9";
+				break;
+
+			case FSWEAPON_AIM9X:
+				idString = "9X";
+				break;
+
+			case FSWEAPON_AIM120:
+				idString = "120";
+				break;
+			default:
+				idString = "M";
+				break;
+			}
+
+			//determine position of identifier letter and draw
+			double fontX = radius * cos(radarAngle);
+			double fontY = radius * sin(radarAngle);
+			double fontXOffset = idString.length() % 2 == 0 ? fontWidth * idString.length() + fontWidth / 2.0 : fontWidth * idString.length();
+			YsMatrix4x4 tfm;
+			tfm.Translate(fontX - fontXOffset, fontY, zPlane);
+			tfm.Scale(fontWidth, fontHeight, 1.0);
+			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), YsRed());
+			numThreatsDrawn++;
+		}
+	}
+
+	//draw RWR indicators for aircraft
 	FsAirplane* currAir = NULL;
-	while ((currAir = sim->FindNextAirplane(currAir)) != NULL)
+	while ((currAir = sim->FindNextAirplane(currAir)) != NULL && numThreatsDrawn < maxNumThreatsToDraw)
 	{
 		double altLimit = airAltLimit + 1000.0 * (1.0 - currAir->Prop().GetRadarCrossSection());
 		if (currAir != withRespectTo 
@@ -1902,6 +1967,7 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 
 			//determine RWR identifier based on aircraft category
 			std::string idString = "";
+			printf("%s\n", currAir->GetIdentifier());
 			switch (currAir->Prop().GetAirplaneCategory())
 			{
 				case FSAC_UNKNOWN:
@@ -1941,64 +2007,48 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			tfm.Translate(fontX - fontWidth / 2.0, fontY, zPlane);
 			tfm.Scale(fontWidth, fontHeight, 1.0);
 			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), currColor);
+			numThreatsDrawn++;
 		}
 	}
 
-	//draw active weapons
-	const FsWeapon* currWeapon = NULL;
-	while ((currWeapon = sim->FindNextActiveWeapon(currWeapon)) != NULL)
+	//draw RWR indicator for radar-capable ground objects
+	const FsGround* currGround = NULL;
+	while ((currGround = sim->FindNextGround(currGround)) != NULL && numThreatsDrawn < maxNumThreatsToDraw)
 	{
-		YsColor currCol;
-		if (currWeapon->lifeRemain > YsTolerance && currWeapon->timeRemain > YsTolerance)
+		YsArray <int, 64> loading;
+		currGround->Prop().GetWeaponConfig(loading);
+		if (currGround->IsAlive() == YSTRUE 
+			&& currGround->Prop().IsNonGameObject() != YSTRUE
+			&& (currGround->GetPosition() - withRespectTo->GetPosition()).GetSquareLength() <= searchRadius * searchRadius
+			&& (loading.IsIncluded(FSWEAPON_AIM9) || loading.IsIncluded(FSWEAPON_AIM9X) || loading.IsIncluded(FSWEAPON_AIM120) || loading.IsIncluded(FSWEAPON_GUN)))
 		{
-			if (currWeapon->target == withRespectTo
-				 && (currWeapon->type == FSWEAPON_AIM9 || currWeapon->type == FSWEAPON_AIM120 || currWeapon->type == FSWEAPON_AIM9X))
-			{
+			YsVec3 relPosition;
+			YsVec2 prj;
 
-				//get relative position of current weapon
-				YsVec3 relPosition;
-				ref.MulInverse(relPosition, currWeapon->pos, 1.0);
+			ref.MulInverse(relPosition, currGround->GetPosition(), 1.0);
 
-				//calculate relative angle in XZ plane
-				double radarAngle = atan2(relPosition.z(), relPosition.x());
+			//calculate relative angle in XZ plane
+			double radarAngle = atan2(relPosition.z(), relPosition.x());
 
-				//calculate start and end screen coordinates of current RWR line
-				double startX = radius * 0.05 * cos(radarAngle);
-				double startY = radius * 0.05 * sin(radarAngle);
-				double endX = radius * 0.85 * cos(radarAngle);
-				double endY = radius * 0.85 * sin(radarAngle);
+			//calculate start and end screen coordinates of current RWR line
+			double startX = radius * 0.05 * cos(radarAngle);
+			double startY = radius * 0.05 * sin(radarAngle);
+			double endX = radius * 0.85 * cos(radarAngle);
+			double endY = radius * 0.85 * sin(radarAngle);
 
-				lineVtxBuf.Add<double>(startX, startY, zPlane);
-				lineColBuf.Add(YsRed());
-				lineVtxBuf.Add<double>(endX, endY, zPlane);
-				lineColBuf.Add(YsRed());
+			lineVtxBuf.Add<double>(startX, startY, zPlane);
+			lineColBuf.Add(hudCol);
+			lineVtxBuf.Add<double>(endX, endY, zPlane);
+			lineColBuf.Add(hudCol);
 
-				//determine RWR identifier based on aircraft category
-				std::string idString = "";
-				switch (currWeapon->type)
-				{
-				case FSWEAPON_AIM9:
-					idString = "9";
-					break;
-
-				case FSWEAPON_AIM9X:
-					idString = "9X";
-					break;
-
-				case FSWEAPON_AIM120:
-					idString = "120";
-					break;
-				}
-
-				//determine position of identifier letter and draw
-				double fontX = radius * cos(radarAngle);
-				double fontY = radius * sin(radarAngle);
-				double fontXOffset = idString.length() % 2 == 0 ? fontWidth * idString.length() + fontWidth / 2.0 : fontWidth * idString.length();
-				YsMatrix4x4 tfm;
-				tfm.Translate(fontX - fontXOffset, fontY, zPlane);
-				tfm.Scale(fontWidth, fontHeight, 1.0);
-				FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), YsRed());
-			}
+			//determine position of identifier letter and draw
+			double fontX = radius * cos(radarAngle);
+			double fontY = radius * sin(radarAngle);
+			YsMatrix4x4 tfm;
+			tfm.Translate(fontX - fontWidth / 2.0, fontY, zPlane);
+			tfm.Scale(fontWidth, fontHeight, 1.0);
+			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, "G", hudCol);
+			numThreatsDrawn++;
 		}
 	}
 }
