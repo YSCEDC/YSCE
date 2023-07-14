@@ -1872,8 +1872,8 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			//calculate start and end screen coordinates of current RWR line
 			double startX = radius * 0.05 * cos(radarAngle);
 			double startY = radius * 0.05 * sin(radarAngle);
-			double endX = radius * 0.85 * cos(radarAngle);
-			double endY = radius * 0.85 * sin(radarAngle);
+			double endX = radius * 0.65 * cos(radarAngle);
+			double endY = radius * 0.65 * sin(radarAngle);
 
 			lineVtxBuf.Add<double>(startX, startY, zPlane);
 			lineColBuf.Add(YsRed());
@@ -1901,8 +1901,8 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			}
 
 			//determine position of identifier letter and draw
-			double fontX = radius * cos(radarAngle);
-			double fontY = radius * sin(radarAngle);
+			double fontX = radius * 0.8 * cos(radarAngle);
+			double fontY = radius * 0.8 * sin(radarAngle);
 			double fontXOffset = idString.length() % 2 == 0 ? fontWidth * idString.length() + fontWidth / 2.0 : fontWidth * idString.length();
 			YsMatrix4x4 tfm;
 			tfm.Translate(fontX - fontXOffset, fontY, zPlane);
@@ -1940,9 +1940,9 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			double endY = radius * 0.85 * sin(radarAngle);
 
 			lineVtxBuf.Add<double>(startX, startY, zPlane);
-			lineColBuf.Add(hudCol);
+			lineColBuf.Add(YsYellow());
 			lineVtxBuf.Add<double>(endX, endY, zPlane);
-			lineColBuf.Add(hudCol);
+			lineColBuf.Add(YsYellow());
 
 			//determine RWR identifier based on aircraft category
 			std::string idString = "";
@@ -1985,7 +1985,7 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			YsMatrix4x4 tfm;
 			tfm.Translate(fontX - fontWidth / 2.0, fontY, zPlane);
 			tfm.Scale(fontWidth, fontHeight, 1.0);
-			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), hudCol);
+			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), YsYellow());
 			numThreatsDrawn++;
 		}
 	}
@@ -2018,9 +2018,9 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			double endY = radius * 0.85 * sin(radarAngle);
 
 			lineVtxBuf.Add<double>(startX, startY, zPlane);
-			lineColBuf.Add(hudCol);
+			lineColBuf.Add(YsYellow());
 			lineVtxBuf.Add<double>(endX, endY, zPlane);
-			lineColBuf.Add(hudCol);
+			lineColBuf.Add(YsYellow());
 
 			//determine position of identifier letter and draw
 			double fontX = radius * cos(radarAngle);
@@ -2028,7 +2028,7 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			YsMatrix4x4 tfm;
 			tfm.Translate(fontX - fontWidth / 2.0, fontY, zPlane);
 			tfm.Scale(fontWidth, fontHeight, 1.0);
-			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, "G", hudCol);
+			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, "G", YsYellow());
 			numThreatsDrawn++;
 		}
 	}
