@@ -529,6 +529,9 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 		case FSKEY_R:
 			YsFlip(cfg.drawCircleRadar);
 			break;
+		case FSKEY_Y:
+			YsFlip(cfg.drawRWR);
+			break;
 		}
 		break;
 	}
@@ -989,6 +992,18 @@ void FsSubMenu::Draw(const class FsSimulation *sim,class FsFlightConfig &cfg,int
 		default:
 		case YSFALSE:
 			FsDrawString(sx, sy, "R: Radar Display Style (Now: Square)", YsWhite());
+			break;
+		}
+		sy += fsAsciiRenderer.GetFontHeight();
+
+		switch (cfg.drawRWR)
+		{
+		case YSTRUE:
+			FsDrawString(sx, sy, "Y: Draw Radar Warning Receiver on HUD (Now: ON)", YsWhite());
+			break;
+		default:
+		case YSFALSE:
+			FsDrawString(sx, sy, "Y: Draw Radar Warning Receiver on HUD(Now : OFF)", YsWhite());
 			break;
 		}
 		sy += fsAsciiRenderer.GetFontHeight();
