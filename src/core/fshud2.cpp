@@ -1916,26 +1916,16 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 	FsAirplane* currAir = NULL;
 	while ((currAir = sim->FindNextAirplane(currAir)) != NULL && numThreatsDrawn < maxNumThreatsToDraw)
 	{
+		bool isLocking = currAir->Prop().GetAirTargetKey() == FsExistence::GetSearchKey(withRespectTo);
 		double altLimit = airAltLimit + 1000.0 * (1.0 - currAir->Prop().GetRadarCrossSection());
 		if (currAir != withRespectTo 
 			&& currAir->IsActive() == YSTRUE
 			&& currAir->GetPosition().y() > altLimit
-			&& (currAir->GetPosition() - withRespectTo->GetPosition()).GetSquareLengthXZ() <= searchRadius * searchRadius)
+			&& (currAir->GetPosition() - withRespectTo->GetPosition()).GetSquareLengthXZ() <= searchRadius * searchRadius
+			&& isLocking)
 		{
 			//check if current aircraft is locking onto us
-			bool isLocking = currAir->Prop().GetAirTargetKey() == FsExistence::GetSearchKey(withRespectTo);
-
-			//if the plane is locked onto us, draw in yellow
-			YsColor currColor;
-			if (isLocking)
-			{
-				currColor = YsYellow();
-			}
-			else
-			{
-				currColor = hudCol;
-			}
-
+			
 			//get relative position of current aircraft
 			YsVec3 relPosition;
 			ref.MulInverse(relPosition, currAir->Prop().GetPosition(), 1.0);
@@ -1943,27 +1933,16 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			//calculate relative angle in XZ plane
 			double radarAngle = atan2(relPosition.z(), relPosition.x());
 
-			//draw a longer RWR line marker if locking 
-			double startRadiusOffset;
-			if (isLocking)
-			{
-				startRadiusOffset = 0.05;
-			}
-			else
-			{
-				startRadiusOffset = 0.25;
-			}
-
 			//calculate start and end screen coordinates of current RWR line
-			double startX = radius * startRadiusOffset * cos(radarAngle);
-			double startY = radius * startRadiusOffset * sin(radarAngle);
+			double startX = radius * 0.25 * cos(radarAngle);
+			double startY = radius * 0.25 * sin(radarAngle);
 			double endX = radius * 0.85 * cos(radarAngle);
 			double endY = radius * 0.85 * sin(radarAngle);
 
 			lineVtxBuf.Add<double>(startX, startY, zPlane);
-			lineColBuf.Add(currColor);
+			lineColBuf.Add(hudCol);
 			lineVtxBuf.Add<double>(endX, endY, zPlane);
-			lineColBuf.Add(currColor);
+			lineColBuf.Add(hudCol);
 
 			//determine RWR identifier based on aircraft category
 			std::string idString = "";
@@ -2006,7 +1985,7 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			YsMatrix4x4 tfm;
 			tfm.Translate(fontX - fontWidth / 2.0, fontY, zPlane);
 			tfm.Scale(fontWidth, fontHeight, 1.0);
-			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), currColor);
+			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), hudCol);
 			numThreatsDrawn++;
 		}
 	}
@@ -2017,10 +1996,12 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 	{
 		YsArray <int, 64> loading;
 		currGround->Prop().GetWeaponConfig(loading);
+		bool isLocking = currGround->Prop().GetAirTargetKey() == FsExistence::GetSearchKey(withRespectTo);
 		if (currGround->IsAlive() == YSTRUE 
 			&& currGround->Prop().IsNonGameObject() != YSTRUE
 			&& (currGround->GetPosition() - withRespectTo->GetPosition()).GetSquareLength() <= searchRadius * searchRadius
-			&& (loading.IsIncluded(FSWEAPON_AIM9) || loading.IsIncluded(FSWEAPON_AIM9X) || loading.IsIncluded(FSWEAPON_AIM120) || loading.IsIncluded(FSWEAPON_GUN)))
+			&& (loading.IsIncluded(FSWEAPON_AIM9) || loading.IsIncluded(FSWEAPON_AIM9X) || loading.IsIncluded(FSWEAPON_AIM120) || loading.IsIncluded(FSWEAPON_GUN))
+			&& isLocking)
 		{
 			YsVec3 relPosition;
 			YsVec2 prj;
@@ -2031,8 +2012,8 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 			double radarAngle = atan2(relPosition.z(), relPosition.x());
 
 			//calculate start and end screen coordinates of current RWR line
-			double startX = radius * 0.05 * cos(radarAngle);
-			double startY = radius * 0.05 * sin(radarAngle);
+			double startX = radius * 0.25 * cos(radarAngle);
+			double startY = radius * 0.25 * sin(radarAngle);
 			double endX = radius * 0.85 * cos(radarAngle);
 			double endY = radius * 0.85 * sin(radarAngle);
 
