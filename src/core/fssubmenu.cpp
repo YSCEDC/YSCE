@@ -526,6 +526,9 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 		case FSKEY_I:
 			YsFlip(cfg.showIAS);
 			break;
+		case FSKEY_R:
+			YsFlip(cfg.drawCircleRadar);
+			break;
 		}
 		break;
 	}
@@ -977,6 +980,18 @@ void FsSubMenu::Draw(const class FsSimulation *sim,class FsFlightConfig &cfg,int
 			break;
 		}
 		sy+=fsAsciiRenderer.GetFontHeight();
+
+		switch (cfg.drawCircleRadar)
+		{
+		case YSTRUE:
+			FsDrawString(sx, sy, "R: Radar Display Style (Now: Circle)", YsWhite());
+			break;
+		default:
+		case YSFALSE:
+			FsDrawString(sx, sy, "R: Radar Display Style (Now: Square)", YsWhite());
+			break;
+		}
+		sy += fsAsciiRenderer.GetFontHeight();
 
 		break;
 	case FSSUBMENU_GUNNER:

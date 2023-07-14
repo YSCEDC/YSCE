@@ -40,7 +40,7 @@ void FsFlightConfig::SetDefault(void)
 	drawTransparentVapor=YSTRUE;
 	drawTransparentSmoke=YSTRUE;
 	drawTransparentLater=YSTRUE;
-
+	drawCircleRadar = YSFALSE;
 	drawPlayerNameAlways=YSTRUE;
 	drawLightsInDaylight=YSTRUE;
 	drawLightsInDaylightVisibilityThr=4667.1; // 2.9 miles visibility.
