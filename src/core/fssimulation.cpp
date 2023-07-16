@@ -7708,6 +7708,42 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 			SimDraw2dVor1(cockpitIndicationSet);
 			SimDraw2dVor2(cockpitIndicationSet);
 			SimDraw2dAdf(cockpitIndicationSet);
+
+			//only display for 2D HUD
+			if (playerPlane->Prop().IsActive() == YSTRUE && demoMode != YSTRUE)
+			{
+				int sx, sy;
+				FsGetWindowSize(sx, sy);
+				sx /= 2;
+				sy /= 2;
+				if (bulletHolder.IsLockedOn(playerPlane) == YSTRUE)
+				{
+					sx -= 40;
+					FsDrawString(sx, sy, "!!MISSILE!!", YsRed());
+				}
+				else if (IsLockedOn(playerPlane) == YSTRUE)
+				{
+					sx -= 80;
+					FsDrawString(sx, sy, "!!YOU ARE LOCKED ON!!", YsRed());
+				}
+				else if (playerPlane->Prop().GetFlightState() == FSSTALL)
+				{
+					sx -= 30;
+					FsDrawString(sx, sy, "STALL", YsYellow());
+				}
+
+				if (playerPlane->Prop().IsOutOfRunway() == YSTRUE)
+				{
+					int sx, sy;
+					FsGetWindowSize(sx, sy);
+					sx = sx / 2 - 72;
+					sy = sy * 1 / 4 + 20;
+
+					FsDrawString(sx, sy, "!!!!UNPAVED FIELD!!!!", YsRed());
+					sy += 20;
+					FsDrawString(sx, sy, "!!!!   OVERRUN   !!!!", YsRed());
+				}
+			}
 		}
 
 		if(playerPlane->Prop().IsActive()!=YSTRUE)
@@ -7725,17 +7761,6 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 			{
 				FsDrawString(sx,sy,"OVERRUN!!",YsRed());
 			}
-		}
-		else if(playerPlane->Prop().IsActive()==YSTRUE && playerPlane->Prop().IsOutOfRunway()==YSTRUE)
-		{
-			int sx,sy;
-			FsGetWindowSize(sx,sy);
-			sx=sx/2-72;
-			sy=sy*1/4+20;
-
-			FsDrawString(sx,sy,"!!!!UNPAVED FIELD!!!!",YsRed());
-			sy+=20;
-			FsDrawString(sx,sy,"!!!!   OVERRUN   !!!!",YsRed());
 		}
 
 		if(YSTRUE==NeedToDrawInstrument(actualViewMode))
@@ -7812,30 +7837,6 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 #ifdef CRASHINVESTIGATION_SIMDRAWFOREGROUND
 	printf("SimDrawForeground-10\n");
 #endif
-
-	if(playerPlane!=NULL && playerPlane->Prop().IsActive()==YSTRUE && demoMode!=YSTRUE)
-	{
-		int sx,sy;
-		FsGetWindowSize(sx,sy);
-		sx/=2;
-		sy/=2;
-		if(bulletHolder.IsLockedOn(playerPlane)==YSTRUE)
-		{
-			sx-=40;
-			FsDrawString(sx,sy,"!!MISSILE!!",YsRed());
-		}
-		else if(IsLockedOn(playerPlane)==YSTRUE)
-		{
-			sx-=80;
-			FsDrawString(sx,sy,"!!YOU ARE LOCKED ON!!",YsRed());
-		}
-		else if(playerPlane->Prop().GetFlightState()==FSSTALL)
-		{
-			sx-=30;
-			FsDrawString(sx,sy,"STALL",YsYellow());
-		}
-	}
-
 
 #ifdef CRASHINVESTIGATION_SIMDRAWFOREGROUND
 	printf("SimDrawForeground-11\n");
@@ -8326,6 +8327,29 @@ void FsSimulation::SimDrawHud3d(const YsVec3 &fakeViewPos,const YsAtt3 &instView
 				hud2->DrawRWRHUD(this, GetPlayerAirplane(), cfgPtr->radarAltitudeLimit, radarRange * 1852, 0.0, 0.0, 0.4);
 			}
 		}
+
+		//draw HUD warnings
+		if (playerPlane != NULL && playerPlane->Prop().IsActive())
+		{
+			if (bulletHolder.IsLockedOn(playerPlane) == YSTRUE)
+			{
+				hud2->DrawHUDText(0.0, 0.65, 0.025, 0.04, YsString("MISSILE"), YsRed());
+			}
+			else if (IsLockedOn(playerPlane) == YSTRUE)
+			{
+				hud2->DrawHUDText(0.0, 0.65, 0.025, 0.04, YsString("LOCK WARNING"), YsYellow());
+			}
+			else if (playerPlane->Prop().GetFlightState() == FSSTALL)
+			{
+				hud2->DrawHUDText(0.0, 0.65, 0.025, 0.04, YsString("STALL"), YsYellow());
+			}
+
+			if (playerPlane->Prop().IsOutOfRunway() == YSTRUE)
+			{
+				hud2->DrawHUDText(0.0, 0.65, 0.025, 0.04, YsString("OVERRUN"), YsRed());
+			}
+		}
+
 		hud2->EndDrawHud();
 		// HUD2 <<
 	}
