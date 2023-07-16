@@ -8021,12 +8021,12 @@ void FsSimulation::SimDrawRadar(const ActualViewMode &actualViewMode) const
 			int wid,hei;
 			FsGetWindowSize(wid,hei);
 
-			long radarSize=wid/5;
+			long radarSize = wid / 5;
 
-			long x1=wid-radarSize-10;
-			long y1=10;
-			long x2=wid-10;
-			long y2=10+radarSize;
+			long x1 = wid - radarSize - 10;
+			long y1 = 10;
+			long x2 = wid - 10;
+			long y2 = 10 + radarSize;
 
 			switch(playerPlane->Prop().GetWeaponOfChoice())
 			{
@@ -8035,17 +8035,45 @@ void FsSimulation::SimDrawRadar(const ActualViewMode &actualViewMode) const
 			case FSWEAPON_AIM9:
 			case FSWEAPON_AIM9X:
 			case FSWEAPON_AIM120:
-				radar.Draw(this,x1,y1,x2,y2,radarRange,*GetPlayerAirplane(),0,cfgPtr->radarAltitudeLimit);
+				if (cfgPtr->drawCircleRadar == YSTRUE)
+				{
+					radar.DrawCircular(this, (x1 + x2) / 2, (y1 + y2) / 2, radarSize / 2, radarRange, *GetPlayerAirplane(), 0, cfgPtr->radarAltitudeLimit);
+				}
+				else
+				{
+					radar.Draw(this,x1,y1,x2,y2,radarRange,*GetPlayerAirplane(),0,cfgPtr->radarAltitudeLimit);
+				}
 				break;
 			case FSWEAPON_AGM65:
-				radar.Draw(this,x1,y1,x2,y2,radarRange,*GetPlayerAirplane(),1,cfgPtr->radarAltitudeLimit);
+				if (cfgPtr->drawCircleRadar == YSTRUE)
+				{
+					radar.DrawCircular(this, (x1 + x2) / 2, (y1 + y2) / 2, radarSize / 2, radarRange, *GetPlayerAirplane(), 1, cfgPtr->radarAltitudeLimit);
+				}
+				else
+				{
+					radar.Draw(this, x1, y1, x2, y2, radarRange, *GetPlayerAirplane(), 1, cfgPtr->radarAltitudeLimit);
+				}
 				break;
 			case FSWEAPON_BOMB:
 			case FSWEAPON_BOMB250:
-				radar.Draw(this,x1,y1,x2,y2,radarRange,*GetPlayerAirplane(),2,cfgPtr->radarAltitudeLimit);
+				if (cfgPtr->drawCircleRadar == YSTRUE)
+				{
+					radar.DrawCircular(this, (x1 + x2) / 2, (y1 + y2) / 2, radarSize / 2, radarRange, *GetPlayerAirplane(), 2, cfgPtr->radarAltitudeLimit);
+				}
+				else
+				{
+					radar.Draw(this, x1, y1, x2, y2, radarRange, *GetPlayerAirplane(), 2, cfgPtr->radarAltitudeLimit);
+				}
 				break;
 			case FSWEAPON_BOMB500HD:
-				radar.Draw(this,x1,y1,x2,y2,radarRange,*GetPlayerAirplane(),1,cfgPtr->radarAltitudeLimit);
+				if (cfgPtr->drawCircleRadar == YSTRUE)
+				{
+					radar.DrawCircular(this, (x1 + x2) / 2, (y1 + y2) / 2, radarSize / 2, radarRange, *GetPlayerAirplane(), 2, cfgPtr->radarAltitudeLimit);
+				}
+				else
+				{
+					radar.Draw(this, x1, y1, x2, y2, radarRange, *GetPlayerAirplane(), 2, cfgPtr->radarAltitudeLimit);
+				}
 				break;
 			}
 		}
@@ -8289,6 +8317,13 @@ void FsSimulation::SimDrawHud3d(const YsVec3 &fakeViewPos,const YsAtt3 &instView
 					   adf.IsSelected(),
 					   adf.IsInop());
 				}
+			}
+
+			double radarRange = playerPlane->Prop().GetCurrentRadarRange();
+
+			if (YsEqual(radarRange, 0.0) != YSTRUE && cfgPtr->drawRWR == YSTRUE)
+			{
+				hud2->DrawRWRHUD(this, GetPlayerAirplane(), cfgPtr->radarAltitudeLimit, radarRange * 1852, 0.0, 0.0, 0.4);
 			}
 		}
 		hud2->EndDrawHud();
