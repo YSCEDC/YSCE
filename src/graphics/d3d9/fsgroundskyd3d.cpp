@@ -320,7 +320,12 @@ void FsGroundSky::DrawGradation
 	fsD3dDev->d3dDev->SetRenderState(D3DRS_ZFUNC,D3DCMP_LESSEQUAL);
 }
 
-void FsGroundSky::DrawGroundMesh(const YsVec3 &pos,const YsAtt3 &att,const YsColor &ignd,int div,YSBOOL)
+void FsGroundSky::DrawGroundMesh(const YsVec3& pos, const YsAtt3& att, const YsColor& ignd, int div, YSBOOL specular)
+{
+	DrawGroundMesh(pos, att, ignd, div, specular, YSTRUE);
+}
+
+void FsGroundSky::DrawGroundMesh(const YsVec3 &pos,const YsAtt3 &att,const YsColor &ignd,int div,YSBOOL specular,YSBOOL useOpenGlGroundTexture)
 {
 	auto ysD3dDev=YsD3dDevice::GetCurrent();
 

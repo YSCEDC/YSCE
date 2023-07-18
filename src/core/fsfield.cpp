@@ -116,32 +116,40 @@ void FsField::DrawProtectPolygon(const YsVec3 &viewPos,const YsAtt3 &viewAtt,con
 	}
 }
 
-void FsField::DrawVisual(const YsVec3 &viewPos,const YsAtt3 &viewAtt,const YsMatrix4x4 &projMat,YSBOOL forShadowMap) const
+void FsField::DrawVisual(const YsVec3& viewPos, const YsAtt3& viewAtt, const YsMatrix4x4& projMat, YSBOOL forShadowMap, YSBOOL useOpenGlGroundTexture) const
 {
 	YsMatrix4x4 viewTfm;
 	viewTfm.RotateXY(-viewAtt.b());
 	viewTfm.RotateZY(-viewAtt.p());
 	viewTfm.RotateXZ(-viewAtt.h());
 	viewTfm.Translate(-viewPos);
-	DrawVisual(viewTfm,projMat,forShadowMap);
+	DrawVisual(viewTfm, projMat, forShadowMap, useOpenGlGroundTexture);
 }
 
-void FsField::DrawVisual(const YsMatrix4x4 &viewMat,const YsMatrix4x4 &projMat,YSBOOL forShadowMap) const
+void FsField::DrawVisual(const YsMatrix4x4& viewMat, const YsMatrix4x4& projMat, YSBOOL forShadowMap ,YSBOOL useOpenGlGroundTexture) const
 {
-	auto &commonTexture=FsCommonTexture::GetCommonTexture();
+	auto& commonTexture = FsCommonTexture::GetCommonTexture();
 
-	commonTexture.LoadGroundTileTexture();
-	commonTexture.LoadRunwayLightTexture();
-
-	YsScenery::commonTexManPtr=&commonTexture.GetTextureManager();
-	YsScenery::commonGroundTexHd=commonTexture.GetGroundTileTextureHd();
-	YsScenery::commonRunwayLightTexHd=commonTexture.GetRunwayLightTextureHd();
-
-	if(fld!=NULL)
+	if (useOpenGlGroundTexture == YSTRUE)
 	{
-		fld->pos=pos;
-		fld->att=att;
-		fld->DrawVisual(viewMat,YsIdentity4x4(),projMat,-1.0,forShadowMap);
+		commonTexture.LoadGroundTileTexture();
+	}
+	else
+	{
+		commonTexture.UnloadGroundTileTexture();
+	}
+
+	commonTexture.LoadRunwayLightTexture();
+	
+	YsScenery::commonGroundTexHd = commonTexture.GetGroundTileTextureHd();
+	YsScenery::commonTexManPtr = &commonTexture.GetTextureManager();
+	YsScenery::commonRunwayLightTexHd = commonTexture.GetRunwayLightTextureHd();
+
+	if (fld != NULL)
+	{
+		fld->pos = pos;
+		fld->att = att;
+		fld->DrawVisual(viewMat, YsIdentity4x4(), projMat, -1.0, forShadowMap);
 	}
 }
 

@@ -6630,7 +6630,7 @@ void FsSimulation::SimDrawShadowMap(const ActualViewMode &actualViewMode) const
 
 				FsBeginRenderShadowMap(projMat,viewMat,texWid,texHei);
 
-				field.DrawVisual(viewMat,projMat,YSTRUE); // forShadowMap=YSTRUE
+				field.DrawVisual(viewMat,projMat,YSTRUE, cfgPtr->useOpenGlGroundTexture); // forShadowMap=YSTRUE
 
 				FsAirplane *airSeeker;
 				YsVec3 pos;
@@ -7040,7 +7040,7 @@ void FsSimulation::SimDrawBackground(const ActualViewMode &actualViewMode,const 
 		{
 			div=50;
 		}
-		groundSky->DrawGroundMesh(actualViewMode.viewPoint,actualViewMode.viewAttitude,gnd,div,gndSpecular);
+		groundSky->DrawGroundMesh(actualViewMode.viewPoint,actualViewMode.viewAttitude,gnd,div,gndSpecular, cfgPtr->useOpenGlGroundTexture);
 	}
 }
 
@@ -7261,7 +7261,7 @@ void FsSimulation::SimDrawAirplaneVaporSmoke(void) const
 
 void FsSimulation::SimDrawField(const ActualViewMode &actualViewMode,const class FsProjection &proj) const
 {
-	field.DrawVisual(actualViewMode.viewPoint,actualViewMode.viewAttitude,proj.GetMatrix(),YSFALSE); // forShadowMap=YSFALSE
+	field.DrawVisual(actualViewMode.viewPoint,actualViewMode.viewAttitude,proj.GetMatrix(),YSFALSE, cfgPtr->useOpenGlGroundTexture); // forShadowMap=YSFALSE
 
 	if(cfgPtr->drawCloud==YSTRUE && env!=FSNIGHT)
 	{

@@ -33,6 +33,7 @@ public:
 	YsTextureManager &GetTextureManager(void);
 
 	void LoadGroundTileTexture(void);
+	void UnloadGroundTileTexture(void);
 	void LoadRunwayLightTexture(void);
 	void LoadParticleSpriteTexture(void);
 
