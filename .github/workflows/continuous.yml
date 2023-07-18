@@ -1,13 +1,13 @@
 name: Continuous Integration
 
 on:
+  workflow_dispatch:
   push:
     branches: [ master ]
     tags-ignore:
       - 'v*' # Don't run if tagged as v*.
   pull_request:
     branches: [ master ]
-  workflow_dispatch
 
 jobs:
   build-windows:
