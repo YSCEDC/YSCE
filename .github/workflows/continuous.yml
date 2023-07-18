@@ -38,7 +38,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: ys-build-windows
-        path: ./ci_windows/main/
+        path: ./ci_windows/main/Release
 
 
 
