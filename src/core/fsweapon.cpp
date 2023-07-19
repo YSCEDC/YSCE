@@ -628,7 +628,7 @@ FsWeapon::FsWeapon()
 	nextFlare=NULL;
 
 	trail=NULL;
-	shouldJettison = YSFALSE;
+	shouldJettison = YSTRUE;
 }
 
 /*static*/ FsAmmunitionIndication::WEAPONTYPE FsWeapon::WeaponTypeToWeaponIndicationType(FSWEAPONTYPE wpnType)
@@ -938,6 +938,12 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 		case FSWEAPON_AIM9X:
 		case FSWEAPON_AIM120:
 		case FSWEAPON_AGM65:
+			if (shouldJettison == YSTRUE)
+			{
+				vec.Set(vec.x(), vec.y() - FsGravityConst * dt, vec.z());
+				att.SetForwardVector(vec);
+				break;
+			}
 			if(target!=NULL && timeUnguided<YsTolerance)
 			{
 				YsVec3 tpos;
@@ -1054,7 +1060,15 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 
 	if(type==FSWEAPON_AIM9 || type==FSWEAPON_AIM9X || type==FSWEAPON_AGM65 || type==FSWEAPON_AIM120 || type==FSWEAPON_FLARE)
 	{
-		if(nullptr!=trail && lifeRemain>0.0)
+		if (shouldJettison == YSTRUE)
+		{
+			if (trail != nullptr)
+			{
+				trail->used = YSTRUE;
+				trail = nullptr;
+			}
+		}
+		else if(nullptr!=trail && lifeRemain>0.0)
 		{
 			trail->Add(dt,cTime,pos,att);
 		}
