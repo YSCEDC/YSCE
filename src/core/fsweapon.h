@@ -104,6 +104,7 @@ public:
 	class FsExistence *target;
 
 	FsWeaponSmokeTrail *trail;
+	YSBOOL shouldJettison;
 
 
 

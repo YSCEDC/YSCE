@@ -628,6 +628,7 @@ FsWeapon::FsWeapon()
 	nextFlare=NULL;
 
 	trail=NULL;
+	shouldJettison = YSFALSE;
 }
 
 /*static*/ FsAmmunitionIndication::WEAPONTYPE FsWeapon::WeaponTypeToWeaponIndicationType(FSWEAPONTYPE wpnType)
