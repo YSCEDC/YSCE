@@ -789,8 +789,9 @@ void FsWeapon::Fire(
     int destruction,
     FsExistence *owner,
     FSWEAPON_CREDIT_OWNER creditOwnerIn,
-    FsExistence *t,FsWeaponSmokeTrail *tr)
+    FsExistence *t,FsWeaponSmokeTrail *tr, YSBOOL jettison)
 {
+	shouldJettison = jettison;
 	type=tp;
 	prv=p;
 	pos=p;
@@ -2789,7 +2790,7 @@ int FsWeaponHolder::Fire
      double v,double vmax,double l,double mobility,double radar,
      int destructivePower,
      FsExistence *owner,unsigned int targetKey,
-     YSBOOL recordIt,YSBOOL transmit)
+     YSBOOL recordIt,YSBOOL transmit, YSBOOL jettison)
 {
 	FsExistence *target=NULL;
 
@@ -2817,7 +2818,7 @@ int FsWeaponHolder::Fire
 		FsWeapon *toShoot=freeList;
 		FSWEAPON_CREDIT_OWNER creditOwner=(sim->GetPlayerObject()==owner ? FSWEAPON_CREDIT_OWNER_PLAYER : FSWEAPON_CREDIT_OWNER_NON_PLAYER);
 
-		toShoot->Fire(ctime,missileType,pos,att,v,vmax,l,mobility,radar,destructivePower,owner,creditOwner,target,trail);
+		toShoot->Fire(ctime,missileType,pos,att,v,vmax,l,mobility,radar,destructivePower,owner,creditOwner,target,trail, jettison);
 		MoveToActiveList(toShoot);
 
 		if((recordIt==YSTRUE && toSave!=NULL) ||

@@ -167,8 +167,9 @@ enum FSBUTTONFUNCTION
 	FSBTF_PROPBACKWARD,                  // Decrease rpm
 
 	FSBTF_SWITCHVIEWTARGET,              // Switch view target
+	FSBTF_JETTISON_WEAPON,				 // Jettison current weapon
 
-FSBTF_NUMBUTTONFUNCTION
+	FSBTF_NUMBUTTONFUNCTION
 };
 
 const char *FsGetAxisFuncLabel(FSAXISFUNCTION fnc);
@@ -230,6 +231,7 @@ public:
 
 	// Buttn press from external source (script) >>
 	YSBOOL ctlFireWeaponButtonExt;
+	YSBOOL ctlJettisonWeaponButtonExt;
 	YSBOOL ctlFireGunButtonExt;
 	YSBOOL ctlFireAAMButtonExt;
 	YSBOOL ctlFireAGMButtonExt;
@@ -242,6 +244,7 @@ public:
 	// Buttn press from external source (script) <<
 
 	YSBOOL ctlFireWeaponButton;
+	YSBOOL ctlJettisonWeaponButton;
 	YSBOOL ctlFireGunButton;
 	YSBOOL ctlFireAAMButton;
 	YSBOOL ctlFireAGMButton;

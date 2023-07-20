@@ -27,6 +27,7 @@ const double FsMinimumAirspeed=0.083;
 #define FSAPPLYCONTROL_BOMBBAYDOOR   0x00000800
 #define FSAPPLYCONTROL_TURRET        0x00001000
 #define FSAPPLYCONTROL_PROPELLER     0x00002000
+#define FSAPPLYCONTROL_JETTISONWEAP  0x00004000
 
 
 
@@ -91,6 +92,7 @@ public:
 		VBT_DISPENSEFLARE,
 		VBT_CYCLEWEAPON,
 		VBT_CYCLESMOKESELECTOR,
+		VBT_JETTISONWEAPON
 	};
 
 
@@ -448,6 +450,7 @@ protected:
 
 
 	YSBOOL ctlFireWeaponButton,pCtlFireWeaponButton;
+	YSBOOL ctlJettisonWeaponButton, pCtlJettisonWeaponButton;
 	YSBOOL ctlFireGunButton,pCtlFireGunButton;
 	YSBOOL ctlFireAAMButton,pCtlFireAAMButton;
 	YSBOOL ctlFireAGMButton,pCtlFireAGMButton;
@@ -567,9 +570,9 @@ private:
 public:
 	YSBOOL FireSelectedWeapon(
 	    YSBOOL &blockedByBombBay,
-	    FsSimulation *sim,const double &ct,class FsWeaponHolder &bul,class FsExistence *own);
+	    FsSimulation *sim,const double &ct,class FsWeaponHolder &bul,class FsExistence *own, YSBOOL jettison=YSFALSE);
 	YSBOOL FireWeapon(
-	    YSBOOL &blockedByBombBay,FsSimulation *sim,const double &ct,class FsWeaponHolder &bul,class FsExistence *own,FSWEAPONTYPE woc);
+	    YSBOOL &blockedByBombBay,FsSimulation *sim,const double &ct,class FsWeaponHolder &bul,class FsExistence *own,FSWEAPONTYPE woc, YSBOOL jettison=YSFALSE);
 	int GetRecentlyFiredMissileId(void) const;
 	void FireMissileByRecord(FSWEAPONTYPE wpnType);
 	YSRESULT ToggleRadarRange(int dir);
@@ -703,7 +706,10 @@ public:
 
 	void SetAllVirtualButton(YSBOOL btn);
 	void SetFireWeaponButton(YSBOOL btn);
+	void SetJettisonWeaponButton(YSBOOL btn);
 	YSBOOL GetFireWeaponButton(void);
+	YSBOOL GetJettisonWeaponButton(void);
+	YSBOOL IsJettisonWeaponButtonJustPressed(void);
 	YSBOOL IsFireWeaponButtonJustPressed(void);
 	void SetFireGunButton(YSBOOL btn);
 	YSBOOL GetFireGunButton(void);

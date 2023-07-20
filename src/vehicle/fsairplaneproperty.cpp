@@ -512,6 +512,8 @@ void FsAirplaneProperty::ReleaseVirtualButton(void)
 {
 	ctlFireWeaponButton=YSFALSE;
 	pCtlFireWeaponButton=YSFALSE;
+	ctlJettisonWeaponButton = YSFALSE;
+	pCtlJettisonWeaponButton = YSFALSE;
 	ctlFireGunButton=YSFALSE;
 	pCtlFireGunButton=YSFALSE;
 	ctlFireAAMButton=YSFALSE;
@@ -2553,6 +2555,11 @@ void FsAirplaneProperty::ApplyControl(const FsFlightControl &ctl,unsigned int wh
 		if((whatToApply&FSAPPLYCONTROL_BOMBBAYDOOR)!=0)
 		{
 			SetBombBayDoor(ctl.ctlBombBayDoor==YSTRUE ? 1.0 : 0.0);
+		}
+
+		if ((whatToApply & FSAPPLYCONTROL_JETTISONWEAP) != 0)
+		{
+			SetJettisonWeaponButton(ctl.ctlJettisonWeaponButton);
 		}
 	}
 }
@@ -5014,6 +5021,30 @@ YSBOOL FsAirplaneProperty::GetFireWeaponButton(void)
 	return ctlFireWeaponButton;
 }
 
+YSBOOL FsAirplaneProperty::GetJettisonWeaponButton(void)
+{
+	return ctlJettisonWeaponButton;
+}
+
+void FsAirplaneProperty::SetJettisonWeaponButton(YSBOOL btn)
+{
+	pCtlJettisonWeaponButton = ctlJettisonWeaponButton;
+	ctlJettisonWeaponButton = btn;
+}
+
+YSBOOL FsAirplaneProperty::IsJettisonWeaponButtonJustPressed(void)
+{
+	if (pCtlJettisonWeaponButton != YSTRUE && ctlJettisonWeaponButton == YSTRUE)
+	{
+		pCtlJettisonWeaponButton = ctlJettisonWeaponButton;
+		return YSTRUE;
+	}
+	else
+	{
+		return YSFALSE;
+	}
+}
+
 YSBOOL FsAirplaneProperty::IsFireWeaponButtonJustPressed(void)
 {
 	if(pCtlFireWeaponButton!=YSTRUE && ctlFireWeaponButton==YSTRUE)
@@ -5993,6 +6024,10 @@ YSBOOL FsAirplaneProperty::ProcessVirtualButtonPress(
 	{
 		staVirtualButtonQueue.Append(VBT_FIREWEAPON);
 	}
+	if (IsJettisonWeaponButtonJustPressed() == YSTRUE)
+	{
+		staVirtualButtonQueue.Append(VBT_JETTISONWEAPON);
+	}
 	if(IsFireAAMButtonJustPressed()==YSTRUE)
 	{
 		staVirtualButtonQueue.Append(VBT_FIREAAM);
@@ -6034,6 +6069,9 @@ YSBOOL FsAirplaneProperty::RunVirtualButtonQueue(
 		staVirtualButtonQueue.Delete(0);
 		switch(btn)
 		{
+		case VBT_JETTISONWEAPON:
+			firedWeapon = staWoc;
+			return FireSelectedWeapon(blockedByBombBay, sim, ctime, bul, owner, YSTRUE);
 		case VBT_FIREWEAPON:
 			firedWeapon=staWoc;
 			return FireSelectedWeapon(blockedByBombBay,sim,ctime,bul,owner);
@@ -6093,14 +6131,14 @@ YSBOOL FsAirplaneProperty::RunVirtualButtonQueue(
 
 YSBOOL FsAirplaneProperty::FireSelectedWeapon(
     YSBOOL &blockedByBombBay,
-    FsSimulation *sim,const double &ct,class FsWeaponHolder &bul,class FsExistence *own)
+    FsSimulation *sim,const double &ct,class FsWeaponHolder &bul,class FsExistence *own, YSBOOL jettison)
 {
 	blockedByBombBay=YSFALSE;
-	return FireWeapon(blockedByBombBay,sim,ct,bul,own,staWoc);
+	return FireWeapon(blockedByBombBay,sim,ct,bul,own,staWoc, jettison);
 }
 
 YSBOOL FsAirplaneProperty::FireWeapon(
-    YSBOOL &blockedByBombBay,FsSimulation *sim,const double &ctime,class FsWeaponHolder &bul,FsExistence *owner,FSWEAPONTYPE wpnType)
+    YSBOOL &blockedByBombBay,FsSimulation *sim,const double &ctime,class FsWeaponHolder &bul,FsExistence *owner,FSWEAPONTYPE wpnType, YSBOOL jettison)
 {
 	YSBOOL fired;
 	fired=YSFALSE;
@@ -6243,7 +6281,7 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 				         12,
 				         owner,
 				         staAirTargetKey, // <- Locked On Target
-				         YSTRUE,YSTRUE);
+				         YSTRUE,YSTRUE, jettison);
 			}
 			break;
 		case FSWEAPON_AIM9X:
@@ -6262,7 +6300,7 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 				         12,
 				         owner,
 				         staAirTargetKey, // <- Locked On Target
-				         YSTRUE,YSTRUE);
+				         YSTRUE,YSTRUE, jettison);
 			}
 			break;
 		case FSWEAPON_AIM120:
@@ -6281,7 +6319,7 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 					         12,
 					         owner,
 					         staAirTargetKey, // <- Locked On Target
-					         YSTRUE,YSTRUE);
+					         YSTRUE,YSTRUE, jettison);
 			}
 			break;
 		case FSWEAPON_AGM65:
@@ -6301,7 +6339,8 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 					         owner,
 					         staGroundTargetKey, // <- Locked On Target
 					         YSTRUE,
-					         YSTRUE);
+					         YSTRUE,
+							 jettison);
 			}
 			break;
 		case FSWEAPON_ROCKET:
@@ -6320,7 +6359,8 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 				         owner,
 				         YSNULLHASHKEY,              // <- Locked On Target
 				         YSTRUE,
-				         YSTRUE);
+				         YSTRUE,
+						 jettison);
 			}
 			break;
 		case FSWEAPON_BOMB:

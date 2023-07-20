@@ -47,6 +47,7 @@ void FsFlightControl::Initialize(void)
 	ctlAileron=0.0;
 
 	ctlFireWeaponButtonExt=YSFALSE;
+	ctlJettisonWeaponButtonExt = YSFALSE;
 	ctlFireGunButtonExt=YSFALSE;
 	ctlFireAAMButtonExt=YSFALSE;
 	ctlFireAGMButtonExt=YSFALSE;
@@ -58,6 +59,7 @@ void FsFlightControl::Initialize(void)
 	ctlCycleSmokeSelectorButtonExt=YSFALSE;
 
 	ctlFireWeaponButton=YSFALSE;
+	ctlJettisonWeaponButton = YSFALSE;
 	ctlFireGunButton=YSFALSE;
 	ctlFireAAMButton=YSFALSE;
 	ctlFireAGMButton=YSFALSE;
@@ -464,6 +466,7 @@ YSRESULT FsFlightControl::ProcessButtonFunction(const double &/*cTime*/,FsExiste
 	case FSBTF_BRAKEHOLD:                     //  Brake On While Holding
 	case FSBTF_FIREGUN:                       //  Fire Machine Gun
 	case FSBTF_SMOKE:                         //  Smoke
+	case FSBTF_JETTISON_WEAPON:
 		break;
 
 	case FSBTF_TOGGLEALLDOOR:
@@ -598,6 +601,7 @@ YSRESULT FsFlightControl::ReadControl
 	// <<
 
 	ctlFireWeaponButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_FIREWEAPON,joy),ctlFireWeaponButtonExt);
+	ctlJettisonWeaponButton = YsOr(ctlAssign.IsButtonPressed(FSBTF_JETTISON_WEAPON, joy), ctlJettisonWeaponButtonExt);
 	ctlFireGunButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_FIREGUN,joy),ctlFireGunButtonExt);
 	ctlFireAAMButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_FIREAAM,joy),ctlFireAAMButtonExt);
 	ctlFireAGMButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_FIREAGM,joy),ctlFireAGMButtonExt);
@@ -609,6 +613,7 @@ YSRESULT FsFlightControl::ReadControl
 	ctlCycleSmokeSelectorButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_CYCLESMOKESELECTOR,joy),ctlCycleSmokeSelectorButtonExt);
 
 	ctlFireWeaponButtonExt=YSFALSE;
+	ctlJettisonWeaponButtonExt = YSFALSE;
 	ctlFireGunButtonExt=YSFALSE;
 	ctlFireAAMButtonExt=YSFALSE;
 	ctlFireAGMButtonExt=YSFALSE;
@@ -1343,7 +1348,8 @@ static struct FsButtonFunctionString fsButtonFuncStr[]=
 	{FSBTF_SENSITIVITYUP,        "SENSITIVITYUP",        "Increase Sensitivity"},
 	{FSBTF_SENSITIVITYDOWN,      "SENSITIVITYDOWN",      "Decrease Sensitivity"},
 
-	{FSBTF_SWITCHVIEWTARGET,     "SWITCHVIEWTARGET",     "Switch View Target"}
+	{FSBTF_SWITCHVIEWTARGET,     "SWITCHVIEWTARGET",     "Switch View Target"},
+	{FSBTF_JETTISON_WEAPON,      "JETTISONWEAPON",       "Jettison Selected Weapon"}
 };
 
 static struct FsKeyString fsKeyString[]=

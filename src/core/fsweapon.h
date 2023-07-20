@@ -157,7 +157,7 @@ public:
 	     int destruction,
 	     class FsExistence *owner,
 	     FSWEAPON_CREDIT_OWNER creditOwnerIn,
-	     class FsExistence *target,FsWeaponSmokeTrail *trail);
+	     class FsExistence *target,FsWeaponSmokeTrail *trail, YSBOOL jettison=YSFALSE);
 
 	// Flare
 	void DispenseFlare
@@ -275,7 +275,7 @@ public:
 	     double v,double vmax,double l,double mobility,double radar,
 	     int destructivePower,
 	     class FsExistence *owner,unsigned int targetKey,
-	     YSBOOL recordIt,YSBOOL transmit);
+	     YSBOOL recordIt,YSBOOL transmit, YSBOOL jettison=YSFALSE);
 
 	// Bomb away!
 	int Bomb
