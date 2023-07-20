@@ -3886,13 +3886,18 @@ void FsSimulation::SimMove(const double &dt)
 		{
 			airplane->Prop().FireGunIfVirtualTriggerIsPressed(currentTime,dt,this,bulletHolder,airplane);
 
-			YSBOOL fired,blockedByBombBay;
+			YSBOOL fired,blockedByBombBay,jettisoned;
 			FSWEAPONTYPE woc;
-			fired=airplane->Prop().ProcessVirtualButtonPress(blockedByBombBay,woc,this,currentTime,bulletHolder,airplane);
-			if(fired==YSTRUE && airplane==GetPlayerAirplane())
+			fired=airplane->Prop().ProcessVirtualButtonPress(blockedByBombBay,woc,this,currentTime,bulletHolder,airplane, jettisoned);
+			if (jettisoned == YSTRUE && airplane == GetPlayerAirplane())
 			{
-
-
+				if (woc != FSWEAPON_GUN && woc != FSWEAPON_FLARE && woc != FSWEAPON_SMOKE)
+				{
+					FsSoundSetOneTime(FSSND_ONETIME_BOMBSAWAY);
+				}
+			}
+			else if(fired==YSTRUE && jettisoned == YSFALSE && airplane==GetPlayerAirplane())
+			{
 				switch(woc)
 				{
 				case FSWEAPON_AIM9:

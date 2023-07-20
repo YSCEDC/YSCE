@@ -562,11 +562,11 @@ public:
 	    (const double &ct,const double &dt,class FsSimulation *sim,class FsWeaponHolder &bul,class FsExistence *own);
 	YSBOOL ProcessVirtualButtonPress(
 	    YSBOOL &blockedByBombBay,FSWEAPONTYPE &firedWeapon,
-	    FsSimulation *sim,const double &ctime,class FsWeaponHolder &bul,FsExistence *owner);
+	    FsSimulation *sim,const double &ctime,class FsWeaponHolder &bul,FsExistence *owner, YSBOOL& jettisonedWeapon);
 private:
 	YSBOOL RunVirtualButtonQueue(
 	    YSBOOL &blockedByBombBay,FSWEAPONTYPE &firedWeapon,
-	    FsSimulation *sim,const double &ctime,FsWeaponHolder &bul,FsExistence *owner);
+	    FsSimulation *sim,const double &ctime,FsWeaponHolder &bul,FsExistence *owner, YSBOOL& jettisonedWeapon);
 public:
 	YSBOOL FireSelectedWeapon(
 	    YSBOOL &blockedByBombBay,

@@ -6017,7 +6017,7 @@ YSBOOL FsAirplaneProperty::FireGunIfVirtualTriggerIsPressed(
 
 YSBOOL FsAirplaneProperty::ProcessVirtualButtonPress(
     YSBOOL &blockedByBombBay,FSWEAPONTYPE &firedWeapon,
-    FsSimulation *sim,const double &ctime,FsWeaponHolder &bul,FsExistence *owner)
+    FsSimulation *sim,const double &ctime,FsWeaponHolder &bul,FsExistence *owner, YSBOOL& jettisonedWeapon)
 {
 	blockedByBombBay=YSFALSE;
 	if(IsFireWeaponButtonJustPressed()==YSTRUE)
@@ -6056,21 +6056,28 @@ YSBOOL FsAirplaneProperty::ProcessVirtualButtonPress(
 	{
 		staVirtualButtonQueue.Append(VBT_CYCLEWEAPON);
 	}
-	return RunVirtualButtonQueue(blockedByBombBay,firedWeapon,sim,ctime,bul,owner);
+	return RunVirtualButtonQueue(blockedByBombBay,firedWeapon,sim,ctime,bul,owner, jettisonedWeapon);
 }
 
 YSBOOL FsAirplaneProperty::RunVirtualButtonQueue(
     YSBOOL &blockedByBombBay,FSWEAPONTYPE &firedWeapon,
-    FsSimulation *sim,const double &ctime,FsWeaponHolder &bul,FsExistence *owner)
+    FsSimulation *sim,const double &ctime,FsWeaponHolder &bul,FsExistence *owner, YSBOOL& jettisonedWeapon)
 {
 	while(0<staVirtualButtonQueue.GetN())
 	{
+		jettisonedWeapon = YSFALSE;
 		auto btn=staVirtualButtonQueue[0];
 		staVirtualButtonQueue.Delete(0);
 		switch(btn)
 		{
 		case VBT_JETTISONWEAPON:
+			if (staWoc == FSWEAPON_FLARE || staWoc == FSWEAPON_GUN || staWoc == FSWEAPON_SMOKE)
+			{
+				return YSTRUE;
+			}
+
 			firedWeapon = staWoc;
+			jettisonedWeapon = YSTRUE;
 			return FireSelectedWeapon(blockedByBombBay, sim, ctime, bul, owner, YSTRUE);
 		case VBT_FIREWEAPON:
 			firedWeapon=staWoc;
