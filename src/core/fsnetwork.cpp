@@ -4342,15 +4342,18 @@ YSRESULT FsSocketServer::SendEnvironment(int clientId)
 
 YSRESULT FsSocketServer::SendLogOnComplete(int clientId)
 {
-	unsigned char dat[256],*ptr;
-	ptr=dat;
-	FsPushInt(ptr,FSNETCMD_LOGON);
+	if(user[clientId].version>20150425){
+		unsigned char dat[256],*ptr;
+		ptr=dat;
+		FsPushInt(ptr,FSNETCMD_LOGON);
 
-	SendPacket(clientId,ptr-dat,dat);
-	FlushSendQueue(clientId,FS_NETEMERGENCYTIMEOUT);
-	SendPacket(clientId,ptr-dat,dat);
-	FlushSendQueue(clientId,FS_NETEMERGENCYTIMEOUT);
-	SendPacket(clientId,ptr-dat,dat);
+		SendPacket(clientId,ptr-dat,dat);
+		FlushSendQueue(clientId,FS_NETEMERGENCYTIMEOUT);
+		SendPacket(clientId,ptr-dat,dat);
+		FlushSendQueue(clientId,FS_NETEMERGENCYTIMEOUT);
+		SendPacket(clientId,ptr-dat,dat);
+	}
+	
 	return YSOK;
 }
 
