@@ -2536,7 +2536,7 @@ YSRESULT FsSocketServer::ReceiveLogOnUser(int clientId,int version,const char re
 
 	YSRESULT versionCheck;
 	versionCheck=YSERR;
-	if(version==YSFLIGHT_NETVERSION)
+	if(version==YSFLIGHT_NETVERSION || version >= 20150425)
 	{
 		versionCheck=YSOK;
 	}
