@@ -105,7 +105,8 @@ public:
 
 	FsWeaponSmokeTrail *trail;
 
-
+	//Flare properties
+	double flareHeat; //flare current heat value (ranges from 1.0 to 0.0)
 
 	// ***s (eg. aim9s, agm65s) stands for silent.
 	static class FsVisualDnm aim9,aim9s,aim_coarse;

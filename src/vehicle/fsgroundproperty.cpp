@@ -2132,6 +2132,11 @@ void FsGroundProperty::SetRelativeVelocity(const YsVec3 &newVel)
 	staSpeed=newVel;
 }
 
+double FsGroundProperty::GetAccel(void) const
+{
+	return staAccel;
+}
+
 const double FsGroundProperty::GetMaxSpeed(void) const
 {
 	return chMaxSpeed;

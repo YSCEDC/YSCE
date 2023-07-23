@@ -269,7 +269,8 @@ public:
 	    const double &ct,class FsWeaponHolder &bul,class FsExistence *own);
 	const double GetTimeBeforeNextMissileCanBeShot(const double currnetTime) const;
 	YSBOOL GetDamage(YSBOOL &killed,int dmg);
-
+	
+	double GetAccel(void) const;
 	double GetBulletSpeed(void) const;
 	double GetSAMRadarAngle(void) const;
 	double GetSAMRange(void) const;

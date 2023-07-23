@@ -615,6 +615,7 @@ FsWeapon::FsWeapon()
 {
 	lifeRemain=0.0;
 	timeRemain=0.0;
+	flareHeat = 0.0;
 	timeUnguided=0.0;
 	velocity=0.0;
 	pos.Set(0.0,0.0,0.0);
@@ -844,7 +845,7 @@ void FsWeapon::DispenseFlare(
     FsWeaponSmokeTrail *tr)
 {
 	type=FSWEAPON_FLARE;
-
+	flareHeat = FsGetRandomBetween(0.75, 1.0);
 	prv=p;
 	pos=p;
 	lastChecked=p;
@@ -955,12 +956,26 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 					YSBOOL fooled;
 					fooled=YSFALSE;
 					flareZ=lifeRemain;
+
+					double targetThrottle = 0.0;
+					if (target->GetType() == FSEX_AIRPLANE)
+					{
+						targetThrottle = ((FsAirplane*)target)->Prop().GetThrottle();
+					}
+					else if (target->GetType() == FSEX_GROUND)
+					{
+						targetThrottle = ((FsGround*)target)->Prop().GetAccel();
+					}
+
+
 					for(flare=flareList; flare!=NULL; flare=flare->nextFlare)
 					{
 						flarePos=mat*flare->pos;
-						if(flarePos.z()>0.0 && flarePos.z()<flareZ &&
-						   atan2(flarePos.x()*flarePos.x()+flarePos.y()*flarePos.y(),flarePos.z())<radar)
+						if(flarePos.z()>0.0 && flarePos.z()<flareZ && 
+							atan2(flarePos.x()*flarePos.x()+flarePos.y()*flarePos.y(),flarePos.z())<radar && 
+							flare->flareHeat > targetThrottle)
 						{
+							printf("missile fooled: flare heat = %lf, target throttle = %lf\n", flare->flareHeat, targetThrottle);
 							fooled=YSTRUE;
 							tpos=flarePos;
 							flareZ=flarePos.z();
