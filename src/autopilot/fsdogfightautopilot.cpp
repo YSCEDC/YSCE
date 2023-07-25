@@ -23,7 +23,7 @@ FsDogfight::FsDogfight()
 	g2=0.0;
 	g3=0.0;
 	lastDamageValue = 0.0;
-	missileEvasionThrottle = FsGetRandomBetween(0.35, 0.95);
+	missileEvasionThrottle = FsGetRandomBetween(0.2, 0.5);
 	gLimit=9.0;
 	backSenseRange=YsDegToRad(45.0);
 	clock=0.0;
@@ -1110,7 +1110,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				case FSWEAPON_AIM120:
 					if ((chasingWeaponPos - air.GetPosition()).GetSquareLength() < 4000.0 * 4000.0)
 					{
-						missileEvasionThrottle = FsGetRandomBetween(0.35, 0.95);
+						missileEvasionThrottle = FsGetRandomBetween(0.2, 0.5);
 						air.Prop().SetDispenseFlareButton(YSTRUE);
 						flareClock = clock + flareClockStep;
 					}
@@ -1118,7 +1118,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				case FSWEAPON_AIM9:
 					if ((chasingWeaponPos - air.GetPosition()).GetSquareLength() < 2000.0 * 2000.0)
 					{
-						missileEvasionThrottle = FsGetRandomBetween(0.35, 0.95);
+						missileEvasionThrottle = FsGetRandomBetween(0.2, 0.5);
 						air.Prop().SetDispenseFlareButton(YSTRUE);
 						flareClock = clock + flareClockStep;
 					}
@@ -1127,7 +1127,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				case FSWEAPON_AIM9X:
 					if ((chasingWeaponPos - air.GetPosition()).GetSquareLength() < 1000.0 * 1000.0)
 					{
-						missileEvasionThrottle = FsGetRandomBetween(0.35, 0.95);
+						missileEvasionThrottle = FsGetRandomBetween(0.2, 0.5);
 						air.Prop().SetDispenseFlareButton(YSTRUE);
 						flareClock = clock + flareClockStep;
 					}
@@ -1360,6 +1360,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 					if (sim->IsMissileChasing(chasingWeaponType, chasingWeaponPos, &air))
 					{
 						air.Prop().TurnOffSpeedController();
+						air.Prop().SetAfterburner(YSFALSE);
 						air.Prop().SetThrottle(missileEvasionThrottle);
 						printf("missile chasing AI, setting throttle to %lf\n", missileEvasionThrottle);
 					}

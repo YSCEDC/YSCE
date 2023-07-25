@@ -5939,7 +5939,6 @@ void FsAirplaneProperty::CalculateHeatSignature(const double& dt)
 		staHeatSignature -= heatStep;
 	}
 	staHeatSignature = YsBound(staHeatSignature, 0.0, 1.0);
-	printf("current heat: %lf\n", staHeatSignature);
 }
 
 YSBOOL FsAirplaneProperty::FireGunIfVirtualTriggerIsPressed(
