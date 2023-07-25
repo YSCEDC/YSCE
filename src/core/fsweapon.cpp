@@ -845,7 +845,7 @@ void FsWeapon::DispenseFlare(
     FsWeaponSmokeTrail *tr)
 {
 	type=FSWEAPON_FLARE;
-	flareHeat = FsGetRandomBetween(0.75, 1.0);
+	flareHeat = FsGetRandomBetween(0.85, 1.0);
 	prv=p;
 	pos=p;
 	lastChecked=p;
@@ -975,7 +975,7 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 							atan2(flarePos.x()*flarePos.x()+flarePos.y()*flarePos.y(),flarePos.z())<radar && 
 							flare->flareHeat > targetHeat)
 						{
-							printf("missile fooled: flare heat = %lf, target throttle = %lf\n", flare->flareHeat, targetHeat);
+							printf("missile fooled: flare heat = %lf, target heat = %lf\n", flare->flareHeat, targetHeat);
 							fooled=YSTRUE;
 							tpos=flarePos;
 							flareZ=flarePos.z();

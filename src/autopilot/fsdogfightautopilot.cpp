@@ -1043,7 +1043,6 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 		air.Prop().SetVectorMarker(YSTRUE);
 	}
 
-
 	//standby mode: bank 45 degrees, slow down 
 	if(mode==DFMODE_STANDBY_AIR/*101*/)
 	{
@@ -1076,65 +1075,78 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 		FsWeapon* seeker = sim->GetLockedOn(&air);
 
 		//if the AI aircraft has flares AND the flare timer has lapsed AND there is a missile pursuing 
-		if(air.Prop().GetNumWeapon(FSWEAPON_FLARE)>0 
-			&& flareClock<clock 
-			&& seeker != NULL)
+		if(seeker != NULL)
 		{
-			//don't flare immediately on missile launch 
-			double chasingWeaponDistTraveled = air.Prop().GetAAMRange(seeker->type) - seeker->lifeRemain;
-			if (chasingWeaponDistTraveled >= 500.0)
+			//evade
+			air.Prop().TurnOffBankController();
+			air.Prop().SetAileron(0.0);
+			air.Prop().TurnOffGController();
+			air.Prop().SetElevator(1.0);
+			air.Prop().TurnOffSpeedController();
+			air.Prop().SetAfterburner(YSFALSE);
+			air.Prop().SetThrottle(missileEvasionThrottle);
+			printf("missile chasing AI, setting throttle to %lf\n", missileEvasionThrottle);			
+
+			if (air.Prop().GetNumWeapon(FSWEAPON_FLARE) > 0 && flareClock < clock)
 			{
-				//"chasing" = actively locked & pursuing the AI aircraft
-				YsVec3 chasingWeaponPos = seeker->pos;
-				FSWEAPONTYPE chasingWeaponType = seeker->type;
-
-				double missileDist = (chasingWeaponPos - air.GetPosition()).GetLength();
-				double flareClockStep = YsGreater(2.0, missileDist / 500);
-				double randomStep = FsGetRandomBetween(0.0, 1.0);
-				if (rand() % 2)
+				//don't flare immediately on missile launch 
+				double chasingWeaponDistTraveled = air.Prop().GetAAMRange(seeker->type) - seeker->lifeRemain;
+				if (chasingWeaponDistTraveled >= 500.0)
 				{
-					flareClockStep += randomStep;
-				}
-				else
-				{
-					flareClockStep -= randomStep;
-				}
-				printf("missile dist: %lf\n", missileDist);
-				printf("flare clock step: %lf\n", flareClockStep);
+					//"chasing" = actively locked & pursuing the AI aircraft
+					YsVec3 chasingWeaponPos = seeker->pos;
+					FSWEAPONTYPE chasingWeaponType = seeker->type;
 
-				//dispense flare and reset flare timer based on missile distance to AI aircraft
-				switch (chasingWeaponType) // Adapted from Pasutisu's code.
-				{
-				default:
-					break;
-				case FSWEAPON_AIM120:
-					if ((chasingWeaponPos - air.GetPosition()).GetSquareLength() < 4000.0 * 4000.0)
+					double missileDist = (chasingWeaponPos - air.GetPosition()).GetLength();
+					double flareClockStep = YsGreater(2.0, missileDist / 500);
+					double randomStep = FsGetRandomBetween(0.0, 1.0);
+					if (rand() % 2)
 					{
-						missileEvasionThrottle = FsGetRandomBetween(0.2, 0.5);
-						air.Prop().SetDispenseFlareButton(YSTRUE);
-						flareClock = clock + flareClockStep;
+						flareClockStep += randomStep;
 					}
-					break;
-				case FSWEAPON_AIM9:
-					if ((chasingWeaponPos - air.GetPosition()).GetSquareLength() < 2000.0 * 2000.0)
+					else
 					{
-						missileEvasionThrottle = FsGetRandomBetween(0.2, 0.5);
-						air.Prop().SetDispenseFlareButton(YSTRUE);
-						flareClock = clock + flareClockStep;
+						flareClockStep -= randomStep;
 					}
-					break;
+					printf("missile dist: %lf\n", missileDist);
+					printf("flare clock step: %lf\n", flareClockStep);
 
-				case FSWEAPON_AIM9X:
-					if ((chasingWeaponPos - air.GetPosition()).GetSquareLength() < 1000.0 * 1000.0)
+					//dispense flare and reset flare timer based on missile distance to AI aircraft
+					switch (chasingWeaponType) // Adapted from Pasutisu's code.
 					{
-						missileEvasionThrottle = FsGetRandomBetween(0.2, 0.5);
-						air.Prop().SetDispenseFlareButton(YSTRUE);
-						flareClock = clock + flareClockStep;
-					}
-					break;
+					default:
+						break;
+					case FSWEAPON_AIM120:
+						if ((chasingWeaponPos - air.GetPosition()).GetSquareLength() < 4000.0 * 4000.0)
+						{
+							missileEvasionThrottle = FsGetRandomBetween(0.2, 0.5);
+							air.Prop().SetDispenseFlareButton(YSTRUE);
+							flareClock = clock + flareClockStep;
+						}
+						break;
+					case FSWEAPON_AIM9:
+						if ((chasingWeaponPos - air.GetPosition()).GetSquareLength() < 2000.0 * 2000.0)
+						{
+							missileEvasionThrottle = FsGetRandomBetween(0.2, 0.5);
+							air.Prop().SetDispenseFlareButton(YSTRUE);
+							flareClock = clock + flareClockStep;
+						}
+						break;
 
+					case FSWEAPON_AIM9X:
+						if ((chasingWeaponPos - air.GetPosition()).GetSquareLength() < 1000.0 * 1000.0)
+						{
+							missileEvasionThrottle = FsGetRandomBetween(0.2, 0.5);
+							air.Prop().SetDispenseFlareButton(YSTRUE);
+							flareClock = clock + flareClockStep;
+						}
+						break;
+
+					}
 				}
 			}
+
+			return YSOK;
 		}
 		// 2005/04/01 <<
 
@@ -1353,28 +1365,13 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 					air.Prop().SetAileron(0.0);
 					air.Prop().SetRudder(0.0);
 
-					FSWEAPONTYPE chasingWeaponType;
-					YsVec3 chasingWeaponPos;
-
-					//if being chased by a missile, evade 
-					if (sim->IsMissileChasing(chasingWeaponType, chasingWeaponPos, &air))
+					//if the target is close, try to cut speed and have them overshoot
+					double targetDist = (target->GetPosition() - air.GetPosition()).GetLength();
+					if (targetDist <= 500.0
+						&& (int)nextBreakClock % 2
+						&& target->Prop().GetVelocity() * 0.6 >= air.Prop().GetMinimumManeuvableSpeed())
 					{
-						air.Prop().TurnOffSpeedController();
-						air.Prop().SetAfterburner(YSFALSE);
-						air.Prop().SetThrottle(missileEvasionThrottle);
-						printf("missile chasing AI, setting throttle to %lf\n", missileEvasionThrottle);
-					}
-
-					else
-					{
-						//if the target is close, try to cut speed and have them overshoot
-						double targetDist = (target->GetPosition() - air.GetPosition()).GetLength();
-						if (targetDist <= 500.0
-							&& (int)nextBreakClock % 2
-							&& target->Prop().GetVelocity() * 0.6 >= air.Prop().GetMinimumManeuvableSpeed())
-						{
-							air.Prop().SpeedController(target->Prop().GetVelocity() * 0.6);
-						}
+						air.Prop().SpeedController(target->Prop().GetVelocity() * 0.6);
 					}
 
 					air.Prop().SetAirTargetKey(YSNULLHASHKEY);
