@@ -518,6 +518,7 @@ public:
 	YSBOOL HasStallHorn(void) const;
 	YSBOOL HasGearHorn(void) const;
 	double GetThrustWeightRatio(void) const;
+	double GetHeatSignature(void) const;
 	FSAIRPLANECATEGORY GetAirplaneCategory(void) const;
 	FSAIRCRAFTCLASS GetAircraftClass(void) const;
 	YSBOOL IsTailDragger(void) const;

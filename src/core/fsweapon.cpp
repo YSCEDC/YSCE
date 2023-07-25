@@ -957,14 +957,14 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 					fooled=YSFALSE;
 					flareZ=lifeRemain;
 
-					double targetThrottle = 0.0;
+					double targetHeat = 0.0;
 					if (target->GetType() == FSEX_AIRPLANE)
 					{
-						targetThrottle = ((FsAirplane*)target)->Prop().GetThrottle();
+						targetHeat = ((FsAirplane*)target)->Prop().GetHeatSignature();
 					}
 					else if (target->GetType() == FSEX_GROUND)
 					{
-						targetThrottle = ((FsGround*)target)->Prop().GetAccel();
+						targetHeat = ((FsGround*)target)->Prop().GetAccel();
 					}
 
 
@@ -973,9 +973,9 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 						flarePos=mat*flare->pos;
 						if(flarePos.z()>0.0 && flarePos.z()<flareZ && 
 							atan2(flarePos.x()*flarePos.x()+flarePos.y()*flarePos.y(),flarePos.z())<radar && 
-							flare->flareHeat > targetThrottle)
+							flare->flareHeat > targetHeat)
 						{
-							printf("missile fooled: flare heat = %lf, target throttle = %lf\n", flare->flareHeat, targetThrottle);
+							printf("missile fooled: flare heat = %lf, target throttle = %lf\n", flare->flareHeat, targetHeat);
 							fooled=YSTRUE;
 							tpos=flarePos;
 							flareZ=flarePos.z();

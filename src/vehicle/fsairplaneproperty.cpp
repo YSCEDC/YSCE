@@ -571,6 +571,11 @@ double FsAirplaneProperty::GetThrustWeightRatio(void) const
 	}
 }
 
+double FsAirplaneProperty::GetHeatSignature(void) const
+{
+	return staHeatSignature;
+}
+
 FSAIRPLANECATEGORY FsAirplaneProperty::GetAirplaneCategory(void) const
 {
 	return chCategory;
