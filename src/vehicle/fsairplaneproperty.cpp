@@ -124,6 +124,7 @@ void FsAirplaneProperty::InitializeState(void)
 
 	staAb=YSFALSE;
 	staThrottle=0.0;
+	staHeatSignature = 0.0;
 
 	staSpoiler=0.0;
 	staGear=1.0;
@@ -958,6 +959,8 @@ void FsAirplaneProperty::Move(
 	{
 		staAb=YSFALSE;
 	}
+
+	CalculateHeatSignature(dt);
 	CalculateCurrentState();
 	CalculateFuelConsumption(dt);
 	CalculateGravitationalForce();
@@ -5915,6 +5918,25 @@ double FsAirplaneProperty::MoveDevice(const double &toBe,double rightNow,const d
 	return rightNow;
 }
 
+void FsAirplaneProperty::CalculateHeatSignature(const double& dt)
+{
+	double afterburnerHeat = staAb == YSTRUE ? 0.3 : 0.0;
+	double targetHeat = staThrottle * 0.8 + afterburnerHeat;
+	double deltaHeat = staAb == YSTRUE ? 0.5 : 0.05;
+	double heatStep = deltaHeat * dt;
+
+	if (staHeatSignature < targetHeat)
+	{
+		staHeatSignature += heatStep;
+	}
+	else if (staHeatSignature > targetHeat)
+	{
+		staHeatSignature -= heatStep;
+	}
+	staHeatSignature = YsBound(staHeatSignature, 0.0, 1.0);
+	printf("current heat: %lf\n", staHeatSignature);
+}
+
 YSBOOL FsAirplaneProperty::FireGunIfVirtualTriggerIsPressed(
     const double &ctime,const double &dt,FsSimulation *sim,FsWeaponHolder &bul,FsExistence *owner)
 {
@@ -6390,13 +6412,43 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 			break;
 		case FSWEAPON_FLARE:
 			{
-				staAttitude.Mul(flareVel,flareVel);
+				double offset = YsPi / 2.0;
+				double flareVelScalar = 20.0;
+
+				YsVec3 flareVelCenter;
+				staInverseMatrix.Mul(flareVelCenter, staVelocity, 0.0);
+				flareVelCenter.RotateYZ(YsPi / 4.0);
+				flareVelCenter.Normalize();
+				flareVelCenter *= flareVelScalar;
+
+				YsVec3 flareVelOffsetL(flareVelCenter);
+				flareVelOffsetL.RotateXZ(-offset);
+
+				YsVec3 flareVelOffsetR(flareVelCenter);
+				flareVelOffsetR.RotateXZ(offset);
+
+				staMatrix.Mul(flareVelCenter, flareVelCenter, 0.0);
+				staMatrix.Mul(flareVelOffsetL, flareVelOffsetL, 0.0);
+				staMatrix.Mul(flareVelOffsetR, flareVelOffsetR, 0.0);
+
+
 				if(0>slot && 0<staFlare)
 				{
 					staFlare--;
 				}
 				fired=YSTRUE;
-				bul.DispenseFlare(ctime,missilePos,staVelocity+flareVel,120.0,1000.0,owner,YSTRUE,YSTRUE);
+
+
+				if (chNumFlareDispenser > 0)
+				{
+					bul.DispenseFlare(ctime, missilePos, staVelocity + flareVel, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
+				}
+				else
+				{
+					bul.DispenseFlare(ctime, missilePos, staVelocity + flareVelCenter, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
+					bul.DispenseFlare(ctime, missilePos, staVelocity + flareVelOffsetL, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
+					bul.DispenseFlare(ctime, missilePos, staVelocity + flareVelOffsetR, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
+				}
 			}
 			break;
 		}

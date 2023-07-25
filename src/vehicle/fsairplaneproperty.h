@@ -121,6 +121,8 @@ protected:
 	double staThrottle;      //Throttle 0.0-1.0(*)
 	YsArray <double> staPropLever;  // Propeller lever 0.0 low RPM   1.0 high RPM
 
+	double staHeatSignature;
+
 	double staSpoiler;       //Spoiler 0.0-1.0(*)
 	double staGear;          //Landing Gear 0.0-1.0(*)
 	double staFlap;          //Flap 0.0-1.0(*)
@@ -982,7 +984,7 @@ public:
 protected:
 	void CalculateCurrentState(void);
 	void CalculateFuelConsumption(const double &dt);
-
+	void CalculateHeatSignature(const double& dt);
 	void CalculateRungeKutta4(const double &dt);
 	void CalculateGravitationalForce(void);
 	void AdjustGravitationalForceForSlope(void);

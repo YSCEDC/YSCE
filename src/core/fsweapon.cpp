@@ -2948,6 +2948,7 @@ int FsWeaponHolder::DispenseFlare(
 		}
 
 		toShoot->DispenseFlare(ctime,pos,attByVel,vel.GetLength(),vMax,l,owner,creditOwner,trail);
+
 		MoveToActiveList(toShoot);
 
 //		toShoot->prevFlare=NULL;

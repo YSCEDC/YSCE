@@ -23,6 +23,7 @@ FsDogfight::FsDogfight()
 	g2=0.0;
 	g3=0.0;
 	lastDamageValue = 0.0;
+	missileEvasionThrottle = FsGetRandomBetween(0.35, 0.95);
 	gLimit=9.0;
 	backSenseRange=YsDegToRad(45.0);
 	clock=0.0;
@@ -1109,6 +1110,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				case FSWEAPON_AIM120:
 					if ((chasingWeaponPos - air.GetPosition()).GetSquareLength() < 4000.0 * 4000.0)
 					{
+						missileEvasionThrottle = FsGetRandomBetween(0.35, 0.95);
 						air.Prop().SetDispenseFlareButton(YSTRUE);
 						flareClock = clock + flareClockStep;
 					}
@@ -1116,6 +1118,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				case FSWEAPON_AIM9:
 					if ((chasingWeaponPos - air.GetPosition()).GetSquareLength() < 2000.0 * 2000.0)
 					{
+						missileEvasionThrottle = FsGetRandomBetween(0.35, 0.95);
 						air.Prop().SetDispenseFlareButton(YSTRUE);
 						flareClock = clock + flareClockStep;
 					}
@@ -1124,6 +1127,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				case FSWEAPON_AIM9X:
 					if ((chasingWeaponPos - air.GetPosition()).GetSquareLength() < 1000.0 * 1000.0)
 					{
+						missileEvasionThrottle = FsGetRandomBetween(0.35, 0.95);
 						air.Prop().SetDispenseFlareButton(YSTRUE);
 						flareClock = clock + flareClockStep;
 					}
@@ -1349,13 +1353,27 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 					air.Prop().SetAileron(0.0);
 					air.Prop().SetRudder(0.0);
 
-					//if the target is close, try to cut speed and have them overshoot
-					double targetDist = (target->GetPosition() - air.GetPosition()).GetLength();
-					if (targetDist <= 500.0 
-						&& (int)nextBreakClock % 2
-						&& target->Prop().GetVelocity() * 0.6 >= air.Prop().GetMinimumManeuvableSpeed())
+					FSWEAPONTYPE chasingWeaponType;
+					YsVec3 chasingWeaponPos;
+
+					//if being chased by a missile, evade 
+					if (sim->IsMissileChasing(chasingWeaponType, chasingWeaponPos, &air))
 					{
-						air.Prop().SpeedController(target->Prop().GetVelocity() * 0.6);
+						air.Prop().TurnOffSpeedController();
+						air.Prop().SetThrottle(missileEvasionThrottle);
+						printf("missile chasing AI, setting throttle to %lf\n", missileEvasionThrottle);
+					}
+
+					else
+					{
+						//if the target is close, try to cut speed and have them overshoot
+						double targetDist = (target->GetPosition() - air.GetPosition()).GetLength();
+						if (targetDist <= 500.0
+							&& (int)nextBreakClock % 2
+							&& target->Prop().GetVelocity() * 0.6 >= air.Prop().GetMinimumManeuvableSpeed())
+						{
+							air.Prop().SpeedController(target->Prop().GetVelocity() * 0.6);
+						}
 					}
 
 					air.Prop().SetAirTargetKey(YSNULLHASHKEY);
