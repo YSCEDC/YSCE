@@ -6416,32 +6416,6 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 			break;
 		case FSWEAPON_FLARE:
 			{
-				double offset = YsPi / 2.0;
-				double flareVelScalar = 20.0;
-
-				YsVec3 flareVelCenter;
-				staInverseMatrix.Mul(flareVelCenter, staVelocity, 0.0);
-				flareVelCenter.RotateYZ(YsPi / 4.0);
-				flareVelCenter.Normalize();
-				flareVelCenter *= flareVelScalar;
-
-				YsVec3 flareVelOffsetL(flareVelCenter);
-				flareVelOffsetL.RotateXZ(-offset);
-
-				YsVec3 flareVelOffsetR(flareVelCenter);
-				flareVelOffsetR.RotateXZ(offset);
-
-				staMatrix.Mul(flareVelCenter, flareVelCenter, 0.0);
-				staMatrix.Mul(flareVelOffsetL, flareVelOffsetL, 0.0);
-				staMatrix.Mul(flareVelOffsetR, flareVelOffsetR, 0.0);
-
-
-				if(0>slot && 0<staFlare)
-				{
-					staFlare--;
-				}
-				fired=YSTRUE;
-
 
 				if (chNumFlareDispenser > 0)
 				{
@@ -6449,7 +6423,31 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 				}
 				else
 				{
-					bul.DispenseFlare(ctime, missilePos, staVelocity + flareVelCenter, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
+					double offset = YsPi / 2.0;
+					double flareVelScalar = 20.0;
+
+					YsVec3 flareVelCenter;
+					staInverseMatrix.Mul(flareVelCenter, staVelocity, 0.0);
+					flareVelCenter.RotateYZ(YsPi / 4.0);
+					flareVelCenter.Normalize();
+					flareVelCenter *= flareVelScalar;
+
+					YsVec3 flareVelOffsetL(flareVelCenter);
+					flareVelOffsetL.RotateXZ(-offset);
+
+					YsVec3 flareVelOffsetR(flareVelCenter);
+					flareVelOffsetR.RotateXZ(offset);
+
+					staMatrix.Mul(flareVelOffsetL, flareVelOffsetL, 0.0);
+					staMatrix.Mul(flareVelOffsetR, flareVelOffsetR, 0.0);
+
+
+					if(0>slot && 0<staFlare)
+					{
+						staFlare--;
+					}
+					fired=YSTRUE;
+
 					bul.DispenseFlare(ctime, missilePos, staVelocity + flareVelOffsetL, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
 					bul.DispenseFlare(ctime, missilePos, staVelocity + flareVelOffsetR, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
 				}
