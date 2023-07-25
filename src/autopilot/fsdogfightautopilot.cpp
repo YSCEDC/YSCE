@@ -1077,14 +1077,39 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 		//if the AI aircraft has flares AND the flare timer has lapsed AND there is a missile pursuing 
 		if(seeker != NULL)
 		{
-			//evade
-			air.Prop().TurnOffBankController();
-			air.Prop().SetAileron(0.0);
 			air.Prop().TurnOffGController();
-			air.Prop().SetElevator(1.0);
+			air.Prop().TurnOffBankController();
 			air.Prop().TurnOffSpeedController();
+			air.Prop().SetAileron(0.0);
 			air.Prop().SetAfterburner(YSFALSE);
 			air.Prop().SetThrottle(missileEvasionThrottle);
+
+			YsVec3 seekerRelPos; 
+			air.Prop().GetInverseMatrix().Mul(seekerRelPos, seeker->pos, 0.0);
+			double seekerRelYZAngle = atan2(seekerRelPos.z(), seekerRelPos.y());
+			if (seekerRelYZAngle > 0.0)
+			{
+				if (seekerRelYZAngle < YsPi / 2.0)
+				{
+					air.Prop().SetElevator(-1.0);
+				}
+				else if (seekerRelYZAngle > YsPi / 2.0)
+				{
+					air.Prop().SetElevator(1.0);
+				}
+			}
+			else
+			{
+				if (seekerRelYZAngle < -YsPi / 2.0)
+				{
+					air.Prop().SetElevator(1.0);
+				}
+				else if (seekerRelYZAngle > -YsPi / 2.0)
+				{
+					air.Prop().SetElevator(-1.0);
+				}
+			}
+
 			printf("missile chasing AI, setting throttle to %lf\n", missileEvasionThrottle);			
 
 			if (air.Prop().GetNumWeapon(FSWEAPON_FLARE) > 0 && flareClock < clock)
