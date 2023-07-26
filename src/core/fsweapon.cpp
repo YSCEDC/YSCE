@@ -845,7 +845,7 @@ void FsWeapon::DispenseFlare(
     FsWeaponSmokeTrail *tr)
 {
 	type=FSWEAPON_FLARE;
-	flareHeat = FsGetRandomBetween(0.85, 1.0);
+	flareHeat = FsGetRandomBetween(0.8, 1.0);
 	prv=p;
 	pos=p;
 	lastChecked=p;

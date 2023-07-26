@@ -7654,6 +7654,16 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 	    YSTRUE==NeedToDrawGameInfo(actualViewMode) ||
 	    YSTRUE==NeedToDrawInstrument(actualViewMode)))
 	{
+
+		int wid, hei;
+		FsGetWindowSize(wid, hei);
+
+		char heatStr[256];
+		double currHeat = playerPlane->Prop().GetHeatSignature();
+		YsColor heatCol = currHeat >= 0.8 ? YsRed() : YsGreen();
+		sprintf(heatStr, "HEAT: %.2lf", currHeat);
+		FsDrawString(wid / 2, hei / 4, heatStr, heatCol);
+
 #ifdef CRASHINVESTIGATION_SIMDRAWFOREGROUND
 		printf("SimDrawForeground-3\n");
 #endif

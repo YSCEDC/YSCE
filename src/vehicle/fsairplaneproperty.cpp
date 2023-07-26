@@ -5927,7 +5927,7 @@ void FsAirplaneProperty::CalculateHeatSignature(const double& dt)
 {
 	double afterburnerHeat = staAb == YSTRUE ? 0.3 : 0.0;
 	double targetHeat = staThrottle * 0.8 + afterburnerHeat;
-	double deltaHeat = staAb == YSTRUE ? 0.5 : 0.1;
+	double deltaHeat = staAb == YSTRUE ? 0.1 : 0.05;
 	double heatStep = deltaHeat * dt;
 
 	if (staHeatSignature < targetHeat)
