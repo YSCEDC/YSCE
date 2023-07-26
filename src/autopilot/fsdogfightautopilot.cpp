@@ -1077,37 +1077,51 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 		//if the AI aircraft has flares AND the flare timer has lapsed AND there is a missile pursuing 
 		if(seeker != NULL)
 		{
-			air.Prop().TurnOffGController();
-			air.Prop().TurnOffBankController();
-			air.Prop().TurnOffSpeedController();
-			air.Prop().SetAfterburner(YSFALSE);
-			air.Prop().SetThrottle(0.7);
-
-			YsVec3 seekerRelPos;
-			GetRelativePosition(seekerRelPos, seeker->pos, air, sim);
-
-			double seekerDist = (seekerRelPos).GetLength();
-			double seekerRelYZAngle = fabs(atan2(seekerRelPos.y(), seekerRelPos.z())); //angle from local +Z axis in YZ
-
-			if (seekerDist <= 2000 && (seekerRelYZAngle >= YsPi / 9.0 || seekerRelPos.z() <= 0.0))
+			double chasingWeaponDistTraveled = air.Prop().GetAAMRange(seeker->type) - seeker->lifeRemain;
+			if (chasingWeaponDistTraveled >= 400.0)
 			{
-				air.Prop().BankController(seeker->pos - air.GetPosition());
-				air.Prop().GController(gLimit);
-			}
-			else
-			{
-				double seekerRelXZAngle = atan2(seekerRelPos.x(), seekerRelPos.z());
-				double bankAngle = YsBound(seekerRelXZAngle * 10.0, -YsPi / 2.0, YsPi / 2.0);
-	
-				air.Prop().BankController(bankAngle);
-				ControlGForVerticalSpeed(air, sim, 0.0, gLimit);
-			}
+				air.Prop().TurnOffGController();
+				air.Prop().TurnOffBankController();
+				air.Prop().TurnOffSpeedController();
 
-			if (air.Prop().GetNumWeapon(FSWEAPON_FLARE) > 0 && flareClock < clock)
-			{
-				//don't flare immediately on missile launch 
-				double chasingWeaponDistTraveled = air.Prop().GetAAMRange(seeker->type) - seeker->lifeRemain;
-				if (chasingWeaponDistTraveled >= 500.0)
+				//if pitch is >= 60 degrees OR velocity is too low, full throttle + afterburner
+				double minVelocity = YsUnitConv::KTtoMPS(air.Prop().GetFullyManeuvableSpeed() * 3.0);
+				if (air.GetAttitude().p() >= YsPi / 3.0 || air.Prop().GetVelocity() <= minVelocity)
+				{
+					air.Prop().SetAfterburner(YSTRUE);
+					air.Prop().SetThrottle(1.0);
+				}
+				//otherwise, cut throttle and afterburner to reduce heat signature, full flaps for maneuverability
+				else
+				{
+					air.Prop().SetAfterburner(YSFALSE);
+					air.Prop().SetThrottle(0.7);
+				}
+
+				YsVec3 seekerRelPos;
+				GetRelativePosition(seekerRelPos, seeker->pos, air, sim);
+
+				double seekerDist = (seekerRelPos).GetLength();
+				double seekerRelYZAngle = fabs(atan2(seekerRelPos.y(), seekerRelPos.z())); //angle from local +Z axis in YZ
+
+				//if missile is within 2000m AND the YZ plane angle is at least 20 degress OR the missile is behind aircraft
+				if (seekerDist <= 2000 && (seekerRelYZAngle >= YsPi / 9.0 || seekerRelPos.z() <= 0.0))
+				{
+					//attempt to bank so that the missile is at aircraft's 12 o'clock position, pull at G limit
+					air.Prop().BankController(seeker->pos - air.GetPosition());
+					air.Prop().GController(gLimit);
+				}
+				else
+				{
+					//otherwise, bank away from the missile
+					double seekerRelXZAngle = atan2(seekerRelPos.x(), seekerRelPos.z());
+					double bankAngle = YsBound(seekerRelXZAngle * 10.0, -YsPi / 2.0, YsPi / 2.0);
+
+					air.Prop().BankController(bankAngle);
+					ControlGForVerticalSpeed(air, sim, 0.0, gLimit);
+				}
+
+				if (air.Prop().GetNumWeapon(FSWEAPON_FLARE) > 0 && flareClock < clock)
 				{
 					//"chasing" = actively locked & pursuing the AI aircraft
 					YsVec3 chasingWeaponPos = seeker->pos;
@@ -1159,9 +1173,9 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 
 					}
 				}
-			}
 
-			return YSOK;
+				return YSOK;
+			}
 		}
 		// 2005/04/01 <<
 
