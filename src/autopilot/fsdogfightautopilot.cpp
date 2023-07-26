@@ -1096,10 +1096,10 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 			}
 			else
 			{
-				double hErr = atan2(seekerRelPos.x(), seekerRelPos.z());
-
-				double bnk = YsBound(hErr * 10.0, -YsPi / 2.0, YsPi / 2.0);
-				air.Prop().BankController(bnk);
+				double seekerRelXZAngle = atan2(seekerRelPos.x(), seekerRelPos.z());
+				double bankAngle = YsBound(seekerRelXZAngle * 10.0, -YsPi / 2.0, YsPi / 2.0);
+	
+				air.Prop().BankController(bankAngle);
 				ControlGForVerticalSpeed(air, sim, 0.0, gLimit);
 			}
 
