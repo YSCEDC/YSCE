@@ -1080,37 +1080,28 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 			air.Prop().TurnOffGController();
 			air.Prop().TurnOffBankController();
 			air.Prop().TurnOffSpeedController();
-			air.Prop().SetAileron(0.0);
 			air.Prop().SetAfterburner(YSFALSE);
-			air.Prop().SetThrottle(missileEvasionThrottle);
+			air.Prop().SetThrottle(0.7);
 
-			YsVec3 seekerRelPos; 
-			air.Prop().GetInverseMatrix().Mul(seekerRelPos, seeker->pos, 0.0);
-			double seekerRelYZAngle = atan2(seekerRelPos.z(), seekerRelPos.y());
-			if (seekerRelYZAngle > 0.0)
+			YsVec3 seekerRelPos;
+			GetRelativePosition(seekerRelPos, seeker->pos, air, sim);
+
+			double seekerDist = (seekerRelPos).GetLength();
+			double seekerRelYZAngle = fabs(atan2(seekerRelPos.y(), seekerRelPos.z())); //angle from local +Z axis in YZ
+
+			if (seekerDist <= 2000 && (seekerRelYZAngle >= YsPi / 9.0 || seekerRelPos.z() <= 0.0))
 			{
-				if (seekerRelYZAngle < YsPi / 2.0)
-				{
-					air.Prop().SetElevator(-1.0);
-				}
-				else if (seekerRelYZAngle > YsPi / 2.0)
-				{
-					air.Prop().SetElevator(1.0);
-				}
+				air.Prop().BankController(seeker->pos - air.GetPosition());
+				air.Prop().GController(gLimit);
 			}
 			else
 			{
-				if (seekerRelYZAngle < -YsPi / 2.0)
-				{
-					air.Prop().SetElevator(1.0);
-				}
-				else if (seekerRelYZAngle > -YsPi / 2.0)
-				{
-					air.Prop().SetElevator(-1.0);
-				}
-			}
+				double hErr = atan2(seekerRelPos.x(), seekerRelPos.z());
 
-			printf("missile chasing AI, setting throttle to %lf\n", missileEvasionThrottle);			
+				double bnk = YsBound(hErr * 10.0, -YsPi / 2.0, YsPi / 2.0);
+				air.Prop().BankController(bnk);
+				ControlGForVerticalSpeed(air, sim, 0.0, gLimit);
+			}
 
 			if (air.Prop().GetNumWeapon(FSWEAPON_FLARE) > 0 && flareClock < clock)
 			{
@@ -1122,8 +1113,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 					YsVec3 chasingWeaponPos = seeker->pos;
 					FSWEAPONTYPE chasingWeaponType = seeker->type;
 
-					double missileDist = (chasingWeaponPos - air.GetPosition()).GetLength();
-					double flareClockStep = YsGreater(2.0, missileDist / 500);
+					double flareClockStep = YsGreater(2.0, seekerDist / 500);
 					double randomStep = FsGetRandomBetween(0.0, 1.0);
 					if (rand() % 2)
 					{
@@ -1133,7 +1123,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 					{
 						flareClockStep -= randomStep;
 					}
-					printf("missile dist: %lf\n", missileDist);
+					printf("missile dist: %lf\n", seekerDist);
 					printf("flare clock step: %lf\n", flareClockStep);
 
 					//dispense flare and reset flare timer based on missile distance to AI aircraft
