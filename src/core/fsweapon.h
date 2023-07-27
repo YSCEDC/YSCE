@@ -74,6 +74,9 @@ public:
 // Declaration /////////////////////////////////////////////
 class FsWeapon
 {
+private:
+	void PurePursuitAttitude(const YsVec3& targetPos, const double& dt);
+	void ConstantBearingPursuitAttitude(FsExistence* target, const double& dt, const FsWeapon* fooledFlare = nullptr);
 public:
 	enum
 	{

@@ -1105,7 +1105,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				double seekerRelYZAngle = fabs(atan2(seekerRelPos.y(), seekerRelPos.z())); //angle from local +Z axis in YZ
 
 				//if missile is within 2000m AND the YZ plane angle is at least 20 degress OR the missile is behind aircraft
-				if (seekerDist <= 2000 && (seekerRelYZAngle >= YsPi / 9.0 || seekerRelPos.z() <= 0.0))
+				if (seekerDist <= 3000 && (seekerRelYZAngle >= YsPi / 9.0 || seekerRelPos.z() <= 0.0))
 				{
 					//attempt to bank so that the missile is at aircraft's 12 o'clock position, pull at G limit
 					air.Prop().BankController(seeker->pos - air.GetPosition());

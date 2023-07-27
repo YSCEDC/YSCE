@@ -845,7 +845,7 @@ void FsWeapon::DispenseFlare(
     FsWeaponSmokeTrail *tr)
 {
 	type=FSWEAPON_FLARE;
-	flareHeat = FsGetRandomBetween(0.8, 1.0);
+	flareHeat = FsGetRandomBetween(0.9, 1.0);
 	prv=p;
 	pos=p;
 	lastChecked=p;
@@ -948,13 +948,12 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 				mat.Invert();
 
 				tpos=mat*(target->GetPosition());
+				const FsWeapon* fooledFlare = nullptr;
 				if(type==FSWEAPON_AIM9 || type==FSWEAPON_AIM9X || type==FSWEAPON_AIM120) // Extension 2001/11/23
 				{
 					const FsWeapon *flare;
 					YsVec3 flarePos;
 					double flareZ;
-					YSBOOL fooled;
-					fooled=YSFALSE;
 					flareZ=lifeRemain;
 
 					double targetHeat = 0.0;
@@ -967,17 +966,16 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 						targetHeat = ((FsGround*)target)->Prop().GetAccel();
 					}
 
-
 					for(flare=flareList; flare!=NULL; flare=flare->nextFlare)
 					{
 						flarePos=mat*flare->pos;
-						if(flarePos.z()>0.0 && flarePos.z()<flareZ && 
+						if(flarePos.z()>0.0 && 
 							atan2(flarePos.x()*flarePos.x()+flarePos.y()*flarePos.y(),flarePos.z())<radar && 
 							flare->flareHeat > targetHeat)
 						{
 							printf("missile fooled: flare heat = %lf, target heat = %lf\n", flare->flareHeat, targetHeat);
-							fooled=YSTRUE;
 							tpos=flarePos;
+							fooledFlare = flare;
 							flareZ=flarePos.z();
 						}
 					}
@@ -987,17 +985,14 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 				r=atan2(sqrt(tpos.x()*tpos.x()+tpos.y()*tpos.y()),tpos.z());
 				if(r<radar || ((type==FSWEAPON_AIM9X || type==FSWEAPON_AIM120) && YSTRUE==IsOwnerStillHaveTarget()))
 				{
-					double maxMovement;
-					maxMovement=mobility*dt;
-
-					double yaw,pit;
-					yaw=atan2(-tpos.x(),tpos.z());
-					pit=atan2( tpos.y(),tpos.z());
-
-					yaw=YsBound(yaw,-maxMovement,maxMovement);
-					pit=YsBound(pit,-maxMovement,maxMovement);
-					att.YawLeft(yaw);
-					att.NoseUp(pit);
+					if (type == FSWEAPON_AIM9)
+					{
+						PurePursuitAttitude(tpos, dt);
+					}
+					else if (type == FSWEAPON_AIM9X || type == FSWEAPON_AIM120)
+					{
+						ConstantBearingPursuitAttitude(target, dt, fooledFlare);
+					}
 				}
 				else if(tpos.z()<-300.0)
 				{
@@ -1073,6 +1068,108 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 			trail->Add(dt,cTime,pos,att);
 		}
 	}
+}
+
+void FsWeapon::PurePursuitAttitude(const YsVec3& targetPos, const double& dt)
+{
+	double maxMovement = mobility * dt;
+
+	double yaw, pit;
+	yaw = atan2(-targetPos.x(), targetPos.z());
+	pit = atan2(targetPos.y(), targetPos.z());
+
+	yaw = YsBound(yaw, -maxMovement, maxMovement);
+	pit = YsBound(pit, -maxMovement, maxMovement);
+	att.YawLeft(yaw);
+	att.NoseUp(pit);
+}
+
+void FsWeapon::ConstantBearingPursuitAttitude(FsExistence* target, const double& dt, const FsWeapon* fooledFlare)
+{
+	//AAMs must target air vehicles
+	if (target->GetType() != FSEX_AIRPLANE)
+	{
+		return; 
+	}
+
+	//cast target as airplane type
+	FsAirplane* targetAircraft = (FsAirplane*)target;
+	YsVec3 targetPos;
+	YsVec3 targetVel;
+
+	//get position and velocity of flare if missile was fooled by one
+	if (fooledFlare != nullptr)
+	{
+		//printf("missile targeting flare\n");
+		targetPos = fooledFlare->pos;
+		targetVel = fooledFlare->vec;
+	}
+	//otherwise, take target aircraft's position and velocity
+	else
+	{
+		//printf("missile targeting aircraft\n");
+		targetPos = targetAircraft->GetPosition();
+		targetAircraft->Prop().GetVelocity(targetVel);
+	}
+
+	YsVec3 targetRelPos = targetPos - pos;
+	YsVec3 targetRelPosNorm(targetRelPos);
+	targetRelPosNorm.Normalize();
+	YsVec3 targetRelVel = targetVel - vec;
+	double navConstant = 3.0; //should this be int? come back to this
+
+	//rotation vector
+	YsVec3 omega = (targetRelPos ^ targetRelVel) / (targetRelPos * targetRelPos);
+
+	//acceleration normal to the instantaneous line of sight
+	YsVec3 accelCmd = -navConstant * targetRelVel.GetLength() * targetRelPosNorm ^ omega;
+
+	//determine missile acceleration
+	YsVec3 missileAccel(vec);
+	missileAccel.Normalize();
+	if (velocity < maxVelocity)
+	{
+		missileAccel *= 50.0;
+	}
+	else
+	{
+		missileAccel *= -20.0;
+	}
+
+	//determine position after one dt has passed
+	YsVec3 missileNextPos = pos + (vec * dt) + (0.5 * (missileAccel + accelCmd) * dt * dt);
+
+	//convert next relative position to missile's frame of reference
+	YsMatrix4x4 mat;
+	mat.Translate(pos);
+	mat.Rotate(att);
+	mat.Invert();
+	//missileNextRelPos = mat * missileNextRelPos;
+	YsVec3 missileNextRelPos = mat * missileNextPos;
+
+	//calculate pitch and yaw offsets from next relative position
+	double yawStep = -atan2(missileNextRelPos.x(), missileNextRelPos.z());
+	double pitchStep = asin(missileNextRelPos.y() / missileNextRelPos.GetLength());
+	//double maxMovement = mobility * dt;
+	//double maxMovement = YsDegToRad(0.1);
+	double maxMovement = 0.0;
+	if (type == FSWEAPON_AIM9X)
+	{
+		maxMovement = 2.0;
+	}
+	else if (type == FSWEAPON_AIM120)
+	{
+		maxMovement = 0.5;
+	}
+	else
+	{
+		maxMovement = 1.0;
+	}
+
+	yawStep = YsBound(yawStep, -maxMovement, maxMovement);
+	pitchStep = YsBound(pitchStep, -maxMovement, maxMovement);
+	att.YawLeft(yawStep);
+	att.NoseUp(pitchStep);
 }
 
 YSBOOL FsWeapon::IsOwnerStillHaveTarget(void)
