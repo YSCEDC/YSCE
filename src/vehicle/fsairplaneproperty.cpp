@@ -7110,7 +7110,7 @@ const double &FsAirplaneProperty::GetRocketSpeed(void) const
 
 const double &FsAirplaneProperty::GetAAMRadarAngle(void) const
 {
-	static double x=YsPi/4.0;
+	static double x=YsPi/6.0;
 	return x;
 }
 

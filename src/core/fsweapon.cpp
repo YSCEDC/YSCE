@@ -966,18 +966,31 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 						targetHeat = ((FsGround*)target)->Prop().GetAccel();
 					}
 
+					double maxObservedHeat = targetHeat;
+
 					for(flare=flareList; flare!=NULL; flare=flare->nextFlare)
 					{
 						flarePos=mat*flare->pos;
+						double currTgtRadarAngle = atan2(sqrt(flarePos.x() * flarePos.x() + flarePos.y() * flarePos.y()), flarePos.z());
+
 						if(flarePos.z()>0.0 && 
-							atan2(flarePos.x()*flarePos.x()+flarePos.y()*flarePos.y(),flarePos.z())<radar && 
-							flare->flareHeat > targetHeat)
+							currTgtRadarAngle < radar &&
+							flare->flareHeat > maxObservedHeat)
 						{
-							printf("missile fooled: flare heat = %lf, target heat = %lf\n", flare->flareHeat, targetHeat);
+							maxObservedHeat = flare->flareHeat;
 							tpos=flarePos;
 							fooledFlare = flare;
 							flareZ=flarePos.z();
 						}
+					}
+
+					if (fooledFlare != nullptr)
+					{
+						printf("max observed heat: flare, %lf\n", maxObservedHeat);
+					}
+					else
+					{
+						printf("max observed heat: aircraft, %lf\n", maxObservedHeat);
 					}
 				}
 
