@@ -479,6 +479,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_NETCONSOLE_ENDURANCE_WW2                    FsGetTextResource("netconsole/endurance_ww2",L"Start Enducrance Mode (Ww2)")
 #define FSGUI_NETCONSOLE_INTERCEPT                        FsGetTextResource("netconsole/intercept",L"Start Intercept Mission")
 #define FSGUI_NETCONSOLE_CLOSEAIRSUPPORT                  FsGetTextResource("netconsole/closeairsupport",L"Start Close Air Support")
+#define FSGUI_NETCONSOLE_SETENVIRONMENT                   FsGetTextResource("netconsole/setenvironment",L"Toggle Day/Night")
 #define FSGUI_NETCONSOLE_ENDSERVER                        FsGetTextResource("netconsole/endserver",L"End Server")
 #define FSGUI_NETCONSOLE_CONFIRMENDSERVER                 FsGetTextResource("netconsole/confirmendserver",L"Confirm End Server")
 #define FSGUI_NETCONSOLE_REVIVEGROUND                     FsGetTextResource("netconsole/reviveground",L"Revive Ground")
