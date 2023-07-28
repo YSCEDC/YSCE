@@ -845,7 +845,7 @@ void FsWeapon::DispenseFlare(
     FsWeaponSmokeTrail *tr)
 {
 	type=FSWEAPON_FLARE;
-	flareHeat = FsGetRandomBetween(0.8, 1.0);
+	flareHeat = FsGetRandomBetween(0.9, 1.0);
 	prv=p;
 	pos=p;
 	lastChecked=p;
@@ -1031,6 +1031,8 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 			break;
 		case FSWEAPON_FLARE:
 			{
+				flareHeat -= 0.00125; //5% heat decay/second at default game tick (dt = 0.025)
+				flareHeat = YsGreater(0.0, flareHeat);
 				vec.Set(vec.x(),vec.y()-FsGravityConst*dt,vec.z());
 				att.SetForwardVector(vec);
 				velocity=vec.GetLength();
