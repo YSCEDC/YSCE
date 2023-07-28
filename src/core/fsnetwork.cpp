@@ -8280,7 +8280,7 @@ static void FsPrintServerMenu(
 		fsConsole.Printf("[L]...List Players               [D]...Dispell User");
 		fsConsole.Printf("[C]...Lock Server                [K]...Join-Lock");
 		fsConsole.Printf("[E]...Start Endurance Mode (Jet) [W].....Start Endurance Mode (WwII)");
-		fsConsole.Printf("[B].....Start Intercept Mission");
+		fsConsole.Printf("[B].....Start Intercept Mission  [N].....Toggle Day/Night");
 		fsConsole.Printf("[P]...Start Close Air Support Mission");
 		fsConsole.Printf("[T]...Terminate Endurance Mode/Intercept Mission");
 		fsConsole.Printf("[R]...Revive Ground Objects");
