@@ -1131,7 +1131,7 @@ void FsWeapon::ConstantBearingPursuitAttitude(FsExistence* target, const double&
 	YsVec3 targetRelPosNorm(targetRelPos);
 	targetRelPosNorm.Normalize();
 	YsVec3 targetRelVel = targetVel - vec;
-	double navConstant = 3.0; //should this be int? come back to this
+	double navConstant = 3.0; 
 
 	//rotation vector
 	YsVec3 omega = (targetRelPos ^ targetRelVel) / (targetRelPos * targetRelPos);
@@ -1159,27 +1159,12 @@ void FsWeapon::ConstantBearingPursuitAttitude(FsExistence* target, const double&
 	mat.Translate(pos);
 	mat.Rotate(att);
 	mat.Invert();
-	//missileNextRelPos = mat * missileNextRelPos;
 	YsVec3 missileNextRelPos = mat * missileNextPos;
 
 	//calculate pitch and yaw offsets from next relative position
 	double yawStep = -atan2(missileNextRelPos.x(), missileNextRelPos.z());
 	double pitchStep = asin(missileNextRelPos.y() / missileNextRelPos.GetLength());
-	//double maxMovement = mobility * dt;
-	//double maxMovement = YsDegToRad(0.1);
-	double maxMovement = 0.0;
-	if (type == FSWEAPON_AIM9X)
-	{
-		maxMovement = YsDegToRad(2.0);
-	}
-	else if (type == FSWEAPON_AIM120)
-	{
-		maxMovement = YsDegToRad(0.5);
-	}
-	else
-	{
-		maxMovement = YsDegToRad(1.0);
-	}
+	double maxMovement = mobility * dt;
 
 	yawStep = YsBound(yawStep, -maxMovement, maxMovement);
 	pitchStep = YsBound(pitchStep, -maxMovement, maxMovement);
