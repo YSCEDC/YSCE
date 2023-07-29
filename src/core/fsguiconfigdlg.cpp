@@ -109,13 +109,41 @@ void FsGuiConfigDialog::MakeDefaultsDialog(FsWorld *world,FsFlightConfig &cfg)
 	dayOrNightBtn[0]=AddTextButton(MkId("day")  ,FSKEY_NULL,FSGUI_RADIOBUTTON,L"DAY",YSTRUE);
 	dayOrNightBtn[1]=AddTextButton(MkId("night"),FSKEY_NULL,FSGUI_RADIOBUTTON,L"NIGHT",YSFALSE);
 	SetRadioButtonGroup(2,dayOrNightBtn);
+	
 
 	grpBox=AddGroupBox();
 	grpBox->AddGuiItem(label);
 	grpBox->AddGuiItem(dayOrNightBtn[0]);
 	grpBox->AddGuiItem(dayOrNightBtn[1]);
+	
+	label=AddStaticText(1,FSKEY_NULL,FSGUI_NEWFLTDLG_WEATHER,16,1,YSTRUE);
+	label->SetFill(YSFALSE);
+	label->SetDrawFrame(YSFALSE);
+	windDir=AddNumberBox(1,FSKEY_NULL,FSGUI_NEWFLTDLG_WINDDIR,16,0,-360,360,10,YSTRUE);
+	windSpd=AddNumberBox(1,FSKEY_NULL,FSGUI_NEWFLTDLG_WINDSPD,16,0,0,50,1,YSTRUE);
+	AddStaticText(1,FSKEY_NULL,FSGUI_NEWFLTDLG_OVERCASTLAYER,YSTRUE);
+	for(int i=0; i<3; i++)
+	{
+		overCastLayerSw[i]=AddTextButton(1,FSKEY_NULL,FSGUI_CHECKBOX,"",YSTRUE);
+		AddStaticText(1,FSKEY_NULL,FSGUI_NEWFLTDLG_OVERCASTFLOOR,YSFALSE);
+		overCastLayerFloor[i]=AddNumberBox(1,FSKEY_NULL,"",6,0,0,25000,200,YSFALSE);
+		overCastLayerFloor[i]->SetNumber(800+i*3000);
+		AddStaticText(1,FSKEY_NULL,FSGUI_NEWFLTDLG_OVERCASTTHICKNESS,YSFALSE);
+		overCastLayerThickness[i]=AddNumberBox(1,FSKEY_NULL,"",6,0,0,5000,100,YSFALSE);
+		overCastLayerThickness[i]->SetNumber(300);
+	}
 
+	grpBox=AddGroupBox();
+	grpBox->AddGuiItem(label);
+	grpBox->AddGuiItem(windDir);
+	grpBox->AddGuiItem(windSpd);
 
+	for(int i=0; i<3; i++)
+	{
+		grpBox->AddGuiItem(overCastLayerSw[i]);
+		grpBox->AddGuiItem(overCastLayerFloor[i]);
+		grpBox->AddGuiItem(overCastLayerThickness[i]);
+	}
 
 	label=AddStaticText(1,FSKEY_NULL,FSGUI_CFGDLG_LIGHT,16,1,YSTRUE);
 	label->SetFill(YSFALSE);
@@ -439,6 +467,12 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 		dayOrNightBtn[1]->SetCheck(YSTRUE);
 		break;
 	}
+	double windDirval = -atan2(cfg.constWind.x(), -cfg.constWind.z()) * 180.0 / YsPi;
+
+	windDir->SetNumber(windDirval);
+	double windSpdval = cfg.constWind.GetLengthXZ();
+	windSpd->SetNumber(YsUnitConv::MPStoKT(windSpdval));
+	//3x cloud layer boxes.
 
 	YsVec3 tst;
 	int lightSrcId=0;

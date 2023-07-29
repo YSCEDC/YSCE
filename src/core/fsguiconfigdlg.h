@@ -18,7 +18,14 @@ public:
 
 	FsGuiButton *dayOrNightBtn[2];
 	FsGuiButton *lightSrcBtn[5];
-
+	FsGuiNumberBox *windDir;
+	FsGuiNumberBox *windSpd;
+	FsGuiNumberBox *visibility;
+	
+	FsGuiButton *overCastLayerSw[3];
+	FsGuiNumberBox *overCastLayerFloor[3];
+	FsGuiNumberBox *overCastLayerThickness[3];
+	
 	FsGuiDropList *airLst,*fldLst,*stpLst;
 
 	FsGuiButton *blackOutBtn,*midAirCollisionBtn,*noTailStrikeBtn,*canLandAnywhereBtn;

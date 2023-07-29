@@ -3,6 +3,7 @@
 #include "fsconfig.h"
 #include "fsutil.h"
 
+#include "core/fsweather.h"
 
 // Implementation //////////////////////////////////////////
 FsFlightConfig::FsFlightConfig()
@@ -59,6 +60,7 @@ void FsFlightConfig::SetDefault(void)
 	accurateTime=YSTRUE;
 
 	fogVisibility=FS_FOG_VISIBILITY_MAX;
+	constWind= YsVec3(0.0,0.0,0.0);
 	radarAltitudeLimit=1000.0*0.3048;
 	noExtAirView=YSFALSE;
 
@@ -222,6 +224,10 @@ const char *const FsFlightConfig::keyWordSource[]=
 	"PHONGSHAD",  // 2014/07/15
 
 	"RLDAYVISI",  // 2017/05/02
+
+	"CONSTWIND", // 2023/07/29
+
+	"CLOUDLAYER", // 2023/07/29
 
 	NULL
 };
@@ -508,7 +514,43 @@ YSRESULT FsFlightConfig::SendCommand(const char cmd[])
 
 			case 61: // 	"RLDAYVISI",  // 2017/05/02
 				return FsGetLength(drawLightsInDaylightVisibilityThr,av[1]);
-			}
+			case 62: // "CONSTWIND" //2023/07/29
+				double x,y,z;
+				x= 0;
+				y= 0;
+				z= 0;
+				if (ac>=4){
+					
+					if(FsGetSpeed(x,av[1])==YSOK &&
+						FsGetSpeed(y,av[2])==YSOK &&
+						FsGetSpeed(z,av[3])==YSOK)
+					{
+						constWind.Set(x,y,z);
+						return YSOK;
+
+					}
+				}
+				else
+				{
+					constWind.Set(x,y,z);
+					return YSOK;
+				}
+			case 63: // "CLOUDLAYER" //2023/07/29
+				if (ac>=4){
+					FsWeatherCloudLayer lyr;
+					lyr.CloudLayerTypeFromString(av[1]);
+					if(FsGetLength(lyr.y0,av[2])==YSOK &&
+						FsGetLength(lyr.y1,av[3])==YSOK)
+					{
+						cloudLayer.Append(lyr);
+						return YSOK;
+
+						
+					}
+				}
+				
+			
+		}
 		}
 		else
 		{
@@ -678,6 +720,13 @@ YSRESULT FsFlightConfig::Save(const wchar_t fn[])
 
 		fprintf(fp,"RLDAYVISI %lfm\n",drawLightsInDaylightVisibilityThr);
 
+		fprintf(fp, "CONSTWIND %lfm/s %lfm/s %lfm/s\n", constWind.x(), constWind.y(), constWind.z());
+
+		for(int i=0; i<cloudLayer.GetN(); i++){
+			fprintf(fp,"CLOUDLAYER %s %lfm %lfm\n", FsWeatherCloudLayer::CloudLayerTypeString(cloudLayer[i].cloudLayerType),
+				cloudLayer[i].y0,
+				cloudLayer[i].y1);
+		}
 		fclose(fp);
 		return YSOK;
 	}
