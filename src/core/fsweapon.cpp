@@ -1170,15 +1170,15 @@ void FsWeapon::ConstantBearingPursuitAttitude(FsExistence* target, const double&
 	double maxMovement = 0.0;
 	if (type == FSWEAPON_AIM9X)
 	{
-		maxMovement = 2.0;
+		maxMovement = YsDegToRad(2.0);
 	}
 	else if (type == FSWEAPON_AIM120)
 	{
-		maxMovement = 0.5;
+		maxMovement = YsDegToRad(0.5);
 	}
 	else
 	{
-		maxMovement = 1.0;
+		maxMovement = YsDegToRad(1.0);
 	}
 
 	yawStep = YsBound(yawStep, -maxMovement, maxMovement);
