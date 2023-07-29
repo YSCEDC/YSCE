@@ -621,7 +621,13 @@ void FsGuiConfigDialog::RetrieveConfig(FsFlightConfig &cfg)
 		cfg.env=FSNIGHT;
 	}
 
+	double windDirVal = windDir->GetNumber()/(180/YsPi); //In rads
+	double windSpdVal = YsUnitConv::KTtoMPS(windSpd->GetNumber());
+	YsVec3 windVec;
+	windVec.Set(0.0,0.0,-windSpdVal);
+	windVec.RotateXZ(-windDirVal);
 
+	cfg.constWind = windVec;
 
 	int lightSrcId=0;
 	for(int i=0; i<5; ++i)
