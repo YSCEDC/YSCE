@@ -135,7 +135,7 @@ $BGCOL 0
 +newfltdlg/weather                                 #Weather
 +newfltdlg/winddir                                 #Wind Dir
 +newfltdlg/windspd                                 #Wind Speed(kt)
-+newfltdlg/visibility                              #Visibility(nautical mile)
++newfltdlg/visibility                              #Visibility(NM)
 +newfltdlg/overcast                                #Overcast Layers
 +newfltdlg/overcastfloor                           #Floor (ft)
 +newfltdlg/overcastthickness                       #Thickness (ft)
@@ -248,7 +248,7 @@ $BGCOL 0
 +configdlg/smokeremain                             #Smoke Remain Time (seconds)
 +configdlg/smokestep                               #Draw Smoke Every N Steps
 +configdlg/fog                                     #Fog
-+configdlg/visibility                              #Visibility (nautical mile)
++configdlg/visibility                              #Visibility (NM)
 +configdlg/zbuffquality                            #Z-Buffer Quality
 +configdlg/trspobj                                 #Trasnparent Object
 +configdlg/trspsmoke                               #Trasnparent Smoke

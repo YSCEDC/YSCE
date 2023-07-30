@@ -134,7 +134,7 @@ $BGCOL 0
 +newfltdlg/weather                                 #天候
 +newfltdlg/winddir                                 #風向
 +newfltdlg/windspd                                 #風速(ノット)
-+newfltdlg/visibility                              #視程(海里)
++newfltdlg/visibility                              #視程(マイル)
 +newfltdlg/overcast                                #雲のレイア
 +newfltdlg/overcastfloor                           #雲底 (フィート)
 +newfltdlg/overcastthickness                       #厚さ(フィート)
@@ -237,7 +237,7 @@ $BGCOL 0
 +configdlg/showplayernamealways                    #プレイヤー名を常に表示
 +configdlg/showjoystick                            #操縦桿を表示
 +configdlg/f8cameradelay                           #F8視点の時間遅れ
-+configdlg/minradaralt                             #レーダーに映る最低高度
++configdlg/minradaralt                             #レーダーに映る最低高度 (フィート)
 +configdlg/showias                                 #対気速度をIASで表示
 +configdlg/drawshadow                              #影の表示
 +configdlg/shadowofdeadplane                       #墜落機/終了機の影も表示
