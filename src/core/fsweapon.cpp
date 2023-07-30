@@ -959,7 +959,8 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 					double targetHeat = 0.0;
 					if (target->GetType() == FSEX_AIRPLANE)
 					{
-						targetHeat = ((FsAirplane*)target)->Prop().GetHeatSignature();
+						targetHeat = ((FsAirplane*)target)->Prop().GetVisibleHeatSignature(pos, att, 0.25, 1.0);
+						printf("observed target heat = %lf, actual target heat = %lf\n", targetHeat, ((FsAirplane*)target)->Prop().GetHeatSignature());
 					}
 					else if (target->GetType() == FSEX_GROUND)
 					{
@@ -982,15 +983,6 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 							fooledFlare = flare;
 							flareZ=flarePos.z();
 						}
-					}
-
-					if (fooledFlare != nullptr)
-					{
-						printf("max observed heat: flare, %lf\n", maxObservedHeat);
-					}
-					else
-					{
-						printf("max observed heat: aircraft, %lf\n", maxObservedHeat);
 					}
 				}
 

@@ -576,6 +576,15 @@ double FsAirplaneProperty::GetHeatSignature(void) const
 	return staHeatSignature;
 }
 
+double FsAirplaneProperty::GetVisibleHeatSignature(const YsVec3& viewPos, const YsAtt3& viewAtt, const double& heatCoeffLowerBound, const double& heatCoeffUpperBound) const
+{
+	YsVec3 aircraftRelPos = staPosition - viewPos;
+
+	double heatAspectCoeff = YsBound(((aircraftRelPos * staAttitude.GetForwardVector()) + 1.0) / 2.0, heatCoeffLowerBound, heatCoeffUpperBound);
+
+	return staHeatSignature * heatAspectCoeff;
+}
+
 FSAIRPLANECATEGORY FsAirplaneProperty::GetAirplaneCategory(void) const
 {
 	return chCategory;
