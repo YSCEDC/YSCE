@@ -12,7 +12,7 @@ $BGCOL 0
 +assigndlg/setdefaultgamepad                       #ゲームパッドを使う
 +assigndlg/setdefaultkeyassign                     #マウスとジョイスティックの割り当てをそのままで、キーボードだけデフォルトにする
 +cfgdlg/ifvisibilityislessthan                     #視程が
-+cfgdlg/thismiles                                  #マイル以下の時
++cfgdlg/thismiles                                  #海里以下の時
 +common/mission                                    #---ミッション---
 +common/wingman                                    #僚機
 +dlg/autopilot/circle                              #現在地点上空で旋回待機
@@ -134,10 +134,10 @@ $BGCOL 0
 +newfltdlg/weather                                 #天候
 +newfltdlg/winddir                                 #風向
 +newfltdlg/windspd                                 #風速(ノット)
-+newfltdlg/visibility                              #視程(マイル)
++newfltdlg/visibility                              #視程(海里)
 +newfltdlg/overcast                                #雲のレイア
-+newfltdlg/overcastfloor                           #雲底
-+newfltdlg/overcastthickness                       #厚さ
++newfltdlg/overcastfloor                           #雲底 (フィート)
++newfltdlg/overcastthickness                       #厚さ(フィート)
 +newfltdlg/formation                               #編隊
 +newfltdlg/flynow                                  #今すぐ飛行開始
 +newfltdlg/wingman                                 #僚機
@@ -251,7 +251,7 @@ $BGCOL 0
 +configdlg/smokeremain                             #スモークの残存時間(秒)
 +configdlg/smokestep                               #スモーク表示の単位ステップ数
 +configdlg/fog                                     #霧
-+configdlg/visibility                              #視程(マイル)
++configdlg/visibility                              #視程(海里)
 +configdlg/zbuffquality                            #Zバッファ品質
 +configdlg/trspobj                                 #半透明オブジェクト
 +configdlg/trspsmoke                               #半透明スモーク

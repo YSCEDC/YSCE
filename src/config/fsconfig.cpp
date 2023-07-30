@@ -538,7 +538,7 @@ YSRESULT FsFlightConfig::SendCommand(const char cmd[])
 			case 63: // "CLOUDLAYER" //2023/07/29
 				if (ac>=4){
 					FsWeatherCloudLayer lyr;
-					lyr.CloudLayerTypeFromString(av[1]);
+					lyr.cloudLayerType = FsWeatherCloudLayer::CloudLayerTypeFromString(av[1]);
 					if(FsGetLength(lyr.y0,av[2])==YSOK &&
 						FsGetLength(lyr.y1,av[3])==YSOK)
 					{

@@ -20,11 +20,10 @@ public:
 	FsGuiButton *lightSrcBtn[5];
 	FsGuiNumberBox *windDir;
 	FsGuiNumberBox *windSpd;
-	FsGuiNumberBox *visibility;
 	
-	FsGuiButton *overCastLayerSw[3];
-	FsGuiNumberBox *overCastLayerFloor[3];
-	FsGuiNumberBox *overCastLayerThickness[3];
+	FsGuiButton *overCastLayerSw[MAXNUMCLOUDLAYER];
+	FsGuiNumberBox *overCastLayerFloor[MAXNUMCLOUDLAYER];
+	FsGuiNumberBox *overCastLayerThickness[MAXNUMCLOUDLAYER];
 	
 	FsGuiDropList *airLst,*fldLst,*stpLst;
 

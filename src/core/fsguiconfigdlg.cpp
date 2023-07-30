@@ -122,7 +122,7 @@ void FsGuiConfigDialog::MakeDefaultsDialog(FsWorld *world,FsFlightConfig &cfg)
 	windDir=AddNumberBox(1,FSKEY_NULL,FSGUI_NEWFLTDLG_WINDDIR,16,0,-360,360,10,YSTRUE);
 	windSpd=AddNumberBox(1,FSKEY_NULL,FSGUI_NEWFLTDLG_WINDSPD,16,0,0,50,1,YSTRUE);
 	AddStaticText(1,FSKEY_NULL,FSGUI_NEWFLTDLG_OVERCASTLAYER,YSTRUE);
-	for(int i=0; i<3; i++)
+	for(int i=0; i<MAXNUMCLOUDLAYER; i++)
 	{
 		overCastLayerSw[i]=AddTextButton(1,FSKEY_NULL,FSGUI_CHECKBOX,"",YSTRUE);
 		AddStaticText(1,FSKEY_NULL,FSGUI_NEWFLTDLG_OVERCASTFLOOR,YSFALSE);
@@ -138,7 +138,7 @@ void FsGuiConfigDialog::MakeDefaultsDialog(FsWorld *world,FsFlightConfig &cfg)
 	grpBox->AddGuiItem(windDir);
 	grpBox->AddGuiItem(windSpd);
 
-	for(int i=0; i<3; i++)
+	for(int i=0; i<MAXNUMCLOUDLAYER; i++)
 	{
 		grpBox->AddGuiItem(overCastLayerSw[i]);
 		grpBox->AddGuiItem(overCastLayerFloor[i]);
@@ -472,7 +472,16 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 	windDir->SetNumber(windDirval);
 	double windSpdval = cfg.constWind.GetLengthXZ();
 	windSpd->SetNumber(YsUnitConv::MPStoKT(windSpdval));
-	//3x cloud layer boxes.
+
+	//MAXNUMCLOUDLAYER cloud layer boxes.
+	for (int i=0; i < min(cfg.cloudLayer.GetN(), MAXNUMCLOUDLAYER); i++){
+		FsWeatherCloudLayer &layer = cfg.cloudLayer[i];
+		if (layer.cloudLayerType == FSCLOUDLAYER_OVERCAST){
+		overCastLayerSw[i]->SetCheck(YSTRUE);
+		overCastLayerFloor[i]->SetNumber(round(YsUnitConv::MtoFT(layer.y0)/100)*100); //Had to round it to the nearest 100.
+		overCastLayerThickness[i]->SetNumber(round(YsUnitConv::MtoFT(layer.y1-layer.y0)/100)*100);
+		}
+	}
 
 	YsVec3 tst;
 	int lightSrcId=0;
@@ -566,7 +575,7 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 
 
 	fogBtn->SetCheck(cfg.drawFog);
-	fogVisibility->SetRealNumber(cfg.fogVisibility/1600.0,1);
+	fogVisibility->SetRealNumber(YsUnitConv::MtoNM(cfg.fogVisibility),1);
 
 	zBufQualityLbx->Select(cfg.zbuffQuality);
 	trspObjBtn->SetCheck(cfg.drawTransparency);
@@ -628,6 +637,20 @@ void FsGuiConfigDialog::RetrieveConfig(FsFlightConfig &cfg)
 	windVec.RotateXZ(-windDirVal);
 
 	cfg.constWind = windVec;
+
+	// Overcast layers
+	cfg.cloudLayer.Clear();
+	for(int i=0; i<MAXNUMCLOUDLAYER; i++){
+		if (overCastLayerSw[i]->GetCheck()==YSTRUE){
+			FsWeatherCloudLayer layer;
+			layer.cloudLayerType= FSCLOUDLAYER_OVERCAST;
+			
+			layer.y0 = YsUnitConv::FTtoM(overCastLayerFloor[i]->GetNumber());
+	
+			layer.y1 = YsUnitConv::FTtoM(overCastLayerThickness[i]->GetNumber())+layer.y0;
+			cfg.cloudLayer.Append(layer);
+		}
+	}
 
 	int lightSrcId=0;
 	for(int i=0; i<5; ++i)
@@ -727,7 +750,7 @@ void FsGuiConfigDialog::RetrieveConfig(FsFlightConfig &cfg)
 
 
 	cfg.drawFog=fogBtn->GetCheck();
-	cfg.fogVisibility=YsBound(fogVisibility->GetRealNumber(),0.1,12.5)*1600.0;
+	cfg.fogVisibility=YsUnitConv::NMtoM(YsBound(fogVisibility->GetRealNumber(),0.1,12.5));
 	cfg.zbuffQuality=zBufQualityLbx->GetSelection();
 	cfg.drawTransparency=trspObjBtn->GetCheck();;
 	cfg.drawTransparentSmoke=trspSmkBtn->GetCheck();
