@@ -12,7 +12,7 @@ $BGCOL 0
 +assigndlg/setdefaultgamepad                       #Use Game Pad
 +assigndlg/setdefaultkeyassign                     #Set Default Key-Assignment Only (Keep Mouse/Joystick Assignment)
 +cfgdlg/ifvisibilityislessthan                     #If visibility is less than:
-+cfgdlg/thismiles                                  #miles
++cfgdlg/thismiles                                  #nautical miles
 +cfgdlg/use3dhud                                   #Use 3D HUD
 +cfgdlg/usesimplehud                               #Use Simple HUD
 +common/mission                                    #---Mission---
