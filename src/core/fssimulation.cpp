@@ -8664,22 +8664,13 @@ void FsSimulation::SimDrawContainer(const ActualViewMode &actualViewMode) const
 						caption.Printf("[%s]%s",(const char *)tmpName,(const char *)spdTxt);
 					}
 				}
-				const char* heatCaption1 = "H-OBSV: %f";
-				const char* heatCaption2 = "H-ACTL: %f";
-				YsString ysHeatCaption1;
-				YsString ysHeatCaption2; 
-				ysHeatCaption1.Printf("H-OBSV: %f", air->Prop().GetVisibleHeatSignature(((FsAirplane*)playerObj)->Prop().GetPosition(), ((FsAirplane*)playerObj)->Prop().GetAttitude(), 0.25, 1.0));
-				YsVec3 losNorm = air->Prop().GetPosition() - ((FsAirplane*)playerObj)->Prop().GetPosition();
-				losNorm.Normalize();
-				ysHeatCaption2.Printf("POS . ATT = %f", losNorm * air->Prop().GetAttitude().GetForwardVector());
-
 				if(air->iff!=playerObj->iff)
 				{
-					hud->DrawCircleContainer(mat,viewAttitude,*trg,*trg,hud->hudCol, ysHeatCaption1, ysHeatCaption2,YSFALSE,0,30);
+					hud->DrawCircleContainer(mat,viewAttitude,*trg,*trg,hud->hudCol,caption,air->actualIdName,YSFALSE,0,30);
 				}
 				else
 				{
-					hud->DrawCircleContainer(mat,viewAttitude,*trg,*trg,YsWhite(), ysHeatCaption1, ysHeatCaption2,YSFALSE,0,30);
+					hud->DrawCircleContainer(mat,viewAttitude,*trg,*trg,YsWhite(),caption,air->actualIdName,YSFALSE,0,30);
 				}
 
 				FSWEAPONTYPE woc=FSWEAPON_NULL;
