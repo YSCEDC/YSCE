@@ -465,6 +465,8 @@ void FsNetworkUser::Initialize(void)
 	controlShowUserNameReadBack=YSFALSE;
 	environmentReadBack=YSFALSE;
 	preparationReadBack=YSFALSE;
+
+	usingYSCE=YSFALSE; //Switch to decide whether to send them the new packets, if and when they come.
 }
 
 
@@ -3756,8 +3758,12 @@ YSRESULT FsSocketServer::ReceiveTextMessage(int clientId,unsigned char dat[],uns
 	}
 }
 
-YSRESULT FsSocketServer::ReceiveEnvironmentRequest(int clientId,unsigned char [],unsigned )
+YSRESULT FsSocketServer::ReceiveEnvironmentRequest(int clientId,unsigned char dat[],unsigned packetLength )
 {
+	if (packetLength>4){
+		//We've got a packet from a YSCE client.
+		user[clientId].usingYSCE=YSTRUE;
+	}
 	return SendEnvironment(clientId);
 }
 
@@ -4189,6 +4195,7 @@ YSRESULT FsSocketServer::SendVersionNotify(int clientId)
 		ptr=dat;
 		FsPushInt(ptr,FSNETCMD_VERSIONNOTIFY);
 		FsPushInt(ptr,YSFLIGHT_NETVERSION);
+		FsPushInt(ptr,1); //Push a 1, this will let the client know if they're connecting to a YSCE server.
 		return SendPacket(clientId,ptr-dat,dat);
 	}
 	return YSOK;
@@ -4260,10 +4267,18 @@ YSRESULT FsSocketServer::SendEnvironment(int clientId)
 	YSBOOL fog;
 	double visibility;
 	unsigned flags;
+	int cloudLayerCount;
+	int version = 1;
+	if (user[clientId].usingYSCE == YSTRUE)
+	{
+		version = 2;
+	}
+	
 
 	wind=sim->GetWeather().GetWind();
 	fog=sim->GetWeather().GetFog();
 	visibility=sim->GetWeather().GetFogVisibility();
+	cloudLayerCount = sim->GetWeather().GetCloudLayerCount();
 
 	flags=0;
 	if(fog==YSTRUE)
@@ -4330,13 +4345,23 @@ YSRESULT FsSocketServer::SendEnvironment(int clientId)
 
 	ptr=dat;
 	FsPushInt  (ptr,FSNETCMD_ENVIRONMENT);
-	FsPushShort(ptr,1);                              // Version 1:Env, Flags, Wind, Visibility
+	FsPushShort(ptr,version);                              // Version 1:Env, Flags, Wind, Visibility
 	FsPushShort(ptr,(short)sim->GetEnvironment());
 	FsPushInt  (ptr,flags);
 	FsPushFloat(ptr,(float)wind.x());
 	FsPushFloat(ptr,(float)wind.y());
 	FsPushFloat(ptr,(float)wind.z());
 	FsPushFloat(ptr,(float)visibility);
+	
+	if (version==2){ //YSCE version, cloud layers.
+		FsPushInt(ptr,cloudLayerCount);
+		for (int i = 0; i < cloudLayerCount; i++){
+			const FsWeatherCloudLayer* layer;
+			sim->GetWeather().GetCloudLayer(i,layer);
+			FsPushInt(ptr, layer->y0);
+			FsPushInt(ptr, layer->y1);	
+		}
+	}
 	return SendPacket(clientId,ptr-dat,dat);
 }
 
@@ -4941,6 +4966,7 @@ FsSocketClient::FsSocketClient(const char username[],const int port,FsSimulation
 	sideWindowAssigned=YSFALSE;
 
 	reportedServerVersion=0;
+	ysceServer=YSFALSE;
 
 	svrUseMissile=YSTRUE;
 	svrUseUnguidedWeapon=YSTRUE;
@@ -5076,7 +5102,7 @@ YSRESULT FsSocketClient::Received(YSSIZE_T nBytes,unsigned char dat[])
 					ReceiveAssignSideWindow(cmdTop);
 					break;
 				case FSNETCMD_VERSIONNOTIFY:
-					ReceiveVersionNotify(cmdTop);
+					ReceiveVersionNotify(packetLength,cmdTop);
 					break;
 				case FSNETCMD_AIRCMD:
 					ReceiveAirCmd(cmdTop);
@@ -5704,9 +5730,10 @@ YSRESULT FsSocketClient::SendTextMessage(const char txt[])
 
 YSRESULT FsSocketClient::SendEnvironmentRequest(void)
 {
-	unsigned char dat[4];
+	unsigned char dat[8];
 	FsSetInt(dat,FSNETCMD_ENVIRONMENT);
-	return SendPacket(4,dat);
+	FsSetInt(dat+4,1); //Send a 1 to indicate that this a request from a YSCE client.
+	return SendPacket(8,dat);
 }
 
 YSRESULT FsSocketClient::SendResendJoinApproval(void)
@@ -6403,13 +6430,22 @@ YSRESULT FsSocketClient::ReceiveAssignSideWindow(unsigned char dat[])
 	return YSOK;
 }
 
-YSRESULT FsSocketClient::ReceiveVersionNotify(unsigned char dat[])
+YSRESULT FsSocketClient::ReceiveVersionNotify(unsigned int packetLength, unsigned char dat[])
 {
 	int svrVersion;
+	
 	char str[256];
-
-	svrVersion=FsGetInt(dat+4);
-
+	const unsigned char *ptr=dat;
+	FsPopInt(ptr);  // Skip FSNETCMD_VERSIONNOTIFY
+	svrVersion=FsPopInt(ptr);
+	printf("PacketLength is %d\n",packetLength);
+	if (packetLength>=8){
+		int ysceVersion=FsPopInt(ptr);
+		if (ysceVersion >0){
+			ysceServer=YSTRUE;
+		}
+	}
+	
 	AddMessage("Version check");
 	sprintf(str,"  SERVER NET-VERSION : %d",svrVersion);
 	AddMessage(str);

@@ -15,6 +15,7 @@ public:
 
 	static const char *CloudLayerTypeString(int cloudLayerType);
 	static int CloudLayerTypeFromString(const char str[]);
+	static FsWeatherCloudLayer Overcast(double y0,double y1); // Returns an overclast 
 };
 
 
@@ -52,6 +53,7 @@ public:
 	void SetCloudLayer(YSSIZE_T nLayer,const FsWeatherCloudLayer layer[]);
 	void AddCloudLayer(const FsWeatherCloudLayer &layer);
 	void GetCloudLayer(int &nLayer,const FsWeatherCloudLayer *&layer) const;
+	int GetCloudLayerCount() const;
 	YSBOOL IsInCloudLayer(const YsVec3 &pos) const;
 
 	YSRESULT Save(FILE *fp) const;
