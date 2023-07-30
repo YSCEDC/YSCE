@@ -1023,7 +1023,7 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 			break;
 		case FSWEAPON_FLARE:
 			{
-				flareHeat -= 0.00125; //5% heat decay/second at default game tick (dt = 0.025)
+				flareHeat -= 0.05 * dt; //5% heat decay/second
 				flareHeat = YsGreater(0.0, flareHeat);
 				vec.Set(vec.x(),vec.y()-FsGravityConst*dt,vec.z());
 				att.SetForwardVector(vec);
