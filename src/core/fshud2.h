@@ -3,6 +3,8 @@
 /* { */
 
 #include <ysglcpp.h>
+#include "fsexistence.h"
+#include "fssimulation.h"
 
 class FsHud2
 {
@@ -60,6 +62,7 @@ public:
 	    YSBOOL isDme,const double &dme,
 	    YSBOOL selected,YSBOOL inop);
 
+	void DrawHUDText(const double& x0, const double& y0, const double& fontWid, const double& fontHei, const YsString& str, YsColor color);
 	void DrawAltitude(const double &x0,const double &y0,const double &wid,const double &hei,const double &altInMeter);
 	void DrawVSI(const double &x0,const double &y0,const double &wid,const double &hei,const double &ftPerMin);
 
@@ -96,6 +99,8 @@ public:
 	void DrawVelocityVectorIndicator(const YsVec3 &viewPos,const YsAtt3 &viewAtt,const YsVec3 &vel);
 
 	void DrawTurnAndSlipIndicator(const double cx,const double cy,const double rad,const double ssa,const double turnRate);
+
+	void DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo, const double& airAltLimit, const double& maxRadarRange, const double& x0, const double& y0, const double& radius, const int& maxNumThreatsToDraw = 8);
 };
 
 /* } */

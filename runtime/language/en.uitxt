@@ -428,6 +428,7 @@ $BGCOL 0
 +netconsole/endurance_ww2                          #Start Enducrance Mode (Ww2)
 +netconsole/intercept                              #Start Intercept Mission
 +netconsole/closeairsupport                        #Start Close Air Support
++netconsole/setenvironment                         #Toggle Day/Night
 +netconsole/endserver                              #End Server
 +netconsole/confirmendserver                       #Confirm End Server
 +netconsole/reviveground                           #Revive Ground

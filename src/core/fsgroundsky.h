@@ -31,6 +31,7 @@ public:
 	     const double &farZ,YSBOOL specular);
 
 	void DrawGroundMesh(const YsVec3 &pos,const YsAtt3 &att,const YsColor &ignd,int div,YSBOOL specular);
+	void DrawGroundMesh(const YsVec3& pos, const YsAtt3& att, const YsColor& ignd, int div, YSBOOL specular, YSBOOL useOpenGlGroundTexture);
 };
 
 /* } */

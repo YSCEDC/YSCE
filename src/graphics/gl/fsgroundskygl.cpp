@@ -254,31 +254,38 @@ void FsGroundSky::DrawGradation
 	glPopAttrib();
 }
 
-void FsGroundSky::DrawGroundMesh(const YsVec3 &pos,const YsAtt3 &att,const YsColor &ignd,int div,YSBOOL)
+void FsGroundSky::DrawGroundMesh(const YsVec3& pos, const YsAtt3& att, const YsColor& ignd, int div, YSBOOL specular, YSBOOL useOpenGlGroundTexture)
 {
-	glPushAttrib(GL_ENABLE_BIT|GL_DEPTH_BUFFER_BIT);
+	glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT);
 	glDepthFunc(GL_ALWAYS);
 	glDepthMask(0);
 	glDisable(GL_LIGHTING);
 	glDisable(GL_CULL_FACE);
 
-	glStencilFunc(GL_EQUAL,0,255);
+	glStencilFunc(GL_EQUAL, 0, 255);
 
-	auto &commonTexture=FsCommonTexture::GetCommonTexture();
-	commonTexture.LoadGroundTileTexture();
-	auto texUnitPtr=commonTexture.GetGroundTileTexture();
-
-	if(nullptr!=texUnitPtr)
+	auto& commonTexture = FsCommonTexture::GetCommonTexture();
+	if (useOpenGlGroundTexture == YSTRUE)
 	{
-		int xx,zz,xp,zp;
-		int x1,z1,x2,z2;
-		const int scaleFactor=4050;
-		const int nGrid=6;
+		commonTexture.LoadGroundTileTexture();
+	}
+	else
+	{
+		commonTexture.UnloadGroundTileTexture();
+	}
+	auto texUnitPtr = commonTexture.GetGroundTileTexture();
 
-		glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	if (nullptr != texUnitPtr)
+	{
+		int xx, zz, xp, zp;
+		int x1, z1, x2, z2;
+		const int scaleFactor = 4050;
+		const int nGrid = 6;
 
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 		texUnitPtr->Bind();
 
@@ -287,32 +294,32 @@ void FsGroundSky::DrawGroundMesh(const YsVec3 &pos,const YsAtt3 &att,const YsCol
 		glEnable(GL_TEXTURE_2D);
 
 		YsVec3 org;
-		xx=(int)(pos.x())/scaleFactor;
-		zz=(int)(pos.z())/scaleFactor;
+		xx = (int)(pos.x()) / scaleFactor;
+		zz = (int)(pos.z()) / scaleFactor;
 
-		xx*=scaleFactor;
-		zz*=scaleFactor;
+		xx *= scaleFactor;
+		zz *= scaleFactor;
 
-		glColor3ub(ignd.Ri(),ignd.Gi(),ignd.Bi());
+		glColor3ub(ignd.Ri(), ignd.Gi(), ignd.Bi());
 
-		for(zp=-nGrid; zp<nGrid; zp++)
+		for (zp = -nGrid; zp < nGrid; zp++)
 		{
 			glBegin(GL_QUAD_STRIP);
-			for(xp=-nGrid; xp<=nGrid; xp++)
+			for (xp = -nGrid; xp <= nGrid; xp++)
 			{
-				x1=xp;
-				z1=zp;
-				x1=xx+x1*scaleFactor;
-				z1=zz+z1*scaleFactor;
+				x1 = xp;
+				z1 = zp;
+				x1 = xx + x1 * scaleFactor;
+				z1 = zz + z1 * scaleFactor;
 
-				glVertex3i(x1,0,z1);
+				glVertex3i(x1, 0, z1);
 
-				x2=xp;
-				z2=zp+1;
-				x2=xx+x2*scaleFactor;
-				z2=zz+z2*scaleFactor;
+				x2 = xp;
+				z2 = zp + 1;
+				x2 = xx + x2 * scaleFactor;
+				z2 = zz + z2 * scaleFactor;
 
-				glVertex3i(x2,0,z2);
+				glVertex3i(x2, 0, z2);
 			}
 			glEnd();
 		}
@@ -330,127 +337,132 @@ void FsGroundSky::DrawGroundMesh(const YsVec3 &pos,const YsAtt3 &att,const YsCol
 		// Grid sizes:
 		//   2^5  2^8  2^11  2^14
 
-		int xx,zz,xp,zp;
-		int x1,z1,x2,z2;
-		const int scaleFactor=div;
-		const int nGrid=6;
+		int xx, zz, xp, zp;
+		int x1, z1, x2, z2;
+		const int scaleFactor = div;
+		const int nGrid = 6;
 		int intensity;
 
-		intensity=YsGreatestOf(ignd.Ri(),ignd.Gi(),ignd.Bi())/8;
+		intensity = YsGreatestOf(ignd.Ri(), ignd.Gi(), ignd.Bi()) / 8;
 
 		YsVec3 org;
-		xx=(int)(pos.x())/scaleFactor;
-		zz=(int)(pos.z())/scaleFactor;
+		xx = (int)(pos.x()) / scaleFactor;
+		zz = (int)(pos.z()) / scaleFactor;
 
-		xx*=scaleFactor;
-		zz*=scaleFactor;
+		xx *= scaleFactor;
+		zz *= scaleFactor;
 
-		glColor3ub(255,255,255);
+		glColor3ub(255, 255, 255);
 
-		for(zp=-nGrid; zp<nGrid; zp++)
+		for (zp = -nGrid; zp < nGrid; zp++)
 		{
 			glBegin(GL_QUAD_STRIP);
-			for(xp=-nGrid; xp<=nGrid; xp++)
+			for (xp = -nGrid; xp <= nGrid; xp++)
 			{
 				int scale;
-				int r,g,b;
+				int r, g, b;
 				YSBOOL boundary;
 
-				x1=xp;
-				z1=zp;
-				boundary=(x1!=-nGrid && z1!=-nGrid && x1!=nGrid && z1!=nGrid ? YSFALSE : YSTRUE);
-				x1=xx+x1*scaleFactor;
-				z1=zz+z1*scaleFactor;
+				x1 = xp;
+				z1 = zp;
+				boundary = (x1 != -nGrid && z1 != -nGrid && x1 != nGrid && z1 != nGrid ? YSFALSE : YSTRUE);
+				x1 = xx + x1 * scaleFactor;
+				z1 = zz + z1 * scaleFactor;
 
-				r=ignd.Ri();
-				g=ignd.Gi();
-				b=ignd.Bi();
-				if(boundary!=YSTRUE)
+				r = ignd.Ri();
+				g = ignd.Gi();
+				b = ignd.Bi();
+				if (boundary != YSTRUE)
 				{
-					r=YsBound(r+((x1&31)-16)*intensity/16,0,255);
-					g=YsBound(g+((z1&31)-16)*intensity/16,0,255);
-					b=YsBound(b+((x1&31)+(z1&31)-32)*intensity/32,0,255);
+					r = YsBound(r + ((x1 & 31) - 16) * intensity / 16, 0, 255);
+					g = YsBound(g + ((z1 & 31) - 16) * intensity / 16, 0, 255);
+					b = YsBound(b + ((x1 & 31) + (z1 & 31) - 32) * intensity / 32, 0, 255);
 				}
 
-				glColor3ub(r,g,b);
-				glVertex3i(x1,0,z1);
+				glColor3ub(r, g, b);
+				glVertex3i(x1, 0, z1);
 
-				x2=xp;
-				z2=zp+1;
-				boundary=(x2!=-nGrid && z2!=-nGrid && x2!=nGrid && z2!=nGrid ? YSFALSE : YSTRUE);
-				x2=xx+x2*scaleFactor;
-				z2=zz+z2*scaleFactor;
+				x2 = xp;
+				z2 = zp + 1;
+				boundary = (x2 != -nGrid && z2 != -nGrid && x2 != nGrid && z2 != nGrid ? YSFALSE : YSTRUE);
+				x2 = xx + x2 * scaleFactor;
+				z2 = zz + z2 * scaleFactor;
 
-				r=ignd.Ri();
-				g=ignd.Gi();
-				b=ignd.Bi();
-				if(boundary!=YSTRUE)
+				r = ignd.Ri();
+				g = ignd.Gi();
+				b = ignd.Bi();
+				if (boundary != YSTRUE)
 				{
-					r=YsBound(r+((x2&31)-16)*intensity/16,0,255);
-					g=YsBound(g+((z2&31)-16)*intensity/16,0,255);
-					b=YsBound(b+((x2&31)+(z2&31)-32)*intensity/32,0,255);
+					r = YsBound(r + ((x2 & 31) - 16) * intensity / 16, 0, 255);
+					g = YsBound(g + ((z2 & 31) - 16) * intensity / 16, 0, 255);
+					b = YsBound(b + ((x2 & 31) + (z2 & 31) - 32) * intensity / 32, 0, 255);
 				}
 
-				glColor3ub(r,g,b);
-				glVertex3i(x2,0,z2);
+				glColor3ub(r, g, b);
+				glVertex3i(x2, 0, z2);
 			}
 			glEnd();
 		}
 
 
 
-	//	int x,z,cx,cz;
-	//
-	//	cx=int(pos.x());
-	//	cz=int(pos.z());
-	//	cx=cx/div;
-	//	cz=cz/div;
-	//	cx=cx*div;
-	//	cz=cz*div;
-	//
-	//	glColor3d(1.0,1.0,1.0);
-	//
-	//	for(z=-4; z<=4; z++)
-	//	{
-	//		YsVec3 p;
-	//		glBegin(GL_QUAD_STRIP);
-	//		for(x=-4; x<=4; x++)
-	//		{
-	//			int xx,zz,r,g,b;
-	//			xx=cx+x*div;
-	//			zz=cz+z*div;
-	//
-	//			r=ignd.Ri();
-	//			g=ignd.Gi();
-	//			b=ignd.Bi();
-	//
-	//			r=YsBound(r+(xx&15)-8,0,255);
-	//			g=YsBound(g+(zz&15)-8,0,255);
-	//			b=YsBound(b+(xx&15)+(zz&15)-16,0,255);
-	//
-	//			glColor3ub(r,g,b);
-	//			glVertex3i(xx,0,zz);
-	//
-	//			xx=cx+x*div;
-	//			zz=cz+z*div+div;
-	//
-	//			r=ignd.Ri();
-	//			g=ignd.Gi();
-	//			b=ignd.Bi();
-	//
-	//			r=YsBound(r+(xx&15)-8,0,255);
-	//			g=YsBound(g+(zz&15)-8,0,255);
-	//			b=YsBound(b+(xx&15)+(zz&15)-16,0,255);
-	//
-	//			glColor3ub(r,g,b);
-	//			glVertex3i(xx,0,zz);
-	//		}
-	//		glEnd();
-	//	}
+		//	int x,z,cx,cz;
+		//
+		//	cx=int(pos.x());
+		//	cz=int(pos.z());
+		//	cx=cx/div;
+		//	cz=cz/div;
+		//	cx=cx*div;
+		//	cz=cz*div;
+		//
+		//	glColor3d(1.0,1.0,1.0);
+		//
+		//	for(z=-4; z<=4; z++)
+		//	{
+		//		YsVec3 p;
+		//		glBegin(GL_QUAD_STRIP);
+		//		for(x=-4; x<=4; x++)
+		//		{
+		//			int xx,zz,r,g,b;
+		//			xx=cx+x*div;
+		//			zz=cz+z*div;
+		//
+		//			r=ignd.Ri();
+		//			g=ignd.Gi();
+		//			b=ignd.Bi();
+		//
+		//			r=YsBound(r+(xx&15)-8,0,255);
+		//			g=YsBound(g+(zz&15)-8,0,255);
+		//			b=YsBound(b+(xx&15)+(zz&15)-16,0,255);
+		//
+		//			glColor3ub(r,g,b);
+		//			glVertex3i(xx,0,zz);
+		//
+		//			xx=cx+x*div;
+		//			zz=cz+z*div+div;
+		//
+		//			r=ignd.Ri();
+		//			g=ignd.Gi();
+		//			b=ignd.Bi();
+		//
+		//			r=YsBound(r+(xx&15)-8,0,255);
+		//			g=YsBound(g+(zz&15)-8,0,255);
+		//			b=YsBound(b+(xx&15)+(zz&15)-16,0,255);
+		//
+		//			glColor3ub(r,g,b);
+		//			glVertex3i(xx,0,zz);
+		//		}
+		//		glEnd();
+		//	}
 	}
 
-	glStencilFunc(GL_ALWAYS,0,255);
+	glStencilFunc(GL_ALWAYS, 0, 255);
 	glPopAttrib();
+}
+
+void FsGroundSky::DrawGroundMesh(const YsVec3 &pos,const YsAtt3 &att,const YsColor &ignd,int div,YSBOOL specular)
+{
+	DrawGroundMesh(pos, att, ignd, div, specular, YSTRUE);
 }
 
 void FsGroundSky::DrawCrappy(const YsVec3 &pos,const YsColor &ignd,const YsColor &isky,const double &farZ,YSBOOL)

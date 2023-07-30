@@ -977,6 +977,44 @@ void FsHud2::DrawBank(const double &bank)
 	triColBuf.Add(hudCol);
 }
 
+void FsHud2::DrawHUDText(const double& x0, const double& y0, const double& fontWid, const double& fontHei, const YsString& str, YsColor color)
+{
+	double centerTxtOffsetX = 0.0;
+	if (str.length() % 2 == 0)
+	{
+		centerTxtOffsetX = fontWid * (double)str.length() / 2.0 + fontWid / 2.0;
+	}
+	else
+	{
+		centerTxtOffsetX = fontWid * (double)str.length() / 2.0;
+	}
+	FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, x0 - centerTxtOffsetX, y0, zPlane, str, color, fontWid, fontHei);
+
+	//float frameVtx[12] =
+	//{
+	//	(float)(x0),(float)(y0)    ,zPlane,
+	//	(float)(x0 + wid),(float)(y0)    ,zPlane,
+	//	(float)(x0 + wid),(float)(y0 + hei),zPlane,
+	//	(float)(x0),(float)(y0 + hei),zPlane,
+	//};
+	//lineVtxBuf.Add(frameVtx[0], frameVtx[1], frameVtx[2]);
+	//lineVtxBuf.Add(frameVtx[3], frameVtx[4], frameVtx[5]);
+	//lineVtxBuf.Add(frameVtx[3], frameVtx[4], frameVtx[5]);
+	//lineVtxBuf.Add(frameVtx[6], frameVtx[7], frameVtx[8]);
+	//lineVtxBuf.Add(frameVtx[6], frameVtx[7], frameVtx[8]);
+	//lineVtxBuf.Add(frameVtx[9], frameVtx[10], frameVtx[11]);
+	//lineVtxBuf.Add(frameVtx[9], frameVtx[10], frameVtx[11]);
+	//lineVtxBuf.Add(frameVtx[0], frameVtx[1], frameVtx[2]);
+	//lineColBuf.Add(hudCol);
+	//lineColBuf.Add(hudCol);
+	//lineColBuf.Add(hudCol);
+	//lineColBuf.Add(hudCol);
+	//lineColBuf.Add(hudCol);
+	//lineColBuf.Add(hudCol);
+	//lineColBuf.Add(hudCol);
+	//lineColBuf.Add(hudCol);
+}
+
 void FsHud2::DrawAltitude(const double &x0,const double &y0,const double &wid,const double &hei,const double &altInMeter)
 {
 	// Dimension: (0,0)-(0.2,1.0);
@@ -1832,3 +1870,205 @@ void FsHud2::DrawNav(
 	    isDme,dme,
 	    selected,inop);
 }
+
+void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo, const double& airAltLimit, const double& maxRadarRange, const double& x0, const double& y0, const double& radius, const int& maxNumThreatsToDraw)
+{
+	YsAtt3 attH;
+	attH = withRespectTo->GetAttitude();
+	attH.SetP(0.0);
+	attH.SetB(0.0);
+
+	YsMatrix4x4 ref;
+	ref.Translate(withRespectTo->GetPosition());
+	ref.Rotate(attH);
+
+	int numThreatsDrawn = 0;
+
+	double fontWidth = 0.02;
+	double fontHeight = 0.03;
+
+	double searchRadius = maxRadarRange / 2.0;
+
+	//draw RWR indicators for missiles which are targeting us 
+	const FsWeapon* currWeapon = NULL;
+	while ((currWeapon = sim->FindNextActiveWeapon(currWeapon)) != NULL && numThreatsDrawn < maxNumThreatsToDraw)
+	{
+		YsColor currCol;
+		if (currWeapon->lifeRemain > YsTolerance
+			&& currWeapon->timeRemain > YsTolerance
+			&& (currWeapon->pos - withRespectTo->GetPosition()).GetSquareLength() <= searchRadius * searchRadius
+			&& currWeapon->target == withRespectTo
+			&& (currWeapon->type == FSWEAPON_AIM9 || currWeapon->type == FSWEAPON_AIM120 || currWeapon->type == FSWEAPON_AIM9X))
+		{
+			//get relative position of current weapon
+			YsVec3 relPosition;
+			ref.MulInverse(relPosition, currWeapon->pos, 1.0);
+
+			//calculate relative angle in XZ plane
+			double radarAngle = atan2(relPosition.z(), relPosition.x());
+
+			//calculate start and end screen coordinates of current RWR line
+			double startX = radius * 0.05 * cos(radarAngle);
+			double startY = radius * 0.05 * sin(radarAngle);
+			double endX = radius * 0.65 * cos(radarAngle);
+			double endY = radius * 0.65 * sin(radarAngle);
+
+			lineVtxBuf.Add<double>(startX, startY, zPlane);
+			lineColBuf.Add(YsRed());
+			lineVtxBuf.Add<double>(endX, endY, zPlane);
+			lineColBuf.Add(YsRed());
+
+			//determine RWR identifier based on aircraft category
+			std::string idString = "";
+			switch (currWeapon->type)
+			{
+			case FSWEAPON_AIM9:
+				idString = "9";
+				break;
+
+			case FSWEAPON_AIM9X:
+				idString = "9X";
+				break;
+
+			case FSWEAPON_AIM120:
+				idString = "120";
+				break;
+			default:
+				idString = "M";
+				break;
+			}
+
+			//determine position of identifier letter and draw
+			double fontX = radius * 0.8 * cos(radarAngle);
+			double fontY = radius * 0.8 * sin(radarAngle);
+			double fontXOffset = idString.length() % 2 == 0 ? fontWidth * idString.length() + fontWidth / 2.0 : fontWidth * idString.length();
+			YsMatrix4x4 tfm;
+			tfm.Translate(fontX - fontXOffset, fontY, zPlane);
+			tfm.Scale(fontWidth, fontHeight, 1.0);
+			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), YsRed());
+			numThreatsDrawn++;
+		}
+	}
+
+	//draw RWR indicators for aircraft
+	FsAirplane* currAir = NULL;
+	while ((currAir = sim->FindNextAirplane(currAir)) != NULL && numThreatsDrawn < maxNumThreatsToDraw)
+	{
+		bool isLocking = currAir->Prop().GetAirTargetKey() == FsExistence::GetSearchKey(withRespectTo);
+		double altLimit = airAltLimit + 1000.0 * (1.0 - currAir->Prop().GetRadarCrossSection());
+		if (currAir != withRespectTo 
+			&& currAir->IsActive() == YSTRUE
+			&& currAir->GetPosition().y() > altLimit
+			&& (currAir->GetPosition() - withRespectTo->GetPosition()).GetSquareLengthXZ() <= searchRadius * searchRadius
+			&& isLocking)
+		{
+			//check if current aircraft is locking onto us
+			
+			//get relative position of current aircraft
+			YsVec3 relPosition;
+			ref.MulInverse(relPosition, currAir->Prop().GetPosition(), 1.0);
+
+			//calculate relative angle in XZ plane
+			double radarAngle = atan2(relPosition.z(), relPosition.x());
+
+			//calculate start and end screen coordinates of current RWR line
+			double startX = radius * 0.25 * cos(radarAngle);
+			double startY = radius * 0.25 * sin(radarAngle);
+			double endX = radius * 0.85 * cos(radarAngle);
+			double endY = radius * 0.85 * sin(radarAngle);
+
+			lineVtxBuf.Add<double>(startX, startY, zPlane);
+			lineColBuf.Add(YsYellow());
+			lineVtxBuf.Add<double>(endX, endY, zPlane);
+			lineColBuf.Add(YsYellow());
+
+			//determine RWR identifier based on aircraft category
+			std::string idString = "";
+			printf("%s\n", currAir->GetIdentifier());
+			switch (currAir->Prop().GetAirplaneCategory())
+			{
+				case FSAC_UNKNOWN:
+				default:
+					idString = "U";
+					break;
+
+				case FSAC_NORMAL:
+					idString = "N";
+					break;
+
+				case FSAC_AEROBATIC:
+				case FSAC_FIGHTER:
+				case FSAC_WW2FIGHTER:
+					idString = "F";
+					break;
+
+				case FSAC_ATTACKER:
+				case FSAC_WW2ATTACKER:
+					idString = "A";
+					break;
+
+				case FSAC_HEAVYBOMBER:
+				case FSAC_WW2BOMBER:
+					idString = "B";
+					break;
+
+				case FSAC_UTILITY:
+					idString = "C";
+					break;
+			}
+
+			//determine position of identifier letter and draw
+			double fontX = radius * cos(radarAngle);
+			double fontY = radius * sin(radarAngle);
+			YsMatrix4x4 tfm;
+			tfm.Translate(fontX - fontWidth / 2.0, fontY, zPlane);
+			tfm.Scale(fontWidth, fontHeight, 1.0);
+			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, idString.c_str(), YsYellow());
+			numThreatsDrawn++;
+		}
+	}
+
+	//draw RWR indicator for radar-capable ground objects
+	const FsGround* currGround = NULL;
+	while ((currGround = sim->FindNextGround(currGround)) != NULL && numThreatsDrawn < maxNumThreatsToDraw)
+	{
+		YsArray <int, 64> loading;
+		currGround->Prop().GetWeaponConfig(loading);
+		bool isLocking = currGround->Prop().GetAirTargetKey() == FsExistence::GetSearchKey(withRespectTo);
+		if (currGround->IsAlive() == YSTRUE 
+			&& currGround->Prop().IsNonGameObject() != YSTRUE
+			&& (currGround->GetPosition() - withRespectTo->GetPosition()).GetSquareLength() <= searchRadius * searchRadius
+			&& (loading.IsIncluded(FSWEAPON_AIM9) || loading.IsIncluded(FSWEAPON_AIM9X) || loading.IsIncluded(FSWEAPON_AIM120) || loading.IsIncluded(FSWEAPON_GUN))
+			&& isLocking)
+		{
+			YsVec3 relPosition;
+			YsVec2 prj;
+
+			ref.MulInverse(relPosition, currGround->GetPosition(), 1.0);
+
+			//calculate relative angle in XZ plane
+			double radarAngle = atan2(relPosition.z(), relPosition.x());
+
+			//calculate start and end screen coordinates of current RWR line
+			double startX = radius * 0.25 * cos(radarAngle);
+			double startY = radius * 0.25 * sin(radarAngle);
+			double endX = radius * 0.85 * cos(radarAngle);
+			double endY = radius * 0.85 * sin(radarAngle);
+
+			lineVtxBuf.Add<double>(startX, startY, zPlane);
+			lineColBuf.Add(YsYellow());
+			lineVtxBuf.Add<double>(endX, endY, zPlane);
+			lineColBuf.Add(YsYellow());
+
+			//determine position of identifier letter and draw
+			double fontX = radius * cos(radarAngle);
+			double fontY = radius * sin(radarAngle);
+			YsMatrix4x4 tfm;
+			tfm.Translate(fontX - fontWidth / 2.0, fontY, zPlane);
+			tfm.Scale(fontWidth, fontHeight, 1.0);
+			FsAddWireFontVertexBuffer(lineVtxBuf, lineColBuf, triVtxBuf, triColBuf, tfm, "G", YsYellow());
+			numThreatsDrawn++;
+		}
+	}
+}
+
