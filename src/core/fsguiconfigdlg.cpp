@@ -474,7 +474,7 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 	windSpd->SetNumber(YsUnitConv::MPStoKT(windSpdval));
 
 	//MAXNUMCLOUDLAYER cloud layer boxes.
-	for (int i=0; i < min(cfg.cloudLayer.GetN(), MAXNUMCLOUDLAYER); i++){
+	for (int i=0; i < YsSmaller((int)cfg.cloudLayer.GetN(),(int) MAXNUMCLOUDLAYER); i++){
 		FsWeatherCloudLayer &layer = cfg.cloudLayer[i];
 		if (layer.cloudLayerType == FSCLOUDLAYER_OVERCAST){
 		overCastLayerSw[i]->SetCheck(YSTRUE);

@@ -637,7 +637,7 @@ void FsGuiNewFlightDialogClass::InitializeDialog(FsWorld *world,const FsNewFligh
 			visibility->SetNumber(20);
 		}
 	}
-	for (int i=0; i < min(info.envInfo.cloudLayer.GetN(), MAXNUMCLOUDLAYER); i++){
+	for (int i=0; i < YsSmaller((int) info.envInfo.cloudLayer.GetN(),(int) MAXNUMCLOUDLAYER); i++){
 		FsWeatherCloudLayer layer = info.envInfo.cloudLayer[i];
 		if (layer.cloudLayerType == FSCLOUDLAYER_OVERCAST){
 			overCastLayerSw[i]->SetCheck(YSTRUE);
