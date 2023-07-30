@@ -579,7 +579,7 @@ double FsAirplaneProperty::GetHeatSignature(void) const
 double FsAirplaneProperty::GetVisibleHeatSignature(const YsVec3& viewPos, const YsAtt3& viewAtt, const double& heatCoeffLowerBound, const double& heatCoeffUpperBound) const
 {
 	YsVec3 aircraftRelPos = staPosition - viewPos;
-
+	aircraftRelPos.Normalize();
 	double heatAspectCoeff = YsBound(((aircraftRelPos * staAttitude.GetForwardVector()) + 1.0) / 2.0, heatCoeffLowerBound, heatCoeffUpperBound);
 
 	return staHeatSignature * heatAspectCoeff;
