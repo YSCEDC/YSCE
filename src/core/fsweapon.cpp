@@ -806,13 +806,13 @@ void FsWeapon::Fire(
 		timeUnguided=3.0;
 		break;
 	case FSWEAPON_AIM9X:
-		timeUnguided=0.5;
+		timeUnguided=1.0;
 		break;
 	case FSWEAPON_AGM65:
-		timeUnguided=1.6;
+		timeUnguided=1.5;
 		break;
 	default:
-		timeUnguided=0.0;
+		timeUnguided=1.0;
 		break;
 	}
 
