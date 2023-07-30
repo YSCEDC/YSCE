@@ -6424,7 +6424,8 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 				else
 				{
 					double offset = YsPi / 2.0;
-					double flareVelScalar = 20.0;
+					double flareVelScalar = 50.0;
+					double maxFlareDispersion = YsPi / 2.0;
 
 					YsVec3 flareVelCenter;
 					staInverseMatrix.Mul(flareVelCenter, staVelocity, 0.0);
@@ -6434,9 +6435,16 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 
 					YsVec3 flareVelOffsetL(flareVelCenter);
 					flareVelOffsetL.RotateXZ(-offset);
+					//apply random dispersion
+					flareVelOffsetL.RotateXZ(maxFlareDispersion * double(rand() % 100 - 50) / 50.0);
+					flareVelOffsetL.RotateYZ(maxFlareDispersion * double(rand() % 100 - 50) / 50.0);
+
 
 					YsVec3 flareVelOffsetR(flareVelCenter);
 					flareVelOffsetR.RotateXZ(offset);
+					//apply random dispersion
+					flareVelOffsetR.RotateXZ(maxFlareDispersion * double(rand() % 100 - 50) / 50.0);
+					flareVelOffsetR.RotateYZ(maxFlareDispersion * double(rand() % 100 - 50) / 50.0);
 
 					staMatrix.Mul(flareVelOffsetL, flareVelOffsetL, 0.0);
 					staMatrix.Mul(flareVelOffsetR, flareVelOffsetR, 0.0);
