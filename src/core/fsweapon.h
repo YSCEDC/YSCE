@@ -45,7 +45,7 @@ public:
 	enum
 	{
 		TIMEPERSEG=100, // ms
-		MAXNUMTRAIL=64
+		MAXNUMTRAIL=128
 	};
 
 	int trailBegin,trailUsed;
@@ -236,7 +236,7 @@ public:
 	enum
 	{
 		NumBulletBuffer=1024,
-		NumSmokeTrailBuffer=32
+		NumSmokeTrailBuffer=128
 	};
 
 	YSRESULT Save(FILE *fp,class FsSimulation *sim,int wpnPosPrecision,int wpnAttPrecision);

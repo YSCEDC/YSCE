@@ -1036,11 +1036,26 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 				vec.Set(vec.x(),vec.y()-FsGravityConst*dt,vec.z());
 				att.SetForwardVector(vec);
 				velocity=vec.GetLength();
-				if(velocity>maxVelocity)
+				//if(velocity>maxVelocity)
+				//{
+				//	velocity-=20.0*dt;
+				//	vec.Set(0.0,0.0,velocity);
+				//	att.Mul(vec,vec); // vec=att.GetMatrix()*vec;
+				//}
+
+				//air drag
+				const double cdS = 0.5;
+				const double refA = YsPi * 0.1016 * 0.1016;
+				//const double refA = 1.0;
+				//const double refA = YsPi * 0.0127 * 0.0127;
+
+				const double D = 0.5 * cdS * vec.GetSquareLength() * FsGetAirDensity(pos.y()) * refA;
+				const double m = 0.2;
+				const double a = D / m;
+				YsVec3 dVec = -vec;
+				if (YSOK == dVec.Normalize())
 				{
-					velocity-=20.0*dt;
-					vec.Set(0.0,0.0,velocity);
-					att.Mul(vec,vec); // vec=att.GetMatrix()*vec;
+					vec += a * dt * dVec;
 				}
 			}
 			break;

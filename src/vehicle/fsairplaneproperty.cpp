@@ -6448,8 +6448,8 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 					}
 					fired=YSTRUE;
 
-					bul.DispenseFlare(ctime, missilePos, staVelocity + flareVelOffsetL, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
-					bul.DispenseFlare(ctime, missilePos, staVelocity + flareVelOffsetR, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
+					bul.DispenseFlare(ctime, missilePos, staVelocity * 1.0 + flareVelOffsetL, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
+					bul.DispenseFlare(ctime, missilePos, staVelocity * 1.0 + flareVelOffsetR, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
 				}
 			}
 			break;
