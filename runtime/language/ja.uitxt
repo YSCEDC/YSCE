@@ -435,6 +435,7 @@ $BGCOL 0
 +netconsole/endurance_ww2                          #15分耐久空中戦開始(WW2)
 +netconsole/intercept                              #迎撃ミッション開始
 +netconsole/closeairsupport                        #近接支援ミッション開始
++netconsole/setenvironment                         #昼/夜の切り替え
 +netconsole/endserver                              #サーバー終了
 +netconsole/confirmendserver                       #サーバー終了確認
 +netconsole/reviveground                           #地上物復活

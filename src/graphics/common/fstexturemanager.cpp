@@ -72,6 +72,15 @@ void FsCommonTexture::LoadGroundTileTexture(void)
 	}
 }
 
+void FsCommonTexture::UnloadGroundTileTexture(void)
+{
+	if (GroundTileTexHd != nullptr)
+	{
+		texMan.Delete(GroundTileTexHd);
+		GroundTileTexHd = nullptr;
+	}
+}
+
 void FsCommonTexture::LoadRunwayLightTexture(void)
 {
 	RunwayLightTexHd=UpdateTextureFromPngFile(RunwayLightTexHd,FS_TEXTURE_RWLIGHT);

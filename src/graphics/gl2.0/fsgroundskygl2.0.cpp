@@ -308,7 +308,12 @@ void FsGroundSky::DrawGradation
 	glStencilOp(GL_KEEP,GL_KEEP,GL_INCR);
 }
 
-void FsGroundSky::DrawGroundMesh(const YsVec3 &pos,const YsAtt3 &att,const YsColor &ignd,int div,YSBOOL specular)
+void FsGroundSky::DrawGroundMesh(const YsVec3& pos, const YsAtt3& att, const YsColor& ignd, int div, YSBOOL specular)
+{
+	DrawGroundMesh(pos, att, ignd, div, specular, YSTRUE);
+}
+
+void FsGroundSky::DrawGroundMesh(const YsVec3 &pos,const YsAtt3 &att,const YsColor &ignd,int div,YSBOOL specular, YSBOOL useOpenGlGroundTexture)
 {
 	glDepthFunc(GL_ALWAYS);
 	glDepthMask(GL_FALSE);
@@ -316,6 +321,15 @@ void FsGroundSky::DrawGroundMesh(const YsVec3 &pos,const YsAtt3 &att,const YsCol
 	glStencilFunc(GL_EQUAL,0,255);
 
 	auto &commonTexture=FsCommonTexture::GetCommonTexture();
+	if (useOpenGlGroundTexture == YSTRUE)
+	{
+		commonTexture.LoadGroundTileTexture();
+	}
+	else
+	{
+		commonTexture.UnloadGroundTileTexture();
+	}
+
 	auto gndTileUnitPtr=commonTexture.GetGroundTileTexture();
 
 	if(nullptr!=gndTileUnitPtr)
