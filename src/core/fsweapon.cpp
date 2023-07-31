@@ -470,8 +470,8 @@ void FsWeaponSmokeTrail::AddToParticleManagerAsFlare(class YsGLParticleManager &
 			if(t<0.1)
 			{
 				r=1.0;
-				g=t*10.0;
-				b=t*10.0;
+				g=0.6 + t * 4.0;
+				b=0.2 + t * 8.0;
 			}
 			else
 			{
