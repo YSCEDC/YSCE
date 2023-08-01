@@ -851,7 +851,7 @@ void FsWeapon::DispenseFlare(
 	lastChecked=p;
 	att=a;
 	lifeRemain=l;
-	timeRemain=2.0*double(FsWeaponSmokeTrail::TIMEPERSEG*FsWeaponSmokeTrail::MAXNUMTRAIL)/1000.0;
+	timeRemain = l;
 	        // ^^^ 2.0 : take margine. because the trail buffer may not be updated regulary by TIMEPERSEG
 
 	vec.Set(0.0,0.0,v);
@@ -1057,7 +1057,16 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 
 		pos+=weather.GetWind()*dt;
 
-		if(type!=FSWEAPON_BOMB && type!=FSWEAPON_BOMB250 && type!=FSWEAPON_BOMB500HD && type!=FSWEAPON_FUELTANK)  // Bomb falls until it hits the ground
+		if (type == FSWEAPON_FLARE)
+		{
+			//flare lifespan shouldn't be proportional to velocity
+			lifeRemain -= dt;
+			if (lifeRemain <= YsTolerance)
+			{
+				lifeRemain = 0.0;
+			}
+		}
+		else if(type!=FSWEAPON_BOMB && type!=FSWEAPON_BOMB250 && type!=FSWEAPON_BOMB500HD && type!=FSWEAPON_FUELTANK)  // Bomb falls until it hits the ground
 		{
 			lifeRemain=lifeRemain-velocity*dt;
 			if(lifeRemain<=YsTolerance)

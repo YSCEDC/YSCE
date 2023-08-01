@@ -6425,10 +6425,10 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 			break;
 		case FSWEAPON_FLARE:
 			{
-
 				if (chNumFlareDispenser > 0)
 				{
-					bul.DispenseFlare(ctime, missilePos, staVelocity + flareVel, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
+					//																	flare lifespan: random in range of 3 - 5 seconds inclusive
+					bul.DispenseFlare(ctime, missilePos, staVelocity + flareVel, 120.0, FsGetRandomBetween(3.0, 5.0), owner, YSTRUE, YSTRUE);
 				}
 				else
 				{
@@ -6465,8 +6465,9 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 					}
 					fired=YSTRUE;
 
-					bul.DispenseFlare(ctime, missilePos, staVelocity * 1.0 + flareVelOffsetL, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
-					bul.DispenseFlare(ctime, missilePos, staVelocity * 1.0 + flareVelOffsetR, 120.0, 1000.0, owner, YSTRUE, YSTRUE);
+					//																				 flare lifespan: random in range of 3 - 5 seconds inclusive
+					bul.DispenseFlare(ctime, missilePos, staVelocity * 1.0 + flareVelOffsetL, 120.0, FsGetRandomBetween(3.0, 5.0), owner, YSTRUE, YSTRUE);
+					bul.DispenseFlare(ctime, missilePos, staVelocity * 1.0 + flareVelOffsetR, 120.0, FsGetRandomBetween(3.0, 5.0), owner, YSTRUE, YSTRUE);
 				}
 			}
 			break;
