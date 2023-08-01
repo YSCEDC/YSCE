@@ -985,6 +985,7 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 					}
 				}
 
+				double debugDist = tpos.GetLength();
 				double r;
 				r=atan2(sqrt(tpos.x()*tpos.x()+tpos.y()*tpos.y()),tpos.z());
 				if(r<radar || ((type==FSWEAPON_AIM9X || type==FSWEAPON_AIM120) && YSTRUE==IsOwnerStillHaveTarget()))
@@ -995,7 +996,16 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 					}
 					else if (type == FSWEAPON_AIM9X || type == FSWEAPON_AIM120)
 					{
-						ConstantBearingPursuitAttitude(target, dt, fooledFlare);
+						if (r >= radar)
+						{
+							PurePursuitAttitude(tpos, dt);
+							printf("pure pursuit\n");
+						}
+						else
+						{
+							ConstantBearingPursuitAttitude(target, dt, fooledFlare);
+							printf("lead pursuit\n");
+						}
 					}
 				}
 				else if(tpos.z()<-300.0)
