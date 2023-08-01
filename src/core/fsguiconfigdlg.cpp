@@ -467,7 +467,7 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 		dayOrNightBtn[1]->SetCheck(YSTRUE);
 		break;
 	}
-	double windDirval = -atan2(cfg.constWind.x(), -cfg.constWind.z()) * 180.0 / YsPi;
+	double windDirval = YsRadToDeg(-atan2(cfg.constWind.x(), -cfg.constWind.z()));
 
 	windDir->SetNumber(windDirval);
 	double windSpdval = cfg.constWind.GetLengthXZ();

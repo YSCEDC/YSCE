@@ -915,7 +915,7 @@ void FsGuiNewFlightDialogClass::OnNumberBoxChange(FsGuiNumberBox *nbx,int prevNu
 	{
 		if(nbx==windDir)
 		{
-			info.envInfo.windDir=(double)nbx->GetNumber()*YsPi/180.0;
+			info.envInfo.windDir=YsDegToRad((double)nbx->GetNumber());
 		}
 		if(nbx==windSpd)
 		{
