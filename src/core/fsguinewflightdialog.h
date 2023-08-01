@@ -53,11 +53,6 @@ public:
 	FsGuiNumberBox *windSpd;
 	FsGuiNumberBox *visibility;
 
-	enum
-	{
-		MAXNUMCLOUDLAYER=3
-	};
-
 	FsGuiButton *overCastLayerSw[MAXNUMCLOUDLAYER];
 	FsGuiNumberBox *overCastLayerFloor[MAXNUMCLOUDLAYER];
 	FsGuiNumberBox *overCastLayerThickness[MAXNUMCLOUDLAYER];

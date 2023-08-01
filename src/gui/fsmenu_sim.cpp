@@ -497,9 +497,9 @@ void FsGuiMainCanvas::Sim_CreateFlight_Create(FsNewFlightDialogInfo &info)
 		world->SetFog(info.envInfo.fog);
 		world->SetFogVisibility(info.envInfo.fogVisibility);
 
-		for(int i=0; i<=info.envInfo.cloudLayer.GetN()-2; i+=2)
+		for(int i=0; i<=info.envInfo.cloudLayer.GetN(); i++)
 		{
-			world->AddOvercastLayer(info.envInfo.cloudLayer[i],info.envInfo.cloudLayer[i+1]);
+			world->AddOvercastLayer(info.envInfo.cloudLayer[i].y0,info.envInfo.cloudLayer[i].y1);
 		}
 	}
 
@@ -1574,9 +1574,9 @@ void FsGuiMainCanvas::Sim_RacingMode_Create(FsNewFlightDialogInfo &info)
 		world->SetFog(info.envInfo.fog);
 		world->SetFogVisibility(info.envInfo.fogVisibility);
 
-		for(int i=0; i<=info.envInfo.cloudLayer.GetN()-2; i+=2)
+		for(int i=0; i<=info.envInfo.cloudLayer.GetN(); i++)
 		{
-			world->AddOvercastLayer(info.envInfo.cloudLayer[i],info.envInfo.cloudLayer[i+1]);
+			world->AddOvercastLayer(info.envInfo.cloudLayer[i].y0,info.envInfo.cloudLayer[i].y1);
 		}
 	}
 

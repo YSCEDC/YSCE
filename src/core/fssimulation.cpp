@@ -12495,6 +12495,12 @@ YSRESULT FsSimulation::LoadConfigFile(const wchar_t fn[],YSBOOL changeEnvironmen
 		env=cfgPtr->env;
 		weather->SetFog(cfgPtr->drawFog);
 		weather->SetFogVisibility(cfgPtr->fogVisibility);
+		for(int i=0; i<cfgPtr->cloudLayer.GetN(); i++)
+		{
+			weather->AddCloudLayer(cfgPtr->cloudLayer[i]);
+		}
+		weather->SetWind(cfgPtr->constWind);
+
 	}
 
 	return r;

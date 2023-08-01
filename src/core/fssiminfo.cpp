@@ -1802,6 +1802,13 @@ void FsNewFlightDialogInfo::SetFromConfig(const class FsWorld *world,const class
 	fieldName.Set(cfg.defField);
 	playerAirInfo.typeName.Set(cfg.defAirplane);
 	playerAirInfo.startPos.Set(cfg.defStartPos);
+	//Set the environmental data from the defaults
+	envInfo.windDir = YsRadToDeg(-atan2(cfg.constWind.x(), -cfg.constWind.z()));
+	envInfo.windSpd = cfg.constWind.GetLength();
+	envInfo.dayOrNight = cfg.env;
+	envInfo.fogVisibility = cfg.fogVisibility;
+
+	envInfo.cloudLayer = cfg.cloudLayer;
 
 	const FsAirplaneTemplate *tmpl;
 	if((tmpl=world->GetAirplaneTemplate(cfg.defAirplane))!=NULL)

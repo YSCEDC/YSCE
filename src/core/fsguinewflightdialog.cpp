@@ -227,11 +227,6 @@ void FsNewSimulationDialogTemplate::OnNumberBoxChange(FsGuiNumberBox *nbx,int /*
 		envButton=YSTRUE;
 	}
 
-	enum
-	{
-		MAXNUMCLOUDLAYER=3
-	};
-
 	for(int i=0; i<MAXNUMCLOUDLAYER; i++)
 	{
 		if(nbx==overCastLayerFloor[i] || nbx==overCastLayerThickness[i])
@@ -621,32 +616,33 @@ void FsGuiNewFlightDialogClass::InitializeDialog(FsWorld *world,const FsNewFligh
 
 	if(windDir!=NULL)
 	{
-		i=(int)(info.envInfo.windDir*180.0/YsPi);
-		if(i<0)
-		{
-			i+=360;
-		}
-		windDir->SetNumber(i);
+		windDir->SetNumber((int)(info.envInfo.windDir));
 	}
 	if(windSpd!=NULL)
 	{
-		double v;
-		v=info.envInfo.windSpd;
-		v=v*3600.0/1852.0;
-		windSpd->SetNumber((int)v);
+		windSpd->SetNumber((int)YsUnitConv::MPStoKT(info.envInfo.windSpd));
 	}
 	if(visibility!=NULL)
 	{
 		double v;
 		if(info.envInfo.fog==YSTRUE)
 		{
+			
 			v=info.envInfo.fogVisibility;
-			v/=1852.0;
+			v = YsUnitConv::MtoNM(v);
 			visibility->SetNumber((int)v);
 		}
 		else
 		{
 			visibility->SetNumber(20);
+		}
+	}
+	for (int i=0; i < YsSmaller((int) info.envInfo.cloudLayer.GetN(),(int) MAXNUMCLOUDLAYER); i++){
+		FsWeatherCloudLayer layer = info.envInfo.cloudLayer[i];
+		if (layer.cloudLayerType == FSCLOUDLAYER_OVERCAST){
+			overCastLayerSw[i]->SetCheck(YSTRUE);
+			overCastLayerFloor[i]->SetNumber(round(YsUnitConv::MtoFT(layer.y0)/100)*100);
+			overCastLayerThickness[i]->SetNumber(round(YsUnitConv::MtoFT(layer.y1-layer.y0)/100)*100);
 		}
 	}
 }
@@ -688,10 +684,13 @@ void FsGuiNewFlightDialogClass::RefreshCloudLayer(void)
 			top=flr+(double)overCastLayerThickness[i]->GetNumber();
 
 			flr=YsUnitConv::FTtoM(flr);
-			top=YsUnitConv::FTtoM(top);
-
-			info.envInfo.cloudLayer.Append(flr);
-			info.envInfo.cloudLayer.Append(top);
+			top=YsUnitConv::FTtoM(top);			
+			
+			FsWeatherCloudLayer layer;
+			layer.cloudLayerType = FSCLOUDLAYER_OVERCAST;
+			layer.y0 = flr;
+			layer.y1 = top;
+			info.envInfo.cloudLayer.Append(layer);
 		}
 	}
 }
@@ -916,7 +915,7 @@ void FsGuiNewFlightDialogClass::OnNumberBoxChange(FsGuiNumberBox *nbx,int prevNu
 	{
 		if(nbx==windDir)
 		{
-			info.envInfo.windDir=(double)nbx->GetNumber()*YsPi/180.0;
+			info.envInfo.windDir=YsDegToRad((double)nbx->GetNumber());
 		}
 		if(nbx==windSpd)
 		{
