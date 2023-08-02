@@ -6292,7 +6292,7 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 				         staV,
 				         340.0*3.0,
 				         GetAAMRange(wpnType),
-				         YsDegToRad(90.0),
+				         YsDegToRad(80.0),
 				         GetAAMRadarAngle(),
 				         12,
 				         owner,
@@ -6311,7 +6311,7 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 					         staV,
 					         340.0*4.0,
 					         30000.0,  // 30km
-					         YsDegToRad(20.0),
+					         YsDegToRad(30.0),
 					         GetAAMRadarAngle(),
 					         12,
 					         owner,

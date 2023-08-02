@@ -806,7 +806,7 @@ void FsWeapon::Fire(
 		timeUnguided=3.0;
 		break;
 	case FSWEAPON_AIM9X:
-		timeUnguided=0.25;
+		timeUnguided=0.5;
 		break;
 	case FSWEAPON_AGM65:
 		timeUnguided=1.5;
@@ -1148,7 +1148,7 @@ void FsWeapon::ConstantBearingPursuitAttitude(FsExistence* target, const double&
 	YsVec3 targetRelPosNorm(targetRelPos);
 	targetRelPosNorm.Normalize();
 	YsVec3 targetRelVel = targetVel - vec;
-	double navConstant = 3.0; 
+	double navConstant = 6.0; 
 
 	//rotation vector
 	YsVec3 omega = (targetRelPos ^ targetRelVel) / (targetRelPos * targetRelPos);
