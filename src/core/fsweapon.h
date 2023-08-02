@@ -111,6 +111,12 @@ public:
 	//Flare properties
 	double flareHeat; //flare current heat value (ranges from 1.0 to 0.0)
 
+	//air drag
+	const double flareDragCoeff   = 0.5;				    //drag coefficient: sphere
+	const double flareDragRefArea = YsPi * 0.1016 * 0.1016; //reference area: 8 inch dia. sphere
+	const double flareMass        = 0.2;
+
+
 	// ***s (eg. aim9s, agm65s) stands for silent.
 	static class FsVisualDnm aim9,aim9s,aim_coarse;
 	static class FsVisualDnm aim9x,aim9xs,aim9x_coarse;

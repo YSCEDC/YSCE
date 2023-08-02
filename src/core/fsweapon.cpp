@@ -1032,23 +1032,22 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 			break;
 		case FSWEAPON_FLARE:
 			{
+				//flare heat decay
 				flareHeat -= 0.05 * dt; //5% heat decay/second
 				flareHeat = YsGreater(0.0, flareHeat);
+
+				//gravity
 				vec.Set(vec.x(),vec.y()-FsGravityConst*dt,vec.z());
 				att.SetForwardVector(vec);
 				velocity=vec.GetLength();
 
 				//air drag
-				const double cdS = 0.5;						//drag coefficient: sphere
-				const double refA = YsPi * 0.1016 * 0.1016; //reference area: 8 inch dia. sphere
-
-				const double D = 0.5 * cdS * vec.GetSquareLength() * FsGetAirDensity(pos.y()) * refA;
-				const double m = 0.2;
-				const double a = D / m;
-				YsVec3 dVec = -vec;
-				if (YSOK == dVec.Normalize())
+				const double dragForce = 0.5 * flareDragCoeff * vec.GetSquareLength() * FsGetAirDensity(pos.y()) * flareDragRefArea;
+				const double dragAccel = dragForce / flareMass;
+				YsVec3 dragAccelVec = -vec;
+				if (YSOK == dragAccelVec.Normalize())
 				{
-					vec += a * dt * dVec;
+					vec += dragAccel * dt * dragAccelVec;
 				}
 			}
 			break;
