@@ -985,7 +985,6 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 					}
 				}
 
-				double debugDist = tpos.GetLength();
 				double r;
 				r=atan2(sqrt(tpos.x()*tpos.x()+tpos.y()*tpos.y()),tpos.z());
 				if(r<radar || ((type==FSWEAPON_AIM9X || type==FSWEAPON_AIM120) && YSTRUE==IsOwnerStillHaveTarget()))
