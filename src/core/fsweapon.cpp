@@ -805,6 +805,7 @@ void FsWeapon::Fire(
 	case FSWEAPON_AIM120:
 		timeUnguided=3.0;
 		break;
+	case FSWEAPON_AIM9:
 	case FSWEAPON_AIM9X:
 		timeUnguided=0.5;
 		break;
