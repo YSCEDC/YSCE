@@ -264,7 +264,7 @@ void FsAirplaneProperty::Initialize(void)
 
 	chMaxNumGunBullet=0;
 	chGunInterval=0.075;
-	chMaxNumFlare=20;
+	chMaxNumFlare=80;
 
 	chMainGearL.Set(-3.0,-1.0,-3.0);
 	chMainGearR.Set( 3.0,-1.0,-3.0);
