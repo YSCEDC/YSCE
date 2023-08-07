@@ -6432,29 +6432,30 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 				}
 				else
 				{
-					double offset = YsPi / 2.0;
-					double flareVelScalar = 50.0;
-					double maxFlareDispersion = YsPi / 2.0;
+					double offset = YsPi / 2.0;				//flare offset from plane's attitude in XZ plane
+					double flareVelScalar = 50.0;			//flare launcher muzzle velocity
+					double maxFlareDispersion = YsPi / 2.0; //maximum dispersion from flare initial departure vector
 
 					YsVec3 flareVelCenter;
-					staInverseMatrix.Mul(flareVelCenter, staVelocity, 0.0);
-					flareVelCenter.RotateYZ(YsPi / 4.0);
+					staInverseMatrix.Mul(flareVelCenter, staVelocity, 0.0); //convert to plane's coordinate system
+					flareVelCenter.RotateYZ(YsPi / 4.0);					//downward from plane's attitude at 45 degrees
 					flareVelCenter.Normalize();
-					flareVelCenter *= flareVelScalar;
+					flareVelCenter *= flareVelScalar;						//scale departure vector by flare launcher muzzle V 
 
+					//calc velocity vector for left flare launcher
 					YsVec3 flareVelOffsetL(flareVelCenter);
 					flareVelOffsetL.RotateXZ(-offset);
-					//apply random dispersion
-					flareVelOffsetL.RotateXZ(maxFlareDispersion * double(rand() % 100 - 50) / 50.0);
+					flareVelOffsetL.RotateXZ(maxFlareDispersion * double(rand() % 100 - 50) / 50.0); //apply random dispersion to departure vector
 					flareVelOffsetL.RotateYZ(maxFlareDispersion * double(rand() % 100 - 50) / 50.0);
 
 
+					//calc velocity vector for right flare launcher
 					YsVec3 flareVelOffsetR(flareVelCenter);
 					flareVelOffsetR.RotateXZ(offset);
-					//apply random dispersion
 					flareVelOffsetR.RotateXZ(maxFlareDispersion * double(rand() % 100 - 50) / 50.0);
 					flareVelOffsetR.RotateYZ(maxFlareDispersion * double(rand() % 100 - 50) / 50.0);
 
+					//convert flare launcher V vectors back to world coordinates
 					staMatrix.Mul(flareVelOffsetL, flareVelOffsetL, 0.0);
 					staMatrix.Mul(flareVelOffsetR, flareVelOffsetR, 0.0);
 
