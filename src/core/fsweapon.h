@@ -89,6 +89,7 @@ public:
 
 	FSWEAPONTYPE type;
 
+	double timeAlive;    // elapsed time since firing
 	double lifeRemain;   // Life remaining by distance
 	double timeRemain;   // Time remaining after impact (to draw smoke better)
 	double timeUnguided; // Duration of unguided flying  2005/02/18 Set in FsWeapon::Fire
@@ -109,7 +110,9 @@ public:
 	FsWeaponSmokeTrail *trail;
 
 	//Flare properties
-	double flareHeat; //flare current heat value (ranges from 1.0 to 0.0)
+	double flareHeat;        //flare current heat value (ranges from 1.0 to 0.0)
+	double flareLifespan;    //flare lifespan - determines length of flare decay in seconds
+	double flareInitialHeat; //flare starting heat - determines initial heat value before decay begins
 
 	//air drag
 	const double flareDragCoeff   = 0.5;				    //drag coefficient: sphere

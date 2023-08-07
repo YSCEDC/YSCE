@@ -614,6 +614,7 @@ const double FsTrailTimePerSegment=0.1;
 FsWeapon::FsWeapon()
 {
 	lifeRemain=0.0;
+	timeAlive = 0.0;
 	timeRemain=0.0;
 	flareHeat = 0.0;
 	timeUnguided=0.0;
@@ -774,6 +775,7 @@ void FsWeapon::Fire(
 	firedBy=owner;
 	creditOwner=creditOwnerIn;
 	velocity=v;
+	timeAlive = 0.0;
 	lifeRemain=l;
 	timeRemain=0.0;
 	target=NULL;
@@ -797,6 +799,7 @@ void FsWeapon::Fire(
 	lastChecked=p;
 	att=a;
 	lifeRemain=l;
+	timeAlive = 0.0;
 	timeRemain=2.0*double(FsWeaponSmokeTrail::TIMEPERSEG*FsWeaponSmokeTrail::MAXNUMTRAIL)/1000.0;
 	        // ^^^ 2.0 : take margine. because the trail buffer may not be updated regulary by TIMEPERSEG
 
@@ -846,12 +849,15 @@ void FsWeapon::DispenseFlare(
     FsWeaponSmokeTrail *tr)
 {
 	type=FSWEAPON_FLARE;
-	flareHeat = FsGetRandomBetween(0.9, 1.0);
+	flareInitialHeat = FsGetRandomBetween(0.9, 1.0);
+	flareHeat = flareInitialHeat;
+	flareLifespan = l;
 	prv=p;
 	pos=p;
 	lastChecked=p;
 	att=a;
 	lifeRemain=l;
+	timeAlive = 0.0;
 	timeRemain = l;
 	        // ^^^ 2.0 : take margine. because the trail buffer may not be updated regulary by TIMEPERSEG
 
@@ -886,6 +892,7 @@ void FsWeapon::ThrowDebris(const double &/*ctime*/,const YsVec3 &p,const YsVec3 
 	creditOwner=FSWEAPON_CREDIT_OWNER_NON_PLAYER;
 	velocity=v.GetLength();
 	lifeRemain=l;
+	timeAlive = 0.0;
 	timeRemain=0.1;
 	target=NULL;
 	trail=NULL;
@@ -1033,7 +1040,7 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 		case FSWEAPON_FLARE:
 			{
 				//flare heat decay
-				flareHeat -= 0.05 * dt; //5% heat decay/second
+				flareHeat = flareInitialHeat - exp(timeAlive - flareLifespan);
 				flareHeat = YsGreater(0.0, flareHeat);
 
 				//gravity
@@ -1067,12 +1074,8 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 
 		if (type == FSWEAPON_FLARE)
 		{
-			//flare lifespan shouldn't be proportional to velocity
-			lifeRemain -= dt;
-			if (lifeRemain <= YsTolerance)
-			{
-				lifeRemain = 0.0;
-			}
+			//flare lifespan is tied to heat level
+			lifeRemain = flareHeat;
 		}
 		else if(type!=FSWEAPON_BOMB && type!=FSWEAPON_BOMB250 && type!=FSWEAPON_BOMB500HD && type!=FSWEAPON_FUELTANK)  // Bomb falls until it hits the ground
 		{
@@ -1082,9 +1085,12 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 				lifeRemain=0.0;
 			}
 		}
+
+		timeAlive += dt;
 	}
 	else if(timeRemain>0.0)
 	{
+		timeAlive += dt; 
 		timeRemain-=dt;
 		if(timeRemain<=YsTolerance)
 		{
