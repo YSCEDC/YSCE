@@ -77,6 +77,17 @@ class FsWeapon
 private:
 	void PurePursuitAttitude(const YsVec3& targetPos, const double& dt);
 	void ConstantBearingPursuitAttitude(FsExistence* target, const double& dt, const FsWeapon* fooledFlare = nullptr);
+
+	//Flare properties
+	double flareHeat;        //flare current heat value (ranges from 1.0 to 0.0)
+	double flareLifespan;    //flare lifespan - determines length of flare decay in seconds
+	double flareInitialHeat; //flare starting heat - determines initial heat value before decay begins
+
+	//air drag
+	const double flareDragCoeff = 0.5;				    //drag coefficient: sphere
+	const double flareDragRefArea = YsPi * 0.1016 * 0.1016; //reference area: 8 inch dia. sphere
+	const double flareMass = 0.2;
+
 public:
 	enum
 	{
@@ -108,17 +119,6 @@ public:
 	class FsExistence *target;
 
 	FsWeaponSmokeTrail *trail;
-
-	//Flare properties
-	double flareHeat;        //flare current heat value (ranges from 1.0 to 0.0)
-	double flareLifespan;    //flare lifespan - determines length of flare decay in seconds
-	double flareInitialHeat; //flare starting heat - determines initial heat value before decay begins
-
-	//air drag
-	const double flareDragCoeff   = 0.5;				    //drag coefficient: sphere
-	const double flareDragRefArea = YsPi * 0.1016 * 0.1016; //reference area: 8 inch dia. sphere
-	const double flareMass        = 0.2;
-
 
 	// ***s (eg. aim9s, agm65s) stands for silent.
 	static class FsVisualDnm aim9,aim9s,aim_coarse;
