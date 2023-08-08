@@ -1137,8 +1137,6 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 					{
 						flareClockStep -= randomStep;
 					}
-					printf("missile dist: %lf\n", seekerDist);
-					printf("flare clock step: %lf\n", flareClockStep);
 
 					//dispense flare and reset flare timer based on missile distance to AI aircraft
 					switch (chasingWeaponType) // Adapted from Pasutisu's code.
