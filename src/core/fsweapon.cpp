@@ -961,8 +961,6 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 				{
 					const FsWeapon *flare;
 					YsVec3 flarePos;
-					double flareZ;
-					flareZ=lifeRemain;
 
 					double targetHeat = 0.0;
 					if (target->GetType() == FSEX_AIRPLANE)
@@ -988,7 +986,6 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 							maxObservedHeat = flare->flareHeat;
 							tpos=flarePos;
 							fooledFlare = flare;
-							flareZ=flarePos.z();
 						}
 					}
 				}
