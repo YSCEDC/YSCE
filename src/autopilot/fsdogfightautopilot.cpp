@@ -1074,9 +1074,10 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 
 		FsWeapon* seeker = sim->GetLockedOn(&air);
 
-		//if the AI aircraft has flares AND the flare timer has lapsed AND there is a missile pursuing 
+		//if the AI aircraft is being chased by a missile
 		if(seeker != NULL)
 		{
+			//don't react immediately on missile launch - too gamey
 			double chasingWeaponDistTraveled = air.Prop().GetAAMRange(seeker->type) - seeker->lifeRemain;
 			if (chasingWeaponDistTraveled >= 400.0)
 			{
@@ -1104,7 +1105,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				double seekerDist = (seekerRelPos).GetLength();
 				double seekerRelYZAngle = fabs(atan2(seekerRelPos.y(), seekerRelPos.z())); //angle from local +Z axis in YZ
 
-				//if missile is within 2000m AND the YZ plane angle is at least 20 degress OR the missile is behind aircraft
+				//if missile is within 3000m AND the YZ plane angle is at least 20 degress OR the missile is behind aircraft
 				if (seekerDist <= 3000 && (seekerRelYZAngle >= YsPi / 9.0 || seekerRelPos.z() <= 0.0))
 				{
 					//attempt to bank so that the missile is at aircraft's 12 o'clock position, pull at G limit
@@ -1121,12 +1122,14 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 					ControlGForVerticalSpeed(air, sim, 0.0, gLimit);
 				}
 
+				//if AI aircraft has flares and the flare timer is fresh
 				if (air.Prop().GetNumWeapon(FSWEAPON_FLARE) > 0 && flareClock < clock)
 				{
 					//"chasing" = actively locked & pursuing the AI aircraft
 					YsVec3 chasingWeaponPos = seeker->pos;
 					FSWEAPONTYPE chasingWeaponType = seeker->type;
 
+					//calculate next flare clock interval w/ slight randomness 
 					double flareClockStep = YsGreater(2.0, seekerDist / 500);
 					double randomStep = FsGetRandomBetween(0.0, 1.0);
 					if (rand() % 2)

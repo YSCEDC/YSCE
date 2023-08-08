@@ -102,7 +102,6 @@ public:
 	YsVec3 rel1,rel2,rel3;
 	double g1,g2,g3;
 	double lastDamageValue;
-	double missileEvasionThrottle;
 	double gLimit,gLimitCorrection;
 	double backSenseRange;
 	double clock, nextClock, nextBreakClock;
