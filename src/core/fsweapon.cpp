@@ -1006,12 +1006,10 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 						if (r >= radar)
 						{
 							PurePursuitAttitude(tpos, dt);
-							printf("pure pursuit\n");
 						}
 						else
 						{
 							ConstantBearingPursuitAttitude(target, dt, fooledFlare);
-							printf("lead pursuit\n");
 						}
 					}
 				}
