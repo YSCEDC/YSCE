@@ -7,6 +7,7 @@
 #include <ysport.h>
 
 #include "fsdef.h"
+#include "core/fsweather.h"
 
 
 // Declaration /////////////////////////////////////////////
@@ -90,6 +91,8 @@ public:
 
 	FSENVIRONMENT env;
 	double fogVisibility;
+	YsVec3 constWind;
+	YsArray <FsWeatherCloudLayer> cloudLayer;
 
 	double radarAltitudeLimit;
 	YSBOOL noExtAirView;
