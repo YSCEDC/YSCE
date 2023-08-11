@@ -933,11 +933,11 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 		case FSWEAPON_ROCKET:
 			if(velocity<maxVelocity)
 			{
-				velocity+=50.0*dt;  // 20.0 m/ss (^_^;)
+				velocity += rocketAccelRate * dt;
 			}
 			else if(velocity>maxVelocity)
 			{
-				velocity-=20.0*dt;
+				velocity -= rocketDecelRate * dt;
 			}
 			vec.Set(0.0,0.0,velocity);
 			att.Mul(vec,vec); // vec=att.GetMatrix()*vec;
@@ -1023,11 +1023,11 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 
 			if(velocity<maxVelocity)
 			{
-				velocity+=50.0*dt;  // 20.0 m/ss (^_^;)
+				velocity += missileAccelRate * dt;
 			}
 			else if(velocity>maxVelocity)
 			{
-				velocity-=20.0*dt;
+				velocity -= missileDecelRate * dt;
 			}
 			vec.Set(0.0,0.0,velocity);
 			att.Mul(vec,vec); // vec=att.GetMatrix()*vec;
@@ -1132,14 +1132,12 @@ void FsWeapon::ConstantBearingPursuitAttitude(FsExistence* target, const double&
 	//get position and velocity of flare if missile was fooled by one
 	if (fooledFlare != nullptr)
 	{
-		//printf("missile targeting flare\n");
 		targetPos = fooledFlare->pos;
 		targetVel = fooledFlare->vec;
 	}
 	//otherwise, take target aircraft's position and velocity
 	else
 	{
-		//printf("missile targeting aircraft\n");
 		targetPos = targetAircraft->GetPosition();
 		targetAircraft->Prop().GetVelocity(targetVel);
 	}
@@ -1161,11 +1159,11 @@ void FsWeapon::ConstantBearingPursuitAttitude(FsExistence* target, const double&
 	missileAccel.Normalize();
 	if (velocity < maxVelocity)
 	{
-		missileAccel *= 50.0;
+		missileAccel *= missileAccelRate;
 	}
 	else
 	{
-		missileAccel *= -20.0;
+		missileAccel *= -missileDecelRate;
 	}
 
 	//determine position after one dt has passed

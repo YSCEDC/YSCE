@@ -112,7 +112,13 @@ public:
 
 	int destructivePower;
 
+	//rocket properties
+	const double rocketAccelRate = 50.0;
+	const double rocketDecelRate = 20.0;
+
 	// for Missile Only
+	const double missileAccelRate = 50.0; //missile acceleration rate (ft/sec)
+	const double missileDecelRate = 20.0; //missile deceleration rate (ft/sec)
 	double maxVelocity;
 	double mobility,radar;
 	YsAtt3 att;
