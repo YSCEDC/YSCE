@@ -6905,7 +6905,15 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode) 
 
 	sizx=hei*4/3;
 	sizy=hei;
-	hud->SetAreaByCenter(wid/2,hei*2/3,sizx*2/3,sizy*2/3);
+	if (cfgPtr->centerCameraPerspective == YSFALSE)
+	{
+		hud->SetAreaByCenter(wid / 2, hei * 2 / 3, sizx * 2 / 3, sizy * 2 / 3);
+	}
+	else
+	{
+		hud->SetAreaByCenter(wid / 2, hei / 2, sizx * 2 / 3, sizy * 2 / 3);
+	}
+
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-2.8\n");
