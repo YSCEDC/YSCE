@@ -56,6 +56,7 @@ public:
 	YSBOOL drawTransparentLater;
 	YSBOOL drawRWR;
 	YSBOOL drawCircleRadar;
+	YSBOOL centerCameraPerspective;
 	YSBOOL useOpenGlListForCloud;
 	YSBOOL useOpenGlListForExplosion;
 	YSBOOL useOpenGlListForWeapon;

@@ -230,6 +230,7 @@ $BGCOL 0
 +configdlg/autorudder                              #Rudder Auto Coordination
 +configdlg/precision                               #Precise Simulation
 +configdlg/showhudalways                           #Always Show HUD
++configdlg/centercameraperspective                 #Center Camera Perspective
 +configdlg/dontuseinstpanel                        #Do not use Instrument Panel
 +configdlg/showplayernamealways                    #Always Draw Player Name
 +configdlg/showjoystick                            #Draw Virtual Joystick

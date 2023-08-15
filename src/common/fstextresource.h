@@ -256,6 +256,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_CFGDLG_AUTORUDDER                           FsGetTextResource("configdlg/autorudder",L"Rudder Auto Coordination")
 #define FSGUI_CFGDLG_PRECISION                            FsGetTextResource("configdlg/precision",L"Precise Simulation")
 #define FSGUI_CFGDLG_SHOWHUDALWAYS                        FsGetTextResource("configdlg/showhudalways",L"Always Show HUD")
+#define FSGUI_CFGDLG_CENTERCAMERAPERSPECTIVE              FsGetTextResource("configdlg/centercameraperspective",L"Center Camera Perspective")
 #define FSGUI_CFGDLG_NOINSTPANEL                          FsGetTextResource("configdlg/dontuseinstpanel",L"Do not use Instrument Panel")
 #define FSGUI_CFGDLG_SHOWNAMEALWAYS                       FsGetTextResource("configdlg/showplayernamealways",L"Always Draw Player Name")
 #define FSGUI_CFGDLG_SHOWJOYSTICK                         FsGetTextResource("configdlg/showjoystick",L"Draw Virtual Joystick")
