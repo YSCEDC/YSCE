@@ -1597,7 +1597,7 @@ YSBOOL FsGroundProperty::FireMissile
 		         0.0,
 		         340.0*3.0,
 		         chSAMRange,
-		         YsDegToRad(180.0),
+		         YsDegToRad(90.0),
 		         GetSAMRadarAngle(),
 		         12,
 		         own,
