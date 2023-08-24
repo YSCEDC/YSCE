@@ -42,6 +42,7 @@ void FsFlightConfig::SetDefault(void)
 	drawTransparentSmoke=YSTRUE;
 	drawTransparentLater=YSTRUE;
 	drawCircleRadar = YSFALSE;
+	centerCameraPerspective = YSTRUE;
 	drawRWR = YSTRUE;
 	drawPlayerNameAlways=YSTRUE;
 	drawLightsInDaylight=YSTRUE;
@@ -229,6 +230,7 @@ const char *const FsFlightConfig::keyWordSource[]=
 	"CONSTWIND", // 2023/07/29
 
 	"CLOUDLAYER", // 2023/07/29
+	"CENTERCAM",  // 2023/08/15
 
 	NULL
 };
@@ -549,7 +551,8 @@ YSRESULT FsFlightConfig::SendCommand(const char cmd[])
 						
 					}
 				}
-				
+			case 64: // CENTERCAM
+				return FsGetBool(centerCameraPerspective, av[1]);
 			
 		}
 		}
@@ -646,6 +649,8 @@ YSRESULT FsFlightConfig::Save(const wchar_t fn[])
 		fprintf(fp,"DEFAIRPLN \"%s\"\n",defAirplane);
 
 		fprintf(fp,"HUDALWAYS %s\n",FsTrueFalseString(showHudAlways));
+
+		fprintf(fp, "CENTERCAM %s\n", FsTrueFalseString(centerCameraPerspective));
 
 		fprintf(fp,"JSCALIBRA %s\n",FsTrueFalseString(additionalCalibration));
 

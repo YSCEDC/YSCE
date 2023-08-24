@@ -216,24 +216,26 @@ void FsGuiConfigDialog::MakeDefaultsDialog(FsWorld *world,FsFlightConfig &cfg)
 
 void FsGuiConfigDialog::MakeGameDialog(FsWorld *,FsFlightConfig &)
 {
-	blackOutBtn            =AddTextButton(MkId("blackOut"),    FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_BLACKOUT       ,YSTRUE);
-	midAirCollisionBtn     =AddTextButton(MkId("midAirColl"),  FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_MIDAIR         ,YSFALSE);
-	noTailStrikeBtn        =AddTextButton(MkId("noTailStrike"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_NOTAILSTRIKE   ,YSTRUE);
-	canLandAnywhereBtn     =AddTextButton(MkId("landAnywhere"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_CANLANDANYWHERE,YSFALSE);
-	autoRudderBtn          =AddTextButton(MkId("autoRudder"),  FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_AUTORUDDER     ,YSTRUE);
-	preciseSimulationBtn   =AddTextButton(MkId("preciseSim"),  FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_PRECISION      ,YSFALSE);
-	alwaysShowHudBtn       =AddTextButton(MkId("alwaysHud"),   FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWHUDALWAYS  ,YSTRUE);
-	doNotUseInstPanelBtn   =AddTextButton(MkId("noInstPanel"), FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_NOINSTPANEL    ,YSFALSE);
+	blackOutBtn                = AddTextButton(MkId("blackOut"),    FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_BLACKOUT       ,YSTRUE);
+	midAirCollisionBtn         = AddTextButton(MkId("midAirColl"),  FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_MIDAIR         ,YSFALSE);
+	noTailStrikeBtn            = AddTextButton(MkId("noTailStrike"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_NOTAILSTRIKE   ,YSTRUE);
+	canLandAnywhereBtn         = AddTextButton(MkId("landAnywhere"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_CANLANDANYWHERE,YSFALSE);
+	autoRudderBtn              = AddTextButton(MkId("autoRudder"),  FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_AUTORUDDER     ,YSTRUE);
+	preciseSimulationBtn       = AddTextButton(MkId("preciseSim"),  FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_PRECISION      ,YSFALSE);
+	alwaysShowHudBtn		   = AddTextButton(MkId("alwaysHud"),   FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWHUDALWAYS  ,YSTRUE);
+	doNotUseInstPanelBtn       = AddTextButton(MkId("noInstPanel"), FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_NOINSTPANEL    ,YSFALSE);
 
-	simpleHudBtn           =AddTextButton(MkId("simpleHud"),FSKEY_NULL,FSGUI_RADIOBUTTON,FSGUI_CFGDLG_USESIMPLEHUD,YSTRUE);
-	threeDHudBtn           =AddTextButton(MkId("3dHud"),    FSKEY_NULL,FSGUI_RADIOBUTTON,FSGUI_CFGDLG_USE3DHUD,YSFALSE);
+	simpleHudBtn               = AddTextButton(MkId("simpleHud"),FSKEY_NULL,FSGUI_RADIOBUTTON,FSGUI_CFGDLG_USESIMPLEHUD,YSTRUE);
+	threeDHudBtn               = AddTextButton(MkId("3dHud"),    FSKEY_NULL,FSGUI_RADIOBUTTON,FSGUI_CFGDLG_USE3DHUD,YSFALSE);
 	FsGuiButton *hudTypeRadioButtonGroup[2]={simpleHudBtn,threeDHudBtn};
 	SetRadioButtonGroup(2,hudTypeRadioButtonGroup);
 
-	alwaysDrawPlayerNameBtn=AddTextButton(MkId("drawName"),    FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWNAMEALWAYS ,YSTRUE);
-	drawVirtualJoystickBtn =AddTextButton(MkId("drawJoystick"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWJOYSTICK   ,YSFALSE);
-	f8CameraDelayBtn       =AddTextButton(MkId("f8Delay"),     FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_F8CAMERADELAY  ,YSTRUE);
-	showIASBtn             =AddTextButton(MkId("showIAS"),     FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWIAS        ,YSFALSE);
+	alwaysDrawPlayerNameBtn = AddTextButton(MkId("drawName"),    FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWNAMEALWAYS ,YSTRUE);
+	drawVirtualJoystickBtn  = AddTextButton(MkId("drawJoystick"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWJOYSTICK   ,YSFALSE);
+	f8CameraDelayBtn        = AddTextButton(MkId("f8Delay"),     FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_F8CAMERADELAY  ,YSTRUE);
+	showIASBtn              = AddTextButton(MkId("showIAS"),     FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWIAS        ,YSFALSE);
+	centerCameraPerspectiveBtn = AddTextButton(MkId("centerCameraPerspective"), FSKEY_NULL, FSGUI_CHECKBOX, FSGUI_CFGDLG_CENTERCAMERAPERSPECTIVE, YSTRUE);
+
 
 	YsArray <YsArray <FsGuiDialogItem *> > dlgItemMatrix;
 	dlgItemMatrix.Increment();
@@ -257,6 +259,8 @@ void FsGuiConfigDialog::MakeGameDialog(FsWorld *,FsFlightConfig &)
 	dlgItemMatrix.Increment();
 	dlgItemMatrix.GetEnd().Append(f8CameraDelayBtn);
 	dlgItemMatrix.GetEnd().Append(showIASBtn);
+	dlgItemMatrix.Increment();
+	dlgItemMatrix.GetEnd().Append(centerCameraPerspectiveBtn);
 	AlignLeftMiddle(dlgItemMatrix);
 
 	radarAltLimitTxt       =AddTextBox(12,FSKEY_NULL,FSGUI_CFGDLG_MINRADARALT,"",8,YSTRUE);
@@ -432,6 +436,7 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 	autoRudderBtn->SetCheck(cfg.autoCoordination);
 	preciseSimulationBtn->SetCheck(cfg.accurateTime);
 	alwaysShowHudBtn->SetCheck(cfg.showHudAlways);
+	centerCameraPerspectiveBtn->SetCheck(cfg.centerCameraPerspective);
 	doNotUseInstPanelBtn->SetCheck(cfg.useHudAlways);
 
 	if(YSTRUE==cfg.useSimpleHud)
@@ -607,6 +612,7 @@ void FsGuiConfigDialog::RetrieveConfig(FsFlightConfig &cfg)
 	cfg.canLandAnywhere=canLandAnywhereBtn->GetCheck();
 	cfg.autoCoordination=autoRudderBtn->GetCheck();
 	cfg.accurateTime=preciseSimulationBtn->GetCheck();
+	cfg.centerCameraPerspective = centerCameraPerspectiveBtn->GetCheck();
 	cfg.showHudAlways=alwaysShowHudBtn->GetCheck();
 	cfg.useHudAlways=doNotUseInstPanelBtn->GetCheck();
 	cfg.useSimpleHud=simpleHudBtn->GetCheck();

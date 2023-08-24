@@ -6905,7 +6905,15 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode) 
 
 	sizx=hei*4/3;
 	sizy=hei;
-	hud->SetAreaByCenter(wid/2,hei*2/3,sizx*2/3,sizy*2/3);
+	if (cfgPtr->centerCameraPerspective == YSFALSE)
+	{
+		hud->SetAreaByCenter(wid / 2, hei * 2 / 3, sizx * 2 / 3, sizy * 2 / 3);
+	}
+	else
+	{
+		hud->SetAreaByCenter(wid / 2, hei / 2, sizx * 2 / 3, sizy * 2 / 3);
+	}
+
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-2.8\n");
@@ -9672,13 +9680,8 @@ void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualV
 	FsGetDrawingAreaSize(wid,hei);
 
 	playerPlane=GetPlayerAirplane();
-
-	if(0!=(GetInstrumentDrawSwitch(actualViewMode)&FSISS_2DHUD))
-	{
-		prj.cx=wid/2;
-		prj.cy=hei*2/3;
-	}
-	else if(FSCOCKPITVIEW==actualViewMode.actualViewMode && NULL!=playerPlane)
+	
+	if(cfgPtr->centerCameraPerspective == YSFALSE && NULL!=playerPlane)
 	{
 		const YsVec2 scrnCen=playerPlane->Prop().GetScreenCenter();
 		prj.cx=(int)((double)wid*(1.0+scrnCen.x())/2.0);
