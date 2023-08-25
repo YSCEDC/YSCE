@@ -169,7 +169,7 @@ void FsGuiFirstDialogClass::Make(int nextActionCode)
 
 	AddStaticText(0,FSKEY_NULL,FSGUI_FIRSTDLG_3RDLINE,60,2,YSTRUE);
 
-	downloadPageBtn=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,"http://download.en.ysflight.com",YSTRUE);
+	downloadPageBtn=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,"https://ysflight.org/download/",YSTRUE);
 
 	AddStaticText(0,FSKEY_NULL,FSGUI_FIRSTDLG_4THLINE,32,2,YSTRUE);
 
@@ -197,17 +197,17 @@ void FsGuiFirstDialogClass::OnButtonClick(FsGuiButton *btn)
 		}
 		else if(btn==ysflightComBtn || btn==bannerBtn)
 		{
-		    YsOpenURL("http://www.ysflight.com");
+		    YsOpenURL("http://ysflight.org");
 		}
 		else if(btn==downloadPageBtn)
 		{
 			if(0==strcmp(FsOption::GetLanguageString(),FsJapaneseLanguageCode))
 			{
-				YsOpenURL("http://download.jp.ysflight.com");
+				YsOpenURL("https://ysflight.org/download/");
 			}
 			else
 			{
-				YsOpenURL("http://download.en.ysflight.com");
+				YsOpenURL("https://ysflight.org/download/");
 			}
 		}
 	}
@@ -334,14 +334,14 @@ void FsGuiSupportYsflightDialogClass::Make(YSBOOL firstStart,int nextActionCode)
 	AddStaticText(0,FSKEY_NULL,FSGUI_SUPPORTYSFLIGHTDLG_3RDLINE,YSTRUE);
 
 	AddStaticText(0,FSKEY_NULL,"        ",YSTRUE);
-	downloadPageBtn=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,"http://download.en.ysflight.com",YSFALSE);
+	downloadPageBtn=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,"https://ysflight.org/download/",YSFALSE);
 
 	AddStaticText(0,FSKEY_NULL,"",1,1,YSTRUE);
 
 	AddStaticText(0,FSKEY_NULL,FSGUI_SUPPORTYSFLIGHTDLG_4THLINE1,YSTRUE);
 
 	AddStaticText(0,FSKEY_NULL,"        ",YSTRUE);
-	ysflightComBtn1=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,"http://www.ysflight.com",YSFALSE);
+	ysflightComBtn1=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,"https://ysflight.org",YSFALSE);
 
 	AddStaticText(0,FSKEY_NULL,FSGUI_SUPPORTYSFLIGHTDLG_4THLINE2,YSFALSE);
 
@@ -351,7 +351,7 @@ void FsGuiSupportYsflightDialogClass::Make(YSBOOL firstStart,int nextActionCode)
 
 	AddStaticText(0,FSKEY_NULL,FSGUI_SUPPORTYSFLIGHTDLG_5THLINE1,YSTRUE);
 
-	ysflightComBtn2=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,"http://www.ysflight.com",YSFALSE);
+	ysflightComBtn2=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,"http://ysflight.org",YSFALSE);
 
 	AddStaticText(0,FSKEY_NULL,FSGUI_SUPPORTYSFLIGHTDLG_5THLINE2,1,1,YSFALSE);
 
@@ -375,17 +375,17 @@ void FsGuiSupportYsflightDialogClass::OnButtonClick(FsGuiButton *btn)
 		}
 		else if(btn==ysflightComBtn1 || btn==ysflightComBtn2)
 		{
-		    YsOpenURL("http://www.ysflight.com");
+		    YsOpenURL("http://ysflight.org");
 		}
 		else if(btn==downloadPageBtn)
 		{
 			if(0==strcmp(FsOption::GetLanguageString(),FsJapaneseLanguageCode))
 			{
-				YsOpenURL("http://download.jp.ysflight.com");
+				YsOpenURL("https://ysflight.org/download/");
 			}
 			else
 			{
-				YsOpenURL("http://download.en.ysflight.com");
+				YsOpenURL("https://ysflight.org/download/");
 			}
 		}
 	}
