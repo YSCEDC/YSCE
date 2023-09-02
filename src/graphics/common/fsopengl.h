@@ -59,6 +59,7 @@ void FsClearStencilBuffer(void);
 void FsSetPerPixelShading(YSBOOL perPix);
 void FsSetPointLight(const YsVec3 &cameraPosition,const YsVec3 &lightPosition,FSENVIRONMENT env);
 void FsSetDirectionalLight(const YsVec3 &cameraPosition,const YsVec3 &lightDirection,FSENVIRONMENT env);
+void FsSetDirectionalLight(const YsVec3 &cameraPosition, const YsVec3 &lightDirection, FSENVIRONMENT env, const YsColor &lightColor, const double &lightLevel);
 void FsFogOn(const YsColor &fogColor,const double &visibility);
 void FsFogOff(void);
 

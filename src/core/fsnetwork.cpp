@@ -47,6 +47,7 @@ typedef int SOCKET;
 #include <yssocket.h>
 
 #include "fstextresource.h"
+#include "fsweather.h"
 
 YSBOOL FsVerboseMode=YSFALSE;
 
@@ -465,6 +466,8 @@ void FsNetworkUser::Initialize(void)
 	controlShowUserNameReadBack=YSFALSE;
 	environmentReadBack=YSFALSE;
 	preparationReadBack=YSFALSE;
+
+	usingYSCE=YSFALSE; //Switch to decide whether to send them the new packets, if and when they come.
 }
 
 
@@ -1949,20 +1952,6 @@ YSRESULT FsSocketServer::BroadcastForceJoin(void)
 	return BroadcastPacket(4,dat,2040618);
 }
 
-YSRESULT FsSocketServer::BroadcastEnvironment(void)
-{
-	int i;
-	for (i=0; i<FS_MAX_NUM_USER; i++)
-	{
-		if(user[i].state!=FSUSERSTATE_NOTCONNECTED)
-		{
-			SendEnvironment(i);
-		}
-	}
-	return YSOK;
-
-}
-
 YSBOOL FsSocketServer::ReceivedKillServer(void)
 {
 	return receivedKillServer;
@@ -2550,7 +2539,7 @@ YSRESULT FsSocketServer::ReceiveLogOnUser(int clientId,int version,const char re
 
 	YSRESULT versionCheck;
 	versionCheck=YSERR;
-	if(version==YSFLIGHT_NETVERSION)
+	if(version==YSFLIGHT_NETVERSION || version >= 20150425)
 	{
 		versionCheck=YSOK;
 	}
@@ -3770,8 +3759,12 @@ YSRESULT FsSocketServer::ReceiveTextMessage(int clientId,unsigned char dat[],uns
 	}
 }
 
-YSRESULT FsSocketServer::ReceiveEnvironmentRequest(int clientId,unsigned char [],unsigned )
+YSRESULT FsSocketServer::ReceiveEnvironmentRequest(int clientId,unsigned char dat[],unsigned packetLength )
 {
+	if (packetLength>4){
+		//We've got a packet from a YSCE client.
+		user[clientId].usingYSCE=YSTRUE;
+	}
 	return SendEnvironment(clientId);
 }
 
@@ -4203,6 +4196,7 @@ YSRESULT FsSocketServer::SendVersionNotify(int clientId)
 		ptr=dat;
 		FsPushInt(ptr,FSNETCMD_VERSIONNOTIFY);
 		FsPushInt(ptr,YSFLIGHT_NETVERSION);
+		FsPushInt(ptr,1); //Push a 1, this will let the client know if they're connecting to a YSCE server.
 		return SendPacket(clientId,ptr-dat,dat);
 	}
 	return YSOK;
@@ -4274,10 +4268,22 @@ YSRESULT FsSocketServer::SendEnvironment(int clientId)
 	YSBOOL fog;
 	double visibility;
 	unsigned flags;
+	int cloudLayerCount;
+	int dayLength;
+	float dayCycle;
+	int version = 1;
+	if (user[clientId].usingYSCE == YSTRUE)
+	{
+		version = 2;
+	}
+	
 
 	wind=sim->GetWeather().GetWind();
 	fog=sim->GetWeather().GetFog();
 	visibility=sim->GetWeather().GetFogVisibility();
+	dayLength = sim->GetDayLength();
+	dayCycle = sim->GetDayCycle();
+	cloudLayerCount = sim->GetWeather().GetCloudLayerCount();
 
 	flags=0;
 	if(fog==YSTRUE)
@@ -4344,13 +4350,25 @@ YSRESULT FsSocketServer::SendEnvironment(int clientId)
 
 	ptr=dat;
 	FsPushInt  (ptr,FSNETCMD_ENVIRONMENT);
-	FsPushShort(ptr,1);                              // Version 1:Env, Flags, Wind, Visibility
+	FsPushShort(ptr,version);                              // Version 1:Env, Flags, Wind, Visibility
 	FsPushShort(ptr,(short)sim->GetEnvironment());
 	FsPushInt  (ptr,flags);
 	FsPushFloat(ptr,(float)wind.x());
 	FsPushFloat(ptr,(float)wind.y());
 	FsPushFloat(ptr,(float)wind.z());
 	FsPushFloat(ptr,(float)visibility);
+	
+	if (version==2){ //YSCE version, cloud layers.
+		FsPushInt(ptr,sim->GetDayLength());
+		FsPushFloat(ptr,(float)sim->GetDayCycle());
+		FsPushInt(ptr,cloudLayerCount);
+		for (int i = 0; i < cloudLayerCount; i++){
+			const FsWeatherCloudLayer* layer;
+			sim->GetWeather().GetCloudLayer(i,layer);
+			FsPushInt(ptr, layer->y0);
+			FsPushInt(ptr, layer->y1);	
+		}
+	}
 	return SendPacket(clientId,ptr-dat,dat);
 }
 
@@ -4955,6 +4973,7 @@ FsSocketClient::FsSocketClient(const char username[],const int port,FsSimulation
 	sideWindowAssigned=YSFALSE;
 
 	reportedServerVersion=0;
+	ysceServer=YSFALSE;
 
 	svrUseMissile=YSTRUE;
 	svrUseUnguidedWeapon=YSTRUE;
@@ -5090,7 +5109,7 @@ YSRESULT FsSocketClient::Received(YSSIZE_T nBytes,unsigned char dat[])
 					ReceiveAssignSideWindow(cmdTop);
 					break;
 				case FSNETCMD_VERSIONNOTIFY:
-					ReceiveVersionNotify(cmdTop);
+					ReceiveVersionNotify(packetLength,cmdTop);
 					break;
 				case FSNETCMD_AIRCMD:
 					ReceiveAirCmd(cmdTop);
@@ -5718,9 +5737,10 @@ YSRESULT FsSocketClient::SendTextMessage(const char txt[])
 
 YSRESULT FsSocketClient::SendEnvironmentRequest(void)
 {
-	unsigned char dat[4];
+	unsigned char dat[8];
 	FsSetInt(dat,FSNETCMD_ENVIRONMENT);
-	return SendPacket(4,dat);
+	FsSetInt(dat+4,1); //Send a 1 to indicate that this a request from a YSCE client.
+	return SendPacket(8,dat);
 }
 
 YSRESULT FsSocketClient::SendResendJoinApproval(void)
@@ -6417,13 +6437,22 @@ YSRESULT FsSocketClient::ReceiveAssignSideWindow(unsigned char dat[])
 	return YSOK;
 }
 
-YSRESULT FsSocketClient::ReceiveVersionNotify(unsigned char dat[])
+YSRESULT FsSocketClient::ReceiveVersionNotify(unsigned int packetLength, unsigned char dat[])
 {
 	int svrVersion;
+	
 	char str[256];
-
-	svrVersion=FsGetInt(dat+4);
-
+	const unsigned char *ptr=dat;
+	FsPopInt(ptr);  // Skip FSNETCMD_VERSIONNOTIFY
+	svrVersion=FsPopInt(ptr);
+	printf("PacketLength is %d\n",packetLength);
+	if (packetLength>=8){
+		int ysceVersion=FsPopInt(ptr);
+		if (ysceVersion >0){
+			ysceServer=YSTRUE;
+		}
+	}
+	
 	AddMessage("Version check");
 	sprintf(str,"  SERVER NET-VERSION : %d",svrVersion);
 	AddMessage(str);
@@ -6870,7 +6899,10 @@ YSRESULT FsSocketClient::ReceiveEnvironment(int ,unsigned char dat[])
 	FSENVIRONMENT env;
 	unsigned flags;
 	YSBOOL fog;
-	double visibility,wx,wy,wz;
+	int cloudLayers, dayLength;
+	double visibility,wx,wy,wz, dayCycle;
+	YsArray <FsWeatherCloudLayer> cloudLayer;
+
 
 	FsPopInt(ptr);
 	version=FsPopShort(ptr);
@@ -6882,9 +6914,22 @@ YSRESULT FsSocketClient::ReceiveEnvironment(int ,unsigned char dat[])
 	wz=FsPopFloat(ptr);
 	visibility=FsPopFloat(ptr);
 
-	// if(2<=version)
-	// {
-	// }
+	if(2<=version)
+	{
+		dayLength=FsPopInt(ptr);
+		dayCycle = FsPopFloat(ptr);
+
+		sim->SetDayLength(dayLength);
+		sim->SetDayCycle(dayCycle);
+		cloudLayers=FsPopInt(ptr);
+
+		for (int i=0;i < cloudLayers; i++){
+			FsWeatherCloudLayer layer;
+			layer.Overcast(FsPopInt(ptr),FsPopInt(ptr));
+			cloudLayer.Append(layer);
+		}
+		sim->GetWeather().SetCloudLayer(cloudLayers,cloudLayer);
+	}
 
 	if(env!=sim->GetEnvironment()) // This check has been added 2015/04/17
 	{
@@ -7510,8 +7555,6 @@ FSNET_CONSOLE_COMMAND FsTranslateKeyToServerCommand(int ky)
 		return FSNCC_SVR_STARTENDURANCEMODE_WW2;
 	case FSKEY_P:
 		return FSNCC_SVR_STARTCLOSEAIRSUPPORTMISSION;
-	case FSKEY_N:
-		return FSNCC_SVR_SETDAY;
 	case FSKEY_T:
 		return FSNCC_SVR_TERMINATEMISSION;
 	case FSKEY_R:
@@ -7878,8 +7921,6 @@ public:
 
 	FsGuiButton *whoKilledMeBtn,*whomHaveIKilledBtn;
 
-	FsGuiButton *setDayBtn;
-
 	FsGuiStatic *multiIpWarningTxt;
 
 	FsGuiButton *endServerBtn,*confirmEndServerBtn;
@@ -7972,8 +8013,6 @@ void FsGuiServerDialog::MakeDialog(FsSimulation *sim,FsSocketServer *server)
 
 	startInterceptMissionBtn=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,FSGUI_NETCONSOLE_INTERCEPT,YSTRUE);
 	startCloseAirSupportBtn=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,FSGUI_NETCONSOLE_CLOSEAIRSUPPORT,YSFALSE);
-
-	setDayBtn=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,FSGUI_NETCONSOLE_SETENVIRONMENT,YSTRUE);
 
 	multiIpWarningTxt=AddStaticText(0,FSKEY_NULL,"",16,2,YSTRUE);
 
@@ -8090,9 +8129,6 @@ void FsGuiServerDialog::OnButtonClick(FsGuiButton *btn)
 	else if(btn==startCloseAirSupportBtn)
 	{
 		svr->commandQueue.push(FSNCC_SVR_STARTCLOSEAIRSUPPORTMISSION);
-	}
-	else if(btn==setDayBtn){
-		svr->commandQueue.push(FSNCC_SVR_SETDAY);
 	}
 	else if(btn==endServerBtn)
 	{
@@ -8269,7 +8305,7 @@ static void FsPrintServerMenu(
 		fsConsole.Printf("[C]...Lock Server                [K]...Join-Lock");
 		fsConsole.Printf("[1][2][3][4]...Choose IFF        [V].....Observer mode");
 		fsConsole.Printf("[E]...Start Endurance Mode (Jet) [W].....Start Endurance Mode (WwII)");
-		fsConsole.Printf("[B].....Start Intercept Mission  [N].....Toggle Day/Night");
+		fsConsole.Printf("[B].....Start Intercept Mission");
 		fsConsole.Printf("[P]...Start Close Air Support Mission");
 		fsConsole.Printf("[T]...Terminate Endurance Mode/Intercept Mission");
 		fsConsole.Printf("[R]...Revive Ground Objects");
@@ -8283,7 +8319,7 @@ static void FsPrintServerMenu(
 		fsConsole.Printf("[L]...List Players               [D]...Dispell User");
 		fsConsole.Printf("[C]...Lock Server                [K]...Join-Lock");
 		fsConsole.Printf("[E]...Start Endurance Mode (Jet) [W].....Start Endurance Mode (WwII)");
-		fsConsole.Printf("[B].....Start Intercept Mission  [N].....Toggle Day/Night");
+		fsConsole.Printf("[B].....Start Intercept Mission");
 		fsConsole.Printf("[P]...Start Close Air Support Mission");
 		fsConsole.Printf("[T]...Terminate Endurance Mode/Intercept Mission");
 		fsConsole.Printf("[R]...Revive Ground Objects");
@@ -8689,19 +8725,6 @@ YSRESULT FsSimulation::ServerState_StandBy(
 
 			DestroyAutoGeneratedAirAndGnd();
 
-			break;
-		case FSNCC_SVR_SETDAY:
-			FSENVIRONMENT env;
-			env = GetEnvironment();
-			switch(env){
-			case FSDAYLIGHT:
-				SetEnvironment(FSNIGHT);
-				break;
-			case FSNIGHT:
-				SetEnvironment(FSDAYLIGHT);
-				break;
-			}
-			svr.BroadcastEnvironment();
 			break;
 		case FSNCC_SVR_REVIVEGROUND:
 			ReviveGround();
@@ -10730,4 +10753,3 @@ FsServerRunLoop::~FsServerRunLoop()
 	delete opt;
 	delete svrDlg;
 }
-

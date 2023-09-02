@@ -289,8 +289,17 @@ protected:
 
 	FSENVIRONMENT env;
 	YsColor fogColor;
-	YsColor skyColor,gndColor;
+	YsColor skyColor,gndColor; //These are the original sky/ground colours, set by the field. We won't modify them too much.
 	YSBOOL gndSpecular;
+
+	YsVec3 &lightPositionVector = YsVec3(-1.0, 1, 0.0);
+	YsColor dayColour = YsColor(1,1,1);
+	YsColor nightColour = YsColor(0.1,0.1,0.1);
+	YsColor sunriseColour = YsColor(1,0.5,0);
+	mutable int dayLength = 60;
+	mutable double daycycle = YsPi;
+	mutable double lightIntensity = 1;
+	mutable YsColor lightColour = YsColor(1,1,1);
 
 	class ActualViewMode
 	{
@@ -477,6 +486,11 @@ public:
 	void SetEnvironment(FSENVIRONMENT env);
 	void EnforceEnvironment(void);
 	FSENVIRONMENT GetEnvironment(void) const;
+	int GetDayLength(void) const;
+	double GetDayCycle(void) const;
+	void SetDayLength(int dayLength);
+	void SetDayCycle(double dayCycle);
+	
 
 	YSRESULT SendConfigString(const char str[]);
 

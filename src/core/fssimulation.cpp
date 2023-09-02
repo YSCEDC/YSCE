@@ -173,6 +173,7 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	currentTime=0.0;
 	aircraftTroubleTimer=0.0;
 	lastTime=0;
+	daycycle = 0;
 	mainWindowViewmode=FSCOCKPITVIEW;
 	mainWindowAdditionalAirplaneViewId=0;
 	mainWindowActualViewMode.viewPoint=YsOrigin();
@@ -1476,16 +1477,16 @@ void FsSimulation::SetEnvironment(FSENVIRONMENT env)
 
 void FsSimulation::EnforceEnvironment(void)
 {
+	fogColor.SetDoubleRGB(0.6*lightIntensity*lightColour.Rd(),0.6*lightIntensity * lightColour.Gd(), 0.6*lightIntensity * lightColour.Bd());
+	//The day/night switch may be removed, as this is all being handled via day/night cycle. 
 	switch(env)
 	{
 	case FSDAYLIGHT:
 		field.ApplyColorScale(1.0,1.0,0.7);
-		fogColor.SetDoubleRGB(0.6,0.6,0.6);
 		YsScenery::lightPointSizePix=1;
 		break;
 	case FSNIGHT:
 		field.ApplyColorScale(0.1,0.1,1.0);
-		fogColor.SetDoubleRGB(0.1,0.1,0.1);
 		YsScenery::lightPointSizePix=4;
 		break;
 	}
@@ -1494,6 +1495,22 @@ void FsSimulation::EnforceEnvironment(void)
 FSENVIRONMENT FsSimulation::GetEnvironment(void) const
 {
 	return env;
+}
+//Implement the following functions:
+int FsSimulation::GetDayLength(void) const{
+	return dayLength;
+}
+
+double FsSimulation::GetDayCycle(void) const{
+	return daycycle;
+}
+
+void FsSimulation::SetDayLength(int dayLength){
+	dayLength = dayLength;
+}
+
+void FsSimulation::SetDayCycle(double dayCycle){
+	daycycle = dayCycle;
 }
 
 YSRESULT FsSimulation::SendConfigString(const char str[])
@@ -3878,7 +3895,18 @@ void FsSimulation::SimMove(const double &dt)
 	particleStore.Move(dt,weather->GetWind());
 
 	weather->WeatherTransition(dt);
+	//Cloud movement if we bring that in, goes here!
 
+	//TODO: Set this is a config variable, day/night cycle length
+	int totalSteps = dayLength/dt;
+	double step = 2 * YsPi / totalSteps;
+	weather->GetDayTime(daycycle,dt,dayLength);
+
+	lightColour = weather->GetLightColour(daycycle);
+	lightIntensity = weather->GetLightIntensity(daycycle);
+	weather->SetSunPosition(lightPositionVector,daycycle);
+	SetEnvironment(FSNIGHT); //Shouldnt matter, this is currently for testing.
+	
 	airplane=NULL;
 	while((airplane=FindNextAirplane(airplane))!=NULL)
 	{
@@ -6723,15 +6751,7 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 #endif
 
 	YsColor fogColor;
-	switch(env)
-	{
-	case FSDAYLIGHT:
-		fogColor.SetDoubleRGB(0.6,0.6,0.6);
-		break;
-	case FSNIGHT:
-		fogColor.SetDoubleRGB(0.1,0.1,0.1);
-		break;
-	}
+	fogColor.SetDoubleRGB(0.6*lightIntensity,0.6*lightIntensity,0.6*lightIntensity);
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
 	printf("SimDrawScreenZBufferSensitive %d\n",__LINE__);
@@ -6901,8 +6921,8 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode) 
 	printf("SIMDRAW-2.6\n");
 #endif
 
-	FsSetDirectionalLight(actualViewMode.viewPoint,cfgPtr->lightSourceDirection,env);
-
+	FsSetDirectionalLight(actualViewMode.viewPoint,lightPositionVector,FSDAYLIGHT,lightColour,lightIntensity);
+	printf("Light intensity: %f\n", lightIntensity);
 	sizx=hei*4/3;
 	sizy=hei;
 	if (cfgPtr->centerCameraPerspective == YSFALSE)
@@ -6993,19 +7013,20 @@ void FsSimulation::SimDrawBackground(const ActualViewMode &actualViewMode,const 
 {
 	auto gnd=gndColor;
 	auto sky=skyColor;
+	sky = weather->GetLightColour(sky, daycycle);
 
 	YSBOOL gndSpecular=this->gndSpecular;
 	YsColor horizonColor;
+	gnd.SetDoubleRGB(gnd.Rd()*lightIntensity,gnd.Gd()*lightIntensity,gnd.Bd()*lightIntensity);
+	sky.SetDoubleRGB(sky.Rd()*lightIntensity,sky.Gd()*lightIntensity,sky.Bd()*lightIntensity);
 	switch(env)
 	{
 	case FSNIGHT:
-		gnd.SetDoubleRGB(gnd.Rd()*0.1,gnd.Gd()*0.1,gnd.Bd()*0.1);
-		sky.SetDoubleRGB(sky.Rd()*0.1,sky.Gd()*0.1,sky.Bd()*0.1);
-		horizonColor=YsGrayScale(0.1);
+		horizonColor=YsGrayScale(lightIntensity);
 		gndSpecular=YSFALSE;
 		break;
 	case FSDAYLIGHT:
-		horizonColor.SetDoubleRGB(0.7,0.7,0.7);
+		horizonColor=YsGrayScale(lightIntensity);
 		break;
 	}
 
@@ -10053,7 +10074,7 @@ void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualVie
 		const auto cameraEv=actualViewMode.viewAttitude.GetForwardVector();
 		const auto cameraUv=actualViewMode.viewAttitude.GetUpVector();
 		
-		const YsVec3 lightEv=-YsUnitVector(cfgPtr->lightSourceDirection);
+		const YsVec3 lightEv=-YsUnitVector(lightPositionVector);
 		const double cameraEvSimilarity=fabs(lightEv*cameraEv);
 		const double cameraUvSimilarity=fabs(lightEv*cameraUv);
 		const YsVec3 lightUv=(cameraEvSimilarity<cameraUvSimilarity ? cameraEv : cameraUv);
@@ -10147,7 +10168,7 @@ void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualVie
 		// where theata is the angle between the lightVec and cameraVec
 		{
 			const auto cameraEv=actualViewMode.viewAttitude.GetForwardVector();
-			const YsVec3 lightEv=-YsUnitVector(cfgPtr->lightSourceDirection);
+			const YsVec3 lightEv=-YsUnitVector(lightPositionVector);
 			const double cosTheata=cameraEv*lightEv;
 			const double sinTheata=sqrt(1.0-YsSmaller(1.0,cosTheata*cosTheata));
 

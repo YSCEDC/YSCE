@@ -269,6 +269,62 @@ void FsSetDirectionalLight(const YsVec3 &cameraPosition,const YsVec3 &lightDirec
 	}
 }
 
+void FsSetDirectionalLight(const YsVec3 &/*cameraPosition*/, const YsVec3 &lightDirection, FSENVIRONMENT env, const YsColor &lightColor, const int &lightLevel){
+	auto ysD3dDev=YsD3dDevice::GetCurrent();
+	if(ysD3dDev!=NULL)
+	{
+		D3DVECTOR lightDir;
+		D3DLIGHT9 light;
+		ZeroMemory(&light,sizeof(light));
+		light.Type=D3DLIGHT_DIRECTIONAL;
+
+		switch(env)
+		{
+		case FSDAYLIGHT:
+			light.Diffuse.r=0.6F;
+			light.Diffuse.g=0.6F;
+			light.Diffuse.b=0.6F;
+			light.Diffuse.a=1.0;
+
+			light.Ambient.r=0.3F;
+			light.Ambient.g=0.3F;
+			light.Ambient.b=0.3F;
+			light.Ambient.a=1.0F;
+
+			light.Specular.r=0.9F;
+			light.Specular.g=0.9F;
+			light.Specular.b=0.9F;
+			light.Specular.a=1.0F;
+			break;
+		case FSNIGHT:
+			light.Diffuse.r=0.05F;
+			light.Diffuse.g=0.05F;
+			light.Diffuse.b=0.05F;
+			light.Diffuse.a=1.0;
+
+			light.Ambient.r=0.05F;
+			light.Ambient.g=0.05F;
+			light.Ambient.b=0.05F;
+			light.Ambient.a=1.0F;
+
+			light.Specular.r=0.0F;
+			light.Specular.g=0.0F;
+			light.Specular.b=0.0F;
+			light.Specular.a=1.0F;
+			break;
+		}
+
+		lightDir.x=(float)-lightDirection.x();
+		lightDir.y=(float)-lightDirection.y();
+		lightDir.z=(float)-lightDirection.z();
+		YsD3dNormalize(light.Direction,lightDir);
+		light.Range=100.0F;
+		ysD3dDev->d3dDev->SetLight(0,&light);
+		ysD3dDev->d3dDev->LightEnable(0,TRUE);
+		ysD3dDev->d3dDev->SetRenderState(D3DRS_LIGHTING,TRUE);
+	}
+}
+
 void FsFogOn(const YsColor &col,const double &visibility)
 {
 	auto ysD3dDev=YsD3dDevice::GetCurrent();

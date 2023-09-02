@@ -187,6 +187,7 @@ public:
 	YsArray <unsigned int> gndToSend,airToSend;
 	YSBOOL useMissileReadBack,useUnguidedWeaponReadBack,controlShowUserNameReadBack;
 	YSBOOL environmentReadBack,preparationReadBack;
+	YSBOOL usingYSCE;
 
 	YsArray <unsigned int> gndRmvToSend,airRmvToSend;
 	int joinSequence;  // 0:Not in process  1:Waiting for Airplane Read Back  2:Waiting for SetPlayer Read Back
@@ -253,7 +254,6 @@ enum FSNET_CONSOLE_COMMAND
 	FSNCC_SVR_STARTENDURANCEMODE_JET,
 	FSNCC_SVR_STARTENDURANCEMODE_WW2,
 	FSNCC_SVR_STARTCLOSEAIRSUPPORTMISSION,
-	FSNCC_SVR_SETDAY,
 	FSNCC_SVR_TERMINATEMISSION,
 	FSNCC_SVR_REVIVEGROUND,
 
@@ -381,7 +381,6 @@ public:
 	YSRESULT BroadcastGroundColor(YsColor col);
 	YSRESULT BroadcastFogColor(YsColor col);
 	YSRESULT BroadcastForceJoin(void);
-	YSRESULT BroadcastEnvironment(void);
 
 	YSRESULT RectifyIllegalMissiles(void);
 
@@ -535,6 +534,7 @@ public:
 	YSBOOL connectionClosedByServer; // Will be set YSTRUE if the connection was closed from the server side.
 	int lastErrorFromServer;
 	unsigned int reportedServerVersion;
+	YSBOOL ysceServer;
 
 	FsSocketClient(const char username[],const int port,class FsSimulation *associatedSimulation,class FsNetConfig *cfg);
 
@@ -610,7 +610,7 @@ public:
 	YSRESULT ReceiveGetDamage(unsigned char dat[]);
 	YSRESULT ReceiveSetTestAutopilot(unsigned char dat[]);
 	YSRESULT ReceiveAssignSideWindow(unsigned char dat[]);
-	YSRESULT ReceiveVersionNotify(unsigned char dat[]);
+	YSRESULT ReceiveVersionNotify(unsigned int packetLength,unsigned char dat[]);
 	YSRESULT ReceiveAirCmd(unsigned char dat[]);
 	YSRESULT ReceiveGndCmd(unsigned char dat[]);
 	YSRESULT ReceiveTextMessage(unsigned char dat[]);

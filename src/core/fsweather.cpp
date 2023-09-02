@@ -35,6 +35,13 @@ int FsWeatherCloudLayer::CloudLayerTypeFromString(const char str[])
 	return FSCLOUDLAYER_NONE;
 }
 
+FsWeatherCloudLayer FsWeatherCloudLayer::Overcast(double y0,double y1)
+{
+	this->y0=y0;
+	this->y1=y1;
+	this->cloudLayerType=FSCLOUDLAYER_OVERCAST;
+	return *this;
+}
 
 
 
@@ -174,6 +181,108 @@ YSBOOL FsWeather::IsInCloudLayer(const YsVec3 &pos) const
 	}
 	return YSFALSE;
 }
+
+int FsWeather::GetCloudLayerCount() const
+{
+	return (int)cloudLayer.GetN();
+}
+//Day/Night cycle functions
+
+
+YsColor FsWeather::GetLightColour(const double dayTime) const{
+	YsColor lightColour = daylightColour;
+	if (IsDuskOrDawn(dayTime) == YSTRUE){
+		//If it's dusk or dawn, then we need to fade the colour.
+			lightColour.SetRd(ColourInterpolate(daylightColour.Rd(),dawnColour.Rd(),DuskIntensity(dayTime)));
+			lightColour.SetGd(ColourInterpolate(daylightColour.Gd(),dawnColour.Gd(),DuskIntensity(dayTime)));
+			lightColour.SetBd(ColourInterpolate(daylightColour.Bd(),dawnColour.Bd(),DuskIntensity(dayTime)));
+	}
+	if (IsDay(dayTime) == YSFALSE){
+		lightColour = nightColour;
+	}
+
+	return lightColour;
+};
+
+YsColor FsWeather::GetLightColour(YsColor skyColour, const double dayTime) const{
+	YsColor lightColour = skyColour;
+	if (IsDuskOrDawn(dayTime) == YSTRUE){
+		//If it's dusk or dawn, then we need to fade the colour.
+			lightColour.SetRd(ColourInterpolate(skyColour.Rd(),dawnColour.Rd(),DuskIntensity(dayTime)));
+			lightColour.SetGd(ColourInterpolate(skyColour.Gd(),dawnColour.Gd(),DuskIntensity(dayTime)));
+			lightColour.SetBd(ColourInterpolate(skyColour.Bd(),dawnColour.Bd(),DuskIntensity(dayTime)));			
+		
+	}
+
+	return lightColour;
+
+};
+
+double FsWeather::GetLightIntensity(const double dayTime) const{
+	double lightIntensity = 1.0;
+	if (IsDuskOrDawn(dayTime) == YSTRUE){ //Then it's dusk/dawn
+		lightIntensity = DuskIntensity(dayTime);
+	}
+	if (IsDay(dayTime) == YSFALSE){
+		lightIntensity = 0.1;
+	}
+	return lightIntensity;
+};
+
+double FsWeather::ColourInterpolate(const double colour2, const double colour1, const double i) const {
+	return colour1 + (colour2 - colour1) * i;
+};
+
+YSBOOL FsWeather::IsDay(const double dayTime) const{
+	if (dayTime < YsPi/2 || dayTime > 3*YsPi/2){
+		return YSTRUE;
+	}
+	else{
+		return YSFALSE;
+	}
+};
+
+YSBOOL FsWeather::IsDuskOrDawn(const double dayTime) const{
+	if (sin(dayTime+YsPi/2)<0.2 && sin(dayTime+YsPi/2)>-0.2){
+		return YSTRUE;
+	}
+	else{
+		return YSFALSE;
+	}
+
+};
+
+double FsWeather::DuskIntensity(const double dayTime) const{
+	//Scale the dusk intensity. Dusk is between sin(dayTime+YsPi/2) = 0.1 and -0.1.
+	//return sin(dayTime+YsPi/2)*5+0.5;
+	return abs(sin(dayTime+YsPi/2))*5;
+
+};
+
+//Increments the dayTime by deltaTime (in seconds) and the dayLength (in seconds)
+//Returns the dayTime - which is the time of day * 2*PI. 
+// 0 is mid day, PI is midnight, 2*PI is mid day again.
+void FsWeather::GetDayTime(double& daytime, double dt, int dayLength) const{
+	int totalSteps = dayLength/dt;
+	double step = 2 * YsPi / totalSteps;
+	daytime = daytime + step;
+	if (daytime > 2 * YsPi){
+		daytime = 0;
+	}
+};
+
+void FsWeather::SetSunPosition(YsVec3& lightPosition, double dayTime) const{
+	if (IsDay(dayTime) == YSTRUE){
+		lightPosition.SetX(cos(dayTime+YsPi/2));
+		lightPosition.SetY(abs(sin(dayTime+YsPi/2)));
+	}
+	else{
+		lightPosition.SetX(-cos(dayTime+YsPi/2));
+		lightPosition.SetY(abs(sin(dayTime+YsPi/2)));
+	}
+};
+
+//Save cloud functions - to review whether these continue to be used with new clouds in future.
 
 YSRESULT FsWeather::Save(FILE *fp) const
 {
