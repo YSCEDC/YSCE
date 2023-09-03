@@ -174,6 +174,7 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	aircraftTroubleTimer=0.0;
 	lastTime=0;
 	daycycle = 0;
+	lightPositionVector = YsVec3(-1.0, 1, 0.0);
 	mainWindowViewmode=FSCOCKPITVIEW;
 	mainWindowAdditionalAirplaneViewId=0;
 	mainWindowActualViewMode.viewPoint=YsOrigin();

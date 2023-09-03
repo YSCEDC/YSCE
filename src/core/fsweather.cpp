@@ -253,7 +253,7 @@ YSBOOL FsWeather::IsDuskOrDawn(const double dayTime) const{
 };
 
 double FsWeather::DuskIntensity(const double dayTime) const{
-	//Scale the dusk intensity. Dusk is between sin(dayTime+YsPi/2) = 0.1 and -0.1.
+	//Scale the dusk intensity. Dusk is between sin(dayTime+YsPi/2) = 0.2 and -0.2.
 	//return sin(dayTime+YsPi/2)*5+0.5;
 	return abs(sin(dayTime+YsPi/2))*5;
 

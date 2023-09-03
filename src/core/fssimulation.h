@@ -292,7 +292,7 @@ protected:
 	YsColor skyColor,gndColor; //These are the original sky/ground colours, set by the field. We won't modify them too much.
 	YSBOOL gndSpecular;
 
-	YsVec3 &lightPositionVector = YsVec3(-1.0, 1, 0.0);
+	YsVec3 lightPositionVector  = YsVec3(-1.0, 1, 0.0);
 	YsColor dayColour = YsColor(1,1,1);
 	YsColor nightColour = YsColor(0.1,0.1,0.1);
 	YsColor sunriseColour = YsColor(1,0.5,0);
