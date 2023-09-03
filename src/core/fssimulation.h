@@ -297,9 +297,10 @@ protected:
 	YsColor nightColour = YsColor(0.1,0.1,0.1);
 	YsColor sunriseColour = YsColor(1,0.5,0);
 	mutable int dayLength = 60;
-	mutable double daycycle = YsPi;
+	mutable double dayTime = YsPi;
 	mutable double lightIntensity = 1;
 	mutable YsColor lightColour = YsColor(1,1,1);
+	FSENVIRONMENT lastEnv;
 
 	class ActualViewMode
 	{
@@ -485,6 +486,7 @@ public:
 
 	void SetEnvironment(FSENVIRONMENT env);
 	void EnforceEnvironment(void);
+	void SendServerEnvironment(FSENVIRONMENT env);
 	FSENVIRONMENT GetEnvironment(void) const;
 	int GetDayLength(void) const;
 	double GetDayCycle(void) const;

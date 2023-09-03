@@ -262,12 +262,18 @@ double FsWeather::DuskIntensity(const double dayTime) const{
 //Increments the dayTime by deltaTime (in seconds) and the dayLength (in seconds)
 //Returns the dayTime - which is the time of day * 2*PI. 
 // 0 is mid day, PI is midnight, 2*PI is mid day again.
-void FsWeather::GetDayTime(double& daytime, double dt, int dayLength) const{
+FSENVIRONMENT FsWeather::GetDayTime(double& daytime, double dt, int dayLength) const{
 	int totalSteps = dayLength/dt;
 	double step = 2 * YsPi / totalSteps;
 	daytime = daytime + step;
 	if (daytime > 2 * YsPi){
 		daytime = 0;
+	}
+	if (IsDay(daytime) == YSTRUE){
+		return FSDAYLIGHT;
+	}
+	else{
+		return FSNIGHT;
 	}
 };
 
@@ -280,6 +286,24 @@ void FsWeather::SetSunPosition(YsVec3& lightPosition, double dayTime) const{
 		lightPosition.SetX(-cos(dayTime+YsPi/2));
 		lightPosition.SetY(abs(sin(dayTime+YsPi/2)));
 	}
+};
+
+YsArray <int> FsWeather::GetDayTimeHours(double dayTime) const{
+	if (dayTime >= YsPi){
+		dayTime = dayTime - YsPi;
+	}
+	else{
+		dayTime = dayTime + YsPi;
+	}
+	int hours = (int)(dayTime/(2*YsPi)*24);
+	int minutes = (int)((dayTime/(2*YsPi)*24 - hours)*60);
+	int seconds = (int)((((dayTime/(2*YsPi)*24 - hours)*60) - minutes)*60);
+	printf("Hours: %d, Minutes: %d, Seconds: %d\n", hours, minutes, seconds);
+	YsArray <int> time;
+	time.Append(hours);
+	time.Append(minutes);
+	time.Append(seconds);
+	return time;
 };
 
 //Save cloud functions - to review whether these continue to be used with new clouds in future.

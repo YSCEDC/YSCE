@@ -3889,6 +3889,26 @@ FSENVIRONMENT FsWorld::GetEnvironment(void)
 	return FSDAYLIGHT;
 }
 
+YSRESULT FsWorld::SetDayTime(double t)
+{
+	if(NULL!=sim)
+	{
+		sim->SetDayCycle(t);
+		return YSERR;
+	}
+	return YSOK;
+}
+
+YSRESULT FsWorld::SetDayLength(int dayLength)
+{
+	if(NULL!=sim)
+	{
+		sim->SetDayLength(dayLength);
+		return YSERR;
+	}
+	return YSOK;
+}
+
 FsAirplane *FsWorld::AddAirplane(const char idName[],YSBOOL isPlayerPlane,unsigned netSearchKey)
 {
 	if(NULL!=sim)

@@ -173,7 +173,8 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	currentTime=0.0;
 	aircraftTroubleTimer=0.0;
 	lastTime=0;
-	daycycle = 0;
+	dayTime = 0;
+	dayLength = 0;
 	lightPositionVector = YsVec3(-1.0, 1, 0.0);
 	mainWindowViewmode=FSCOCKPITVIEW;
 	mainWindowAdditionalAirplaneViewId=0;
@@ -236,6 +237,7 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	subMenu.CleanUp();
 
 	env=FSDAYLIGHT;
+	lastEnv = FSDAYLIGHT;
 
 	airplaneSearch=new YsHashTable <FsAirplane *> (128);
 	groundSearch=new YsHashTable <FsGround *> (128);
@@ -1493,25 +1495,31 @@ void FsSimulation::EnforceEnvironment(void)
 	}
 }
 
+void FsSimulation::SendServerEnvironment(FSENVIRONMENT env){
+	if (netServer != NULL){
+		netServer->SendEnvironment(env);
+	}
+
+}
 FSENVIRONMENT FsSimulation::GetEnvironment(void) const
 {
 	return env;
 }
 //Implement the following functions:
 int FsSimulation::GetDayLength(void) const{
-	return dayLength;
+	return dayLength / 60; //Convert to minutes
 }
 
 double FsSimulation::GetDayCycle(void) const{
-	return daycycle;
+	return dayTime;
 }
 
 void FsSimulation::SetDayLength(int dayLength){
-	dayLength = dayLength;
+	this->dayLength = dayLength*60; //Convert to seconds
 }
 
 void FsSimulation::SetDayCycle(double dayCycle){
-	daycycle = dayCycle;
+	this->dayTime = dayCycle;
 }
 
 YSRESULT FsSimulation::SendConfigString(const char str[])
@@ -3898,15 +3906,18 @@ void FsSimulation::SimMove(const double &dt)
 	weather->WeatherTransition(dt);
 	//Cloud movement if we bring that in, goes here!
 
-	//TODO: Set this is a config variable, day/night cycle length
-	int totalSteps = dayLength/dt;
-	double step = 2 * YsPi / totalSteps;
-	weather->GetDayTime(daycycle,dt,dayLength);
+	env = weather->GetDayTime(dayTime,dt,dayLength);
+	// If the environment has changed, ensure it is forwarded to the server.
+	if (env != lastEnv){
+		SetEnvironment(env);
+		lastEnv = env;
+		SendServerEnvironment(env);
+	}
+	weather->GetDayTimeHours(dayTime);
 
-	lightColour = weather->GetLightColour(daycycle);
-	lightIntensity = weather->GetLightIntensity(daycycle);
-	weather->SetSunPosition(lightPositionVector,daycycle);
-	SetEnvironment(FSNIGHT); //Shouldnt matter, this is currently for testing.
+	lightColour = weather->GetLightColour(dayTime);
+	lightIntensity = weather->GetLightIntensity(dayTime);
+	weather->SetSunPosition(lightPositionVector,dayTime);
 	
 	airplane=NULL;
 	while((airplane=FindNextAirplane(airplane))!=NULL)
@@ -6922,8 +6933,9 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode) 
 	printf("SIMDRAW-2.6\n");
 #endif
 
+
 	FsSetDirectionalLight(actualViewMode.viewPoint,lightPositionVector,FSDAYLIGHT,lightColour,lightIntensity);
-	printf("Light intensity: %f\n", lightIntensity);
+
 	sizx=hei*4/3;
 	sizy=hei;
 	if (cfgPtr->centerCameraPerspective == YSFALSE)
@@ -7014,7 +7026,7 @@ void FsSimulation::SimDrawBackground(const ActualViewMode &actualViewMode,const 
 {
 	auto gnd=gndColor;
 	auto sky=skyColor;
-	sky = weather->GetLightColour(sky, daycycle);
+	sky = weather->GetLightColour(sky, dayTime);
 
 	YSBOOL gndSpecular=this->gndSpecular;
 	YsColor horizonColor;
@@ -12525,6 +12537,9 @@ YSRESULT FsSimulation::LoadConfigFile(const wchar_t fn[],YSBOOL changeEnvironmen
 			weather->AddCloudLayer(cfgPtr->cloudLayer[i]);
 		}
 		weather->SetWind(cfgPtr->constWind);
+
+		SetDayCycle(cfgPtr->dayTime);
+		SetDayLength(cfgPtr->dayLength);
 
 	}
 

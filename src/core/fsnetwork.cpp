@@ -1945,6 +1945,17 @@ YSRESULT FsSocketServer::BroadcastFogColor(YsColor col)
 	return BroadcastPacket(7,dat,20040618);
 }
 
+YSRESULT FsSocketServer::BroadcastEnvironmentUpdate(void){
+	for(i=0; i<FS_MAX_NUM_USER; i++)
+	{
+		if(user[i].state!=FSUSERSTATE_NOTCONNECTED)
+		{
+			SendEnvironment(i);
+		}
+	}
+	return YSOK;
+}
+
 YSRESULT FsSocketServer::BroadcastForceJoin(void)
 {
 	unsigned char dat[16];

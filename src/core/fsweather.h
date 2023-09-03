@@ -74,8 +74,9 @@ public:
 	YSBOOL IsDay(const double dayTime) const;
 	YSBOOL IsDuskOrDawn(const double dayTime) const;
 	double DuskIntensity(const double dayTime) const;
-	void GetDayTime(double& daytime, double dt, int dayLength) const;
+	FSENVIRONMENT GetDayTime(double& daytime, double dt, int dayLength) const;
 	void SetSunPosition(YsVec3& lightPosition, double dayTime) const;
+	YsArray <int> GetDayTimeHours(double dayTime) const;
 };
 
 

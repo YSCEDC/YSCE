@@ -380,6 +380,7 @@ public:
 	YSRESULT BroadcastSkyColor(YsColor col);
 	YSRESULT BroadcastGroundColor(YsColor col);
 	YSRESULT BroadcastFogColor(YsColor col);
+	YSRESULT BroadcastEnvironmentUpdate(void);
 	YSRESULT BroadcastForceJoin(void);
 
 	YSRESULT RectifyIllegalMissiles(void);
