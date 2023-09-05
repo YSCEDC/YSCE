@@ -126,7 +126,7 @@ public:
 
 	void AddToParticleManager(
 		class YsGLParticleManager &partMan,
-	    FSENVIRONMENT env,const class FsWeather &weather,
+	    double lightIntensity,const class FsWeather &weather,
 	    const YsVec3 &viewDir,const YsMatrix4x4 &viewMdlTfm,const double &nearZ,const double &farZ,const double &tanFov);
 
 

@@ -191,13 +191,21 @@ int FsWeather::GetCloudLayerCount() const
 
 YsColor FsWeather::GetLightColour(const double dayTime) const{
 	YsColor lightColour = daylightColour;
-	if (IsDuskOrDawn(dayTime) == YSTRUE){
+	if (IsDuskOrDawn(dayTime) == YSTRUE)
+	{	
+		//Which colour are we transitioning from? Day or night?
+		if (IsDay(dayTime) == YSTRUE){
+			lightColour = daylightColour;
+		}
+		else{
+			lightColour = nightColour;
+		}
 		//If it's dusk or dawn, then we need to fade the colour.
-			lightColour.SetRd(ColourInterpolate(daylightColour.Rd(),dawnColour.Rd(),DuskIntensity(dayTime)));
-			lightColour.SetGd(ColourInterpolate(daylightColour.Gd(),dawnColour.Gd(),DuskIntensity(dayTime)));
-			lightColour.SetBd(ColourInterpolate(daylightColour.Bd(),dawnColour.Bd(),DuskIntensity(dayTime)));
+			lightColour.SetRd(ColourInterpolate(lightColour.Rd(),dawnColour.Rd(),DuskIntensity(dayTime)));
+			lightColour.SetGd(ColourInterpolate(lightColour.Gd(),dawnColour.Gd(),DuskIntensity(dayTime)));
+			lightColour.SetBd(ColourInterpolate(lightColour.Bd(),dawnColour.Bd(),DuskIntensity(dayTime)));
 	}
-	if (IsDay(dayTime) == YSFALSE){
+	else if (IsDay(dayTime) == YSFALSE){
 		lightColour = nightColour;
 	}
 
@@ -254,8 +262,11 @@ YSBOOL FsWeather::IsDuskOrDawn(const double dayTime) const{
 
 double FsWeather::DuskIntensity(const double dayTime) const{
 	//Scale the dusk intensity. Dusk is between sin(dayTime+YsPi/2) = 0.2 and -0.2.
-	//return sin(dayTime+YsPi/2)*5+0.5;
-	return abs(sin(dayTime+YsPi/2))*5;
+	double lightIntensity = abs(sin(dayTime+YsPi/2))*5;
+	if (lightIntensity<=0.1){
+		lightIntensity = 0.1;
+	}
+	return lightIntensity;
 
 };
 
@@ -298,7 +309,6 @@ YsArray <int> FsWeather::GetDayTimeHours(double dayTime) const{
 	int hours = (int)(dayTime/(2*YsPi)*24);
 	int minutes = (int)((dayTime/(2*YsPi)*24 - hours)*60);
 	int seconds = (int)((((dayTime/(2*YsPi)*24 - hours)*60) - minutes)*60);
-	printf("Hours: %d, Minutes: %d, Seconds: %d\n", hours, minutes, seconds);
 	YsArray <int> time;
 	time.Append(hours);
 	time.Append(minutes);

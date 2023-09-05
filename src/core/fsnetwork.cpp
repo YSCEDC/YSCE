@@ -1946,6 +1946,7 @@ YSRESULT FsSocketServer::BroadcastFogColor(YsColor col)
 }
 
 YSRESULT FsSocketServer::BroadcastEnvironmentUpdate(void){
+	int i;
 	for(i=0; i<FS_MAX_NUM_USER; i++)
 	{
 		if(user[i].state!=FSUSERSTATE_NOTCONNECTED)
@@ -4281,7 +4282,7 @@ YSRESULT FsSocketServer::SendEnvironment(int clientId)
 	unsigned flags;
 	int cloudLayerCount;
 	int dayLength;
-	float dayCycle;
+	float dayTime;
 	int version = 1;
 	if (user[clientId].usingYSCE == YSTRUE)
 	{
@@ -4293,7 +4294,7 @@ YSRESULT FsSocketServer::SendEnvironment(int clientId)
 	fog=sim->GetWeather().GetFog();
 	visibility=sim->GetWeather().GetFogVisibility();
 	dayLength = sim->GetDayLength();
-	dayCycle = sim->GetDayCycle();
+	dayTime = sim->GetDayTime();
 	cloudLayerCount = sim->GetWeather().GetCloudLayerCount();
 
 	flags=0;
@@ -4371,7 +4372,7 @@ YSRESULT FsSocketServer::SendEnvironment(int clientId)
 	
 	if (version==2){ //YSCE version, cloud layers.
 		FsPushInt(ptr,sim->GetDayLength());
-		FsPushFloat(ptr,(float)sim->GetDayCycle());
+		FsPushFloat(ptr,(float)sim->GetDayTime());
 		FsPushInt(ptr,cloudLayerCount);
 		for (int i = 0; i < cloudLayerCount; i++){
 			const FsWeatherCloudLayer* layer;
@@ -6911,7 +6912,7 @@ YSRESULT FsSocketClient::ReceiveEnvironment(int ,unsigned char dat[])
 	unsigned flags;
 	YSBOOL fog;
 	int cloudLayers, dayLength;
-	double visibility,wx,wy,wz, dayCycle;
+	double visibility,wx,wy,wz, dayTime;
 	YsArray <FsWeatherCloudLayer> cloudLayer;
 
 
@@ -6928,10 +6929,10 @@ YSRESULT FsSocketClient::ReceiveEnvironment(int ,unsigned char dat[])
 	if(2<=version)
 	{
 		dayLength=FsPopInt(ptr);
-		dayCycle = FsPopFloat(ptr);
+		dayTime = FsPopFloat(ptr);
 
 		sim->SetDayLength(dayLength);
-		sim->SetDayCycle(dayCycle);
+		sim->SetDayTime(dayTime);
 		cloudLayers=FsPopInt(ptr);
 
 		for (int i=0;i < cloudLayers; i++){

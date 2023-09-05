@@ -83,6 +83,8 @@ YSRESULT FsSimulation::Save(
 		fprintf(fp,"ENVIRONM NIGHT\n");
 	}
 
+	fprintf(fp,"DAYLENG %d\n",GetDayLength());
+	fprintf(fp,"DAYTIME %lf\n",dayTime);
 	fprintf(fp,"ALLOWGUN %s\n",((allowedWeaponType & FSWEAPON_ALLOWGUN) ? "TRUE" : "FALSE"));
 	fprintf(fp,"ALLOWAAM %s\n",((allowedWeaponType & FSWEAPON_ALLOWAAM) ? "TRUE" : "FALSE"));
 	fprintf(fp,"ALLOWAGM %s\n",((allowedWeaponType & FSWEAPON_ALLOWAGM) ? "TRUE" : "FALSE"));

@@ -38,6 +38,8 @@ public:
 
 	void SetColor(const YsColor &col);
 
+	YsColor GetColor(void) const;
+
 	void DrawBank(const double &bank);
 
 	void DrawHSI(

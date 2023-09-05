@@ -489,9 +489,9 @@ public:
 	void SendServerEnvironment(FSENVIRONMENT env);
 	FSENVIRONMENT GetEnvironment(void) const;
 	int GetDayLength(void) const;
-	double GetDayCycle(void) const;
+	double GetDayTime(void) const;
 	void SetDayLength(int dayLength);
-	void SetDayCycle(double dayCycle);
+	void SetDayTime(double dayTime);
 	
 
 	YSRESULT SendConfigString(const char str[]);

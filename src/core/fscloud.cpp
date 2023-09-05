@@ -1097,10 +1097,10 @@ void FsSolidClouds::Make(
 
 void FsSolidClouds::AddToParticleManager(
 	class YsGLParticleManager &partMan,
-	FSENVIRONMENT env,const class FsWeather &weather,
+	double lightIntensity,const class FsWeather &weather,
 	const YsVec3 &viewDir,const YsMatrix4x4 &viewMdlTfm,const double &nearZ,const double &farZ,const double &tanFov)
 {
-	const double baseBrightness=(FSDAYLIGHT==env ? 0.7 : 0.15);
+	const double baseBrightness=lightIntensity*.75;
 
 	YsListItem <FsSolidCloud> *itm=NULL;
 	while((itm=cloudContainer.FindNext(itm))!=NULL)
