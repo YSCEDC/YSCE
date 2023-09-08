@@ -136,10 +136,16 @@ void FsGroundSky::DrawByFog(
 	for(int i=0; i<nLayer; ++i)
 	{
 		const double a0=(YsPi/2.0)*double(i)/double(nLayer);
+		float r,g,b;
+		r= (205/(1+pow((a0/30+0.55),7))-(a0/10)+15)/255;
 
-		res->vtxBuf.AddColor(isky.Rf(),isky.Gf(),isky.Bf(),1.0f);
+		g= ((128*pow(2,(-0.0056*pow((1.5*a0-6),2)))-(a0/3)+53-50/(a0+0.5)))/255;
+
+		b= ((105-75/(1+pow((a0+5)/7,7))-a0/1.5))/255;
+
+		res->vtxBuf.AddColor(r,g,b,1.0f);
 		res->vtxBuf.AddVertex(x0,cylRad*(GLfloat)sin(a0)/10.0f,cylRad*(GLfloat)cos(a0));
-		res->vtxBuf.AddColor(isky.Rf(),isky.Gf(),isky.Bf(),1.0f);
+		res->vtxBuf.AddColor(r,g,b,1.0f);
 		res->vtxBuf.AddVertex(x1,cylRad*(GLfloat)sin(a0)/10.0f,cylRad*(GLfloat)cos(a0));
 	}
 
@@ -147,6 +153,7 @@ void FsGroundSky::DrawByFog(
 	{
 		const double a0=(YsPi/2.0)*double(i)/double(nLayer);
 
+		
 		res->vtxBuf.AddColor(isky.Rf(),isky.Gf(),isky.Bf(),1.0f);
 		res->vtxBuf.AddVertex(x0,cylRad*(GLfloat)sin(a0)/10.0f,-cylRad*(GLfloat)cos(a0));
 		res->vtxBuf.AddColor(isky.Rf(),isky.Gf(),isky.Bf(),1.0f);
@@ -165,34 +172,10 @@ void FsGroundSky::DrawByFog(
 }
 
 void FsGroundSky::DrawGradation
-    (const YsVec3 &pos,const YsAtt3 &att,const YsColor &ignd,const YsColor &isky,const YsColor &horizon,
-     const double & /*farZ*/,YSBOOL specular)
+    (const YsVec3 &pos,const YsAtt3 &viewAtt,const YsColor &ignd,const YsColor &isky,const YsColor &horizon,
+     const double &farZ,YSBOOL specular)
 {
 	glStencilOp(GL_KEEP,GL_KEEP,GL_KEEP);
-	glDisable(GL_DEPTH_TEST);
-	glDepthFunc(GL_ALWAYS);
-	glDepthMask(GL_FALSE);
-	glEnable(GL_CULL_FACE);
-
-
-
-	GLfloat groundFadeAngle=0.0f;
-	// if(YsEqual(att.p(),YsPi/2.0)!=YSTRUE && YsEqual(att.p(),-YsPi/2.0)!=YSTRUE)
-	// {
-	// 	double groundFadeZ;  // Distance that maps fade
-	// 	groundFadeZ=farZ*cos(att.p())+(farZ*sin(att.p())+pos.y())*tan(att.p());
-	// 	groundFadeAngle=atan2(pos.y(),groundFadeZ);
-	// }
-	// else
-	// {
-	// 	groundFadeAngle=0.0;
-	// }
-
-
-
-	const GLfloat cylRad=5000.0f;
-	const GLfloat x0=-cylRad*3.0f;  // Actually, I have to draw a infinitely long cylinder.
-	const GLfloat x1= cylRad*3.0f;  // So, x0 and x1 must be sufficiently long, but not too long to cause numerical shit.
 
 
 	YsGLSL3DRenderer *renderer=YsGLSLSharedVariColor3DRenderer();
@@ -200,6 +183,26 @@ void FsGroundSky::DrawGradation
 
 	GLfloat prevTfm[16];
 	YsGLSLGet3DRendererModelViewfv(prevTfm,renderer);
+	glDisable(GL_DEPTH_TEST);
+	glDepthFunc(GL_ALWAYS);
+	glDepthMask(GL_FALSE);
+
+
+	YsAtt3 att;
+	att.Set(viewAtt.h(),0.0,0.0);
+
+	GLfloat groundFadeAngle=1.0f;
+	if(YsEqual(viewAtt.p(),YsPi/2.0)!=YSTRUE && YsEqual(viewAtt.p(),-YsPi/2.0)!=YSTRUE)
+	{
+		GLfloat groundFadeZ;  // Distance that maps fade
+		groundFadeZ=(GLfloat)(farZ*cos(viewAtt.p())+(farZ*sin(viewAtt.p())+pos.y())*tan(viewAtt.p()));
+		groundFadeAngle=(GLfloat)atan2((GLfloat)pos.y(),groundFadeZ);
+	}
+
+	const GLfloat cylRad=(GLfloat)farZ/10.0f;
+	const GLfloat x0=-cylRad*3.0f;  // Actually, I have to draw a infinitely long cylinder.
+	const GLfloat x1= cylRad*3.0f;  // So, x0 and x1 must be sufficiently long, but not too long to cause numerical shit.
+
 
 	GLfloat tfm[16];
 	YsGLCopyMatrixfv(tfm,prevTfm);
@@ -209,39 +212,32 @@ void FsGroundSky::DrawGradation
 
 	res->vtxBuf.CleanUp();
 
-	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x0,-cylRad*sinf(groundFadeAngle),-cylRad*cosf(groundFadeAngle));
-	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x1,-cylRad*sinf(groundFadeAngle),-cylRad*cosf(groundFadeAngle));
-	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x1,-cylRad                     , 0.0f);
+	const GLfloat y0=-cylRad*sinf(groundFadeAngle);
 
 	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x1,-cylRad                     , 0.0f);
+ 	res->vtxBuf.AddVertex(x0, 0.0f, -cylRad);
 	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x0,-cylRad                     , 0.0f);
+ 	res->vtxBuf.AddVertex(x1, 0.0f, -cylRad);
+	for(int i=-32; i>=1; i/=2)
+	{
+		const GLfloat z=cylRad*cosf(groundFadeAngle)*(GLfloat)i/32.0f;
+		res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
+		res->vtxBuf.AddVertex(x0,y0,z);
+		res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
+		res->vtxBuf.AddVertex(x1,y0,z);
+	}
+	for(int i=1; i<=32; i*=2)
+	{
+		const GLfloat z=cylRad*cosf(groundFadeAngle)*(GLfloat)i/32.0f;
+		res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
+		res->vtxBuf.AddVertex(x0,y0,z);
+		res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
+		res->vtxBuf.AddVertex(x1,y0,z);
+	}
 	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x0,-cylRad*sinf(groundFadeAngle),-cylRad*cosf(groundFadeAngle));
-
+	res->vtxBuf.AddVertex(x0, 0.0f, cylRad);
 	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x0,-cylRad                     , 0.0f);
-	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x1,-cylRad                     , 0.0f);
-	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x1,-cylRad*sinf(groundFadeAngle), cylRad*cosf(groundFadeAngle));
-
-	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x1,-cylRad*sinf(groundFadeAngle), cylRad*cosf(groundFadeAngle));
-	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x0,-cylRad*sinf(groundFadeAngle), cylRad*cosf(groundFadeAngle));
-	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x0,-cylRad                     , 0.0f);
-
- 	res->vtxBuf.AddColor(horizon.Rf(),horizon.Gf(),horizon.Bf(),1.0f);
- 	res->vtxBuf.AddVertex(x0,-cylRad*sinf(groundFadeAngle), cylRad*cosf(groundFadeAngle));
- 	res->vtxBuf.AddColor(horizon.Rf(),horizon.Gf(),horizon.Bf(),1.0f);
- 	res->vtxBuf.AddVertex(x1,-cylRad*sinf(groundFadeAngle), cylRad*cosf(groundFadeAngle));
- 	res->vtxBuf.AddColor(horizon.Rf(),horizon.Gf(),horizon.Bf(),1.0f);
+ 	res->vtxBuf.AddVertex(x1, 0.0f, cylRad);
  	res->vtxBuf.AddVertex(x1, 0.0f, cylRad);
 
  	res->vtxBuf.AddColor(horizon.Rf(),horizon.Gf(),horizon.Bf(),1.0f);
@@ -251,60 +247,48 @@ void FsGroundSky::DrawGradation
  	res->vtxBuf.AddColor(horizon.Rf(),horizon.Gf(),horizon.Bf(),1.0f);
  	res->vtxBuf.AddVertex(x0,-cylRad*sinf(groundFadeAngle), cylRad*cosf(groundFadeAngle));
 
+	res->vtxBuf.AddVertex(x1, 0.0f, cylRad);
 
-	int k;
-	YsColor col0,col1;
-	GLfloat a0,a1;
-	const GLfloat nRadianf=(GLfloat)YsDegToRad(nDeg);
-	for(int i=0; i<nLayer; i++)
+ 	res->vtxBuf.AddColor(horizon.Rf(),horizon.Gf(),horizon.Bf(),1.0f);
+ 	res->vtxBuf.AddVertex(x1, 0.0f, cylRad);
+ 	res->vtxBuf.AddColor(horizon.Rf(),horizon.Gf(),horizon.Bf(),1.0f);
+ 	res->vtxBuf.AddVertex(x0, 0.0f, cylRad);
+ 	res->vtxBuf.AddColor(horizon.Rf(),horizon.Gf(),horizon.Bf(),1.0f);
+ 	res->vtxBuf.AddVertex(x0,-cylRad*sinf(groundFadeAngle), cylRad*cosf(groundFadeAngle));
+
+
+for(int i=0; i<nLayer; ++i)
 	{
-		a0=(nRadianf*GLfloat(i  )/GLfloat(nLayer));
-		a1=(nRadianf*GLfloat(i+1)/GLfloat(nLayer));
+		const double a0=(YsPi/2.0)*double(i)/double(nLayer);
+		float r,g,b;
+		r= (205/(1+pow((a0/30+0.55),7))-(a0/10)+15)/255;
 
-		k=i+1;
-		col0.SetDoubleRGB
-		  ((isky.Rd()*double(i)+horizon.Rd()*double(nLayer-i))/double(nLayer),
-		   (isky.Gd()*double(i)+horizon.Gd()*double(nLayer-i))/double(nLayer),
-		   (isky.Bd()*double(i)+horizon.Bd()*double(nLayer-i))/double(nLayer));
-		col1.SetDoubleRGB
-		  ((isky.Rd()*double(k)+horizon.Rd()*double(nLayer-k))/double(nLayer),
-		   (isky.Gd()*double(k)+horizon.Gd()*double(nLayer-k))/double(nLayer),
-		   (isky.Bd()*double(k)+horizon.Bd()*double(nLayer-k))/double(nLayer));
+		g= ((128*pow(2,(-0.0056*pow((1.5*a0-6),2)))-(a0/3)+53-50/(a0+0.5)))/255;
 
-		res->vtxBuf.AddColor(col0.Rf(),col0.Gf(),col0.Bf(),1.0f);
-		res->vtxBuf.AddVertex(x0,cylRad*sinf(a0),cylRad*(cosf(a0)));
-		res->vtxBuf.AddColor(col0.Rf(),col0.Gf(),col0.Bf(),1.0f);
-		res->vtxBuf.AddVertex(x1,cylRad*sinf(a0),cylRad*(cosf(a0)));
-		res->vtxBuf.AddColor(col1.Rf(),col1.Gf(),col1.Bf(),1.0f);
-		res->vtxBuf.AddVertex(x1,cylRad*sinf(a1),cylRad*(cosf(a1)));
+		b= ((105-75/(1+pow((a0+5)/7,7))-a0/1.5))/255;
 
-		res->vtxBuf.AddColor(col1.Rf(),col1.Gf(),col1.Bf(),1.0f);
-		res->vtxBuf.AddVertex(x1,cylRad*sinf(a1),cylRad*(cosf(a1)));
-		res->vtxBuf.AddColor(col1.Rf(),col1.Gf(),col1.Bf(),1.0f);
-		res->vtxBuf.AddVertex(x0,cylRad*sinf(a1),cylRad*(cosf(a1)));
-		res->vtxBuf.AddColor(col0.Rf(),col0.Gf(),col0.Bf(),1.0f);
-		res->vtxBuf.AddVertex(x0,cylRad*sinf(a0),cylRad*(cosf(a0)));
+		res->vtxBuf.AddColor(r,g,b,1.0f);
+		res->vtxBuf.AddVertex(x0,cylRad*(GLfloat)sin(a0)/10.0f,cylRad*(GLfloat)cos(a0));
+		res->vtxBuf.AddColor(r,g,b,1.0f);
+		res->vtxBuf.AddVertex(x1,cylRad*(GLfloat)sin(a0)/10.0f,cylRad*(GLfloat)cos(a0));
 	}
 
-	a1=nRadianf;
-	res->vtxBuf.AddColor(col0.Rf(),col0.Gf(),col0.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x0,cylRad*sinf(a1), cylRad*cosf(a1));
-	res->vtxBuf.AddColor(col0.Rf(),col0.Gf(),col0.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x1,cylRad*sinf(a1), cylRad*cosf(a1));
-	res->vtxBuf.AddColor(col0.Rf(),col0.Gf(),col0.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x1,cylRad*sinf(a1),-cylRad*cosf(a1));
+	for(int i=nLayer; 0<=i; --i)
+	{
+		const double a0=(YsPi/2.0)*double(i)/double(nLayer);
 
-	res->vtxBuf.AddColor(col0.Rf(),col0.Gf(),col0.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x1,cylRad*sinf(a1),-cylRad*cosf(a1));
-	res->vtxBuf.AddColor(col0.Rf(),col0.Gf(),col0.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x0,cylRad*sinf(a1),-cylRad*cosf(a1));
-	res->vtxBuf.AddColor(col0.Rf(),col0.Gf(),col0.Bf(),1.0f);
-	res->vtxBuf.AddVertex(x0,cylRad*sinf(a1), cylRad*cosf(a1));
+		res->vtxBuf.AddColor(isky.Rf(),isky.Gf(),isky.Bf(),1.0f);
+		res->vtxBuf.AddVertex(x0,cylRad*(GLfloat)sin(a0)/10.0f,-cylRad*(GLfloat)cos(a0));
+		res->vtxBuf.AddColor(isky.Rf(),isky.Gf(),isky.Bf(),1.0f);
+		res->vtxBuf.AddVertex(x1,cylRad*(GLfloat)sin(a0)/10.0f,-cylRad*(GLfloat)cos(a0));
+	}
 
-	YsGLSLDrawPrimitiveVtxColfv(renderer,GL_TRIANGLES,res->vtxBuf.nVtx,res->vtxBuf.vtxArray,res->vtxBuf.colArray);
+	YsGLSLDrawPrimitiveVtxColfv(renderer,GL_TRIANGLE_STRIP,res->vtxBuf.nVtx,res->vtxBuf.vtxArray,res->vtxBuf.colArray);
 
 	YsGLSLSet3DRendererModelViewfv(renderer,prevTfm);
 	YsGLSLEndUse3DRenderer(renderer);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LEQUAL);
 	glStencilOp(GL_KEEP,GL_KEEP,GL_INCR);
 }
 

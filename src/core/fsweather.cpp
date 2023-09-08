@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stddef.h>
 #include <math.h>
+#include <random>
+#include <vector>
 
 #include <ysclass.h>
 
@@ -315,6 +317,47 @@ YsArray <int> FsWeather::GetDayTimeHours(double dayTime) const{
 	time.Append(seconds);
 	return time;
 };
+
+double FsWeather::perlinNoise(double x, double y, int seed) const{
+	std::default_random_engine generator(seed);
+
+	std::vector<int> p(256);
+
+	for (int i= 0; i < 256; ++i) {
+		p[i] = i;
+	}
+
+	shuffle(p.begin(), p.end(), generator);
+
+	double noise = 0.0;
+	double fade = 1.0;
+
+	for (int i = 0; i < 4; ++i) {
+		int X = (int)floor(x) & 255;
+		int Y = (int)floor(y) & 255;
+
+		double u = x - floor(x);
+		double v = y - floor(y);
+
+		int A = p[X] + Y;
+		int AA = p[A];
+		int AB = p[A + 1];
+		int B = p[X + 1] + Y;
+		int BA = p[B];
+		int BB = p[B + 1];
+
+		noise += fade * ((1 - u) * (1 - v) * AA + (1 - u) * v * AB + u * (1 - v) * BA + u * v * BB);
+
+		x *= 2.0;
+		y *= 2.0;
+		fade *= 0.5;
+	}
+
+	return noise;
+
+}
+
+
 
 //Save cloud functions - to review whether these continue to be used with new clouds in future.
 

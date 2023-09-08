@@ -3904,6 +3904,7 @@ void FsSimulation::SimMove(const double &dt)
 
 	weather->WeatherTransition(dt);
 	//Cloud movement if we bring that in, goes here!
+	solidCloud->Move(dt,weather->GetWind());
 
 	env = weather->GetDayTime(dayTime,dt,dayLength);
 	// If the environment has changed, ensure it is forwarded to the server.
@@ -3917,6 +3918,8 @@ void FsSimulation::SimMove(const double &dt)
 	lightColour = weather->GetLightColour(dayTime);
 	lightIntensity = weather->GetLightIntensity(dayTime);
 	weather->SetSunPosition(lightPositionVector,dayTime);
+	double randomNoise = weather->perlinNoise(1,1,1);
+	printf("Random Noise: %f\n",randomNoise);
 	fogColor.SetDoubleRGB(0.6*lightIntensity*lightColour.Rd(),0.6*lightIntensity * lightColour.Gd(), 0.6*lightIntensity * lightColour.Bd());
 	airplane=NULL;
 	while((airplane=FindNextAirplane(airplane))!=NULL)
@@ -6834,7 +6837,7 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 
 	if(YSTRUE!=cfgPtr->useParticle)
 	{
-		solidCloud->Draw(env,*weather,actualViewMode.viewMat,proj.nearz,proj.farz,proj.tanFov);
+		solidCloud->Draw(env,*weather,actualViewMode.viewMat,proj.nearz,proj.farz,proj.tanFov,proj.GetMatrix());
 	}
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
@@ -12530,7 +12533,7 @@ YSRESULT FsSimulation::LoadConfigFile(const wchar_t fn[],YSBOOL changeEnvironmen
 
 	if(changeEnvironment==YSTRUE)
 	{
-		env=cfgPtr->env;
+		//env=cfgPtr->env;
 		weather->SetFog(cfgPtr->drawFog);
 		weather->SetFogVisibility(cfgPtr->fogVisibility);
 		for(int i=0; i<cfgPtr->cloudLayer.GetN(); i++)

@@ -3,6 +3,7 @@
 /* { */
 
 #include <ysglbuffermanager.h>
+#include "fsvisual.h"
 
 class FsCloud
 {
@@ -83,9 +84,8 @@ private:
 
 	YsArray <CloudParticle> particle;
 
-	YsShell shl;
-	YsShellLattice ltc;
-	YsVec3 bbx[2],cen;
+	mutable class FsVisualSrf shl;
+	YsVec3 bbx[2],cen, position;
 	YsGLBufferManager::Handle vboHd;
 
 public:
@@ -94,6 +94,7 @@ public:
 	void Initialize(void);
 
 	const YsShell &GetShell(void) const;
+		FsVisualSrf &GetSrf(void);
 	const YsVec3 &GetCenter(void) const;
 
 	// Cloud rendering is view-direction dependent.
@@ -102,6 +103,7 @@ public:
 	void MakeOpenGlList(void);
 
 	void Make(const YsVec3 &cen,const double &sizeX,const double &sizeZ,const double &y0,const double &y1);
+	void Move(const YsVec3 &wind);
 	YSBOOL IsInCloud(const YsVec3 &pos) const;
 
 	void ScatterParticle(int nParticle);
@@ -136,7 +138,8 @@ public:
 	void BeginDrawCloud(void);
 	void Draw(
 	    FSENVIRONMENT env,const class FsWeather &weather,
-	    const YsMatrix4x4 &viewMdlTfm,const double &nearZ,const double &farZ,const double &tanFov);
+	    const YsMatrix4x4 &viewMdlTfm,const double &nearZ,const double &farZ,const double &tanFov, const YsMatrix4x4 &projTfm);
+	void Move(const double dv, const YsVec3 &wind);
 	void EndDrawCloud(void);
 	void ReduceVisibilityByPolygon(const YsMatrix4x4 &viewTfm,const YsColor &col,YSBOOL transparency);
 	void Make(int n,const YsVec3 &cen,const double &range,const double &sizeX,const double &y0,const double &y1);

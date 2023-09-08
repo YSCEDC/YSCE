@@ -369,7 +369,6 @@ void FsSetDirectionalLight(const YsVec3 &cameraPosition,const YsVec3 &lightDirec
 
 void FsSetDirectionalLight(const YsVec3 &/*cameraPosition*/, const YsVec3 &lightDirection, FSENVIRONMENT env, const YsColor &lightColor, const double &lightLevel){
 	float light[4];
-//TODO - Need to apply the light level and colour here to DAYLIGHT.
 #ifdef YSOGLERRORCHECK
 	FsOpenGlShowError("FsSetDirectionalLight In");
 #endif
