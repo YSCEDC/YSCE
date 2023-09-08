@@ -1131,8 +1131,9 @@ void FsSolidClouds::Draw(
 	for(int i=0; i<toDraw.GetN(); ++i)
 	{
 		FsVisualSrf srf;
+		YsAtt3 atti = YsAtt3(0.0,0,0);
 		srf = toDraw[i]->GetSrf();
-		srf.Draw(*&viewMdlTfm,*&projTfm,toDraw[i]->cen, *&YsAtt3(0.0,0,0), FSVISUAL_DRAWTRANSPARENT);
+		srf.Draw(*&viewMdlTfm,*&projTfm,toDraw[i]->cen, *&atti, FSVISUAL_DRAWTRANSPARENT);
 	}
 
 	EndDrawCloud();

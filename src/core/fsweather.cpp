@@ -327,7 +327,7 @@ double FsWeather::perlinNoise(double x, double y, int seed) const{
 		p[i] = i;
 	}
 
-	shuffle(p.begin(), p.end(), generator);
+	std::shuffle(p.begin(), p.end(), generator);
 
 	double noise = 0.0;
 	double fade = 1.0;
