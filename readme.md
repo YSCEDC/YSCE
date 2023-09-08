@@ -1,4 +1,4 @@
-# YSFlight Community Edition
+# YSFlight Community Edition (YSCE)
 
 This repository is home to the YSFlight Community Edition fork of YSFlight. If you are interested in joining the project, please email Current Repository maintainer Nodoka Hanamura at nodo-at-kahanamura.com (temporary) or contact any of the current YSCEDC contributors on YSFlight Headquarters (https://www.ysfhq.com/).
 
