@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <math.h>
 #include <random>
+#include <algorithm>
 #include <vector>
 
 #include <ysclass.h>
