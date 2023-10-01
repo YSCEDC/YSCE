@@ -10827,6 +10827,8 @@ void FsSimulation::SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWM
 	case FS45DEGREELEFTVIEW:
 	case FS90DEGREERIGHTVIEW:
 	case FS90DEGREELEFTVIEW:
+	case FSVIEWUP:
+	case FSVIEWDOWN:
 	case FSADDITIONALAIRPLANEVIEW:
 	case FSOUTSIDEPLAYER2:
 	case FSOUTSIDEPLAYER3:
@@ -10910,6 +10912,8 @@ void FsSimulation::SimDecideViewpoint_Gnd(ActualViewMode &actualViewMode,FSVIEWM
 	case FS45DEGREELEFTVIEW:
 	case FS90DEGREERIGHTVIEW:
 	case FS90DEGREELEFTVIEW:
+	case FSVIEWUP:
+	case FSVIEWDOWN:
 	case FSADDITIONALAIRPLANEVIEW:
 	case FSOUTSIDEPLAYER2:
 	case FSOUTSIDEPLAYER3:
@@ -11106,6 +11110,8 @@ void FsSimulation::SimDecideViewpoint_Common(ActualViewMode &actualViewMode,FSVI
 	case FS45DEGREELEFTVIEW:
 	case FS90DEGREERIGHTVIEW:
 	case FS90DEGREELEFTVIEW:
+	case FSVIEWUP:
+	case FSVIEWDOWN:
 		switch(mode)
 		{
 		case FSBACKMIRRORVIEW:
@@ -11127,6 +11133,14 @@ void FsSimulation::SimDecideViewpoint_Common(ActualViewMode &actualViewMode,FSVI
 		case FS90DEGREELEFTVIEW:
 			actualViewMode.actualViewHdg=YsPi/2.0;
 			actualViewMode.actualViewPch=0.0;
+			break;
+		case FSVIEWUP:
+			actualViewMode.actualViewPch=YsPi/2.0;
+			actualViewMode.actualViewHdg=0.0;
+			break;
+		case FSVIEWDOWN:
+			actualViewMode.actualViewPch=-YsPi/2.0;
+			actualViewMode.actualViewHdg=0.0;
 			break;
 		}
 
