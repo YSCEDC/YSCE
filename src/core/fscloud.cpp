@@ -3,6 +3,9 @@
 #include <string.h>
 #include <stddef.h>
 #include <math.h>
+#include <random>
+#include <algorithm>
+#include <vector>
 
 #include <ysclass.h>
 
@@ -814,12 +817,12 @@ void FsSolidCloud::Move(const YsVec3 &wind){ //Moves each cloud by wind * delta 
 	YsMatrix4x4 mat;
 	mat.Translate(wind);
 	shl.SetMatrix(mat);
-	for(auto &p : particle){
-		p.pos += wind;
-		if (p.pos.y() < 0){
-			p.pos.SetY(cen.y());
-		}
-	}
+	// for(auto &p : particle){
+	// 	p.pos += wind;
+	// 	if (p.pos.y() < 0){
+	// 		p.pos.SetY(cen.y());
+	// 	}
+	// }
 }
 
 void FsSolidClouds::MakeOpenGlList(void)
@@ -1082,7 +1085,7 @@ void FsSolidClouds::Move(const double dv, const YsVec3 &wind)
 void FsSolidClouds::AddToParticleManager(
 	class YsGLParticleManager &partMan,
 	double lightIntensity,const class FsWeather &weather,
-	const YsVec3 &viewDir,const YsMatrix4x4 &viewMdlTfm,const double &nearZ,const double &farZ,const double &tanFov)
+	const YsVec3 &viewDir,const YsMatrix4x4 &viewMdlTfm,const double &nearZ,const double &farZ,const double &tanFov,const YsVec3 &viewPoint)
 {
 	const double baseBrightness=lightIntensity*.75;
 
@@ -1099,7 +1102,7 @@ void FsSolidClouds::AddToParticleManager(
 				col.SetDoubleRGBA(brightness,brightness,brightness,0.5);
 
 				float s=(float)particle.particleType*0.125f;
-				partMan.Add(particle.pos,col,particle.rad*2.0,s,0);
+				partMan.Add(particle.pos+itm->dat.cen,col,particle.rad*2.0,s,0);
 			}
 		}
 	}
@@ -1113,6 +1116,14 @@ void FsSolidClouds::Draw(
 	YsArray <FsSolidCloud *,32> toDraw;
 
 	BeginDrawCloud();
+
+	YsVec3 cameraPos,pos;
+	pos.Set(0.0,0.0,0.0);
+	cameraPos = viewMdlTfm * pos;
+	
+
+	printf("CameraPos: %lf %lf %lf\n",cameraPos.x(),cameraPos.y(),cameraPos.z());
+
 
 	YsListItem <FsSolidCloud> *itm;
 	itm=NULL;
@@ -1138,4 +1149,44 @@ void FsSolidClouds::Draw(
 
 	EndDrawCloud();
 }
+
+	double FsSolidCloud::perlinNoise(double x, double y, int seed){
+	std::default_random_engine generator(seed);
+
+	std::vector<int> p(256);
+
+	for (int i= 0; i < 256; ++i) {
+		p[i] = i;
+	}
+
+	std::shuffle(p.begin(), p.end(), generator);
+
+	double noise = 0.0;
+	double fade = 1.0;
+
+	for (int i = 0; i < 4; ++i) {
+		int X = (int)floor(x) & 255;
+		int Y = (int)floor(y) & 255;
+
+		double u = x - floor(x);
+		double v = y - floor(y);
+
+		int A = p[X] + Y;
+		int AA = p[A];
+		int AB = p[A + 1];
+		int B = p[X + 1] + Y;
+		int BA = p[B];
+		int BB = p[B + 1];
+
+		noise += fade * ((1 - u) * (1 - v) * AA + (1 - u) * v * AB + u * (1 - v) * BA + u * v * BB);
+
+		x *= 2.0;
+		y *= 2.0;
+		fade *= 0.5;
+	}
+
+	return noise;
+
+}
+
 

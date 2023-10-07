@@ -107,6 +107,7 @@ public:
 	YSBOOL IsInCloud(const YsVec3 &pos) const;
 
 	void ScatterParticle(int nParticle);
+	double perlinNoise(double x, double y, int seed);
 };
 
 class FsSolidClouds
@@ -129,7 +130,7 @@ public:
 	void AddToParticleManager(
 		class YsGLParticleManager &partMan,
 	    double lightIntensity,const class FsWeather &weather,
-	    const YsVec3 &viewDir,const YsMatrix4x4 &viewMdlTfm,const double &nearZ,const double &farZ,const double &tanFov);
+	    const YsVec3 &viewDir,const YsMatrix4x4 &viewMdlTfm,const double &nearZ,const double &farZ,const double &tanFov,const YsVec3 &viewPoint);
 
 
 	void MakeOpenGlList(void);

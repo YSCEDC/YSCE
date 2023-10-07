@@ -78,8 +78,6 @@ public:
 	void SetSunPosition(YsVec3& lightPosition, double dayTime) const;
 	YsArray <int> GetDayTimeHours(double dayTime) const;
 
-	double perlinNoise(double x, double y, int seed) const;
-
 };
 
 

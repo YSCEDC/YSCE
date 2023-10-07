@@ -5,9 +5,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <math.h>
-#include <random>
-#include <algorithm>
-#include <vector>
+
 
 #include <ysclass.h>
 
@@ -231,12 +229,16 @@ YsColor FsWeather::GetLightColour(YsColor skyColour, const double dayTime) const
 
 double FsWeather::GetLightIntensity(const double dayTime) const{
 	double lightIntensity = 1.0;
-	if (IsDuskOrDawn(dayTime) == YSTRUE){ //Then it's dusk/dawn
-		lightIntensity = DuskIntensity(dayTime);
-	}
-	if (IsDay(dayTime) == YSFALSE){
+	lightIntensity = sin(dayTime+YsPi/2);
+	if (lightIntensity<=0.1){
 		lightIntensity = 0.1;
 	}
+	// if (IsDuskOrDawn(dayTime) == YSTRUE){ //Then it's dusk/dawn
+	// 	lightIntensity = DuskIntensity(dayTime);
+	// }
+	// if (IsDay(dayTime) == YSFALSE){
+	// 	lightIntensity = 0.1;
+	// }
 	return lightIntensity;
 };
 
@@ -292,14 +294,9 @@ FSENVIRONMENT FsWeather::GetDayTime(double& daytime, double dt, int dayLength) c
 };
 
 void FsWeather::SetSunPosition(YsVec3& lightPosition, double dayTime) const{
-	if (IsDay(dayTime) == YSTRUE){
+	// if (IsDay(dayTime) == YSTRUE){
 		lightPosition.SetX(cos(dayTime+YsPi/2));
-		lightPosition.SetY(abs(sin(dayTime+YsPi/2)));
-	}
-	else{
-		lightPosition.SetX(-cos(dayTime+YsPi/2));
-		lightPosition.SetY(abs(sin(dayTime+YsPi/2)));
-	}
+		lightPosition.SetY((sin(dayTime+YsPi/2)));
 };
 
 YsArray <int> FsWeather::GetDayTimeHours(double dayTime) const{
@@ -319,44 +316,6 @@ YsArray <int> FsWeather::GetDayTimeHours(double dayTime) const{
 	return time;
 };
 
-double FsWeather::perlinNoise(double x, double y, int seed) const{
-	std::default_random_engine generator(seed);
-
-	std::vector<int> p(256);
-
-	for (int i= 0; i < 256; ++i) {
-		p[i] = i;
-	}
-
-	std::shuffle(p.begin(), p.end(), generator);
-
-	double noise = 0.0;
-	double fade = 1.0;
-
-	for (int i = 0; i < 4; ++i) {
-		int X = (int)floor(x) & 255;
-		int Y = (int)floor(y) & 255;
-
-		double u = x - floor(x);
-		double v = y - floor(y);
-
-		int A = p[X] + Y;
-		int AA = p[A];
-		int AB = p[A + 1];
-		int B = p[X + 1] + Y;
-		int BA = p[B];
-		int BB = p[B + 1];
-
-		noise += fade * ((1 - u) * (1 - v) * AA + (1 - u) * v * AB + u * (1 - v) * BA + u * v * BB);
-
-		x *= 2.0;
-		y *= 2.0;
-		fade *= 0.5;
-	}
-
-	return noise;
-
-}
 
 
 

@@ -2334,7 +2334,7 @@ void FsSimulation::PrepareRunSimulation(void)
 		{
 			if(solidCloud->IsReady()!=YSTRUE)
 			{
-				solidCloud->Make(12,cloudCenter,30000.0,6000.0,cfgPtr->ceiling-400.0,cfgPtr->ceiling+400.0);
+				solidCloud->Make(20,cloudCenter,30000.0,6000.0,cfgPtr->ceiling-400.0,cfgPtr->ceiling+400.0);
 			}
 		}
 	}
@@ -3918,8 +3918,6 @@ void FsSimulation::SimMove(const double &dt)
 	lightColour = weather->GetLightColour(dayTime);
 	lightIntensity = weather->GetLightIntensity(dayTime);
 	weather->SetSunPosition(lightPositionVector,dayTime);
-	double randomNoise = weather->perlinNoise(1,1,1);
-	printf("Random Noise: %f\n",randomNoise);
 	fogColor.SetDoubleRGB(0.6*lightIntensity*lightColour.Rd(),0.6*lightIntensity * lightColour.Gd(), 0.6*lightIntensity * lightColour.Bd());
 	airplane=NULL;
 	while((airplane=FindNextAirplane(airplane))!=NULL)
@@ -6442,7 +6440,7 @@ void FsSimulation::SimDrawScreen(
 		particleStore.AddToParticleManager(partMan);
 		if(YSTRUE==cfgPtr->useParticle)
 		{
-			solidCloud->AddToParticleManager(partMan,lightIntensity,*weather,actualViewMode.viewAttitude.GetForwardVector(),actualViewMode.viewMat,prj.nearz,prj.farz,prj.tanFov);
+			solidCloud->AddToParticleManager(partMan,lightIntensity,*weather,actualViewMode.viewAttitude.GetForwardVector(),actualViewMode.viewMat,prj.nearz,prj.farz,prj.tanFov,actualViewMode.viewPoint);
 			bulletHolder.AddToParticleManager(partMan,currentTime);
 
 			for(FsAirplane *seeker=nullptr; nullptr!=(seeker=FindNextAirplane(seeker)); )
@@ -7042,7 +7040,7 @@ void FsSimulation::SimDrawBackground(const ActualViewMode &actualViewMode,const 
 
 	if(weather->GetFog()==YSTRUE)
 	{
-		groundSky->DrawByFog(actualViewMode.viewPoint,actualViewMode.viewAttitude,gnd,sky,horizonColor,farZ,gndSpecular);
+		groundSky->DrawByFog(actualViewMode.viewPoint,actualViewMode.viewAttitude,gnd,sky,horizonColor,farZ,gndSpecular, lightPositionVector, lightColour);
 	}
 	else if(cfgPtr->horizonGradation==YSTRUE)
 	{

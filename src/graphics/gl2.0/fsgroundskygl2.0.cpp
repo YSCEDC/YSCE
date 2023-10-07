@@ -21,7 +21,7 @@ public:
 FsGroundSky::FsGroundSky()
 {
 	res=new FsGroundSkyGraphicCache;
-
+	LoadSunAndMoon();
 	nLayer=8;
 	nDeg=30.0;
 
@@ -64,7 +64,7 @@ FsGroundSky::~FsGroundSky()
 
 void FsGroundSky::DrawByFog(
     const YsVec3 &pos,const YsAtt3 &viewAtt,const YsColor &ignd,const YsColor &isky,const YsColor & /*horizon*/,
-    const double &farZ,YSBOOL specular)
+    const double &farZ,YSBOOL specular, YsVec3 sunPos, YsColor sunCol)
 {
 	glStencilOp(GL_KEEP,GL_KEEP,GL_KEEP);
 
@@ -77,9 +77,9 @@ void FsGroundSky::DrawByFog(
 	glDepthFunc(GL_ALWAYS);
 	glDepthMask(GL_FALSE);
 
-
+	
 	YsAtt3 att;
-	att.Set(viewAtt.h(),0.0,0.0);
+	att.Set(viewAtt.h(),viewAtt.p(),viewAtt.b());
 
 
 	const GLfloat fogDensity=YsGLSLGet3DRendererFogDensity(renderer);
@@ -94,8 +94,8 @@ void FsGroundSky::DrawByFog(
 	}
 
 	const GLfloat cylRad=(GLfloat)farZ/10.0f;
-	const GLfloat x0=-cylRad*3.0f;  // Actually, I have to draw a infinitely long cylinder.
-	const GLfloat x1= cylRad*3.0f;  // So, x0 and x1 must be sufficiently long, but not too long to cause numerical shit.
+	const GLfloat x0=-cylRad*5.0f;  // Actually, I have to draw a infinitely long cylinder.
+	const GLfloat x1= cylRad*5.0f;  // So, x0 and x1 must be sufficiently long, but not too long to cause numerical shit.
 
 	GLfloat tfm[16];
 	YsGLCopyMatrixfv(tfm,prevTfm);
@@ -132,7 +132,8 @@ void FsGroundSky::DrawByFog(
 	res->vtxBuf.AddColor(ignd.Rf(),ignd.Gf(),ignd.Bf(),1.0f);
 	res->vtxBuf.AddVertex(x1, 0.0f, cylRad);
 
-
+	GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
+	
 	for(int i=0; i<nLayer; ++i)
 	{
 		const double a0=(YsPi/2.0)*double(i)/double(nLayer);
@@ -163,8 +164,47 @@ void FsGroundSky::DrawByFog(
 	YsGLSLDrawPrimitiveVtxColfv(renderer,GL_TRIANGLE_STRIP,res->vtxBuf.nVtx,res->vtxBuf.vtxArray,res->vtxBuf.colArray);
 
 	YsGLSLSet3DRendererUniformFogDensity(renderer,fogDensity);
-	YsGLSLSet3DRendererModelViewfv(renderer,prevTfm);
 	YsGLSLEndUse3DRenderer(renderer);
+
+	YsMatrix4x4 viewTransform;
+	
+	viewTransform.CreateFromOpenGlCompatibleMatrix(prevTfm);
+	YsMatrix4x4 invViewTransform;
+	invViewTransform+=viewTransform;
+	// invViewTransform.Invert();
+
+	// invViewTransform.Translate(pos.x(),pos.y(),pos.z());
+	// invViewTransform.Rotate(viewAtt);
+	// invViewTransform.RotateXZ(att.h());
+	// invViewTransform.RotateZY(att.p());
+	// invViewTransform.RotateXY(att.b());
+	// invViewTransform.Translate(0,0,-50);
+	// 	invViewTransform.RotateZX(viewAtt.h());
+	
+	//XZ is yaw
+	//ZY is pitch
+	//XY is roll
+
+	// invViewTransform.RotateXZ(sunPos.x());
+	// invViewTransform.RotateZY(-sunPos.y());
+	YsMatrix4x4 modelTransform;
+
+	modelTransform.RotateXZ(YsPi); //Because it is backwards...
+	modelTransform.Translate(10,pos.y(),-pos.z());
+	modelTransform.RotateZX(att.h());
+	modelTransform.RotateZY(att.p());
+	modelTransform.RotateXY(att.b());
+
+	sun->SetMatrix(modelTransform);
+
+	
+
+	// moon->SetMatrix(modelTransform);
+
+	
+	
+	
+	sun->Draw(invViewTransform,FSVISUAL_DRAWALL);
 
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LEQUAL);
@@ -522,4 +562,18 @@ void FsGroundSky::DrawCrappy(const YsVec3 &pos,const YsColor &ignd,const YsColor
 	glDepthFunc(GL_LEQUAL);
 	glDepthMask(GL_TRUE);
 	glStencilOp(GL_KEEP,GL_KEEP,GL_INCR);
+}
+
+void FsGroundSky::LoadSunAndMoon(void){
+	sun = new FsVisualSrf;
+	if(sun->Load(L"misc/sun.srf")!=YSOK)
+		{
+			printf("Error loading sun srf\n");
+
+		}
+	moon = new FsVisualSrf;
+	if(moon->Load(L"misc/moon.srf")!= YSOK){
+		printf("Error loading moon srf\n");
+	}
+
 }
