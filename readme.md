@@ -31,12 +31,14 @@ Current YSCEDC Contributors (Code, Design, Advisory):
 To compile YSCE at this time, please follow the instructions below as prepared for the original YSFlight repository by Soji Yamakawa.
 
 ## Compile Instruction
-Prerequisite is a compiler and cmake.
+Prequisites are:
+* CMake
+* Any CMake-compatible compiler
+* The YSCE Public Libraries (Fork of YSFLIGHT Public Libraries)
 
-YSFLIGHT requires my public libraries to build.  Follow the steps below:
+Open your preferred terminal client and input the following commands in your build area:
 
 ```
-(In your working directory)
 git clone https://github.com/YSCEDC/ysce_public.git
 git clone https://github.com/YSCEDC/YSCE.git
 cd YSCE
