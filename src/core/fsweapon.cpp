@@ -998,7 +998,7 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 					{
 						PurePursuitAttitude(tpos, dt);
 					}
-					else if (type == FSWEAPON_AIM9X || type == FSWEAPON_AIM120)
+					else if (type == FSWEAPON_AIM9X || type == FSWEAPON_AIM120 || type == FSWEAPON_AGM65)
 					{
 						if (r >= radar)
 						{
@@ -1118,14 +1118,7 @@ void FsWeapon::PurePursuitAttitude(const YsVec3& targetPos, const double& dt)
 
 void FsWeapon::ConstantBearingPursuitAttitude(FsExistence* target, const double& dt, const FsWeapon* fooledFlare)
 {
-	//AAMs must target air vehicles
-	if (target->GetType() != FSEX_AIRPLANE)
-	{
-		return; 
-	}
-
 	//cast target as airplane type
-	FsAirplane* targetAircraft = (FsAirplane*)target;
 	YsVec3 targetPos;
 	YsVec3 targetVel;
 
@@ -1136,10 +1129,17 @@ void FsWeapon::ConstantBearingPursuitAttitude(FsExistence* target, const double&
 		targetVel = fooledFlare->vec;
 	}
 	//otherwise, take target aircraft's position and velocity
-	else
+	else if (target->GetType() == FSEX_AIRPLANE)
 	{
+		FsAirplane* targetAircraft = (FsAirplane*)target;
 		targetPos = targetAircraft->GetPosition();
 		targetAircraft->Prop().GetVelocity(targetVel);
+	}
+	else if (target->GetType() == FSEX_GROUND)
+	{
+		FsGround* targetGround = (FsGround*)target;
+		targetPos = targetGround->GetPosition();
+		targetGround->Prop().GetVelocity(targetVel);
 	}
 
 	YsVec3 targetRelPos = targetPos - pos;
