@@ -243,6 +243,10 @@ typedef enum
 	FSCLOUDSOLID
 } FSCLOUDTYPE;
 
+enum
+	{
+		MAXNUMCLOUDLAYER=3
+	};
 
 
 // MEMO:

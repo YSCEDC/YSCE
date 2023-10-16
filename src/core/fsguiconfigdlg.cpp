@@ -109,13 +109,41 @@ void FsGuiConfigDialog::MakeDefaultsDialog(FsWorld *world,FsFlightConfig &cfg)
 	dayOrNightBtn[0]=AddTextButton(MkId("day")  ,FSKEY_NULL,FSGUI_RADIOBUTTON,L"DAY",YSTRUE);
 	dayOrNightBtn[1]=AddTextButton(MkId("night"),FSKEY_NULL,FSGUI_RADIOBUTTON,L"NIGHT",YSFALSE);
 	SetRadioButtonGroup(2,dayOrNightBtn);
+	
 
 	grpBox=AddGroupBox();
 	grpBox->AddGuiItem(label);
 	grpBox->AddGuiItem(dayOrNightBtn[0]);
 	grpBox->AddGuiItem(dayOrNightBtn[1]);
+	
+	label=AddStaticText(1,FSKEY_NULL,FSGUI_NEWFLTDLG_WEATHER,16,1,YSTRUE);
+	label->SetFill(YSFALSE);
+	label->SetDrawFrame(YSFALSE);
+	windDir=AddNumberBox(1,FSKEY_NULL,FSGUI_NEWFLTDLG_WINDDIR,16,0,-360,360,10,YSTRUE);
+	windSpd=AddNumberBox(1,FSKEY_NULL,FSGUI_NEWFLTDLG_WINDSPD,16,0,0,50,1,YSTRUE);
+	AddStaticText(1,FSKEY_NULL,FSGUI_NEWFLTDLG_OVERCASTLAYER,YSTRUE);
+	for(int i=0; i<MAXNUMCLOUDLAYER; i++)
+	{
+		overCastLayerSw[i]=AddTextButton(1,FSKEY_NULL,FSGUI_CHECKBOX,"",YSTRUE);
+		AddStaticText(1,FSKEY_NULL,FSGUI_NEWFLTDLG_OVERCASTFLOOR,YSFALSE);
+		overCastLayerFloor[i]=AddNumberBox(1,FSKEY_NULL,"",6,0,0,25000,200,YSFALSE);
+		overCastLayerFloor[i]->SetNumber(800+i*3000);
+		AddStaticText(1,FSKEY_NULL,FSGUI_NEWFLTDLG_OVERCASTTHICKNESS,YSFALSE);
+		overCastLayerThickness[i]=AddNumberBox(1,FSKEY_NULL,"",6,0,0,5000,100,YSFALSE);
+		overCastLayerThickness[i]->SetNumber(300);
+	}
 
+	grpBox=AddGroupBox();
+	grpBox->AddGuiItem(label);
+	grpBox->AddGuiItem(windDir);
+	grpBox->AddGuiItem(windSpd);
 
+	for(int i=0; i<MAXNUMCLOUDLAYER; i++)
+	{
+		grpBox->AddGuiItem(overCastLayerSw[i]);
+		grpBox->AddGuiItem(overCastLayerFloor[i]);
+		grpBox->AddGuiItem(overCastLayerThickness[i]);
+	}
 
 	label=AddStaticText(1,FSKEY_NULL,FSGUI_CFGDLG_LIGHT,16,1,YSTRUE);
 	label->SetFill(YSFALSE);
@@ -188,24 +216,26 @@ void FsGuiConfigDialog::MakeDefaultsDialog(FsWorld *world,FsFlightConfig &cfg)
 
 void FsGuiConfigDialog::MakeGameDialog(FsWorld *,FsFlightConfig &)
 {
-	blackOutBtn            =AddTextButton(MkId("blackOut"),    FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_BLACKOUT       ,YSTRUE);
-	midAirCollisionBtn     =AddTextButton(MkId("midAirColl"),  FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_MIDAIR         ,YSFALSE);
-	noTailStrikeBtn        =AddTextButton(MkId("noTailStrike"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_NOTAILSTRIKE   ,YSTRUE);
-	canLandAnywhereBtn     =AddTextButton(MkId("landAnywhere"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_CANLANDANYWHERE,YSFALSE);
-	autoRudderBtn          =AddTextButton(MkId("autoRudder"),  FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_AUTORUDDER     ,YSTRUE);
-	preciseSimulationBtn   =AddTextButton(MkId("preciseSim"),  FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_PRECISION      ,YSFALSE);
-	alwaysShowHudBtn       =AddTextButton(MkId("alwaysHud"),   FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWHUDALWAYS  ,YSTRUE);
-	doNotUseInstPanelBtn   =AddTextButton(MkId("noInstPanel"), FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_NOINSTPANEL    ,YSFALSE);
+	blackOutBtn                = AddTextButton(MkId("blackOut"),    FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_BLACKOUT       ,YSTRUE);
+	midAirCollisionBtn         = AddTextButton(MkId("midAirColl"),  FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_MIDAIR         ,YSFALSE);
+	noTailStrikeBtn            = AddTextButton(MkId("noTailStrike"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_NOTAILSTRIKE   ,YSTRUE);
+	canLandAnywhereBtn         = AddTextButton(MkId("landAnywhere"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_CANLANDANYWHERE,YSFALSE);
+	autoRudderBtn              = AddTextButton(MkId("autoRudder"),  FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_AUTORUDDER     ,YSTRUE);
+	preciseSimulationBtn       = AddTextButton(MkId("preciseSim"),  FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_PRECISION      ,YSFALSE);
+	alwaysShowHudBtn		   = AddTextButton(MkId("alwaysHud"),   FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWHUDALWAYS  ,YSTRUE);
+	doNotUseInstPanelBtn       = AddTextButton(MkId("noInstPanel"), FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_NOINSTPANEL    ,YSFALSE);
 
-	simpleHudBtn           =AddTextButton(MkId("simpleHud"),FSKEY_NULL,FSGUI_RADIOBUTTON,FSGUI_CFGDLG_USESIMPLEHUD,YSTRUE);
-	threeDHudBtn           =AddTextButton(MkId("3dHud"),    FSKEY_NULL,FSGUI_RADIOBUTTON,FSGUI_CFGDLG_USE3DHUD,YSFALSE);
+	simpleHudBtn               = AddTextButton(MkId("simpleHud"),FSKEY_NULL,FSGUI_RADIOBUTTON,FSGUI_CFGDLG_USESIMPLEHUD,YSTRUE);
+	threeDHudBtn               = AddTextButton(MkId("3dHud"),    FSKEY_NULL,FSGUI_RADIOBUTTON,FSGUI_CFGDLG_USE3DHUD,YSFALSE);
 	FsGuiButton *hudTypeRadioButtonGroup[2]={simpleHudBtn,threeDHudBtn};
 	SetRadioButtonGroup(2,hudTypeRadioButtonGroup);
 
-	alwaysDrawPlayerNameBtn=AddTextButton(MkId("drawName"),    FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWNAMEALWAYS ,YSTRUE);
-	drawVirtualJoystickBtn =AddTextButton(MkId("drawJoystick"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWJOYSTICK   ,YSFALSE);
-	f8CameraDelayBtn       =AddTextButton(MkId("f8Delay"),     FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_F8CAMERADELAY  ,YSTRUE);
-	showIASBtn             =AddTextButton(MkId("showIAS"),     FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWIAS        ,YSFALSE);
+	alwaysDrawPlayerNameBtn = AddTextButton(MkId("drawName"),    FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWNAMEALWAYS ,YSTRUE);
+	drawVirtualJoystickBtn  = AddTextButton(MkId("drawJoystick"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWJOYSTICK   ,YSFALSE);
+	f8CameraDelayBtn        = AddTextButton(MkId("f8Delay"),     FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_F8CAMERADELAY  ,YSTRUE);
+	showIASBtn              = AddTextButton(MkId("showIAS"),     FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWIAS        ,YSFALSE);
+	centerCameraPerspectiveBtn = AddTextButton(MkId("centerCameraPerspective"), FSKEY_NULL, FSGUI_CHECKBOX, FSGUI_CFGDLG_CENTERCAMERAPERSPECTIVE, YSTRUE);
+
 
 	YsArray <YsArray <FsGuiDialogItem *> > dlgItemMatrix;
 	dlgItemMatrix.Increment();
@@ -229,6 +259,8 @@ void FsGuiConfigDialog::MakeGameDialog(FsWorld *,FsFlightConfig &)
 	dlgItemMatrix.Increment();
 	dlgItemMatrix.GetEnd().Append(f8CameraDelayBtn);
 	dlgItemMatrix.GetEnd().Append(showIASBtn);
+	dlgItemMatrix.Increment();
+	dlgItemMatrix.GetEnd().Append(centerCameraPerspectiveBtn);
 	AlignLeftMiddle(dlgItemMatrix);
 
 	radarAltLimitTxt       =AddTextBox(12,FSKEY_NULL,FSGUI_CFGDLG_MINRADARALT,"",8,YSTRUE);
@@ -404,6 +436,7 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 	autoRudderBtn->SetCheck(cfg.autoCoordination);
 	preciseSimulationBtn->SetCheck(cfg.accurateTime);
 	alwaysShowHudBtn->SetCheck(cfg.showHudAlways);
+	centerCameraPerspectiveBtn->SetCheck(cfg.centerCameraPerspective);
 	doNotUseInstPanelBtn->SetCheck(cfg.useHudAlways);
 
 	if(YSTRUE==cfg.useSimpleHud)
@@ -438,6 +471,21 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 		dayOrNightBtn[0]->SetCheck(YSFALSE);
 		dayOrNightBtn[1]->SetCheck(YSTRUE);
 		break;
+	}
+	double windDirval = YsRadToDeg(-atan2(cfg.constWind.x(), -cfg.constWind.z()));
+
+	windDir->SetNumber(windDirval);
+	double windSpdval = cfg.constWind.GetLengthXZ();
+	windSpd->SetNumber(YsUnitConv::MPStoKT(windSpdval));
+
+	//MAXNUMCLOUDLAYER cloud layer boxes.
+	for (int i=0; i < YsSmaller((int)cfg.cloudLayer.GetN(),(int) MAXNUMCLOUDLAYER); i++){
+		FsWeatherCloudLayer &layer = cfg.cloudLayer[i];
+		if (layer.cloudLayerType == FSCLOUDLAYER_OVERCAST){
+		overCastLayerSw[i]->SetCheck(YSTRUE);
+		overCastLayerFloor[i]->SetNumber(round(YsUnitConv::MtoFT(layer.y0)/100)*100); //Had to round it to the nearest 100.
+		overCastLayerThickness[i]->SetNumber(round(YsUnitConv::MtoFT(layer.y1-layer.y0)/100)*100);
+		}
 	}
 
 	YsVec3 tst;
@@ -532,7 +580,7 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 
 
 	fogBtn->SetCheck(cfg.drawFog);
-	fogVisibility->SetRealNumber(cfg.fogVisibility/1600.0,1);
+	fogVisibility->SetRealNumber(YsUnitConv::MtoNM(cfg.fogVisibility),1);
 
 	zBufQualityLbx->Select(cfg.zbuffQuality);
 	trspObjBtn->SetCheck(cfg.drawTransparency);
@@ -564,6 +612,7 @@ void FsGuiConfigDialog::RetrieveConfig(FsFlightConfig &cfg)
 	cfg.canLandAnywhere=canLandAnywhereBtn->GetCheck();
 	cfg.autoCoordination=autoRudderBtn->GetCheck();
 	cfg.accurateTime=preciseSimulationBtn->GetCheck();
+	cfg.centerCameraPerspective = centerCameraPerspectiveBtn->GetCheck();
 	cfg.showHudAlways=alwaysShowHudBtn->GetCheck();
 	cfg.useHudAlways=doNotUseInstPanelBtn->GetCheck();
 	cfg.useSimpleHud=simpleHudBtn->GetCheck();
@@ -587,7 +636,27 @@ void FsGuiConfigDialog::RetrieveConfig(FsFlightConfig &cfg)
 		cfg.env=FSNIGHT;
 	}
 
+	double windDirVal = windDir->GetNumber()/(180/YsPi); //In rads
+	double windSpdVal = YsUnitConv::KTtoMPS(windSpd->GetNumber());
+	YsVec3 windVec;
+	windVec.Set(0.0,0.0,-windSpdVal);
+	windVec.RotateXZ(-windDirVal);
 
+	cfg.constWind = windVec;
+
+	// Overcast layers
+	cfg.cloudLayer.Clear();
+	for(int i=0; i<MAXNUMCLOUDLAYER; i++){
+		if (overCastLayerSw[i]->GetCheck()==YSTRUE){
+			FsWeatherCloudLayer layer;
+			layer.cloudLayerType= FSCLOUDLAYER_OVERCAST;
+			
+			layer.y0 = YsUnitConv::FTtoM(overCastLayerFloor[i]->GetNumber());
+	
+			layer.y1 = YsUnitConv::FTtoM(overCastLayerThickness[i]->GetNumber())+layer.y0;
+			cfg.cloudLayer.Append(layer);
+		}
+	}
 
 	int lightSrcId=0;
 	for(int i=0; i<5; ++i)
@@ -687,7 +756,7 @@ void FsGuiConfigDialog::RetrieveConfig(FsFlightConfig &cfg)
 
 
 	cfg.drawFog=fogBtn->GetCheck();
-	cfg.fogVisibility=YsBound(fogVisibility->GetRealNumber(),0.1,12.5)*1600.0;
+	cfg.fogVisibility=YsUnitConv::NMtoM(YsBound(fogVisibility->GetRealNumber(),0.1,12.5));
 	cfg.zbuffQuality=zBufQualityLbx->GetSelection();
 	cfg.drawTransparency=trspObjBtn->GetCheck();;
 	cfg.drawTransparentSmoke=trspSmkBtn->GetCheck();
