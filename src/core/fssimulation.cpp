@@ -6905,7 +6905,15 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode) 
 
 	sizx=hei*4/3;
 	sizy=hei;
-	hud->SetAreaByCenter(wid/2,hei*2/3,sizx*2/3,sizy*2/3);
+	if (cfgPtr->centerCameraPerspective == YSFALSE)
+	{
+		hud->SetAreaByCenter(wid / 2, hei * 2 / 3, sizx * 2 / 3, sizy * 2 / 3);
+	}
+	else
+	{
+		hud->SetAreaByCenter(wid / 2, hei / 2, sizx * 2 / 3, sizy * 2 / 3);
+	}
+
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-2.8\n");
@@ -9676,13 +9684,8 @@ void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualV
 	FsGetDrawingAreaSize(wid,hei);
 
 	playerPlane=GetPlayerAirplane();
-
-	if(0!=(GetInstrumentDrawSwitch(actualViewMode)&FSISS_2DHUD))
-	{
-		prj.cx=wid/2;
-		prj.cy=hei*2/3;
-	}
-	else if(FSCOCKPITVIEW==actualViewMode.actualViewMode && NULL!=playerPlane)
+	
+	if(cfgPtr->centerCameraPerspective == YSFALSE && NULL!=playerPlane)
 	{
 		const YsVec2 scrnCen=playerPlane->Prop().GetScreenCenter();
 		prj.cx=(int)((double)wid*(1.0+scrnCen.x())/2.0);
@@ -10828,6 +10831,8 @@ void FsSimulation::SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWM
 	case FS45DEGREELEFTVIEW:
 	case FS90DEGREERIGHTVIEW:
 	case FS90DEGREELEFTVIEW:
+	case FSVIEWUP:
+	case FSVIEWDOWN:
 	case FSADDITIONALAIRPLANEVIEW:
 	case FSOUTSIDEPLAYER2:
 	case FSOUTSIDEPLAYER3:
@@ -10911,6 +10916,8 @@ void FsSimulation::SimDecideViewpoint_Gnd(ActualViewMode &actualViewMode,FSVIEWM
 	case FS45DEGREELEFTVIEW:
 	case FS90DEGREERIGHTVIEW:
 	case FS90DEGREELEFTVIEW:
+	case FSVIEWUP:
+	case FSVIEWDOWN:
 	case FSADDITIONALAIRPLANEVIEW:
 	case FSOUTSIDEPLAYER2:
 	case FSOUTSIDEPLAYER3:
@@ -11107,6 +11114,8 @@ void FsSimulation::SimDecideViewpoint_Common(ActualViewMode &actualViewMode,FSVI
 	case FS45DEGREELEFTVIEW:
 	case FS90DEGREERIGHTVIEW:
 	case FS90DEGREELEFTVIEW:
+	case FSVIEWUP:
+	case FSVIEWDOWN:
 		switch(mode)
 		{
 		case FSBACKMIRRORVIEW:
@@ -11128,6 +11137,14 @@ void FsSimulation::SimDecideViewpoint_Common(ActualViewMode &actualViewMode,FSVI
 		case FS90DEGREELEFTVIEW:
 			actualViewMode.actualViewHdg=YsPi/2.0;
 			actualViewMode.actualViewPch=0.0;
+			break;
+		case FSVIEWUP:
+			actualViewMode.actualViewPch=YsPi/2.0;
+			actualViewMode.actualViewHdg=0.0;
+			break;
+		case FSVIEWDOWN:
+			actualViewMode.actualViewPch=-YsPi/2.0;
+			actualViewMode.actualViewHdg=0.0;
 			break;
 		}
 

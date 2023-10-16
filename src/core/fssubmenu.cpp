@@ -390,7 +390,19 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 				sim->SetSubWindowViewMode(windowId,FsSimulation::FSCOCKPITVIEW);
 				SetSubMenu(sim,FSSUBMENU_WAITKEYRELEASE);
 				break;
+
+			case FSKEY_8:
+				needOpen=YSTRUE;
+				sim->SetSubWindowViewMode(windowId,FsSimulation::FSVIEWUP);
+				SetSubMenu(sim,FSSUBMENU_WAITKEYRELEASE);
+				break;
+			case FSKEY_9:
+				needOpen=YSTRUE;
+				sim->SetSubWindowViewMode(windowId,FsSimulation::FSVIEWDOWN);
+				SetSubMenu(sim,FSSUBMENU_WAITKEYRELEASE);
+				break;
 			}
+			
 
 			if(needOpen==YSTRUE && FsIsSubWindowOpen(windowId)!=YSTRUE)
 			{
@@ -532,6 +544,9 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 		case FSKEY_Y:
 			YsFlip(cfg.drawRWR);
 			break;
+		case FSKEY_O:
+			YsFlip(cfg.centerCameraPerspective);
+			break;
 		}
 		break;
 	}
@@ -621,6 +636,13 @@ void FsSubMenu::Draw(const class FsSimulation *sim,class FsFlightConfig &cfg,int
 
 		FsDrawString(sx,sy,"7. Forward View",YsWhite());
 		sy+=fsAsciiRenderer.GetFontHeight();
+
+		FsDrawString(sx,sy,"8. View Up",YsWhite());
+		sy+=fsAsciiRenderer.GetFontHeight();
+
+		FsDrawString(sx,sy,"9. View Down",YsWhite());
+		sy+=fsAsciiRenderer.GetFontHeight();
+		
 
 		FsDrawString(sx,sy,"Enter: Back",YsWhite());
 		sy+=fsAsciiRenderer.GetFontHeight();
@@ -1004,6 +1026,18 @@ void FsSubMenu::Draw(const class FsSimulation *sim,class FsFlightConfig &cfg,int
 		default:
 		case YSFALSE:
 			FsDrawString(sx, sy, "Y: Draw Radar Warning Receiver on HUD(Now : OFF)", YsWhite());
+			break;
+		}
+		sy += fsAsciiRenderer.GetFontHeight();
+
+		switch (cfg.centerCameraPerspective)
+		{
+		case YSTRUE:
+			FsDrawString(sx, sy, "O: Center Camera Perspective (Now: TRUE)", YsWhite());
+			break;
+		default:
+		case YSFALSE:
+			FsDrawString(sx, sy, "O: Center Camera Perspective (Now: FALSE)", YsWhite());
 			break;
 		}
 		sy += fsAsciiRenderer.GetFontHeight();
