@@ -628,7 +628,7 @@ FsWeapon::FsWeapon()
 	nextFlare=NULL;
 
 	trail=NULL;
-	shouldJettison = YSTRUE;
+	shouldJettison = YSFALSE;
 }
 
 /*static*/ FsAmmunitionIndication::WEAPONTYPE FsWeapon::WeaponTypeToWeaponIndicationType(FSWEAPONTYPE wpnType)
@@ -789,9 +789,17 @@ void FsWeapon::Fire(
     int destruction,
     FsExistence *owner,
     FSWEAPON_CREDIT_OWNER creditOwnerIn,
-    FsExistence *t,FsWeaponSmokeTrail *tr, YSBOOL jettison)
+    FsExistence *t,FsWeaponSmokeTrail *tr)
 {
-	shouldJettison = jettison;
+	if (owner->GetType() == FSEX_AIRPLANE)
+	{
+		FsAirplane* ownerAirplane = (FsAirplane*)owner;
+		shouldJettison = ownerAirplane->Prop().GetShouldJettisonWeapon();
+	}
+	else
+	{
+		shouldJettison = YSFALSE;
+	}
 	type=tp;
 	prv=p;
 	pos=p;
@@ -2818,7 +2826,7 @@ int FsWeaponHolder::Fire
 		FsWeapon *toShoot=freeList;
 		FSWEAPON_CREDIT_OWNER creditOwner=(sim->GetPlayerObject()==owner ? FSWEAPON_CREDIT_OWNER_PLAYER : FSWEAPON_CREDIT_OWNER_NON_PLAYER);
 
-		toShoot->Fire(ctime,missileType,pos,att,v,vmax,l,mobility,radar,destructivePower,owner,creditOwner,target,trail, jettison);
+		toShoot->Fire(ctime,missileType,pos,att,v,vmax,l,mobility,radar,destructivePower,owner,creditOwner,target,trail);
 		MoveToActiveList(toShoot);
 
 		if((recordIt==YSTRUE && toSave!=NULL) ||

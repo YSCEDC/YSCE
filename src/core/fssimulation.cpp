@@ -3891,7 +3891,11 @@ void FsSimulation::SimMove(const double &dt)
 			fired=airplane->Prop().ProcessVirtualButtonPress(blockedByBombBay,woc,this,currentTime,bulletHolder,airplane, jettisoned);
 			if (jettisoned == YSTRUE && airplane == GetPlayerAirplane())
 			{
-				if (woc != FSWEAPON_GUN && woc != FSWEAPON_FLARE && woc != FSWEAPON_SMOKE)
+				if (woc == FSWEAPON_FLARE)
+				{
+					FsSoundSetOneTime(FSSND_ONETIME_ROCKET);
+				}
+				else if (woc != FSWEAPON_GUN && woc != FSWEAPON_SMOKE)
 				{
 					FsSoundSetOneTime(FSSND_ONETIME_BOMBSAWAY);
 				}

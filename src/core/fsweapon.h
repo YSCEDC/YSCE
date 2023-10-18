@@ -157,7 +157,7 @@ public:
 	     int destruction,
 	     class FsExistence *owner,
 	     FSWEAPON_CREDIT_OWNER creditOwnerIn,
-	     class FsExistence *target,FsWeaponSmokeTrail *trail, YSBOOL jettison=YSFALSE);
+	     class FsExistence *target,FsWeaponSmokeTrail *trail);
 
 	// Flare
 	void DispenseFlare
