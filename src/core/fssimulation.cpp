@@ -3889,7 +3889,7 @@ void FsSimulation::SimMove(const double &dt)
 			YSBOOL fired,blockedByBombBay,jettisoned;
 			FSWEAPONTYPE woc;
 			fired=airplane->Prop().ProcessVirtualButtonPress(blockedByBombBay,woc,this,currentTime,bulletHolder,airplane, jettisoned);
-			if (jettisoned == YSTRUE && airplane == GetPlayerAirplane())
+			if (fired == YSTRUE && jettisoned == YSTRUE && airplane == GetPlayerAirplane())
 			{
 				if (woc == FSWEAPON_FLARE)
 				{
