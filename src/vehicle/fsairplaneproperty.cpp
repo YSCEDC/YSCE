@@ -4669,7 +4669,7 @@ YSBOOL FsAirplaneProperty::IsWeaponSlotCurrentlyVisible(int slotId) const
 	return YSFALSE;
 }
 
-YSBOOL FsAirplaneProperty::GetShouldJettisonWeapon(void)
+YSBOOL FsAirplaneProperty::GetShouldJettisonWeapon(void) const
 {
 	return ctlShouldJettisonWeapon;
 }

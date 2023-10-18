@@ -700,7 +700,7 @@ public:
 	YSRESULT SetAutoVgw(YSBOOL a);
 	YSRESULT SetBombBayDoor(const double &a);
 	YSRESULT ToggleShouldJettisonWeapon(void);
-	YSBOOL GetShouldJettisonWeapon(void);
+	YSBOOL GetShouldJettisonWeapon(void) const;
 
 	YSRESULT BouncePitchByTailStrike(void);
 

@@ -8295,7 +8295,7 @@ void FsSimulation::SimDrawHud3d(const YsVec3 &fakeViewPos,const YsAtt3 &instView
 				loading.Append(FSWEAPON_SMOKE);
 				loading.Append((int)smokeOil);
 			}
-			hud2->DrawAmmo(-0.9,0.9,0.025,0.04,cockpitIndicationSet.ammo);
+			hud2->DrawAmmo(-0.9,0.9,0.025,0.04,cockpitIndicationSet.ammo, playerPlane->Prop().GetShouldJettisonWeapon());
 
 
 			double ix=1.25;

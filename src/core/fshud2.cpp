@@ -1597,7 +1597,7 @@ void FsHud2::DrawAirSpeed(const double &x0,const double &y0,const double &wid,co
 
 void FsHud2::DrawAmmo(
     const double &x0,const double &y0,const double &fontWid,const double &fontHei,
-    const class FsAmmunitionIndication &ammo)
+    const class FsAmmunitionIndication &ammo, YSBOOL shouldJettison)
 {
 	float x=(float)x0;
 	float y=(float)(y0+fontHei);
@@ -1605,8 +1605,14 @@ void FsHud2::DrawAmmo(
 	for(auto &a : ammo.ammoArray)
 	{
 		auto str=a.FormatString();
+
 		YsColor col;
-		if(YSTRUE==a.ReadyToFire())
+		if (shouldJettison && a.selected)
+		{
+			str.Append(" - JETTISON!");
+			col = YsYellow();
+		}
+		else if(YSTRUE==a.ReadyToFire())
 		{
 			col=hudCol;
 		}
