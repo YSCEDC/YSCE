@@ -932,6 +932,12 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 			att.SetForwardVector(vec);
 			break;
 		case FSWEAPON_ROCKET:
+			if (shouldJettison == YSTRUE)
+			{
+				vec.Set(vec.x(), vec.y() - FsGravityConst * dt, vec.z());
+				att.SetForwardVector(vec);
+				break;
+			}
 			if(velocity<maxVelocity)
 			{
 				velocity+=50.0*dt;  // 20.0 m/ss (^_^;)
@@ -1201,11 +1207,27 @@ void FsWeapon::HitGround(
 					}
 					if(evg==NULL && collType==1 && areaType==YSSCNAREA_WATER)
 					{
-						ExplodeBombInWater(callback,ctime,pos,destructivePower*5/10,explode,sim,killCredit);
+						if (shouldJettison == YSTRUE)
+						{
+							lifeRemain = 0.0;
+							timeRemain = 0.0;
+						}
+						else
+						{
+							ExplodeBombInWater(callback, ctime, pos, destructivePower * 5 / 10, explode, sim, killCredit);
+						}
 					}
 					else
 					{
-						ExplodeBomb(callback,ctime,pos,destructivePower*5/2,explode,sim,killCredit);
+						if (shouldJettison == YSTRUE)
+						{
+							lifeRemain = 0.0;
+							timeRemain = 0.0;
+						}
+						else
+						{
+							ExplodeBomb(callback, ctime, pos, destructivePower * 5 / 2, explode, sim, killCredit);
+						}
 					}
 					break;
 				case FSWEAPON_ROCKET:
@@ -1219,11 +1241,27 @@ void FsWeapon::HitGround(
 					}
 					if(evg==NULL && collType==1 && areaType==YSSCNAREA_WATER)
 					{
-						ExplodeBombInWater(callback,ctime,pos,10.0,explode,sim,killCredit);
+						if (shouldJettison == YSTRUE)
+						{
+							lifeRemain = 0.0;
+							timeRemain = 0.0;
+						}
+						else
+						{
+							ExplodeBombInWater(callback, ctime, pos, 10.0, explode, sim, killCredit);
+						}
 					}
 					else
 					{
-						ExplodeBomb(callback,ctime,pos,50.0,explode,sim,killCredit);
+						if (shouldJettison == YSTRUE)
+						{
+							lifeRemain = 0.0;
+							timeRemain = 0.0;
+						}
+						else
+						{
+							ExplodeBomb(callback, ctime, pos, 50.0, explode, sim, killCredit);
+						}
 					}
 					break;
 				case FSWEAPON_DEBRIS:
@@ -1240,11 +1278,27 @@ void FsWeapon::HitGround(
 					}
 					if(evg==NULL && collType==1 && areaType==YSSCNAREA_WATER)
 					{
-						explode->WaterPlume(ctime,pos,3.0,4.0,20.0,NULL,YSFALSE);
+						if (shouldJettison == YSTRUE)
+						{
+							lifeRemain = 0.0;
+							timeRemain = 0.0;
+						}
+						else
+						{
+							explode->WaterPlume(ctime, pos, 3.0, 4.0, 20.0, NULL, YSFALSE);
+						}
 					}
 					else
 					{
-						explode->Explode(ctime,pos,3.0,0.0,20.0,YSTRUE,NULL,YSFALSE);
+						if (shouldJettison == YSTRUE)
+						{
+							lifeRemain = 0.0;
+							timeRemain = 0.0;
+						}
+						else
+						{
+							explode->Explode(ctime, pos, 3.0, 0.0, 20.0, YSTRUE, NULL, YSFALSE);
+						}
 					}
 					break;
 				}
