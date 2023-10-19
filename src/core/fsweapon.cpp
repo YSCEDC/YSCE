@@ -1353,6 +1353,15 @@ YSBOOL FsWeapon::HitObject(
 
 			if(YsCheckInBetween3(np,pos,lastChecked)==YSTRUE && sqDist3<range*range)
 			{
+				if (shouldJettison == YSTRUE)
+				{
+					lifeRemain = 0.0;
+					timeRemain = 0.0;
+					target = NULL;
+
+					return YSTRUE;
+				}
+
 				double l,dmg;
 				l=sqrt(sqDist3);
 
@@ -1434,6 +1443,14 @@ YSBOOL FsWeapon::HitObject(
 
 				if(plHd!=NULL && YsCheckInBetween3(intersect,pos,lastChecked)==YSTRUE)
 				{
+					if (shouldJettison)
+					{
+						lifeRemain = 0.0;
+						timeRemain = 0.0;
+
+						return YSTRUE;
+					}
+
 					YSBOOL killed;
 					lifeRemain=0.0;
 
@@ -1465,6 +1482,15 @@ YSBOOL FsWeapon::HitObject(
 				   (coll.ShootRayH(is,lastChecked,pos-lastChecked)!=NULL &&
 				    YsCheckInBetween3(is,pos,lastChecked)==YSTRUE))
 				{
+					if (shouldJettison)
+					{
+						lifeRemain = 0.0;
+						timeRemain = 0.0;
+						target = NULL;
+
+						return YSTRUE;
+					}
+
 					YSBOOL killed;
 					lifeRemain=0.0;
 					target=NULL;
