@@ -5727,7 +5727,7 @@ void FsSimulation::SimProcessButtonFunction(FSBUTTONFUNCTION fnc,FSUSERCONTROL u
 			userInput.ctlFireWeaponButtonExt=YSTRUE;
 		}
 		break;
-	case FSBTF_JETTISON_WEAPON:                    //  Jettison Selected Weapon
+	case FSBTF_TOGGLE_JETTISON_WEAPON:                    //  Jettison Selected Weapon
 		if (FSUSC_SCRIPT == userControl)
 		{
 			userInput.ctlJettisonWeaponButtonExt = YSTRUE;

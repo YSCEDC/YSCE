@@ -167,7 +167,7 @@ enum FSBUTTONFUNCTION
 	FSBTF_PROPBACKWARD,                  // Decrease rpm
 
 	FSBTF_SWITCHVIEWTARGET,              // Switch view target
-	FSBTF_JETTISON_WEAPON,				 // Jettison current weapon
+	FSBTF_TOGGLE_JETTISON_WEAPON,				 // Jettison current weapon
 
 	FSBTF_NUMBUTTONFUNCTION
 };
@@ -244,7 +244,7 @@ public:
 	// Buttn press from external source (script) <<
 
 	YSBOOL ctlFireWeaponButton;
-	YSBOOL ctlJettisonWeaponButton;
+	YSBOOL ctlToggleJettisonWeaponButton;
 	YSBOOL ctlFireGunButton;
 	YSBOOL ctlFireAAMButton;
 	YSBOOL ctlFireAGMButton;

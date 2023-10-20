@@ -59,7 +59,7 @@ void FsFlightControl::Initialize(void)
 	ctlCycleSmokeSelectorButtonExt=YSFALSE;
 
 	ctlFireWeaponButton=YSFALSE;
-	ctlJettisonWeaponButton = YSFALSE;
+	ctlToggleJettisonWeaponButton = YSFALSE;
 	ctlFireGunButton=YSFALSE;
 	ctlFireAAMButton=YSFALSE;
 	ctlFireAGMButton=YSFALSE;
@@ -466,7 +466,7 @@ YSRESULT FsFlightControl::ProcessButtonFunction(const double &/*cTime*/,FsExiste
 	case FSBTF_BRAKEHOLD:                     //  Brake On While Holding
 	case FSBTF_FIREGUN:                       //  Fire Machine Gun
 	case FSBTF_SMOKE:                         //  Smoke
-	case FSBTF_JETTISON_WEAPON:
+	case FSBTF_TOGGLE_JETTISON_WEAPON:
 		break;
 
 	case FSBTF_TOGGLEALLDOOR:
@@ -601,7 +601,7 @@ YSRESULT FsFlightControl::ReadControl
 	// <<
 
 	ctlFireWeaponButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_FIREWEAPON,joy),ctlFireWeaponButtonExt);
-	ctlJettisonWeaponButton = YsOr(ctlAssign.IsButtonPressed(FSBTF_JETTISON_WEAPON, joy), ctlJettisonWeaponButtonExt);
+	ctlToggleJettisonWeaponButton = YsOr(ctlAssign.IsButtonPressed(FSBTF_TOGGLE_JETTISON_WEAPON, joy), ctlJettisonWeaponButtonExt);
 	ctlFireGunButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_FIREGUN,joy),ctlFireGunButtonExt);
 	ctlFireAAMButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_FIREAAM,joy),ctlFireAAMButtonExt);
 	ctlFireAGMButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_FIREAGM,joy),ctlFireAGMButtonExt);
@@ -1349,7 +1349,7 @@ static struct FsButtonFunctionString fsButtonFuncStr[]=
 	{FSBTF_SENSITIVITYDOWN,      "SENSITIVITYDOWN",      "Decrease Sensitivity"},
 
 	{FSBTF_SWITCHVIEWTARGET,     "SWITCHVIEWTARGET",     "Switch View Target"},
-	{FSBTF_JETTISON_WEAPON,      "JETTISONWEAPON",       "Jettison Selected Weapon"}
+	{FSBTF_TOGGLE_JETTISON_WEAPON,      "JETTISONWEAPON",       "Toggle Jettison Selected Weapon"}
 };
 
 static struct FsKeyString fsKeyString[]=

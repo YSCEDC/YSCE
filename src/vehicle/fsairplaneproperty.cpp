@@ -2560,7 +2560,7 @@ void FsAirplaneProperty::ApplyControl(const FsFlightControl &ctl,unsigned int wh
 
 		if ((whatToApply & FSAPPLYCONTROL_TOGGLEJETTISONWEAP) != 0)
 		{
-			SetJettisonWeaponButton(ctl.ctlJettisonWeaponButton);
+			SetJettisonWeaponButton(ctl.ctlToggleJettisonWeaponButton);
 		}
 	}
 }
