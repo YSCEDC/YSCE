@@ -7721,11 +7721,11 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 			YSBOOL autoPilot=(NULL!=playerPlane->GetAutopilot() ? YSTRUE : YSFALSE);
 			if(long(currentTime*2.0)%2==0)
 			{
-				hud->Draw(autoPilot,cockpitIndicationSet);
+				hud->Draw(autoPilot, cockpitIndicationSet, playerPlane->Prop().GetShouldJettisonWeapon());
 			}
 			else
 			{
-				hud->Draw(YSFALSE,cockpitIndicationSet);
+				hud->Draw(YSFALSE,cockpitIndicationSet, playerPlane->Prop().GetShouldJettisonWeapon());
 			}
 
 			SimDraw2dVor1(cockpitIndicationSet);
