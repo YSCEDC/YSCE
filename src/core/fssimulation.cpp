@@ -7114,7 +7114,7 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 				// Otherwise, Weapon LOD depends on drawCoarseOrdinance
 
 				//calculate object position in player's view
-				YsVec3 objViewPos, objPos, objScreenPos;
+				YsVec3 objViewPos, objPos;
 				objPos = seeker->GetPosition();
 				objViewPos = actualViewMode.viewMat * objPos;
 
@@ -7214,7 +7214,7 @@ void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsPr
 			}
 
 			//calculate object position in player's view
-			YsVec3 objViewPos, objPos, objScreenPos;
+			YsVec3 objViewPos, objPos;
 			objPos = seeker->GetPosition();
 			objViewPos = actualViewMode.viewMat * objPos;
 
