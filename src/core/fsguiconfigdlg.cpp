@@ -227,6 +227,9 @@ void FsGuiConfigDialog::MakeGameDialog(FsWorld *,FsFlightConfig &)
 
 	simpleHudBtn               = AddTextButton(MkId("simpleHud"),FSKEY_NULL,FSGUI_RADIOBUTTON,FSGUI_CFGDLG_USESIMPLEHUD,YSTRUE);
 	threeDHudBtn               = AddTextButton(MkId("3dHud"),    FSKEY_NULL,FSGUI_RADIOBUTTON,FSGUI_CFGDLG_USE3DHUD,YSFALSE);
+	char* label = new char[256];
+	sprintf(label, "%s", FSGUI_CFGDLG_HUDCOLOUR);
+	hudColorBtn                   = AddColorPalette(MkId("hudColor"),FSKEY_NULL,label,255,255,255,4,YSTRUE,YSTRUE);
 	FsGuiButton *hudTypeRadioButtonGroup[2]={simpleHudBtn,threeDHudBtn};
 	SetRadioButtonGroup(2,hudTypeRadioButtonGroup);
 
@@ -449,6 +452,7 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 		simpleHudBtn->SetCheck(YSFALSE);
 		threeDHudBtn->SetCheck(YSTRUE);
 	}
+	hudColorBtn->SetColor(cfg.hudColour);
 
 	alwaysDrawPlayerNameBtn->SetCheck(cfg.drawPlayerNameAlways);
 	drawVirtualJoystickBtn->SetCheck(cfg.drawVirtualJoystick);

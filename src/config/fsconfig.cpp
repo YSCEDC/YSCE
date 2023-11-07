@@ -56,6 +56,7 @@ void FsFlightConfig::SetDefault(void)
 	useHudAlways=YSFALSE;
 
 	useSimpleHud=YSFALSE;
+	hudColour.SetIntRGB(255,255,255);
 
 	neverDrawAirplaneContainer=YSFALSE;
 
@@ -231,6 +232,8 @@ const char *const FsFlightConfig::keyWordSource[]=
 
 	"CLOUDLAYER", // 2023/07/29
 	"CENTERCAM",  // 2023/08/15
+
+	"HUDCOLOUR",  // 2023/10/07
 
 	NULL
 };
@@ -554,6 +557,10 @@ YSRESULT FsFlightConfig::SendCommand(const char cmd[])
 			case 64: // CENTERCAM
 				return FsGetBool(centerCameraPerspective, av[1]);
 			
+			case 65: // HUDCOLOUR
+			hudColour.SetIntRGB(255,255,255);
+				return YSOK; //TODO: implement this
+			
 		}
 		}
 		else
@@ -716,6 +723,8 @@ YSRESULT FsFlightConfig::Save(const wchar_t fn[])
 		fprintf(fp,"ANTIALIAS %s\n",FsTrueFalseString(useOpenGlAntiAliasing));
 
 		fprintf(fp,"SIMPLEHUD %s\n",FsTrueFalseString(useSimpleHud));
+
+		fprintf(fp,"HUDCOLOUR %d %d %d\n",hudColour.Ri(),hudColour.Gi(),hudColour.Bi());
 
 		fprintf(fp,"SHOWKIAS_ %s\n",YsBoolToStr(showIAS));
 

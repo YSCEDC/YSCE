@@ -34,6 +34,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_CFGDLG_THISMILES                            FsGetTextResource("cfgdlg/thismiles",L"miles")
 #define FSGUI_CFGDLG_USE3DHUD                             FsGetTextResource("cfgdlg/use3dhud",L"Use 3D HUD")
 #define FSGUI_CFGDLG_USESIMPLEHUD                         FsGetTextResource("cfgdlg/usesimplehud",L"Use Simple HUD")
+#define FSGUI_CFGDLG_HUDCOLOUR							  FsGetTextResource("cfgdlg/hudcolour",L"HUD Colour")
 #define FSGUI_COMMON_MISSION                              FsGetTextResource("common/mission",L"Mission")
 #define FSGUI_COMMON_OK                                   FsGetTextResource("common/ok",L"OK")
 #define FSGUI_COMMON_CANCEL                               FsGetTextResource("common/cancel",L"Cancel")

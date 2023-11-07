@@ -67,6 +67,7 @@ public:
 	YSBOOL useOpenGlAntiAliasing;
 
 	YSBOOL useSimpleHud;
+	YsColor hudColour;
 
 	int aircraftReliability;          // See FsSimulation::PlayerAircraftGetTrouble
 	double aircraftTroubleFrequency;  // See FsSimulation::PlayerAircraftGetTrouble

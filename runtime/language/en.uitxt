@@ -15,6 +15,7 @@ $BGCOL 0
 +cfgdlg/thismiles                                  #nautical miles
 +cfgdlg/use3dhud                                   #Use 3D HUD
 +cfgdlg/usesimplehud                               #Use Simple HUD
++cfgdlg/hudcolour                                  #HUD colour
 +common/mission                                    #---Mission---
 +common/wingman                                    #Wingman
 +configdlg/phongShading                            #Phong Shading (OpenGL 2.0 only)

@@ -32,6 +32,7 @@ public:
 	FsGuiButton* centerCameraPerspectiveBtn;
 	FsGuiButton *showIASBtn;
 	FsGuiButton *simpleHudBtn,*threeDHudBtn;
+	FsGuiColorPalette *hudColorBtn;
 	FsGuiButton *alwaysDrawPlayerNameBtn,*drawVirtualJoystickBtn,*f8CameraDelayBtn;
 	FsGuiTextBox *radarAltLimitTxt;
 	FsGuiStatic *troubleFrequencyText;

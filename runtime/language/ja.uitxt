@@ -270,6 +270,7 @@ $BGCOL 0
 +configdlg/reliability                             #航空機信頼性
 +cfgdlg/use3dhud                                   #3Dヘッドアップディスプレイ
 +cfgdlg/usesimplehud                               #シンプルヘッドアップディスプレイ
++cfgdlg/hudcolour                                  #ヘッドアップディスプレイの色
 
 
 +assigndlg/save                                    #保存
