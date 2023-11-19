@@ -66,7 +66,7 @@ $$T = \eta   \times   THRMILIT   \times   (THRAFTBN   -   THRMILIT)   \times   T
 
 Where:
 - $\eta$ is the Jet Engine Thrust Efficiency
-- $Thr$ is the throttle
+- $Thr$ is the throttle (0 to 1, where 0 = idle, 1 = max)
 <br>
 
 ## Jet Engine Thrust Efficiency
@@ -167,11 +167,15 @@ $$T_{Static} = PROPELLR   \times   \frac{PROPEFCY}{PROPVMIN}$$
 
 <br>
 
-$$T_{Moving} = T_{Static} - PropK \times \left(PROPVMIN  \times  V \right)$$ 
+$$T_{Max} = T_{Static} - PropK \times \left(PROPVMIN  \times  V \right)$$ 
+
+<br>
+
+$$T = T_{Max} \times Throttle \times \frac{\rho_{alt}}{\rho_{sea}}$$
 
 Where:
 - $T_{Static}$ Static thrust of propeller engine
-- $T_{Moving}$ Thrust of propeller engine when aircraft flying faster than PROPVMIN.
+- $T_{Max}$ Maximum thrust of the engine
 - $V$ = Aircraft Velocity (m/s)
 - $PropK$ = Unknown constant, probably a flux with J/s [^1]
 
@@ -190,7 +194,9 @@ Where:
 In 2015 YSFlight, Soji introduced the real propeller engine model which also unlocked the ability to have multiple propeller engines.
 
 ## Blades
-Each engine defines performance for a single blade, and then multiplies that by the number of propellers in the engine.
+Each engine defines performance for a single blade, and then multiplies that by the number of propellers in the engine. It is assumed that all blades are identical.
+
+
 
 
 
@@ -333,7 +339,7 @@ $$C_{D_{0}} = \frac{T_{Cruise}}{0.5 \times  \rho_{REFACRUS} \times V^2 \times WI
 
 <br>
 
-$$C_{D_{Land}} = \left(\frac{T_{Landing}}{\left( 0.5 \times  \rho_{Sea} \times  REFVLAND^2 \times  WINGAREA \right)}\right)   \left(\frac{1}{ 1.0 + CLBYFLAP }\right)   \left(\frac{1}{ 1.0 + CLVARGEO }\right)   \left(\frac{1}{ 1.0 + CDBYGEAR }\right)$$
+$$C_{D_{Land}} = \left(\frac{T_{Landing}}{\left( 0.5 \times  \rho_{Sea} \times  REFVLAND^2 \times  WINGAREA \right)}\right)   \left(\frac{1}{ 1.0 + CDBYFLAP }\right)   \left(\frac{1}{ 1.0 + CDVARGEO }\right)   \left(\frac{1}{ 1.0 + CDBYGEAR }\right)$$
 
 <br>
 

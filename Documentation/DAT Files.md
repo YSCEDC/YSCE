@@ -186,3 +186,173 @@ For Vectors, the following order is used.
 - Fore / Aft, Positive Forward
 
 Note: Most vectors defined in DAT files are [unit vectors](https://en.wikipedia.org/wiki/Unit_vector), but some are used to define velocity.
+
+
+
+
+## REALPROP 
+# AREAPERBLADE
+
+>REALPROP 0 AREAPERBLADE   0.3m^2
+
+Defines the ""wing"" area of each blade in the propeller
+
+<br>
+##REALPROP # CL
+
+>REALPROP 0 CL 0deg 0.2 15deg 1.2
+
+Defines the min and max CL and the angle they occur at. Uses a linear function between the two points identified to determine the lift coefficient at different propeller pitch angles.
+
+<br>
+##REALPROP # CD
+
+>REALPROP 0 CD -5deg 0.008 20deg 0.4
+
+Defines the min drag coefficient and the max drag coefficient and the angle at which they occur. Uses a quadratic equation to calculate values between these end points: cd=CdMin+kCd*(aoa-minCdAOA)^2, where kCd=(cd1-CdMin)/(dAOA*dAOA) and dAOA=aoa1-minCdAOA
+
+<br>
+
+## REALPROP # PITCHCHGRATE
+
+>REALPROP 0 PITCHCHGRATE  90deg
+
+Maximum angular velocity that the blade can change pitch per second. In this example, the propeller pitch can change at 90 degrees per second from a minimum pitch of 15 degrees to a maximum of 60 degrees or pitch
+
+<br>
+## REALPROP # MINPITCH
+
+>REALPROP 0 MINPITCH       15deg
+
+Defines the minimum pitch angle of the propeller 
+
+<br>
+## REALPROP # MAXPITCH
+
+>REALPROP 0 MAXPITCH       60deg
+
+Defines the maximum pitch angle of the propeller
+
+<br>
+
+## REALPROP # KGOVERNER
+
+>REALPROP 0 KGOVERNER      0.05
+
+Defines the reaction speed of the propeller governer to define how fast the propeller pitch can change (pitch change = KGOVERNER * (current rad/s - Desired rad/s) * dt)
+
+<br>
+
+## REALPROP # GRAVITYCENTER
+
+>REALPROP 0 GRAVITYCENTER  1.0m
+
+Defines the distance from the propeller centeriline to the center of gravity of a blade (used for engine torque)
+
+<br>
+
+## REALPROP # LIFTCENTER
+
+>REALPROP 0 LIFTCENTER     1.0m
+
+Defines the distance from propeller centerline that the center of lift is located
+
+<br>
+
+## REALPROP # WEIGHTPERBLADE
+
+>REALPROP 0 WEIGHTPERBLADE 20kg
+
+Defines the weight of a single propeller (used for engine torque)
+
+<br>
+
+## REALPROP # CLOCKWISE
+
+>REALPROP 0 CLOCKWISE      0
+
+Defines if the engine spins clockwise or counterclockwise (for engine torque)
+
+<br>
+
+## REALPROP # MAXPOWER
+
+>REALPROP 0 MAXPOWER       1590HP
+
+Defines the maximum engine power output
+
+<br>
+
+## REALPROP # IDLEPOWER
+
+>REALPROP 0 IDLEPOWER      30HP
+
+Defines the IDLE engine power output
+
+<br>
+
+## REALPROP # RPMCTLRANGE
+
+>REALPROP 0 RPMCTLRANGE    1000 3500
+
+Defines the minimum (first) and maximum (second) RPM for propeller controller
+
+<br>
+
+## REALPROP # SNDRPMRANGE
+
+>REALPROP 0 SNDRPMRANGE    700 3000
+
+Defines minimum (first) and maximum (second) RPM for propeller sound effect
+
+<br>
+
+## REALPROP # ENGBRKTRQRPM
+
+>REALPROP 0 ENGBRKTRQRPM   10
+
+Defines the torque in Nm from engine brake from excess RPM
+
+<br>
+
+## REALPROP # ENGBRK0THRRPM
+
+>REALPROP 0 ENGBRK0THRRPM  700
+
+Defines the RPM at which the engine wats to spin at zero throttle
+
+<br>
+
+## REALPROP # ENGBRKMAXTHRRPM
+
+>REALPROP 0 ENGBRKMAXTHRRPM 2500
+
+Defines the RPM at which the engine wats to spin at max throttle
+
+<br>"
+"##LEFTGEAR
+
+>LEFTGEAR -1.94m -2.03m -0.71m
+
+Defines the location of the left main landing gear interface with the ground. If not defined, YSFlight uses an equivalent to:
+
+> LEFTGEAR -3m -1m -3m
+
+See the [Coordinate System Definition](#-YSFlight-Coordinate-System) for more about the order of inputs.
+
+**NOTE:** First value should always be negative.
+
+<br>"
+"##RIGHGEAR
+
+>RIGHGEAR 1.94m -2.03m -0.71m
+
+Defines the location of the right main landing gear interface with the ground. If not defined, YSFlight uses an equivalent to:
+
+> RIGHGEAR 3m -1m -3m
+
+See the [Coordinate System Definition](#-YSFlight-Coordinate-System) for more about the order of inputs.
+
+**NOTE:** First value should always be Positive.
+
+<br>"
