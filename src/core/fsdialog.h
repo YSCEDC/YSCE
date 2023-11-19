@@ -17,7 +17,7 @@ public:
 	YSBOOL fog;
 	double fogVisibility;
 
-	YsArray <double> cloudLayer; // [2n+0] Floor [2n+1] Top
+	YsArray <FsWeatherCloudLayer> cloudLayer;
 };
 
 class FsNewFlightDialogOption

@@ -390,7 +390,19 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 				sim->SetSubWindowViewMode(windowId,FsSimulation::FSCOCKPITVIEW);
 				SetSubMenu(sim,FSSUBMENU_WAITKEYRELEASE);
 				break;
+
+			case FSKEY_8:
+				needOpen=YSTRUE;
+				sim->SetSubWindowViewMode(windowId,FsSimulation::FSVIEWUP);
+				SetSubMenu(sim,FSSUBMENU_WAITKEYRELEASE);
+				break;
+			case FSKEY_9:
+				needOpen=YSTRUE;
+				sim->SetSubWindowViewMode(windowId,FsSimulation::FSVIEWDOWN);
+				SetSubMenu(sim,FSSUBMENU_WAITKEYRELEASE);
+				break;
 			}
+			
 
 			if(needOpen==YSTRUE && FsIsSubWindowOpen(windowId)!=YSTRUE)
 			{
@@ -526,6 +538,15 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 		case FSKEY_I:
 			YsFlip(cfg.showIAS);
 			break;
+		case FSKEY_R:
+			YsFlip(cfg.drawCircleRadar);
+			break;
+		case FSKEY_Y:
+			YsFlip(cfg.drawRWR);
+			break;
+		case FSKEY_O:
+			YsFlip(cfg.centerCameraPerspective);
+			break;
 		}
 		break;
 	}
@@ -616,6 +637,13 @@ void FsSubMenu::Draw(const class FsSimulation *sim,class FsFlightConfig &cfg,int
 		FsDrawString(sx,sy,"7. Forward View",YsWhite());
 		sy+=fsAsciiRenderer.GetFontHeight();
 
+		FsDrawString(sx,sy,"8. View Up",YsWhite());
+		sy+=fsAsciiRenderer.GetFontHeight();
+
+		FsDrawString(sx,sy,"9. View Down",YsWhite());
+		sy+=fsAsciiRenderer.GetFontHeight();
+		
+
 		FsDrawString(sx,sy,"Enter: Back",YsWhite());
 		sy+=fsAsciiRenderer.GetFontHeight();
 		break;
@@ -645,11 +673,11 @@ void FsSubMenu::Draw(const class FsSimulation *sim,class FsFlightConfig &cfg,int
 					vorId=subMenuBase+i;
 					if(stationInRange[vorId]->Prop().GetAircraftCarrierProperty()!=NULL)
 					{
-						sprintf(buf,"%d. ILS [%s] (%.0lf miles)",i+1,(const char *)stationInRange[vorId]->name,stationDist[vorId]/1609.0);
+						sprintf(buf,"%d. ILS [%s] (%.0lf nautical miles)",i+1,(const char *)stationInRange[vorId]->name,YsUnitConv::MtoNM(stationDist[vorId]));
 					}
 					else
 					{
-						sprintf(buf,"%d. [%s] (%.0lf miles)",i+1,(const char *)stationInRange[vorId]->name,stationDist[vorId]/1609.0);
+						sprintf(buf,"%d. [%s] (%.0lf nautical miles)",i+1,(const char *)stationInRange[vorId]->name,YsUnitConv::MtoNM(stationDist[vorId]));
 					}
 					FsDrawString(sx,sy,buf,YsWhite());
 					sy+=fsAsciiRenderer.GetFontHeight();
@@ -977,6 +1005,42 @@ void FsSubMenu::Draw(const class FsSimulation *sim,class FsFlightConfig &cfg,int
 			break;
 		}
 		sy+=fsAsciiRenderer.GetFontHeight();
+
+		switch (cfg.drawCircleRadar)
+		{
+		case YSTRUE:
+			FsDrawString(sx, sy, "R: Radar Display Style (Now: Circle)", YsWhite());
+			break;
+		default:
+		case YSFALSE:
+			FsDrawString(sx, sy, "R: Radar Display Style (Now: Square)", YsWhite());
+			break;
+		}
+		sy += fsAsciiRenderer.GetFontHeight();
+
+		switch (cfg.drawRWR)
+		{
+		case YSTRUE:
+			FsDrawString(sx, sy, "Y: Draw Radar Warning Receiver on HUD (Now: ON)", YsWhite());
+			break;
+		default:
+		case YSFALSE:
+			FsDrawString(sx, sy, "Y: Draw Radar Warning Receiver on HUD(Now : OFF)", YsWhite());
+			break;
+		}
+		sy += fsAsciiRenderer.GetFontHeight();
+
+		switch (cfg.centerCameraPerspective)
+		{
+		case YSTRUE:
+			FsDrawString(sx, sy, "O: Center Camera Perspective (Now: TRUE)", YsWhite());
+			break;
+		default:
+		case YSFALSE:
+			FsDrawString(sx, sy, "O: Center Camera Perspective (Now: FALSE)", YsWhite());
+			break;
+		}
+		sy += fsAsciiRenderer.GetFontHeight();
 
 		break;
 	case FSSUBMENU_GUNNER:

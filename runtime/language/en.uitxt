@@ -12,7 +12,7 @@ $BGCOL 0
 +assigndlg/setdefaultgamepad                       #Use Game Pad
 +assigndlg/setdefaultkeyassign                     #Set Default Key-Assignment Only (Keep Mouse/Joystick Assignment)
 +cfgdlg/ifvisibilityislessthan                     #If visibility is less than:
-+cfgdlg/thismiles                                  #miles
++cfgdlg/thismiles                                  #nautical miles
 +cfgdlg/use3dhud                                   #Use 3D HUD
 +cfgdlg/usesimplehud                               #Use Simple HUD
 +common/mission                                    #---Mission---
@@ -135,10 +135,10 @@ $BGCOL 0
 +newfltdlg/weather                                 #Weather
 +newfltdlg/winddir                                 #Wind Dir
 +newfltdlg/windspd                                 #Wind Speed(kt)
-+newfltdlg/visibility                              #Visibility(mile)
++newfltdlg/visibility                              #Visibility(NM)
 +newfltdlg/overcast                                #Overcast Layers
-+newfltdlg/overcastfloor                           #Floor
-+newfltdlg/overcastthickness                       #Thickness
++newfltdlg/overcastfloor                           #Floor (ft)
++newfltdlg/overcastthickness                       #Thickness (ft)
 +newfltdlg/formation                               #Formation
 +newfltdlg/flynow                                  #Fly Now
 +newfltdlg/wingman                                 #Wingmen
@@ -230,6 +230,7 @@ $BGCOL 0
 +configdlg/autorudder                              #Rudder Auto Coordination
 +configdlg/precision                               #Precise Simulation
 +configdlg/showhudalways                           #Always Show HUD
++configdlg/centercameraperspective                 #Center Camera Perspective
 +configdlg/dontuseinstpanel                        #Do not use Instrument Panel
 +configdlg/showplayernamealways                    #Always Draw Player Name
 +configdlg/showjoystick                            #Draw Virtual Joystick
@@ -248,7 +249,7 @@ $BGCOL 0
 +configdlg/smokeremain                             #Smoke Remain Time (seconds)
 +configdlg/smokestep                               #Draw Smoke Every N Steps
 +configdlg/fog                                     #Fog
-+configdlg/visibility                              #Visibility (mile)
++configdlg/visibility                              #Visibility (NM)
 +configdlg/zbuffquality                            #Z-Buffer Quality
 +configdlg/trspobj                                 #Trasnparent Object
 +configdlg/trspsmoke                               #Trasnparent Smoke
@@ -428,6 +429,7 @@ $BGCOL 0
 +netconsole/endurance_ww2                          #Start Enducrance Mode (Ww2)
 +netconsole/intercept                              #Start Intercept Mission
 +netconsole/closeairsupport                        #Start Close Air Support
++netconsole/setenvironment                         #Toggle Day/Night
 +netconsole/endserver                              #End Server
 +netconsole/confirmendserver                       #Confirm End Server
 +netconsole/reviveground                           #Revive Ground

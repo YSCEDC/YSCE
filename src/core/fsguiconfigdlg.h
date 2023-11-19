@@ -18,11 +18,18 @@ public:
 
 	FsGuiButton *dayOrNightBtn[2];
 	FsGuiButton *lightSrcBtn[5];
-
+	FsGuiNumberBox *windDir;
+	FsGuiNumberBox *windSpd;
+	
+	FsGuiButton *overCastLayerSw[MAXNUMCLOUDLAYER];
+	FsGuiNumberBox *overCastLayerFloor[MAXNUMCLOUDLAYER];
+	FsGuiNumberBox *overCastLayerThickness[MAXNUMCLOUDLAYER];
+	
 	FsGuiDropList *airLst,*fldLst,*stpLst;
 
 	FsGuiButton *blackOutBtn,*midAirCollisionBtn,*noTailStrikeBtn,*canLandAnywhereBtn;
 	FsGuiButton *autoRudderBtn,*preciseSimulationBtn,*alwaysShowHudBtn,*doNotUseInstPanelBtn;
+	FsGuiButton* centerCameraPerspectiveBtn;
 	FsGuiButton *showIASBtn;
 	FsGuiButton *simpleHudBtn,*threeDHudBtn;
 	FsGuiButton *alwaysDrawPlayerNameBtn,*drawVirtualJoystickBtn,*f8CameraDelayBtn;
@@ -50,6 +57,7 @@ public:
 	FsGuiButton *trspObjBtn,*trspSmkBtn,*trspVaporBtn,*reducePeepHoleBtn;
 	FsGuiButton *useDlistCloudBtn,*useDlistExplosionBtn,*useDlistWeaponBtn;
 	FsGuiButton *useGroundTextureBtn,*useRunwayLightTextureBtn;
+	FsGuiButton* msaaButton;
 
 #ifdef __APPLE__
 	FsGuiButton *useOpenGlAntiAliasing;

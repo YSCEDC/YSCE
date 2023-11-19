@@ -149,7 +149,10 @@ public:
 		FSTURNVIEW,                     // 2005/06/07
 
 		FSADDITIONALAIRPLANEVIEW,       // 2006/07/19 For additional view in cockpit
-		FSADDITIONALAIRPLANEVIEW_CABIN  // 2011/02/01 For additional view in cabin
+		FSADDITIONALAIRPLANEVIEW_CABIN,  // 2011/02/01 For additional view in cabin
+
+		FSVIEWUP,
+		FSVIEWDOWN 					//Added 01/10/2023 - for subwindow view up and down
 	};
 	enum FSREPLAYMODE
 	{
@@ -994,8 +997,9 @@ public:
 	double GetFirstRecordTime(void);
 	double GetLastRecordTime(void);
 
-	YSBOOL IsLockedOn(const FsExistence *ex) const;
+	YSBOOL IsLockedOn(const FsExistence *ex, YSBOOL missileLockOnly = YSFALSE) const;
 	YSBOOL IsMissileChasing(FSWEAPONTYPE &wpnType,YsVec3 &wpnPos,const FsExistence *ex) const;
+	FsWeapon* GetLockedOn(const FsExistence* ex) const;
 
 protected:
 	YSBOOL AllRecordedFlightsAreOver(double &lastRecordTime);

@@ -12,7 +12,7 @@ $BGCOL 0
 +assigndlg/setdefaultgamepad                       #ゲームパッドを使う
 +assigndlg/setdefaultkeyassign                     #マウスとジョイスティックの割り当てをそのままで、キーボードだけデフォルトにする
 +cfgdlg/ifvisibilityislessthan                     #視程が
-+cfgdlg/thismiles                                  #マイル以下の時
++cfgdlg/thismiles                                  #海里以下の時
 +common/mission                                    #---ミッション---
 +common/wingman                                    #僚機
 +dlg/autopilot/circle                              #現在地点上空で旋回待機
@@ -136,8 +136,8 @@ $BGCOL 0
 +newfltdlg/windspd                                 #風速(ノット)
 +newfltdlg/visibility                              #視程(マイル)
 +newfltdlg/overcast                                #雲のレイア
-+newfltdlg/overcastfloor                           #雲底
-+newfltdlg/overcastthickness                       #厚さ
++newfltdlg/overcastfloor                           #雲底 (フィート)
++newfltdlg/overcastthickness                       #厚さ(フィート)
 +newfltdlg/formation                               #編隊
 +newfltdlg/flynow                                  #今すぐ飛行開始
 +newfltdlg/wingman                                 #僚機
@@ -237,7 +237,7 @@ $BGCOL 0
 +configdlg/showplayernamealways                    #プレイヤー名を常に表示
 +configdlg/showjoystick                            #操縦桿を表示
 +configdlg/f8cameradelay                           #F8視点の時間遅れ
-+configdlg/minradaralt                             #レーダーに映る最低高度
++configdlg/minradaralt                             #レーダーに映る最低高度 (フィート)
 +configdlg/showias                                 #対気速度をIASで表示
 +configdlg/drawshadow                              #影の表示
 +configdlg/shadowofdeadplane                       #墜落機/終了機の影も表示
@@ -251,7 +251,7 @@ $BGCOL 0
 +configdlg/smokeremain                             #スモークの残存時間(秒)
 +configdlg/smokestep                               #スモーク表示の単位ステップ数
 +configdlg/fog                                     #霧
-+configdlg/visibility                              #視程(マイル)
++configdlg/visibility                              #視程(海里)
 +configdlg/zbuffquality                            #Zバッファ品質
 +configdlg/trspobj                                 #半透明オブジェクト
 +configdlg/trspsmoke                               #半透明スモーク
@@ -435,6 +435,7 @@ $BGCOL 0
 +netconsole/endurance_ww2                          #15分耐久空中戦開始(WW2)
 +netconsole/intercept                              #迎撃ミッション開始
 +netconsole/closeairsupport                        #近接支援ミッション開始
++netconsole/setenvironment                         #昼/夜の切り替え
 +netconsole/endserver                              #サーバー終了
 +netconsole/confirmendserver                       #サーバー終了確認
 +netconsole/reviveground                           #地上物復活

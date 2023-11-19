@@ -7,6 +7,7 @@
 #include <ysport.h>
 
 #include "fsdef.h"
+#include "core/fsweather.h"
 
 
 // Declaration /////////////////////////////////////////////
@@ -53,6 +54,9 @@ public:
 	YSBOOL drawTransparentVapor;
 	YSBOOL drawTransparentSmoke;
 	YSBOOL drawTransparentLater;
+	YSBOOL drawRWR;
+	YSBOOL drawCircleRadar;
+	YSBOOL centerCameraPerspective;
 	YSBOOL useOpenGlListForCloud;
 	YSBOOL useOpenGlListForExplosion;
 	YSBOOL useOpenGlListForWeapon;
@@ -88,6 +92,8 @@ public:
 
 	FSENVIRONMENT env;
 	double fogVisibility;
+	YsVec3 constWind;
+	YsArray <FsWeatherCloudLayer> cloudLayer;
 
 	double radarAltitudeLimit;
 	YSBOOL noExtAirView;
