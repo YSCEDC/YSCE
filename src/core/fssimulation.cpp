@@ -3886,13 +3886,22 @@ void FsSimulation::SimMove(const double &dt)
 		{
 			airplane->Prop().FireGunIfVirtualTriggerIsPressed(currentTime,dt,this,bulletHolder,airplane);
 
-			YSBOOL fired,blockedByBombBay;
+			YSBOOL fired,blockedByBombBay,jettisoned;
 			FSWEAPONTYPE woc;
-			fired=airplane->Prop().ProcessVirtualButtonPress(blockedByBombBay,woc,this,currentTime,bulletHolder,airplane);
-			if(fired==YSTRUE && airplane==GetPlayerAirplane())
+			fired=airplane->Prop().ProcessVirtualButtonPress(blockedByBombBay,woc,this,currentTime,bulletHolder,airplane, jettisoned);
+			if (fired == YSTRUE && jettisoned == YSTRUE && airplane == GetPlayerAirplane())
 			{
-
-
+				if (woc == FSWEAPON_FLARE)
+				{
+					FsSoundSetOneTime(FSSND_ONETIME_ROCKET);
+				}
+				else if (woc != FSWEAPON_GUN && woc != FSWEAPON_SMOKE)
+				{
+					FsSoundSetOneTime(FSSND_ONETIME_BOMBSAWAY);
+				}
+			}
+			else if(fired==YSTRUE && jettisoned == YSFALSE && airplane==GetPlayerAirplane())
+			{
 				switch(woc)
 				{
 				case FSWEAPON_AIM9:
@@ -5716,6 +5725,12 @@ void FsSimulation::SimProcessButtonFunction(FSBUTTONFUNCTION fnc,FSUSERCONTROL u
 		if(FSUSC_SCRIPT==userControl)
 		{
 			userInput.ctlFireWeaponButtonExt=YSTRUE;
+		}
+		break;
+	case FSBTF_TOGGLE_JETTISON_WEAPON:                    //  Jettison Selected Weapon
+		if (FSUSC_SCRIPT == userControl)
+		{
+			userInput.ctlJettisonWeaponButtonExt = YSTRUE;
 		}
 		break;
 	case FSBTF_FIREGUN:                       //  Fire Machine Gun
@@ -7746,11 +7761,11 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 			YSBOOL autoPilot=(NULL!=playerPlane->GetAutopilot() ? YSTRUE : YSFALSE);
 			if(long(currentTime*2.0)%2==0)
 			{
-				hud->Draw(autoPilot,cockpitIndicationSet);
+				hud->Draw(autoPilot, cockpitIndicationSet, playerPlane->Prop().GetShouldJettisonWeapon());
 			}
 			else
 			{
-				hud->Draw(YSFALSE,cockpitIndicationSet);
+				hud->Draw(YSFALSE,cockpitIndicationSet, playerPlane->Prop().GetShouldJettisonWeapon());
 			}
 
 			SimDraw2dVor1(cockpitIndicationSet);
@@ -8320,7 +8335,7 @@ void FsSimulation::SimDrawHud3d(const YsVec3 &fakeViewPos,const YsAtt3 &instView
 				loading.Append(FSWEAPON_SMOKE);
 				loading.Append((int)smokeOil);
 			}
-			hud2->DrawAmmo(-0.9,0.9,0.025,0.04,cockpitIndicationSet.ammo);
+			hud2->DrawAmmo(-0.9,0.9,0.025,0.04,cockpitIndicationSet.ammo, playerPlane->Prop().GetShouldJettisonWeapon());
 
 
 			double ix=1.25;

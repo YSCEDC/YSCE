@@ -104,6 +104,7 @@ public:
 	class FsExistence *target;
 
 	FsWeaponSmokeTrail *trail;
+	YSBOOL shouldJettison;
 
 
 
@@ -274,7 +275,7 @@ public:
 	     double v,double vmax,double l,double mobility,double radar,
 	     int destructivePower,
 	     class FsExistence *owner,unsigned int targetKey,
-	     YSBOOL recordIt,YSBOOL transmit);
+	     YSBOOL recordIt,YSBOOL transmit, YSBOOL jettison=YSFALSE);
 
 	// Bomb away!
 	int Bomb

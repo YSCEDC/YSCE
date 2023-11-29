@@ -23,13 +23,13 @@ public:
 	void SetArea(long x1,long y1,long dx,long dy);
 	void SetAreaByCenter(long cx,long cy,long dx,long dy);
 
-	void Draw(YSBOOL autoPilot,const class FsCockpitIndicationSet &cockpitIndicationSet);
+	void Draw(YSBOOL autoPilot,const class FsCockpitIndicationSet &cockpitIndicationSet, YSBOOL shouldJettison = YSFALSE);
 	void DrawCrossHair(void);
 	void DrawHeading(const YsAtt3 &hdg,YSBOOL showHdgBug,const double &hdgBug,YSBOOL selected);
 	void DrawThrottle(int nEng,const double thr[],const YSBOOL ab[]);
 	void DrawNozzle(const YsVec3 &vec);
 	void DrawFuelLeft(double fuel,double maxFuel);
-	void DrawWeapon(const class FsAmmunitionIndication &ammo);
+	void DrawWeapon(const class FsAmmunitionIndication &ammo, YSBOOL shouldJettison=YSFALSE);
 	void DrawG(double g);
 	void DrawMach(double mach);
 	void DrawElevator(double elv,double trim,YSBOOL au);
