@@ -14,7 +14,7 @@ FsGroundSky::~FsGroundSky()
 
 void FsGroundSky::DrawByFog(
     const YsVec3 &,const YsAtt3 &,const YsColor &,const YsColor &,const YsColor &,
-    const double &,YSBOOL)
+    const double &,YSBOOL, YsVec3, YsColor)
 {
 }
 

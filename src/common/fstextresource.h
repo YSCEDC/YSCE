@@ -246,6 +246,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_CFGDLG_SETDEFAULT                           FsGetTextResource("common/setdefault",L"Set Default")
 #define FSGUI_CFGDLG_ENVIRONMENT                          FsGetTextResource("configdlg/environment",L"Environment")
 #define FSGUI_CFGDLG_LIGHT                                FsGetTextResource("configdlg/light",L"Light Direction")
+#define FSGUI_CFGDLG_DAYLENGTH                            FsGetTextResource("configdlg/daylength",L"Day Length (min)")
 #define FSGUI_CFGDLG_AIRCRAFT                             FsGetTextResource("configdlg/aircraft",L"Aircraft")
 #define FSGUI_CFGDLG_FIELD                                FsGetTextResource("common/field",L"Field")
 #define FSGUI_CFGDLG_STP                                  FsGetTextResource("common/startpos",L"Start Position")
