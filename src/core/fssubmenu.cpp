@@ -547,6 +547,9 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 		case FSKEY_O:
 			YsFlip(cfg.centerCameraPerspective);
 			break;
+		case FSKEY_B:
+			YsFlip(cfg.useTerrainAltitude);
+			break;
 		}
 		break;
 	}
@@ -1038,6 +1041,18 @@ void FsSubMenu::Draw(const class FsSimulation *sim,class FsFlightConfig &cfg,int
 		default:
 		case YSFALSE:
 			FsDrawString(sx, sy, "O: Center Camera Perspective (Now: FALSE)", YsWhite());
+			break;
+		}
+		sy += fsAsciiRenderer.GetFontHeight();
+
+		switch (cfg.useTerrainAltitude)
+		{
+		case YSTRUE:
+			FsDrawString(sx, sy, "B: Altitude Indication (Now: TERRAIN LEVEL)", YsWhite());
+			break;
+		default:
+		case YSFALSE:
+			FsDrawString(sx, sy, "B: Altitude Indication (Now: SEA LEVEL)", YsWhite());
 			break;
 		}
 		sy += fsAsciiRenderer.GetFontHeight();

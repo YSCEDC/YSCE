@@ -8268,7 +8268,19 @@ void FsSimulation::SimDrawHud3d(const YsVec3 &fakeViewPos,const YsAtt3 &instView
 				    nav.IsInop());
 			}
 
-			hud2->DrawAltitude(0.6,-0.2,0.25,0.8,inst.altitude);
+			double instAltitude = 0.0;
+			if (cfgPtr->useTerrainAltitude)
+			{
+				YsVec3 playerPlanePos = playerPlane->Prop().GetPosition();
+				double terrainAltitude;
+				field.GetFieldElevation(terrainAltitude, playerPlanePos.x(), playerPlanePos.z());
+				instAltitude = playerPlane->Prop().GetTrueAltitude() - terrainAltitude;
+			}
+			else
+			{
+				instAltitude = inst.altitude;
+			}
+			hud2->DrawAltitude(0.6,-0.2,0.25,0.8,instAltitude);
 			hud2->DrawVSI(0.85,-0.1,0.2,0.6,YsUnitConv::MtoFT(inst.verticalSpeed*60.0));
 			hud2->DrawAirSpeed(-0.85,-0.2,0.25,0.8,inst.airSpeed);
 

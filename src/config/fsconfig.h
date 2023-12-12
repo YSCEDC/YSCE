@@ -63,6 +63,7 @@ public:
 	YSBOOL useOpenGlGroundTexture;
 	YSBOOL useOpenGlRunwayLightTexture;
 	YSBOOL showIAS;
+	YSBOOL useTerrainAltitude;
 
 	YSBOOL useOpenGlAntiAliasing;
 

@@ -42,6 +42,7 @@ void FsFlightConfig::SetDefault(void)
 	drawTransparentSmoke=YSTRUE;
 	drawTransparentLater=YSTRUE;
 	drawCircleRadar = YSFALSE;
+	useTerrainAltitude = YSFALSE;
 	centerCameraPerspective = YSTRUE;
 	drawRWR = YSTRUE;
 	drawPlayerNameAlways=YSTRUE;
