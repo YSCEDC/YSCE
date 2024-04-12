@@ -7214,9 +7214,7 @@ void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsPr
 			}
 
 			//calculate object position in player's view
-			YsVec3 objViewPos, objPos;
-			objPos = seeker->GetPosition();
-			objViewPos = actualViewMode.viewMat * objPos;
+			YsVec3 objViewPos = actualViewMode.viewMat * seeker->GetPosition();
 
 			//calculate apparent radius of object (view size)
 			double objRad,distance,apparentRad;
