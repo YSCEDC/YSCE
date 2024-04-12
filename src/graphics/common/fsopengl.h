@@ -16,6 +16,9 @@ public:
 //   | /
 //   |/
 //   V
+
+	double fov;
+	double fovSecondary;
 	double tanFov;          // Tangent of field of view (FOV) along the longer (primary) screen axis
 	double tanFovSecondary; // Tangent of field of view (FOV) along the shorter (secondary) screen axis
 	double prjPlnDist;  // =scrnwidth/(2*tanFov)

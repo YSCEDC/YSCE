@@ -77,7 +77,7 @@ YsListAllocator <FsGround> FsGroundAllocator;
 extern void DrawSharewareMessage(void);
 #endif
 
-
+static const double PROJ_PLANE_DIST_SCALE = 1.41421356 * 0.75;
 
 FsVisualSrf *cockpit=nullptr;
 
@@ -7114,9 +7114,7 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 				// Otherwise, Weapon LOD depends on drawCoarseOrdinance
 
 				//calculate object position in player's view
-				YsVec3 objViewPos, objPos;
-				objPos = seeker->GetPosition();
-				objViewPos = actualViewMode.viewMat * objPos;
+				YsVec3 objViewPos = actualViewMode.viewMat * seeker->GetPosition();
 
 				//calculate apparent radius of object (view size)
 				double objRad, distance, apparentRad;
@@ -7136,8 +7134,8 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 				// only draw if apparent radius is larger than 1 pixel AND object is within camera's view
 				if (apparentRad >= 1
 					&& objViewPos.z() + objRad >= 0.0
-					&& objHorizontalViewAngle <= fovHorizontal + objRadiusViewAngleOffset
-					&& objVerticalViewAngle <= fovVertical + objRadiusViewAngleOffset)
+					&& objHorizontalViewAngle <= proj.fov + objRadiusViewAngleOffset
+					&& objVerticalViewAngle <= proj.fovSecondary + objRadiusViewAngleOffset)
 				{
 					switch (cfgPtr->airLod)
 					{
@@ -7222,10 +7220,6 @@ void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsPr
 			distance=(seeker->GetPosition()-viewPoint).GetLength();
 			apparentRad=objRad*proj.prjPlnDist/distance;
 
-			//1/2 of vertical and horizontal FOVs
-			double fovHorizontal = atan(proj.tanFov);
-			double fovVertical = atan(proj.tanFovSecondary);
-
 			//calculate relative (unsigned) XZ & YZ angles of object from camera view vector
 			double objRadiusViewAngleOffset = atan2(objRad, abs(objViewPos.z()));
 			double objHorizontalViewAngle = atan2(abs(objViewPos.x()), abs(objViewPos.z()));
@@ -7234,8 +7228,8 @@ void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsPr
 			// only draw if apparent radius is larger than 1 pixel AND object is within camera's view
 			if(apparentRad>=1 
 				&& objViewPos.z() + objRad >= 0.0 
-				&& objHorizontalViewAngle <= fovHorizontal + objRadiusViewAngleOffset 
-				&& objVerticalViewAngle <= fovVertical + objRadiusViewAngleOffset)
+				&& objHorizontalViewAngle <= proj.tanFov + objRadiusViewAngleOffset 
+				&& objVerticalViewAngle <= proj.tanFovSecondary + objRadiusViewAngleOffset)
 			{
 				switch(cfgPtr->gndLod)
 				{
@@ -9712,36 +9706,38 @@ void FsSimulation::SetUpGunnerSubMenu(void)
 
 void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualViewMode) const
 {
-	int wid,hei,fovInPixel;
+	int wid, hei, fovInPixel;
 	const FsAirplane *playerPlane;
 
 	FsGetDrawingAreaSize(wid,hei);
 
-	playerPlane=GetPlayerAirplane();
+	playerPlane = GetPlayerAirplane();
 	
-	if(cfgPtr->centerCameraPerspective == YSFALSE && NULL!=playerPlane)
+	if(cfgPtr->centerCameraPerspective == YSFALSE && NULL != playerPlane)
 	{
-		const YsVec2 scrnCen=playerPlane->Prop().GetScreenCenter();
-		prj.cx=(int)((double)wid*(1.0+scrnCen.x())/2.0);
-		prj.cy=(int)((double)hei*(1.0-scrnCen.y())/2.0);
+		const YsVec2 scrnCen = playerPlane->Prop().GetScreenCenter();
+		prj.cx = (int)((double)wid * (1.0 + scrnCen.x()) / 2.0);
+		prj.cy = (int)((double)hei * (1.0 - scrnCen.y()) / 2.0);
 	}
 	else
 	{
-		prj.cx=wid/2;
-		prj.cy=hei/2;
+		prj.cx = wid / 2;
+		prj.cy = hei / 2;
 	}
 
-	fovInPixel=YsGreater(wid/2,hei/2);  // 2010/07/05 It was ...,prj.cx,prj.cy);
+	fovInPixel = YsGreater(wid/2,hei/2);  // 2010/07/05 It was ...,prj.cx,prj.cy);
 
-	prj.prjMode=YsProjectionTransformation::PERSPECTIVE;
-	prj.prjPlnDist=(double)hei/(1.41421356 * 0.75);  // 2010/07/05 Fix vertical fov (double)wid/(double)1.41421356;
-	prj.prjPlnDist*=(actualViewMode.viewMagFix*viewMagUser/1.8);
-	prj.tanFov=(double)fovInPixel/prj.prjPlnDist;
+	prj.prjMode = YsProjectionTransformation::PERSPECTIVE;
+	prj.prjPlnDist = (double)hei / (PROJ_PLANE_DIST_SCALE);  // 2010/07/05 Fix vertical fov (double)wid/(double)1.41421356;
+	prj.prjPlnDist *= (actualViewMode.viewMagFix*viewMagUser / 1.8);
+	prj.tanFov = (double)fovInPixel / prj.prjPlnDist;
 	prj.tanFovSecondary = (double)YsSmaller(wid / 2, hei / 2) / prj.prjPlnDist;
+	prj.fov = atan(prj.tanFov);
+	prj.fovSecondary = atan(prj.tanFovSecondary);
 	prj.viewportDim.Set(wid,hei);
 
-	prj.nearz=0.1;
-	prj.farz=18000.0;
+	prj.nearz = 0.1;
+	prj.farz = 18000.0;
 
 	prj.UncacheMatrix();
 }
