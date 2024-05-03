@@ -6933,11 +6933,8 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode)
 FsProjection FsSimulation::SimDrawPrepareBackground(const ActualViewMode &actualViewMode)
 {
 	FsProjection prj;
-	int wid,hei;
-
-	FsGetWindowSize(wid,hei);
-
 	GetProjection(prj,actualViewMode);
+
 	prj.farz=40000.0; // #### 80000.0 ? 20000.0  What to do with sky sphere?
 	nearZ=prj.nearz;
 	farZ=prj.farz;
