@@ -17,6 +17,8 @@ public:
 //   |/
 //   V
 
+	int fovInPixels;
+
 	double fov;
 	double fovSecondary;
 	double tanFov;          // Tangent of field of view (FOV) along the longer (primary) screen axis
