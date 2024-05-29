@@ -1038,6 +1038,9 @@ public:
 	void OpenChatDialog(void);
 	void CloseChatDialog(void);
 	void OpenLoadingDialog(YSBOOL fuel,YSBOOL ammo,const FsAirplane &air);
+
+	//FOV and screen size (pixels) check for draw culling purposes
+	bool IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const;
 };
 
 #include "fsmissiongoal.h"

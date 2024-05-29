@@ -6641,31 +6641,13 @@ void FsSimulation::SimDrawShadowMap(const ActualViewMode &actualViewMode)
 				field.DrawVisual(viewMat,projMat,YSTRUE, cfgPtr->useOpenGlGroundTexture); // forShadowMap=YSTRUE
 
 				FsAirplane *airSeeker;
-				YsVec3 airObjViewPos;
 				airSeeker=NULL;
 				while((airSeeker=FindNextAirplane(airSeeker))!=NULL)
 				{
-					//calculate object position in player's view
-					airObjViewPos = actualViewMode.viewMat * airSeeker->GetPosition();
-
-					//calculate apparent radius of object (view size)
-					double objRad, distance, apparentRad;
-					objRad = airSeeker->Prop().GetOutsideRadius();
-					distance = (airSeeker->GetPosition() - viewPoint).GetLength();
-					apparentRad = objRad * proj.prjPlnDist / distance;
-
-					//calculate relative (unsigned) XZ & YZ angles of object from camera view vector
-					double objRadiusViewAngleOffset = atan2(objRad, abs(airObjViewPos.z()));
-					double objHorizontalViewAngle = atan2(abs(airObjViewPos.x()), abs(airObjViewPos.z()));
-					double objVerticalViewAngle = atan2(abs(airObjViewPos.y()), abs(airObjViewPos.z()));
-
 					// only draw if apparent radius is larger than 1 pixel AND object is within camera's view
 					if (cfgPtr->shadowOfDeadAirplane == YSTRUE
 						&& airSeeker->IsAlive() == YSTRUE
-						&& apparentRad >= 1 
-						&& airObjViewPos.z() + objRad >= 0.0
-						&& objHorizontalViewAngle <= proj.tanFov + objRadiusViewAngleOffset
-						&& objVerticalViewAngle <= proj.tanFovSecondary + objRadiusViewAngleOffset)
+						&& IsObjectVisible(airSeeker, actualViewMode, proj))
 					{
 						airSeeker->DrawShadow(viewMat, projMat, YsIdentity4x4());
 						if (cfgPtr->drawOrdinance == YSTRUE)
@@ -6677,31 +6659,13 @@ void FsSimulation::SimDrawShadowMap(const ActualViewMode &actualViewMode)
 				}
 
 				FsGround *gndSeeker;
-				YsVec3 gndObjViewPos;
 				gndSeeker=NULL;
 				while((gndSeeker=FindNextGround(gndSeeker))!=NULL)
 				{
-					//calculate object position in player's view
-					gndObjViewPos = actualViewMode.viewMat * gndSeeker->GetPosition();
-
-					//calculate apparent radius of object (view size)
-					double objRad, distance, apparentRad;
-					objRad = gndSeeker->Prop().GetOutsideRadius();
-					distance = (gndSeeker->GetPosition() - viewPoint).GetLength();
-					apparentRad = objRad * proj.prjPlnDist / distance;
-
-					//calculate relative (unsigned) XZ & YZ angles of object from camera view vector
-					double objRadiusViewAngleOffset = atan2(objRad, abs(gndObjViewPos.z()));
-					double objHorizontalViewAngle = atan2(abs(gndObjViewPos.x()), abs(gndObjViewPos.z()));
-					double objVerticalViewAngle = atan2(abs(gndObjViewPos.y()), abs(gndObjViewPos.z()));
-
 					if (cfgPtr->shadowOfDeadAirplane == YSTRUE
 						&& gndSeeker->IsAlive() == YSTRUE
 						&& gndSeeker->Prop().NoShadow() != YSTRUE
-						&& apparentRad >= 1
-						&& gndObjViewPos.z() + objRad >= 0.0
-						&& objHorizontalViewAngle <= proj.tanFov + objRadiusViewAngleOffset
-						&& objVerticalViewAngle <= proj.tanFovSecondary + objRadiusViewAngleOffset)
+						&& IsObjectVisible(gndSeeker, actualViewMode, proj))
 					{
 						gndSeeker->DrawShadow(viewMat, projMat, YsIdentity4x4());
 					}
@@ -7121,7 +7085,7 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 
 	FsAirplane *seeker;
 	double airRad;
-	YsVec3 airPos, objViewPos;
+	YsVec3 airPos;
 
 	seeker=NULL;
 	while((seeker=FindNextAirplane(seeker))!=NULL)
@@ -7147,29 +7111,7 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 				// If cfgPtr->airLod==0 (Automatic), Weapon LOD is also automatic
 				// Otherwise, Weapon LOD depends on drawCoarseOrdinance
 
-				//calculate object position in player's view
-				objViewPos = actualViewMode.viewMat * seeker->GetPosition();
-
-				//calculate apparent radius of object (view size)
-				double objRad, distance, apparentRad;
-				objRad = seeker->Prop().GetOutsideRadius();
-				distance = (seeker->GetPosition() - viewPoint).GetLength();
-				apparentRad = objRad * proj.prjPlnDist / distance;
-
-				//1/2 of vertical and horizontal FOVs
-				double fovHorizontal = atan(proj.tanFov);
-				double fovVertical = atan(proj.tanFovSecondary);
-
-				//calculate relative (unsigned) XZ & YZ angles of object from camera view vector
-				double objRadiusViewAngleOffset = atan2(objRad, abs(objViewPos.z()));
-				double objHorizontalViewAngle = atan2(abs(objViewPos.x()), abs(objViewPos.z()));
-				double objVerticalViewAngle = atan2(abs(objViewPos.y()), abs(objViewPos.z()));
-
-				// only draw if apparent radius is larger than 1 pixel AND object is within camera's view
-				if (apparentRad >= 1
-					&& objViewPos.z() + objRad >= 0.0
-					&& objHorizontalViewAngle <= proj.fov + objRadiusViewAngleOffset
-					&& objVerticalViewAngle <= proj.fovSecondary + objRadiusViewAngleOffset)
+				if (IsObjectVisible(seeker, actualViewMode, proj))
 				{
 					switch (cfgPtr->airLod)
 					{
@@ -7227,12 +7169,34 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 	// Hence, now they are drawn in SimDrawAirplaneVaporSmoke
 }
 
+//FOV and screen size (pixels) check for draw culling purposes
+bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const
+{
+	//calculate object position in player's view
+	YsVec3 objViewPos = actualViewMode.viewMat * obj->GetPosition();
+
+	//calculate apparent radius of object (view size)
+	double objRad, distance, apparentRad;
+	objRad = obj->CommonProp().GetOutsideRadius();
+	distance = (obj->GetPosition() - actualViewMode.viewPoint).GetLength();
+	apparentRad = objRad * proj.prjPlnDist / distance;
+
+	//calculate relative (unsigned) XZ & YZ angles of object from camera view vector
+	double objRadiusViewAngleOffset = atan2(objRad, abs(objViewPos.z()));
+	double objHorizontalViewAngle = atan2(abs(objViewPos.x()), abs(objViewPos.z()));
+	double objVerticalViewAngle = atan2(abs(objViewPos.y()), abs(objViewPos.z()));
+
+	return (apparentRad >= 1
+		&& objViewPos.z() + objRad >= 0.0
+		&& objHorizontalViewAngle <= proj.tanFov + objRadiusViewAngleOffset
+		&& objVerticalViewAngle <= proj.tanFovSecondary + objRadiusViewAngleOffset);
+}
+
 void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsProjection &proj,unsigned int drawFlag) const
 {
 	auto &viewPoint=actualViewMode.viewPoint;
 	auto &viewMat=actualViewMode.viewMat;
 
-	YsVec3 objViewPos;
 	FsGround *seeker;
 	seeker=NULL;
 	while((seeker=FindNextGround(seeker))!=NULL)
@@ -7245,30 +7209,12 @@ void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsPr
 				continue;
 			}
 
-			//calculate object position in player's view
-			objViewPos = actualViewMode.viewMat * seeker->GetPosition();
-
-			//calculate apparent radius of object (view size)
-			double objRad,distance,apparentRad;
-			objRad=seeker->Prop().GetOutsideRadius();
-			distance=(seeker->GetPosition()-viewPoint).GetLength();
-			apparentRad=objRad*proj.prjPlnDist/distance;
-
-			//calculate relative (unsigned) XZ & YZ angles of object from camera view vector
-			double objRadiusViewAngleOffset = atan2(objRad, abs(objViewPos.z()));
-			double objHorizontalViewAngle = atan2(abs(objViewPos.x()), abs(objViewPos.z()));
-			double objVerticalViewAngle = atan2(abs(objViewPos.y()), abs(objViewPos.z()));
-
-			// only draw if apparent radius is larger than 1 pixel AND object is within camera's view
-			if(apparentRad>=1 
-				&& objViewPos.z() + objRad >= 0.0 
-				&& objHorizontalViewAngle <= proj.tanFov + objRadiusViewAngleOffset 
-				&& objVerticalViewAngle <= proj.tanFovSecondary + objRadiusViewAngleOffset)
+			if(IsObjectVisible(seeker, actualViewMode, proj))
 			{
 				switch(cfgPtr->gndLod)
 				{
 				case 0: // Default
-					if((seeker->GetPosition()-viewPoint).GetSquareLength()<(objRad*objRad)*400.0)
+					if((seeker->GetPosition()-viewPoint).GetSquareLength()<(seeker->Prop().GetOutsideRadius() * seeker->Prop().GetOutsideRadius())*400.0)
 					{
 						seeker->Draw(0,viewMat,proj.GetMatrix(),viewPoint,drawFlag,currentTime);
 					}
