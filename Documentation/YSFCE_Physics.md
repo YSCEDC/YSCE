@@ -46,6 +46,28 @@ The YSFlight atmospheric model is based on the 1976 U.S. Standard Atmosphere mod
 
 <br>
 
+# Thrust Vectoring
+
+Thrust vectoring is calculated using the following equation for each of the 3 coordinates.
+
+$$TV_a = TRSTDIR0_a * \left(1 - \frac{staThrustVector}{99}\right) + TRSTDIR1_a * \left(\frac{staThrustVector}{99}\right)$$
+
+Where:
+- $a$ indicates the x, y, or z coordinate portion of the thrust vectors 
+
+ Note that in any calculation, the output vector gets normalized so that this doesn't magnify thrust calculations, only the direction.
+
+ $$Magnitude = \sqrt{{TV_x}^2 + {TV_y}^2 + {TV_z}^2}$$
+
+Therefore the normalized vector components can be calculated with:
+
+$$\hat{TV_a} = \frac{TV_a}{Magnitude}$$
+
+Where:
+- $TV_a$ is a thrust vector component in the x, y, or z axis directions (aircraft body relative)
+- $\hat{TV_a}$ is the normalized thrust vector component in the x, y, or z axis directions (aircraft body relative)
+
+
 # Jet Engine Performance
 
 Jet engine performance is a function of DAT variables and altitude. 
@@ -141,14 +163,14 @@ $$P = PROPELLR   \times   Thr   \times   \frac{PROPEFCY}{PROPVMIN}$$
 
 <br>
 
-$$T = \frac{\rho_{sea}}{\rho_{alt}}   \times   \frac{P}{V}$$
+$$T = \frac{\rho_{alt}}{\rho_{sea}}   \times   \frac{P}{V}$$
 
 where:
 - $P$ = Power
 - $T$ = Thrust
 - $\rho_{sea}$ = Air Density at sea level (kg/m3)
 - $\rho_{alt}$ = Air Density at aircraft's altitude (kg/m3)
-- $V$ = Aircraft Velocity (m/s)
+- $V$ = Aircraft Velocity (m/s) in the thrust direction.
 - $Thr$ = Throttle setting
 
 <br>
@@ -215,9 +237,20 @@ The mach number of the aircraft is calculated by first determining the speed of 
 $$Mach   =   \frac{V}{a}$$
 
 Where:
-- $V$ is the aircraft's speed
-- $a$ is the speed of sound.
+- $V$ is the aircraft's true air speed
+- $a$ is the speed of sound at the aircraft's altitude
 
+
+Interpolate the table below to find the speed of sound at a given altitude. For any altitude outside of this table, use the closest altitude's value.
+
+| Altitude | Speed (m/s) |
+|----------|----------|
+| 0 | 340.294 |
+| 4000 | 324.579 | 
+| 8000 | 308.063 | 
+| 12000 | 295.069 |
+
+NOTE: This table is accurate for YSFlight 2018 and older. YSCE may use the table at the beginning of this document instead.
 <br>
 
 # Gravity
@@ -335,7 +368,7 @@ The drag coefficient has a lot of different considerations that need to be calcu
 - $T_{V_{MAX}}$ = Thrust at REFACRUS, and MAXSPEED and a throttle setting of 1.0 or Max AB.
 - $T_{Landing}$ = Thrust at REFVLAND throttle setting, sea level and at REFVLAND speed without afterburner.
 
-$$C_{D_{0}} = \frac{T_{Cruise}}{0.5 \times  \rho_{REFACRUS} \times V^2 \times WINGAREA}$$
+$$C_{D_{0}} = \frac{T_{Cruise}}{0.5 \times  \rho_{REFACRUS} \times REFVCRUS^2 \times WINGAREA}$$
 
 <br>
 
@@ -384,9 +417,9 @@ $$C_{D_{Const}} = 0$$
 
 ### Drag Coefficient Buildup
 
-When calculating drag, the angle of attack is artificially bound:
+When calculating drag, the angle of attack is artificially bounded to the range defined below:
 
-$$-1 \times MAXCDAOA \le \alpha \le MAXCDAOA$$
+$$(-1 \times MAXCDAOA) \le \alpha \le MAXCDAOA$$
 
 <br>
 
@@ -531,6 +564,8 @@ The following table of DAT variables are used during the performance model calcu
 | REFTHRLD | float | Throttle setting at landing | N/A |
 | REFVLAND | float | Landing Speed | Speed |
 | REFLNRWY | float | Runway distance required to stop | Length |
+| TRSTDIR0 | vector | Vector of the thrust direction when thrust vector is set to full aft | Length |
+| TRSTDIR1 | vector | Vector of the thrust direction when thrust vector is set to full down | Length |
 
 
 
