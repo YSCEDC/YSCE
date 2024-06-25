@@ -14,7 +14,7 @@ The YSFlight atmospheric model is based on the 1976 U.S. Standard Atmosphere mod
 |----------|------------|-------------|----------|----------------|-------------|
 | -2000 | 1.47808    | 301.15 | 127774  | 347.886 | 0.0000187630 |
 | -1000 | 1.347      | 294.65 | 113929  | 344.111 | 0.0000184434 |
-| 0     | 1.225      | 288.15 | 101325  | 340.294 | 0.0000181206 |
+| 0     | 1.224991   | 288.15 | 101325  | 340.294 | 0.0000181206 |
 | 1000  | 1.11164    | 281.65 | 89874.6 | 336.434 | 0.0000177943 |
 | 2000  | 1.00649    | 275.15 | 79495.2 | 332.529 | 0.0000174645 |
 | 3000  | 0.909122   | 268.65 | 70108.5 | 328.578 | 0.0000171311 |
@@ -413,7 +413,10 @@ $$C_{D_{Const}} = 0$$
 
 <br>
 
+### Drag Coefficient Catches
+In order to prevent the aircraft accelerating the faster it goes, YSCE does a simple check. If $C_{D_{0_{MAX}}} < C_{D_{0}}$, then:
 
+$$C_{D_{0_{MAX}}} = C_{D_{0}}$$
 
 ### Drag Coefficient Buildup
 
@@ -452,7 +455,12 @@ $${C_D}_2 = {C_D}_1$$
 
 NOTE: If the aircraft doesn't have CDSPOILR defined, then it defaults to zero. If the aircraft doesn't have CDVARGEO defined, it defaults to zero.
 
-$${C_D}_3 = {C_D}_2 \times \left(1.0 + CDSPOILR \times staSpoiler\right) \times \left(1.0 + CDVARGEO \times staVgw\right) \times \left(1.0 + CDBYFLAP \times staFlap\right) \times \left(1.0 + CDBYGEAR \times staGear\right)$$
+$${C_D} = {C_D}_2 \times \left(1.0 + CDSPOILR \times staSpoiler\right) \times \left(1.0 + CDVARGEO \times staVgw\right) \times \left(1.0 + CDBYFLAP \times staFlap\right) \times \left(1.0 + CDBYGEAR \times staGear\right)$$
+
+#### Invalid Results
+In some cases it is possible to create physically impossible results like negative drag. If $C_D < 0$, then:
+
+$$C_D = C_{D_{MAX}}$$
 
 
 <br>
