@@ -224,6 +224,7 @@ $BGCOL 0
 +configdlg/opengl                                  #OpenGL
 +common/setdefault                                 #デフォルトに戻す
 +configdlg/environment                             #環境
++configdlg/daylength                               #日の長さ（分）
 +configdlg/light                                   #光源方向
 +configdlg/aircraft                                #航空機
 +configdlg/blackout                                #ブラックアウト

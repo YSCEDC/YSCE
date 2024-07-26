@@ -998,6 +998,9 @@ static const char *const ysflightCommand[]=
 	// Added 2017/12/17
 	"EXTENSIO",
 
+	//Added 2023/09/03
+	"DAYLENG",
+	"DAYTIME",
 	NULL
 };
 
@@ -1978,6 +1981,16 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								}
 							}
 						}
+						break;
+					case 53: // "DAYLENG"
+						int dayLength;
+						dayLength = atoi(args[1]);
+						sim->SetDayLength(dayLength);
+						break;
+					case 54: // "DAYTIME"
+						double dayTime;
+						dayTime = atof(args[1]);
+						sim->SetDayTime(dayTime);
 						break;
 
 					default:
@@ -3887,6 +3900,26 @@ FSENVIRONMENT FsWorld::GetEnvironment(void)
 		return sim->GetEnvironment();
 	}
 	return FSDAYLIGHT;
+}
+
+YSRESULT FsWorld::SetDayTime(double t)
+{
+	if(NULL!=sim)
+	{
+		sim->SetDayTime(t);
+		return YSERR;
+	}
+	return YSOK;
+}
+
+YSRESULT FsWorld::SetDayLength(int dayLength)
+{
+	if(NULL!=sim)
+	{
+		sim->SetDayLength(dayLength);
+		return YSERR;
+	}
+	return YSOK;
 }
 
 FsAirplane *FsWorld::AddAirplane(const char idName[],YSBOOL isPlayerPlane,unsigned netSearchKey)

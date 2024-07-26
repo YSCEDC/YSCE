@@ -221,6 +221,7 @@ $BGCOL 0
 +configdlg/opengl                                  #OpenGL
 +common/setdefault                                 #Set Default
 +configdlg/environment                             #Environment
++configdlg/daylength                               #Day length (mins)
 +configdlg/light                                   #Light Direction
 +configdlg/aircraft                                #Aircraft
 +configdlg/blackout                                #Black Out
