@@ -94,7 +94,7 @@ public:
 
 	void DrawAmmo(
 	    const double &x0,const double &y0,const double &fontWid,const double &fontHei,
-	    const class FsAmmunitionIndication &ammo);
+	    const class FsAmmunitionIndication &ammo, YSBOOL shouldJettison=YSFALSE);
 
 	void DrawVelocityVectorIndicator(const YsVec3 &viewPos,const YsAtt3 &viewAtt,const YsVec3 &vel);
 

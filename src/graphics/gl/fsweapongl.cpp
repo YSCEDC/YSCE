@@ -74,9 +74,16 @@ void FsWeapon::Draw(
 			{
 				glDisable(GL_CULL_FACE);
 				glEnable(GL_LIGHTING);
-				if(coarse!=YSTRUE && aim9!=nullptr)
+				if(coarse!=YSTRUE)
 				{
-					aim9.Draw(viewMat,projMat,pos,att,drawFlag);
+					if (shouldJettison == YSTRUE && aim9s != nullptr)
+					{
+						aim9s.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
+					else if (aim9 != nullptr)
+					{
+						aim9.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
 				}
 				else if(coarse==YSTRUE && aim_coarse!=nullptr)
 				{
@@ -89,9 +96,16 @@ void FsWeapon::Draw(
 			{
 				glDisable(GL_CULL_FACE);
 				glEnable(GL_LIGHTING);
-				if(coarse!=YSTRUE && aim9x!=nullptr)
+				if(coarse!=YSTRUE)
 				{
-					aim9x.Draw(viewMat,projMat,pos,att,drawFlag);
+					if (shouldJettison == YSTRUE && aim9xs != nullptr)
+					{
+						aim9xs.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
+					else if (aim9x != nullptr)
+					{
+						aim9x.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
 				}
 				else if(coarse==YSTRUE && aim_coarse!=nullptr)
 				{
@@ -104,9 +118,16 @@ void FsWeapon::Draw(
 			{
 				glDisable(GL_CULL_FACE);
 				glEnable(GL_LIGHTING);
-				if(coarse!=YSTRUE && aim120!=nullptr)
+				if(coarse!=YSTRUE)
 				{
-					aim120.Draw(viewMat,projMat,pos,att,drawFlag);
+					if (shouldJettison == YSTRUE && aim120s != nullptr)
+					{
+						aim120s.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
+					else if (aim120 != nullptr)
+					{
+						aim120.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
 				}
 				else if(coarse==YSTRUE && aim120_coarse!=nullptr)
 				{
@@ -164,9 +185,16 @@ void FsWeapon::Draw(
 			{
 				glDisable(GL_CULL_FACE);
 				glEnable(GL_LIGHTING);
-				if(coarse!=YSTRUE && agm65!=nullptr)
+				if(coarse!=YSTRUE)
 				{
-					agm65.Draw(viewMat,projMat,pos,att,drawFlag);
+					if (shouldJettison == YSTRUE && agm65s != nullptr)
+					{
+						agm65s.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
+					else if (agm65 != nullptr)
+					{
+						agm65.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
 				}
 				else if(coarse==YSTRUE && agm_coarse!=nullptr)
 				{
@@ -179,9 +207,16 @@ void FsWeapon::Draw(
 			{
 				glDisable(GL_CULL_FACE);
 				glEnable(GL_LIGHTING);
-				if(coarse!=YSTRUE && rocket!=nullptr)
+				if(coarse!=YSTRUE)
 				{
-					rocket.Draw(viewMat,projMat,pos,att,drawFlag);
+					if (shouldJettison && rockets != nullptr)
+					{
+						rockets.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
+					else if (rocket != nullptr)
+					{
+						rocket.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
 				}
 				else if(coarse==YSTRUE && rocket_coarse!=nullptr)
 				{

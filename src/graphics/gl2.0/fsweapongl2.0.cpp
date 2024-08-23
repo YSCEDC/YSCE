@@ -92,10 +92,17 @@ void FsWeapon::Draw(
 		case FSWEAPON_AIM9:
 			if(lifeRemain>YsTolerance)
 			{
-				// glDisable(GL_CULL_FACE); Do I have to?
-				if(coarse!=YSTRUE && aim9!=NULL)
+				// glDisable(GL_CULL_FACE); Do I have to
+				if(coarse!=YSTRUE)
 				{
-					aim9.Draw(viewMat,projMat,pos,att,drawFlag);
+					if (shouldJettison == YSTRUE && aim9s != NULL)
+					{
+						aim9s.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
+					else if (aim9 != NULL)
+					{
+						aim9.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
 				}
 				else if(coarse==YSTRUE && aim_coarse!=NULL)
 				{
@@ -107,9 +114,16 @@ void FsWeapon::Draw(
 			if(lifeRemain>YsTolerance)
 			{
 				// glDisable(GL_CULL_FACE); Do I have to?
-				if(coarse!=YSTRUE && aim9x!=NULL)
+				if(coarse!=YSTRUE)
 				{
-					aim9x.Draw(viewMat,projMat,pos,att,drawFlag);
+					if (shouldJettison == YSTRUE && aim9xs != NULL)
+					{
+						aim9xs.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
+					else if (aim9x != NULL)
+					{
+						aim9x.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
 				}
 				else if(coarse==YSTRUE && aim_coarse!=NULL)
 				{
@@ -121,9 +135,16 @@ void FsWeapon::Draw(
 			if(lifeRemain>YsTolerance)
 			{
 				// glDisable(GL_CULL_FACE); Do I have to?
-				if(coarse!=YSTRUE && aim120!=NULL)
+				if(coarse!=YSTRUE)
 				{
-					aim120.Draw(viewMat,projMat,pos,att,drawFlag);
+					if (shouldJettison == YSTRUE && aim120s != NULL)
+					{
+						aim120s.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
+					else if (aim120 != NULL)
+					{
+						aim120.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
 				}
 				else if(coarse==YSTRUE && aim120_coarse!=NULL)
 				{
@@ -177,9 +198,16 @@ void FsWeapon::Draw(
 			if(lifeRemain>YsTolerance)
 			{
 				// glDisable(GL_CULL_FACE); Do I have to?
-				if(coarse!=YSTRUE && agm65!=NULL)
+				if(coarse!=YSTRUE)
 				{
-					agm65.Draw(viewMat,projMat,pos,att,drawFlag);
+					if (shouldJettison == YSTRUE && agm65s != NULL)
+					{
+						agm65s.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
+					else if (agm65 != NULL)
+					{
+						agm65.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
 				}
 				else if(coarse==YSTRUE && agm_coarse!=NULL)
 				{
@@ -191,9 +219,16 @@ void FsWeapon::Draw(
 			if(lifeRemain>YsTolerance)
 			{
 				// glDisable(GL_CULL_FACE); Do I have to?
-				if(coarse!=YSTRUE && rocket!=NULL)
+				if(coarse!=YSTRUE)
 				{
-					rocket.Draw(viewMat,projMat,pos,att,drawFlag);
+					if (shouldJettison == YSTRUE && rockets != NULL)
+					{
+						rockets.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
+					else if (rocket != NULL)
+					{
+						rocket.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
 				}
 				else if(coarse==YSTRUE && rocket_coarse!=NULL)
 				{
