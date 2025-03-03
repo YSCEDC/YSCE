@@ -7182,7 +7182,7 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 	apparentRad = objRad * proj.prjPlnDist / distance;
 
 	//calculate relative (unsigned) XZ & YZ angles of object from camera view vector
-	double objRadiusViewAngleOffset = atan2(objRad, abs(objViewPos.z()));
+	double objRadiusViewAngleOffset = atan2(2.0 * objRad, abs(objViewPos.z()));
 	double objHorizontalViewAngle = atan2(abs(objViewPos.x()), abs(objViewPos.z()));
 	double objVerticalViewAngle = atan2(abs(objViewPos.y()), abs(objViewPos.z()));
 
