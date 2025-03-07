@@ -7177,10 +7177,14 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 
 	//calculate apparent radius of object (view size)
 
+	//load visual bounding box
+	YsVec3 boxMin, boxMax;
+	obj->vis.GetBoundingBox(boxMin, boxMax);
+
 	//load collision box corners
-	auto collBox = obj->GetCollisionShellBbx();
-	YsVec3 boxMin = collBox[0];
-	YsVec3 boxMax = collBox[1];
+	//auto collBox = obj->GetCollisionShellBbx();
+	//YsVec3 boxMin = collBox[0];
+	//YsVec3 boxMax = collBox[1];
 	YsVec3 corner[8];
 	corner[0].Set(boxMin.x(), boxMin.y(), boxMin.z());
 	corner[1].Set(boxMax.x(), boxMin.y(), boxMin.z());
