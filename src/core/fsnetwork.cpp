@@ -9503,7 +9503,7 @@ void FsSimulation::RunServerModeOneStep(FsServerRunLoop &svrSta)
 	}
 }
 
-void FsSimulation::DrawInServerMode(const class FsServerRunLoop &svrSta) const
+void FsSimulation::DrawInServerMode(const class FsServerRunLoop &svrSta)
 {
 	const FsSocketServer &server=svrSta.svr;
 
@@ -10622,7 +10622,7 @@ printf("%s %d\n",__FUNCTION__,__LINE__);
 #endif
 }
 
-void FsSimulation::DrawInClientMode(const class FsClientRunLoop &cliSta) const
+void FsSimulation::DrawInClientMode(const class FsClientRunLoop &cliSta)
 {
 	switch(cliSta.runState)
 	{

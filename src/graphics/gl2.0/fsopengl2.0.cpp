@@ -26,6 +26,9 @@
 #include <windows.h>
 #endif
 
+int lastWindowWidth = 0;
+int lastWindowHeight = 0;
+YsBitmap* titleBmp = new YsBitmap();
 
 // #define YSOGLERRORCHECK
 
@@ -1076,24 +1079,27 @@ void FsDrawTitleBmp(const YsBitmap &bmp,YSBOOL tile)
 
 
 	
-	
+	const unsigned char* bmpPtr;
 	int wid,hei;
 	FsGetWindowSize(wid,hei);
 
-	// zoomFactor=float(wid)/float(bmp.GetWidth());
-	// glPixelZoom(zoomFactor,zoomFactor);
+	//only scale img if window size changes
+	if (wid != lastWindowWidth || hei != lastWindowHeight)
+	{
+		//cache window dimensions
+		lastWindowWidth = wid;
+		lastWindowHeight = hei;
 
-	YsBitmap scaledBmp;
+		float xScale = (float)wid / (float)bmpWid;
+		float yScale = (float)hei / (float)bmpHei;
+		float scale = (xScale > yScale ? xScale : yScale); //Scale the image to fit the window
 
-	float xScale = (float)wid/(float)bmpWid;
-	float yScale = (float)hei/(float)bmpHei;
-	float scale = (xScale>yScale ? xScale : yScale); //Scale the image to fit the window
+		titleBmp->ScaleCopy(bmpWid * scale, bmpHei * scale, bmp);
+	}
 
-	scaledBmp.ScaleCopy(bmpWid*scale,bmpHei*scale,bmp);
-
-	const unsigned char *bmpPtr=scaledBmp.GetRGBABitmapPointer();
-	bmpWid = scaledBmp.GetWidth();
-	bmpHei = scaledBmp.GetHeight();
+	bmpPtr = titleBmp->GetRGBABitmapPointer();
+	bmpWid = titleBmp->GetWidth();
+	bmpHei = titleBmp->GetHeight();
 
 	GLenum prevActiveTexture;
 	GLuint prevBinding2d;

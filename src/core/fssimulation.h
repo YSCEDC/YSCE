@@ -35,6 +35,7 @@
 #include "fsatc.h"
 
 #include "graphics/common/fsconsole.h"
+#include "graphics/common/fsopengl.h"
 
 #include "fssimextension.h"
 
@@ -94,6 +95,10 @@ private:
 	mutable YsThreadPool threadPool;
 
 	YsArray <std::shared_ptr <FsSimExtensionBase> > addOnList;
+
+	FsProjection lastProjection;
+	int lastWindowWidth;
+	int lastWindowHeight;
 
 public:
 	enum FSSIMULATIONSTATE
@@ -601,9 +606,9 @@ public:
 	void SetNeedRedraw(YSBOOL needRedraw);
 	YSBOOL NeedRedraw(void) const;
 
-	void DrawInNormalSimulationMode(FsSimulation::FSSIMULATIONSTATE simState,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker) const;
-	void DrawInClientMode(const class FsClientRunLoop &clientModeRunLoop) const;
-	void DrawInServerMode(const class FsServerRunLoop &serverModeRunLoop) const;
+	void DrawInNormalSimulationMode(FsSimulation::FSSIMULATIONSTATE simState,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker);
+	void DrawInClientMode(const class FsClientRunLoop &clientModeRunLoop);
+	void DrawInServerMode(const class FsServerRunLoop &serverModeRunLoop);
 
 
 	void GenerateEnemyAirplane(
@@ -884,27 +889,27 @@ public:
 protected:
 	void SimControlByComputer(const double &dt);
 	void SimMakeUpCockpitIndicationSet(class FsCockpitIndicationSet &cockpitIndicationSet) const;
-	void SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker) const;
-	void SimDrawScreen(const double &dt,const FsCockpitIndicationSet &cockpitIndicationSet,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker,const ActualViewMode &actualViewMode) const;
-	void SimDrawShadowMap(const ActualViewMode &actualViewMode) const;
+	void SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker);
+	void SimDrawScreen(const double &dt,const FsCockpitIndicationSet &cockpitIndicationSet,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker,const ActualViewMode &actualViewMode);
+	void SimDrawShadowMap(const ActualViewMode &actualViewMode);
 	void SimDrawGuiDialog(void) const;
 	void SimDrawScreenZBufferSensitive(
 		const FsCockpitIndicationSet &cockpitIndicationSet,
 		const class YsGLParticleManager &particleMan,
 		const ActualViewMode &actualViewMode,
-		class FsProjection &proj) const;
+		class FsProjection &proj);
 
 	void SimAutoViewChange(FSVIEWMODE mainWindowViewMode,const double dt);
-	void SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,YsVec2i drawingAreaSize) const;
+	void SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,YsVec2i drawingAreaSize);
 	void SimDecideViewpoint(ActualViewMode &actualViewMode,FSVIEWMODE viewmode) const;
 	void SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,const FsAirplane *playerPlane) const;
 	void SimDecideViewpoint_Gnd(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,const FsGround *playerGround) const;
 	void SimDecideViewpoint_Common(ActualViewMode &actualViewMode,FSVIEWMODE viewmode) const;
 	YSBOOL CheckNoExtAirView(void) const;
-	class FsProjection SimDrawPrepare(const ActualViewMode &) const;
-	class FsProjection SimDrawPrepareBackground(const ActualViewMode &actualViewMode) const;
-	class FsProjection SimDrawPrepareRange(const ActualViewMode &actualViewMode,const double &nearZ,const double &farZ) const;
-	class FsProjection SimDrawPrepareNormal(const ActualViewMode &actualViewMode) const; // OpenGL Only
+	class FsProjection SimDrawPrepare(const ActualViewMode &);
+	class FsProjection SimDrawPrepareBackground(const ActualViewMode &actualViewMode);
+	class FsProjection SimDrawPrepareRange(const ActualViewMode &actualViewMode,const double &nearZ,const double &farZ);
+	class FsProjection SimDrawPrepareNormal(const ActualViewMode &actualViewMode); // OpenGL Only
 	void SimDrawBackground(const ActualViewMode &actualViewMode,const FsProjection &proj) const;
 	void SimDrawMap(const ActualViewMode &actualViewMode,const FsProjection &prj,const double &elvMin,const double &elvMax) const;
 	void SimDrawJoystick(const ActualViewMode &actualViewMode) const;
@@ -932,8 +937,8 @@ protected:
 	void SimDrawGround(const ActualViewMode &actualViewMode,const class FsProjection &proj,unsigned int drawFlag) const;
 	void SimDrawAirplaneVaporSmoke(void) const;
 	void SimDrawField(const ActualViewMode &actualViewMode,const class FsProjection &proj) const;
-	void SimDrawShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj) const;        // For OpenGL/Direct3D, not for BlueImpulseSDK
-	void SimDrawComplexShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj) const; // For OpenGL/Direct3D, not for BlueImpulseSDK
+	void SimDrawShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj);        // For OpenGL/Direct3D, not for BlueImpulseSDK
+	void SimDrawComplexShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj) ; // For OpenGL/Direct3D, not for BlueImpulseSDK
 	void SimDrawFlush(void) const;
 
 	void SimDrawContainer(const ActualViewMode &actualViewMode) const;
@@ -985,7 +990,7 @@ public:
 	// fom[0] will always be the wingLeader, and position to be YsOrigin()
 	void GetAircraftInFormation(YsArray <YsPair <FsAirplane *,YsVec3>,16> &fom,FsAirplane *wingLeader) const;
 
-	void GetProjection(class FsProjection &prj,const ActualViewMode &actualViewMode) const;
+	void GetProjection(class FsProjection &prj,const ActualViewMode &actualViewMode);
 	void SetSubWindowViewMode(int windowId,FSVIEWMODE viewMode);
 	void FlipShowUserNameMasterSwitch(void);
 	YSBOOL GetShowUserNameMasterSwitch(void) const;
@@ -1015,7 +1020,7 @@ protected:
 
 	YSBOOL CheckContinue(void);
 	YSBOOL CheckContinueOneStep(void);
-	void CheckContinueDraw(void) const;
+	void CheckContinueDraw(void);
 
 public:
 	void SetNetServer(class FsSocketServer *svr);
@@ -1033,6 +1038,9 @@ public:
 	void OpenChatDialog(void);
 	void CloseChatDialog(void);
 	void OpenLoadingDialog(YSBOOL fuel,YSBOOL ammo,const FsAirplane &air);
+
+	//FOV and screen size (pixels) check for draw culling purposes
+	bool IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const;
 };
 
 #include "fsmissiongoal.h"

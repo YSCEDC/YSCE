@@ -12,7 +12,7 @@
 #include <fsairproperty.h>
 
 #include "fsconfig.h"
-
+#include "fssimulation.h"
 #include "fs.h"
 #include "fsradar.h"
 #include "fsfilename.h"
@@ -77,7 +77,7 @@ YsListAllocator <FsGround> FsGroundAllocator;
 extern void DrawSharewareMessage(void);
 #endif
 
-
+static const double PROJ_PLANE_DIST_SCALE = 1.41421356 * 0.75;
 
 FsVisualSrf *cockpit=nullptr;
 
@@ -305,6 +305,10 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	gndColor.SetIntRGB(0,0,160);
 	gndSpecular=YSFALSE;
 	skyColor.SetIntRGB(0,128,192);
+
+	//lastProjection();
+	lastWindowWidth = 0;
+	lastWindowHeight = 0;
 }
 
 FsSimulation::~FsSimulation()
@@ -2791,7 +2795,7 @@ YSBOOL FsSimulation::NeedRedraw(void) const
 {
 	return needRedraw;
 }
-void FsSimulation::DrawInNormalSimulationMode(FsSimulation::FSSIMULATIONSTATE simState,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker) const
+void FsSimulation::DrawInNormalSimulationMode(FsSimulation::FSSIMULATIONSTATE simState,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker)
 {
 	switch(simState)
 	{
@@ -6309,7 +6313,7 @@ void FsSimulation::SimMakeUpCockpitIndicationSet(class FsCockpitIndicationSet &c
 	}
 }
 
-void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker) const
+void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker)
 {
 	for(auto addOnPtr : addOnList)
 	{
@@ -6383,7 +6387,7 @@ void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL show
 }
 
 void FsSimulation::SimDrawScreen(
-    const double &dt,const FsCockpitIndicationSet &cockpitIndicationSet,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker,const ActualViewMode &actualViewMode) const
+    const double &dt,const FsCockpitIndicationSet &cockpitIndicationSet,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker,const ActualViewMode &actualViewMode)
 {
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-1\n");
@@ -6609,10 +6613,14 @@ void FsSimulation::SimDrawScreen(
 #endif
 }
 
-void FsSimulation::SimDrawShadowMap(const ActualViewMode &actualViewMode) const
+void FsSimulation::SimDrawShadowMap(const ActualViewMode &actualViewMode)
 {
 	if(YSTRUE==FsIsShadowMapAvailable() && cfgPtr->drawShadow==YSTRUE)
 	{
+		auto& viewPoint = actualViewMode.viewPoint;
+		FsProjection proj;
+		GetProjection(proj, actualViewMode);
+
 		auto &commonTexture=FsCommonTexture::GetCommonTexture();
 		commonTexture.ReadyShadowMap();
 
@@ -6633,42 +6641,35 @@ void FsSimulation::SimDrawShadowMap(const ActualViewMode &actualViewMode) const
 				field.DrawVisual(viewMat,projMat,YSTRUE, cfgPtr->useOpenGlGroundTexture); // forShadowMap=YSTRUE
 
 				FsAirplane *airSeeker;
-				YsVec3 pos;
 				airSeeker=NULL;
 				while((airSeeker=FindNextAirplane(airSeeker))!=NULL)
 				{
-					if(cfgPtr->shadowOfDeadAirplane!=YSTRUE && airSeeker->IsAlive()!=YSTRUE)
+					// only draw if apparent radius is larger than 1 pixel AND object is within camera's view
+					if (cfgPtr->shadowOfDeadAirplane == YSTRUE
+						&& airSeeker->IsAlive() == YSTRUE
+						&& IsObjectVisible(airSeeker, actualViewMode, proj))
 					{
-						continue;
-					}
-
-					airSeeker->DrawShadow(viewMat,projMat,YsIdentity4x4());
-					if(cfgPtr->drawOrdinance==YSTRUE)
-					{
-						airSeeker->Prop().DrawOrdinanceVisual(
-						    cfgPtr->drawCoarseOrdinance,airSeeker->weaponShapeOverrideStatic,viewMat,projMat,YsVisual::DRAWALL);
+						airSeeker->DrawShadow(viewMat, projMat, YsIdentity4x4());
+						if (cfgPtr->drawOrdinance == YSTRUE)
+						{
+							airSeeker->Prop().DrawOrdinanceVisual(
+								cfgPtr->drawCoarseOrdinance, airSeeker->weaponShapeOverrideStatic, viewMat, projMat, YsVisual::DRAWALL);
+						}
 					}
 				}
 
 				FsGround *gndSeeker;
-				FsProjection prj;
-				GetProjection(prj,actualViewMode);
-
 				gndSeeker=NULL;
 				while((gndSeeker=FindNextGround(gndSeeker))!=NULL)
 				{
-					if(cfgPtr->shadowOfDeadAirplane!=YSTRUE && gndSeeker->IsAlive()!=YSTRUE)
+					if (cfgPtr->shadowOfDeadAirplane == YSTRUE
+						&& gndSeeker->IsAlive() == YSTRUE
+						&& gndSeeker->Prop().NoShadow() != YSTRUE
+						&& IsObjectVisible(gndSeeker, actualViewMode, proj))
 					{
-						continue;
+						gndSeeker->DrawShadow(viewMat, projMat, YsIdentity4x4());
 					}
-					if(gndSeeker->Prop().NoShadow()==YSTRUE)
-					{
-						continue;
-					}
-
-					gndSeeker->DrawShadow(viewMat,projMat,YsIdentity4x4());
 				}
-
 				FsEndRenderShadowMap();
 
 				texUnit->Bind(5+i);
@@ -6716,7 +6717,7 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 	const FsCockpitIndicationSet &,
 	const YsGLParticleManager &particleMan,
 	const ActualViewMode &actualViewMode,
-	class FsProjection &proj) const
+	class FsProjection &proj)
 {
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
 	printf("SimDrawScreenZBufferSensitive %d\n",__LINE__);
@@ -6868,7 +6869,7 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 // #### Draw a wall of quadrilateral in front of the camera if isViewPointInCloud==YSTRUE && (it is Non-OpenGL or fog is off)
 }
 
-FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode) const
+FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode)
 {
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-2.1\n");
@@ -6926,14 +6927,11 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode) 
 	return prj;
 }
 
-FsProjection FsSimulation::SimDrawPrepareBackground(const ActualViewMode &actualViewMode) const
+FsProjection FsSimulation::SimDrawPrepareBackground(const ActualViewMode &actualViewMode)
 {
 	FsProjection prj;
-	int wid,hei;
-
-	FsGetWindowSize(wid,hei);
-
 	GetProjection(prj,actualViewMode);
+
 	prj.farz=40000.0; // #### 80000.0 ? 20000.0  What to do with sky sphere?
 	nearZ=prj.nearz;
 	farZ=prj.farz;
@@ -6946,7 +6944,7 @@ FsProjection FsSimulation::SimDrawPrepareBackground(const ActualViewMode &actual
 	return prj;
 }
 
-FsProjection FsSimulation::SimDrawPrepareRange(const ActualViewMode &actualViewMode,const double &nZ,const double &fZ) const  // OpenGL Only
+FsProjection FsSimulation::SimDrawPrepareRange(const ActualViewMode &actualViewMode,const double &nZ,const double &fZ)  // OpenGL Only
 {
 	FsProjection prj;
 	int wid,hei;
@@ -6969,7 +6967,7 @@ FsProjection FsSimulation::SimDrawPrepareRange(const ActualViewMode &actualViewM
 	return prj;
 }
 
-FsProjection FsSimulation::SimDrawPrepareNormal(const ActualViewMode &actualViewMode) const // OpenGL Only
+FsProjection FsSimulation::SimDrawPrepareNormal(const ActualViewMode &actualViewMode) // OpenGL Only
 {
 	FsProjection prj;
 	int wid,hei;
@@ -7113,31 +7111,7 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 				// If cfgPtr->airLod==0 (Automatic), Weapon LOD is also automatic
 				// Otherwise, Weapon LOD depends on drawCoarseOrdinance
 
-				//calculate object position in player's view
-				YsVec3 objViewPos, objPos;
-				objPos = seeker->GetPosition();
-				objViewPos = actualViewMode.viewMat * objPos;
-
-				//calculate apparent radius of object (view size)
-				double objRad, distance, apparentRad;
-				objRad = seeker->Prop().GetOutsideRadius();
-				distance = (seeker->GetPosition() - viewPoint).GetLength();
-				apparentRad = objRad * proj.prjPlnDist / distance;
-
-				//1/2 of vertical and horizontal FOVs
-				double fovHorizontal = atan(proj.tanFov);
-				double fovVertical = atan(proj.tanFovSecondary);
-
-				//calculate relative (unsigned) XZ & YZ angles of object from camera view vector
-				double objRadiusViewAngleOffset = atan2(objRad, abs(objViewPos.z()));
-				double objHorizontalViewAngle = atan2(abs(objViewPos.x()), abs(objViewPos.z()));
-				double objVerticalViewAngle = atan2(abs(objViewPos.y()), abs(objViewPos.z()));
-
-				// only draw if apparent radius is larger than 1 pixel AND object is within camera's view
-				if (apparentRad >= 1
-					&& objViewPos.z() + objRad >= 0.0
-					&& objHorizontalViewAngle <= fovHorizontal + objRadiusViewAngleOffset
-					&& objVerticalViewAngle <= fovVertical + objRadiusViewAngleOffset)
+				if (IsObjectVisible(seeker, actualViewMode, proj))
 				{
 					switch (cfgPtr->airLod)
 					{
@@ -7195,13 +7169,36 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 	// Hence, now they are drawn in SimDrawAirplaneVaporSmoke
 }
 
+//FOV and screen size (pixels) check for draw culling purposes
+bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const
+{
+	//calculate object position in player's view
+	YsVec3 objViewPos = actualViewMode.viewMat * obj->GetPosition();
+
+	//calculate apparent radius of object (view size)
+	double objRad, distance, apparentRad;
+	objRad = obj->CommonProp().GetOutsideRadius();
+	distance = (obj->GetPosition() - actualViewMode.viewPoint).GetLength();
+	apparentRad = objRad * proj.prjPlnDist / distance;
+
+	//calculate relative (unsigned) XZ & YZ angles of object from camera view vector
+	double objDiameter = 2.0 * objRad; 
+	double objFovOffset = atan2(objDiameter, abs(objViewPos.z()));
+	double objHorizontalViewAngle = atan2(abs(objViewPos.x()), abs(objViewPos.z()));
+	double objVerticalViewAngle = atan2(abs(objViewPos.y()), abs(objViewPos.z()));
+
+	return (apparentRad >= 1
+		&& objViewPos.z() + objDiameter >= 0.0
+		&& objHorizontalViewAngle <= proj.tanFov + objFovOffset
+		&& objVerticalViewAngle <= proj.tanFovSecondary + objFovOffset);
+}
+
 void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsProjection &proj,unsigned int drawFlag) const
 {
 	auto &viewPoint=actualViewMode.viewPoint;
 	auto &viewMat=actualViewMode.viewMat;
 
 	FsGround *seeker;
-
 	seeker=NULL;
 	while((seeker=FindNextGround(seeker))!=NULL)
 	{
@@ -7213,36 +7210,12 @@ void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsPr
 				continue;
 			}
 
-			//calculate object position in player's view
-			YsVec3 objViewPos, objPos;
-			objPos = seeker->GetPosition();
-			objViewPos = actualViewMode.viewMat * objPos;
-
-			//calculate apparent radius of object (view size)
-			double objRad,distance,apparentRad;
-			objRad=seeker->Prop().GetOutsideRadius();
-			distance=(seeker->GetPosition()-viewPoint).GetLength();
-			apparentRad=objRad*proj.prjPlnDist/distance;
-
-			//1/2 of vertical and horizontal FOVs
-			double fovHorizontal = atan(proj.tanFov);
-			double fovVertical = atan(proj.tanFovSecondary);
-
-			//calculate relative (unsigned) XZ & YZ angles of object from camera view vector
-			double objRadiusViewAngleOffset = atan2(objRad, abs(objViewPos.z()));
-			double objHorizontalViewAngle = atan2(abs(objViewPos.x()), abs(objViewPos.z()));
-			double objVerticalViewAngle = atan2(abs(objViewPos.y()), abs(objViewPos.z()));
-
-			// only draw if apparent radius is larger than 1 pixel AND object is within camera's view
-			if(apparentRad>=1 
-				&& objViewPos.z() + objRad >= 0.0 
-				&& objHorizontalViewAngle <= fovHorizontal + objRadiusViewAngleOffset 
-				&& objVerticalViewAngle <= fovVertical + objRadiusViewAngleOffset)
+			if(IsObjectVisible(seeker, actualViewMode, proj))
 			{
 				switch(cfgPtr->gndLod)
 				{
 				case 0: // Default
-					if((seeker->GetPosition()-viewPoint).GetSquareLength()<(objRad*objRad)*400.0)
+					if((seeker->GetPosition()-viewPoint).GetSquareLength()<(seeker->Prop().GetOutsideRadius() * seeker->Prop().GetOutsideRadius())*400.0)
 					{
 						seeker->Draw(0,viewMat,proj.GetMatrix(),viewPoint,drawFlag,currentTime);
 					}
@@ -7317,7 +7290,7 @@ void FsSimulation::SimDrawField(const ActualViewMode &actualViewMode,const class
 	}
 }
 
-void FsSimulation::SimDrawShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj) const  // For OpenGL/Direct3D, not for BlueImpulseSDK
+void FsSimulation::SimDrawShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj)  // For OpenGL/Direct3D, not for BlueImpulseSDK
 {
 	if(YSTRUE!=FsIsShadowMapAvailable() || cfgPtr->drawShadow!=YSTRUE)
 	{
@@ -7327,7 +7300,7 @@ void FsSimulation::SimDrawShadow(const ActualViewMode &actualViewMode,const clas
 	}
 }
 
-void FsSimulation::SimDrawComplexShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj) const // For OpenGL/Direct3D, not for BlueImpulseSDK
+void FsSimulation::SimDrawComplexShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj) // For OpenGL/Direct3D, not for BlueImpulseSDK
 {
 	auto &viewPoint=actualViewMode.viewPoint;
 	auto &viewMat=actualViewMode.viewMat;
@@ -9712,40 +9685,65 @@ void FsSimulation::SetUpGunnerSubMenu(void)
 	}
 }
 
-void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualViewMode) const
+void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualViewMode)
 {
-	int wid,hei,fovInPixel;
+	int wid, hei;
 	const FsAirplane *playerPlane;
 
 	FsGetDrawingAreaSize(wid,hei);
 
-	playerPlane=GetPlayerAirplane();
+	playerPlane = GetPlayerAirplane();
 	
-	if(cfgPtr->centerCameraPerspective == YSFALSE && NULL!=playerPlane)
+	if(cfgPtr->centerCameraPerspective == YSFALSE && NULL != playerPlane)
 	{
-		const YsVec2 scrnCen=playerPlane->Prop().GetScreenCenter();
-		prj.cx=(int)((double)wid*(1.0+scrnCen.x())/2.0);
-		prj.cy=(int)((double)hei*(1.0-scrnCen.y())/2.0);
+		const YsVec2 scrnCen = playerPlane->Prop().GetScreenCenter();
+		prj.cx = (int)((double)wid * (1.0 + scrnCen.x()) / 2.0);
+		prj.cy = (int)((double)hei * (1.0 - scrnCen.y()) / 2.0);
 	}
 	else
 	{
-		prj.cx=wid/2;
-		prj.cy=hei/2;
+		prj.cx = wid / 2;
+		prj.cy = hei / 2;
 	}
 
-	fovInPixel=YsGreater(wid/2,hei/2);  // 2010/07/05 It was ...,prj.cx,prj.cy);
+	if (wid != lastWindowWidth || hei != lastWindowHeight)
+	{
+		lastWindowWidth = wid;
+		lastWindowHeight = hei;
 
-	prj.prjMode=YsProjectionTransformation::PERSPECTIVE;
-	prj.prjPlnDist=(double)hei/(1.41421356 * 0.75);  // 2010/07/05 Fix vertical fov (double)wid/(double)1.41421356;
-	prj.prjPlnDist*=(actualViewMode.viewMagFix*viewMagUser/1.8);
-	prj.tanFov=(double)fovInPixel/prj.prjPlnDist;
-	prj.tanFovSecondary = (double)YsSmaller(wid / 2, hei / 2) / prj.prjPlnDist;
-	prj.viewportDim.Set(wid,hei);
+		prj.fovInPixels = YsGreater(wid / 2, hei / 2);  // 2010/07/05 It was ...,prj.cx,prj.cy);
 
-	prj.nearz=0.1;
-	prj.farz=18000.0;
+		prj.prjMode = YsProjectionTransformation::PERSPECTIVE;
+		prj.prjPlnDist = (double)hei / (PROJ_PLANE_DIST_SCALE);  // 2010/07/05 Fix vertical fov (double)wid/(double)1.41421356;
+		prj.prjPlnDist *= (actualViewMode.viewMagFix * viewMagUser / 1.8);
+		prj.tanFov = (double)prj.fovInPixels / prj.prjPlnDist;
+		prj.tanFovSecondary = (double)YsSmaller(wid / 2, hei / 2) / prj.prjPlnDist;
+		prj.fov = atan(prj.tanFov);
+		prj.fovSecondary = atan(prj.tanFovSecondary);
+		prj.viewportDim.Set(wid, hei);
 
-	prj.UncacheMatrix();
+		prj.nearz = 0.1;
+		prj.farz = 18000.0;
+
+		prj.UncacheMatrix();
+
+		lastProjection = prj;
+	}
+	else
+	{
+		prj.fovInPixels = lastProjection.fovInPixels;
+		prj.prjMode = lastProjection.prjMode;
+		prj.prjPlnDist = (double)hei / (PROJ_PLANE_DIST_SCALE) * (actualViewMode.viewMagFix * viewMagUser / 1.8);
+		prj.tanFov = lastProjection.tanFov;
+		prj.tanFovSecondary = lastProjection.tanFovSecondary;
+		prj.fov = lastProjection.fov;
+		prj.fovSecondary = lastProjection.fovSecondary;
+		prj.viewportDim.Set(lastWindowWidth, lastWindowHeight);
+		prj.nearz = lastProjection.nearz;
+		prj.farz = lastProjection.farz;
+	}
+
+	
 }
 
 void FsSimulation::SetSubWindowViewMode(int windowId,FSVIEWMODE viewMode)
@@ -10060,7 +10058,7 @@ void FsSimulation::SimAutoViewChange(FSVIEWMODE mainWindowViewMode,const double 
 	}
 }
 
-void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,YsVec2i drawingAreaSize) const
+void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,YsVec2i drawingAreaSize)
 {
 	SimDecideViewpoint(actualViewMode,viewmode);
 
@@ -11392,7 +11390,7 @@ YSBOOL FsSimulation::CheckContinueOneStep(void)
 	return res;
 }
 
-void FsSimulation::CheckContinueDraw(void) const
+void FsSimulation::CheckContinueDraw(void)
 {
 	FsClearScreenAndZBuffer(YsGrayScale(0.25));
 
