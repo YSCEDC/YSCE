@@ -7176,21 +7176,44 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 	YsVec3 objViewPos = actualViewMode.viewMat * obj->GetPosition();
 
 	//calculate apparent radius of object (view size)
-	double objRad, distance, apparentRad;
-	objRad = obj->CommonProp().GetOutsideRadius();
-	distance = (obj->GetPosition() - actualViewMode.viewPoint).GetLength();
-	apparentRad = objRad * proj.prjPlnDist / distance;
 
-	//calculate relative (unsigned) XZ & YZ angles of object from camera view vector
-	double objDiameter = 2.0 * objRad; 
-	double objFovOffset = atan2(objDiameter, abs(objViewPos.z()));
-	double objHorizontalViewAngle = atan2(abs(objViewPos.x()), abs(objViewPos.z()));
-	double objVerticalViewAngle = atan2(abs(objViewPos.y()), abs(objViewPos.z()));
+	//load collision box corners
+	auto collBox = obj->GetCollisionShellBbx();
+	YsVec3 boxMin = collBox[0];
+	YsVec3 boxMax = collBox[1];
+	YsVec3 corner[8];
+	corner[0].Set(boxMin.x(), boxMin.y(), boxMin.z());
+	corner[1].Set(boxMax.x(), boxMin.y(), boxMin.z());
+	corner[2].Set(boxMin.x(), boxMax.y(), boxMin.z());
+	corner[3].Set(boxMax.x(), boxMax.y(), boxMin.z());
+	corner[4].Set(boxMin.x(), boxMin.y(), boxMax.z());
+	corner[5].Set(boxMax.x(), boxMin.y(), boxMax.z());
+	corner[6].Set(boxMin.x(), boxMax.y(), boxMax.z());
+	corner[7].Set(boxMax.x(), boxMax.y(), boxMax.z());
 
-	return (apparentRad >= 1
-		&& objViewPos.z() + objDiameter >= 0.0
-		&& objHorizontalViewAngle <= proj.tanFov + objFovOffset
-		&& objVerticalViewAngle <= proj.tanFovSecondary + objFovOffset);
+	//test whether each collision box corner is inside the viewport
+	bool inside = false;
+	for (int i = 0; i < 8; i++)
+	{
+		//compute vertex position in camera space
+		YsVec3 currVtx = corner[i];
+		YsVec3 currVtxViewPos = actualViewMode.viewMat * obj->GetMatrix() * currVtx;
+
+		//compute view angles
+		double currVtxHorizViewAngle = atan2(abs(currVtxViewPos.x()), abs(currVtxViewPos.z()));
+		double currVtxVertViewAngle = atan2(abs(currVtxViewPos.y()), abs(currVtxViewPos.z()));
+
+		inside = inside || (currVtxHorizViewAngle <= proj.tanFov && currVtxVertViewAngle <= proj.tanFovSecondary);
+	}
+
+	//an object is visible IF:
+	//	each corner of its bounding box is inside the FOV
+	//  the apparent radius is at least pixel
+	//  it is in front of the camera (absolute value math)
+	double objRad = obj->CommonProp().GetOutsideRadius();
+	double distance = (obj->GetPosition() - actualViewMode.viewPoint).GetLength();
+	double apparentRad = objRad * proj.prjPlnDist / distance;
+	return inside && apparentRad >= 1 && objViewPos.z() + objRad * 2.0 >= 0.0;
 }
 
 void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsProjection &proj,unsigned int drawFlag) const
