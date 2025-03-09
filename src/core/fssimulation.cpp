@@ -309,6 +309,7 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	//lastProjection();
 	lastWindowWidth = 0;
 	lastWindowHeight = 0;
+	lastViewMagUser = 1.0;
 }
 
 FsSimulation::~FsSimulation()
@@ -9735,10 +9736,11 @@ void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualV
 		prj.cy = hei / 2;
 	}
 
-	if (wid != lastWindowWidth || hei != lastWindowHeight)
+	if (wid != lastWindowWidth || hei != lastWindowHeight || viewMagUser != lastViewMagUser)
 	{
 		lastWindowWidth = wid;
 		lastWindowHeight = hei;
+		lastViewMagUser = viewMagUser;
 
 		prj.fovInPixels = YsGreater(wid / 2, hei / 2);  // 2010/07/05 It was ...,prj.cx,prj.cy);
 
