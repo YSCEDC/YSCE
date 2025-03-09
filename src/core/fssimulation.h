@@ -99,6 +99,7 @@ private:
 	FsProjection lastProjection;
 	int lastWindowWidth;
 	int lastWindowHeight;
+	double lastViewMagUser;
 
 public:
 	enum FSSIMULATIONSTATE
