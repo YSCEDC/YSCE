@@ -7172,11 +7172,6 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 //FOV and screen size (pixels) check for draw culling purposes
 bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const
 {
-	//calculate object position in player's view
-	YsVec3 objViewPos = actualViewMode.viewMat * obj->GetPosition();
-
-	//calculate apparent radius of object (view size)
-
 	//load visual bounding box
 	YsVec3 boxMin, boxMax;
 	obj->vis.GetBoundingBox(boxMin, boxMax);
@@ -7204,20 +7199,27 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 		YsVec3 currVtxViewPos = actualViewMode.viewMat * obj->GetMatrix() * currVtx;
 
 		//compute view angles
-		double currVtxHorizViewAngle = atan2(abs(currVtxViewPos.x()), abs(currVtxViewPos.z()));
-		double currVtxVertViewAngle = atan2(abs(currVtxViewPos.y()), abs(currVtxViewPos.z()));
+		double currVtxHorizViewAngle = atan2(currVtxViewPos.x(), currVtxViewPos.z());
+		double currVtxVertViewAngle = atan2(currVtxViewPos.y(), currVtxViewPos.z());
 
-		inside = inside || (currVtxHorizViewAngle <= proj.tanFov && currVtxVertViewAngle <= proj.tanFovSecondary);
+		//determine FOV angles based on portrait or landscape aspect ratio
+		double horizFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fov : proj.fovSecondary;
+		double vertFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fovSecondary : proj.fov;
+
+		bool currVtxIsInFov = currVtxHorizViewAngle >= -horizFovAngle && currVtxHorizViewAngle <= horizFovAngle &&
+			                  currVtxVertViewAngle >= -vertFovAngle && currVtxVertViewAngle <= vertFovAngle;
+
+		inside = inside || currVtxIsInFov;
 	}
 
-	//an object is visible IF:
-	//	each corner of its bounding box is inside the FOV
-	//  the apparent radius is at least pixel
-	//  it is in front of the camera (absolute value math)
+	//an object is considered visible IF:
+	//	at least one corner of its bounding box is inside the FOV
+	//  AND the apparent radius is at least pixel
 	double objRad = obj->CommonProp().GetOutsideRadius();
 	double distance = (obj->GetPosition() - actualViewMode.viewPoint).GetLength();
 	double apparentRad = objRad * proj.prjPlnDist / distance;
-	return inside && apparentRad >= 1 && objViewPos.z() + objRad * 2.0 >= 0.0;
+
+	return inside && apparentRad >= 1;
 }
 
 void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsProjection &proj,unsigned int drawFlag) const
