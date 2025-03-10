@@ -7173,54 +7173,40 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 //FOV and screen size (pixels) check for draw culling purposes
 bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const
 {
+	//calculate object position in player's view
+	YsVec3 objPosInCamSpace = actualViewMode.viewMat * obj->GetPosition();
+
 	//load visual bounding box
 	YsVec3 boxMin, boxMax;
 	obj->vis.GetBoundingBox(boxMin, boxMax);
 
-	//load collision box corners
-	//auto collBox = obj->GetCollisionShellBbx();
-	//YsVec3 boxMin = collBox[0];
-	//YsVec3 boxMax = collBox[1];
-	YsVec3 corner[8];
-	corner[0].Set(boxMin.x(), boxMin.y(), boxMin.z());
-	corner[1].Set(boxMax.x(), boxMin.y(), boxMin.z());
-	corner[2].Set(boxMin.x(), boxMax.y(), boxMin.z());
-	corner[3].Set(boxMax.x(), boxMax.y(), boxMin.z());
-	corner[4].Set(boxMin.x(), boxMin.y(), boxMax.z());
-	corner[5].Set(boxMax.x(), boxMin.y(), boxMax.z());
-	corner[6].Set(boxMin.x(), boxMax.y(), boxMax.z());
-	corner[7].Set(boxMax.x(), boxMax.y(), boxMax.z());
+	//compute obj size on screen
+	double boundingBoxDiag = 2.0 * ((boxMin - boxMax).GetLength());
+	double objDistToCam = objPosInCamSpace.GetLength();
+	double apparentRadInPixels = boundingBoxDiag * proj.prjPlnDist / objDistToCam;
 
-	//test whether each collision box corner is inside the viewport
-	bool inside = false;
-	for (int i = 0; i < 8; i++)
+	if (apparentRadInPixels < 1.0)
 	{
-		//compute vertex position in camera space
-		YsVec3 currVtx = corner[i];
-		YsVec3 currVtxViewPos = actualViewMode.viewMat * obj->GetMatrix() * currVtx;
-
-		//compute view angles
-		double currVtxHorizViewAngle = atan2(currVtxViewPos.x(), currVtxViewPos.z());
-		double currVtxVertViewAngle = atan2(currVtxViewPos.y(), currVtxViewPos.z());
-
-		//determine FOV angles based on portrait or landscape aspect ratio
-		double horizFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fov : proj.fovSecondary;
-		double vertFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fovSecondary : proj.fov;
-
-		bool currVtxIsInFov = currVtxHorizViewAngle >= -horizFovAngle && currVtxHorizViewAngle <= horizFovAngle &&
-			                  currVtxVertViewAngle >= -vertFovAngle && currVtxVertViewAngle <= vertFovAngle;
-
-		inside = inside || currVtxIsInFov;
+		//don't perform FOV check if obj too small to see
+		return false;
 	}
 
-	//an object is considered visible IF:
-	//	at least one corner of its bounding box is inside the FOV
-	//  AND the apparent radius is at least pixel
-	double objRad = obj->CommonProp().GetOutsideRadius();
-	double distance = (obj->GetPosition() - actualViewMode.viewPoint).GetLength();
-	double apparentRad = objRad * proj.prjPlnDist / distance;
+	//convert pixels to radians by taking proportion of FOV (alternatively, use angular diam formula: 2.0 * atan(boundingBoxDiag / (2.0 * objDistToCam))
+	double objAngularRad = apparentRadInPixels / proj.fovInPixels * proj.fov; 
 
-	return inside && apparentRad >= 1;
+	//compute view angles
+	double objHorizViewAngle = atan2(objPosInCamSpace.x(), objPosInCamSpace.z());
+	double objVertViewAngle = atan2(objPosInCamSpace.y(), objPosInCamSpace.z());
+
+	//determine FOV angles based on portrait or landscape aspect ratio
+	double horizFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fov : proj.fovSecondary;
+	double vertFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fovSecondary : proj.fov;
+
+	//check if the object is within horizontal and vertical FOV +/- angular rad 
+	bool objIsInFov = objHorizViewAngle >= -horizFovAngle - objAngularRad && objHorizViewAngle <= horizFovAngle + objAngularRad &&
+		objVertViewAngle >= -vertFovAngle - objAngularRad && objVertViewAngle <= vertFovAngle + objAngularRad;
+
+	return objIsInFov;
 }
 
 void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsProjection &proj,unsigned int drawFlag) const
@@ -7266,7 +7252,6 @@ void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsPr
 					break;
 				}
 			}
-
 		}
 
 		if((actualViewMode.actualViewMode==FSCOCKPITVIEW ||
