@@ -309,6 +309,7 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	//lastProjection();
 	lastWindowWidth = 0;
 	lastWindowHeight = 0;
+	lastViewMagUser = 1.0;
 }
 
 FsSimulation::~FsSimulation()
@@ -7173,24 +7174,39 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const
 {
 	//calculate object position in player's view
-	YsVec3 objViewPos = actualViewMode.viewMat * obj->GetPosition();
+	YsVec3 objPosInCamSpace = actualViewMode.viewMat * obj->GetPosition();
 
-	//calculate apparent radius of object (view size)
-	double objRad, distance, apparentRad;
-	objRad = obj->CommonProp().GetOutsideRadius();
-	distance = (obj->GetPosition() - actualViewMode.viewPoint).GetLength();
-	apparentRad = objRad * proj.prjPlnDist / distance;
+	//load visual bounding box
+	YsVec3 boxMin, boxMax;
+	obj->vis.GetBoundingBox(boxMin, boxMax);
 
-	//calculate relative (unsigned) XZ & YZ angles of object from camera view vector
-	double objDiameter = 2.0 * objRad; 
-	double objFovOffset = atan2(objDiameter, abs(objViewPos.z()));
-	double objHorizontalViewAngle = atan2(abs(objViewPos.x()), abs(objViewPos.z()));
-	double objVerticalViewAngle = atan2(abs(objViewPos.y()), abs(objViewPos.z()));
+	//compute obj size on screen
+	double boundingBoxDiag = 2.0 * ((boxMin - boxMax).GetLength());
+	double objDistToCam = objPosInCamSpace.GetLength();
+	double apparentRadInPixels = boundingBoxDiag * proj.prjPlnDist / objDistToCam;
 
-	return (apparentRad >= 1
-		&& objViewPos.z() + objDiameter >= 0.0
-		&& objHorizontalViewAngle <= proj.tanFov + objFovOffset
-		&& objVerticalViewAngle <= proj.tanFovSecondary + objFovOffset);
+	if (apparentRadInPixels < 1.0)
+	{
+		//don't perform FOV check if obj too small to see
+		return false;
+	}
+
+	//convert pixels to radians by taking proportion of FOV (alternatively, use angular diam formula: 2.0 * atan(boundingBoxDiag / (2.0 * objDistToCam))
+	double objAngularRad = apparentRadInPixels / proj.fovInPixels * proj.fov; 
+
+	//compute view angles
+	double objHorizViewAngle = atan2(objPosInCamSpace.x(), objPosInCamSpace.z());
+	double objVertViewAngle = atan2(objPosInCamSpace.y(), objPosInCamSpace.z());
+
+	//determine FOV angles based on portrait or landscape aspect ratio
+	double horizFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fov : proj.fovSecondary;
+	double vertFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fovSecondary : proj.fov;
+
+	//check if the object is within horizontal and vertical FOV +/- angular rad 
+	bool objIsInFov = objHorizViewAngle >= -horizFovAngle - objAngularRad && objHorizViewAngle <= horizFovAngle + objAngularRad &&
+		objVertViewAngle >= -vertFovAngle - objAngularRad && objVertViewAngle <= vertFovAngle + objAngularRad;
+
+	return objIsInFov;
 }
 
 void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsProjection &proj,unsigned int drawFlag) const
@@ -7236,7 +7252,6 @@ void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsPr
 					break;
 				}
 			}
-
 		}
 
 		if((actualViewMode.actualViewMode==FSCOCKPITVIEW ||
@@ -9706,10 +9721,11 @@ void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualV
 		prj.cy = hei / 2;
 	}
 
-	if (wid != lastWindowWidth || hei != lastWindowHeight)
+	if (wid != lastWindowWidth || hei != lastWindowHeight || viewMagUser != lastViewMagUser)
 	{
 		lastWindowWidth = wid;
 		lastWindowHeight = hei;
+		lastViewMagUser = viewMagUser;
 
 		prj.fovInPixels = YsGreater(wid / 2, hei / 2);  // 2010/07/05 It was ...,prj.cx,prj.cy);
 
