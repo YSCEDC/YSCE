@@ -27,6 +27,7 @@ const double FsMinimumAirspeed=0.083;
 #define FSAPPLYCONTROL_BOMBBAYDOOR   0x00000800
 #define FSAPPLYCONTROL_TURRET        0x00001000
 #define FSAPPLYCONTROL_PROPELLER     0x00002000
+#define FSAPPLYCONTROL_TOGGLEJETTISONWEAP  0x00004000
 
 
 
@@ -91,6 +92,7 @@ public:
 		VBT_DISPENSEFLARE,
 		VBT_CYCLEWEAPON,
 		VBT_CYCLESMOKESELECTOR,
+		VBT_TOGGLEJETTISONWEAPON
 	};
 
 
@@ -404,6 +406,7 @@ protected:
 	YSBOOL ctlAutoVgw;
 	double chAutoVgwSpeed1,chAutoVgwSpeed2;
 	double ctlBombBayDoor;
+	YSBOOL ctlShouldJettisonWeapon;
 
 
 	double ctlElevator,ctlElvTrim,ctlAileron;
@@ -448,6 +451,7 @@ protected:
 
 
 	YSBOOL ctlFireWeaponButton,pCtlFireWeaponButton;
+	YSBOOL ctlJettisonWeaponButton, pCtlJettisonWeaponButton;
 	YSBOOL ctlFireGunButton,pCtlFireGunButton;
 	YSBOOL ctlFireAAMButton,pCtlFireAAMButton;
 	YSBOOL ctlFireAGMButton,pCtlFireAGMButton;
@@ -559,11 +563,11 @@ public:
 	    (const double &ct,const double &dt,class FsSimulation *sim,class FsWeaponHolder &bul,class FsExistence *own);
 	YSBOOL ProcessVirtualButtonPress(
 	    YSBOOL &blockedByBombBay,FSWEAPONTYPE &firedWeapon,
-	    FsSimulation *sim,const double &ctime,class FsWeaponHolder &bul,FsExistence *owner);
+	    FsSimulation *sim,const double &ctime,class FsWeaponHolder &bul,FsExistence *owner, YSBOOL& jettisonedWeapon);
 private:
 	YSBOOL RunVirtualButtonQueue(
 	    YSBOOL &blockedByBombBay,FSWEAPONTYPE &firedWeapon,
-	    FsSimulation *sim,const double &ctime,FsWeaponHolder &bul,FsExistence *owner);
+	    FsSimulation *sim,const double &ctime,FsWeaponHolder &bul,FsExistence *owner, YSBOOL& jettisonedWeapon);
 public:
 	YSBOOL FireSelectedWeapon(
 	    YSBOOL &blockedByBombBay,
@@ -695,6 +699,8 @@ public:
 	YSRESULT SetVgw(const double &a);
 	YSRESULT SetAutoVgw(YSBOOL a);
 	YSRESULT SetBombBayDoor(const double &a);
+	YSRESULT ToggleShouldJettisonWeapon(void);
+	YSBOOL GetShouldJettisonWeapon(void) const;
 
 	YSRESULT BouncePitchByTailStrike(void);
 
@@ -703,7 +709,10 @@ public:
 
 	void SetAllVirtualButton(YSBOOL btn);
 	void SetFireWeaponButton(YSBOOL btn);
+	void SetJettisonWeaponButton(YSBOOL btn);
 	YSBOOL GetFireWeaponButton(void);
+	YSBOOL GetJettisonWeaponButton(void);
+	YSBOOL IsJettisonWeaponButtonJustPressed(void);
 	YSBOOL IsFireWeaponButtonJustPressed(void);
 	void SetFireGunButton(YSBOOL btn);
 	YSBOOL GetFireGunButton(void);

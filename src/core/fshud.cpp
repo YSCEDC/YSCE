@@ -41,7 +41,7 @@ void FsHeadUpDisplay::SetAreaByCenter(long cx,long cy,long dx,long dy)
 	hei=dy;
 }
 
-void FsHeadUpDisplay::Draw(YSBOOL autoPilot,const class FsCockpitIndicationSet &cockpitIndicationSet)
+void FsHeadUpDisplay::Draw(YSBOOL autoPilot,const class FsCockpitIndicationSet &cockpitIndicationSet, YSBOOL shouldJettison)
 {
 	const FsInstrumentIndication &inst=cockpitIndicationSet.inst;
 
@@ -56,7 +56,7 @@ void FsHeadUpDisplay::Draw(YSBOOL autoPilot,const class FsCockpitIndicationSet &
 	}
 	DrawFuelLeft(inst.fuelRemain[0],inst.fuelCapacity[0]);
 	DrawG(inst.gForce);
-	DrawWeapon(cockpitIndicationSet.ammo);
+	DrawWeapon(cockpitIndicationSet.ammo, shouldJettison);
 	DrawMach(inst.mach);
 	DrawElevator(inst.elevator,inst.elevatorTrim,YSFALSE);
 	DrawAileron(inst.aileron,YSFALSE);
@@ -75,7 +75,7 @@ void FsHeadUpDisplay::Draw(YSBOOL autoPilot,const class FsCockpitIndicationSet &
 	DrawBank(inst.bank);
 }
 
-void FsHeadUpDisplay::DrawWeapon(const FsAmmunitionIndication &ammo)
+void FsHeadUpDisplay::DrawWeapon(const FsAmmunitionIndication &ammo, YSBOOL shouldJettison)
 {
 	int x,y;
 
@@ -86,7 +86,12 @@ void FsHeadUpDisplay::DrawWeapon(const FsAmmunitionIndication &ammo)
 	{
 		YsColor col;
 		auto str=a.FormatString();
-		if(YSTRUE==a.ReadyToFire())
+		if (shouldJettison && a.selected)
+		{
+			str.Append(" - JETTISON!");
+			col = YsYellow();
+		}
+		else if(YSTRUE==a.ReadyToFire())
 		{
 			col=hudCol;
 		}
@@ -94,7 +99,7 @@ void FsHeadUpDisplay::DrawWeapon(const FsAmmunitionIndication &ammo)
 		{
 			col=YsRed();
 		}
-		FsDrawString(x,y,str,hudCol);
+		FsDrawString(x,y,str,col);
 		y+=FONTPITCH;
 	}
 }
