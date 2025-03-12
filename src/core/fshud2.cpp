@@ -129,6 +129,11 @@ void FsHud2::SetColor(const YsColor &col)
 	this->hudCol=col;
 }
 
+YsColor FsHud2::GetColor(void) const
+{
+	return hudCol;
+}
+
 void FsHud2::DrawCrossHair(const double &lx,const double &ly,const double &centerBlank)
 {
 	const float crsHairVtx[3*8]=

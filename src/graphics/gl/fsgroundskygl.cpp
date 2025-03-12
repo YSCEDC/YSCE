@@ -63,7 +63,7 @@ FsGroundSky::~FsGroundSky()
 
 void FsGroundSky::DrawByFog
     (const YsVec3 &pos,const YsAtt3 &viewAtt,const YsColor &ignd,const YsColor &isky,const YsColor &horizon,
-     const double &farZ,YSBOOL specular)
+     const double &farZ,YSBOOL specular, YsVec3 sunPos, YsColor sunColor)
 {
 	int i;
 	YsAtt3 att;
