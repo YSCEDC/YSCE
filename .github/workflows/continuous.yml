@@ -35,7 +35,7 @@ jobs:
       run: cmake --build . --config Release --parallel --target ysflight64_gl1 ysflight64_gl2 ysflight64_gl1demo ysflight64_gl2demo ysflight64_nownd
       # Cannot build ysflight64_d3d9 in github workflow because the virtual machine does not have DirectX9 libraries.
       working-directory: ./ci_windows
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ys-build-windows
         path: ./ci_windows/main/Release
@@ -77,7 +77,7 @@ jobs:
     - name: build
       run: cmake --build . --config Release --parallel --target ysflight64_gl1 ysflight64_gl2 ysflight64_gl1demo ysflight64_gl2demo ysflight64_nownd
       working-directory: ./ci_ubuntu
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ys-build-linux
         path: ./ci_ubuntu/main/
