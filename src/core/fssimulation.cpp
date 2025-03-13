@@ -7219,32 +7219,32 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 		return false;
 	}
 
-	// compute object's apparent angular radius:
-	// (angle between bounding box span and cam axis at object's Z distance)
-	//             .
-	//            /|
-	//           / |
-	//          /  |
+    // compute object's apparent angular radius:
+    // (angle between bounding box span and cam axis at object's Z distance)
+    //             .
+    //            /|
+    //           / |
+    //          /  |
     //         /   | boundingBoxDiag
     //        /    |
-	//       /x    |
-	//  cam /------+---> cam axis (+Z)
-	//      |      |
-	//     objPosInCamSpace.z()
-	//
-	// angular offset (x): x = atan2(boundingBoxDiag, abs(objPosInCamSpace.z()))
+    //       /x    |
+    //  cam /------+---> cam axis (+Z)
+    //      |      |
+    //     objPosInCamSpace.z()
+    //
+    // angular offset (x): x = atan2(boundingBoxDiag, abs(objPosInCamSpace.z()))
 	double objAngularRad = atan2(boundingBoxDiag, abs(objPosInCamSpace.z()));
 
-	//compute view angles from camera axis
-	//      +X/+Y  . objPosInCamSpace
-	//      ^     /|
-	//      |    / |
-	//      |   /  |
-	//      |  /   | 
-	//      | /    |
-	//      |/a    | horizontal/vertical view angle (in XZ/YZ plane): a = atan2(objPosInCamSpace.x/y(), objPosInCamSpace.z())
-	// cam /------+---> cam axis (+Z)
-	//
+    //compute view angles from camera axis
+    //      +X/+Y  . objPosInCamSpace
+    //      ^     /|
+    //      |    / |
+    //      |   /  |
+    //      |  /   | 
+    //      | /    |
+    //      |/a    | horizontal/vertical view angle (in XZ/YZ plane): a = atan2(objPosInCamSpace.x/y(), objPosInCamSpace.z())
+    // cam /------+---> cam axis (+Z)
+    //
 	double objHorizViewAngle = atan2(objPosInCamSpace.x(), objPosInCamSpace.z());
 	double objVertViewAngle = atan2(objPosInCamSpace.y(), objPosInCamSpace.z());
 
