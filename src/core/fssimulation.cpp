@@ -7188,28 +7188,63 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 //FOV and screen size (pixels) check for draw culling purposes
 bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const
 {
+	std::string id = obj->CommonProp().GetIdentifier();
+
 	//calculate object position in player's view
 	YsVec3 objPosInCamSpace = actualViewMode.viewMat * obj->GetPosition();
 
-	//load visual bounding box
+	//load visual bounding box corners
 	YsVec3 boxMin, boxMax;
 	obj->vis.GetBoundingBox(boxMin, boxMax);
 
-	//compute obj size on screen
-	double boundingBoxDiag = 2.0 * ((boxMin - boxMax).GetLength());
+	//calculate span of bounding box
+	double boundingBoxDiag = 1.0 * ((boxMin - boxMax).GetLength());
+
+	//distance from object to camera (magnitude of obj position vector in camera space)
 	double objDistToCam = objPosInCamSpace.GetLength();
+
+	//compute obj size on screen
 	double apparentRadInPixels = boundingBoxDiag * proj.prjPlnDist / objDistToCam;
 
+	//if object is within bounding box span length of cam, draw it regardless of viewport visibility
+	//(angular culling method below sometimes fails for extreme angles at close distances to camera)
+	if (objDistToCam < boundingBoxDiag)
+	{
+		return true;
+	}
+
+	//don't perform FOV check if obj too small to see
 	if (apparentRadInPixels < 1.0)
 	{
-		//don't perform FOV check if obj too small to see
 		return false;
 	}
 
-	//convert pixels to radians by taking proportion of FOV (alternatively, use angular diam formula: 2.0 * atan(boundingBoxDiag / (2.0 * objDistToCam))
-	double objAngularRad = apparentRadInPixels / proj.fovInPixels * proj.fov; 
+    // compute object's apparent angular radius:
+    // (angle between bounding box span and cam axis at object's Z distance)
+    //             .
+    //            /|
+    //           / |
+    //          /  |
+    //         /   | boundingBoxDiag
+    //        /    |
+    //       /x    |
+    //  cam /------+---> cam axis (+Z)
+    //      |      |
+    //     objPosInCamSpace.z()
+    //
+    // angular offset (x): x = atan2(boundingBoxDiag, abs(objPosInCamSpace.z()))
+	double objAngularRad = atan2(boundingBoxDiag, abs(objPosInCamSpace.z()));
 
-	//compute view angles
+    //compute view angles from camera axis
+    //      +X/+Y  . objPosInCamSpace
+    //      ^     /|
+    //      |    / |
+    //      |   /  |
+    //      |  /   | 
+    //      | /    |
+    //      |/a    | horizontal/vertical view angle (in XZ/YZ plane): a = atan2(objPosInCamSpace.x/y(), objPosInCamSpace.z())
+    // cam /------+---> cam axis (+Z)
+    //
 	double objHorizViewAngle = atan2(objPosInCamSpace.x(), objPosInCamSpace.z());
 	double objVertViewAngle = atan2(objPosInCamSpace.y(), objPosInCamSpace.z());
 
@@ -9764,7 +9799,7 @@ void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualV
 	{
 		prj.fovInPixels = lastProjection.fovInPixels;
 		prj.prjMode = lastProjection.prjMode;
-		prj.prjPlnDist = (double)hei / (PROJ_PLANE_DIST_SCALE) * (actualViewMode.viewMagFix * viewMagUser / 1.8);
+		prj.prjPlnDist = lastProjection.prjPlnDist;
 		prj.tanFov = lastProjection.tanFov;
 		prj.tanFovSecondary = lastProjection.tanFovSecondary;
 		prj.fov = lastProjection.fov;
