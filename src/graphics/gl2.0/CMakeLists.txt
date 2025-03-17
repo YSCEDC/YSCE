@@ -17,6 +17,7 @@ fsopengl2.0.cpp
 fsparticlegl2.0.cpp
 fsweapongl2.0.cpp
 fsweathergl2.0.cpp
+fssunsetcolour.cpp
 )
 
 set(HEADERS
