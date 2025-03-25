@@ -463,6 +463,66 @@ void FsSetDirectionalLight(const YsVec3 &/*cameraPosition*/ ,const YsVec3 &light
 #endif
 }
 
+
+void FsSetDirectionalLight(const YsVec3 &/*cameraPosition*/, const YsVec3 &lightDirection, FSENVIRONMENT env, const YsColor &lightColor, const double &lightLevel){
+#ifdef YSOGLERRORCHECK
+	FsOpenGlShowError("FsSetDirectionalLight In");
+#endif
+
+	const GLfloat light[4]=
+	{
+		(GLfloat)lightDirection.x(),
+		(GLfloat)lightDirection.y(),
+		(GLfloat)lightDirection.z(),
+		0.0f
+	};
+
+	GLfloat dif[4];
+	GLfloat amb[4];
+	GLfloat spc[4];
+
+	dif[0]=(float) 0.6 * lightColor.Rd() * lightLevel;
+	dif[1]=(float) 0.6 * lightColor.Gd() * lightLevel;
+	dif[2]=(float) 0.6 * lightColor.Bd() * lightLevel;
+	dif[3]=1.0F;
+
+	amb[0]=0.3F * lightColor.Rd() * lightLevel;
+	amb[1]=0.3F * lightColor.Gd() * lightLevel;
+	amb[2]=0.3F * lightColor.Bd() * lightLevel;
+	amb[3]=1.0F;
+
+	spc[0]=0.9F * lightColor.Rd() * lightLevel;
+	spc[1]=0.9F * lightColor.Gd() * lightLevel;
+	spc[2]=0.9F * lightColor.Bd() * lightLevel;
+	spc[3]=1.0F;
+
+
+	YsGLSLSetShared3DRendererDirectionalLightfv(0,light);
+	YsGLSLSetShared3DRendererLightColor(0,dif);
+	YsGLSLSetShared3DRendererAmbientColor(amb);
+	YsGLSLSetShared3DRendererSpecularColor(spc);
+
+	YsGLSLUse3DRenderer(YsGLSLSharedFlash3DRenderer());
+	switch(env)
+	{
+	case FSDAYLIGHT:
+		YsGLSLSet3DRendererUniformFlashSize(YsGLSLSharedFlash3DRenderer(),0.1f);
+		YsGLSLSet3DRendererFlashRadius(YsGLSLSharedFlash3DRenderer(),0.6f,1.0f);
+		break;
+	case FSNIGHT:
+		YsGLSLSet3DRendererUniformFlashSize(YsGLSLSharedFlash3DRenderer(),1.0f);
+		YsGLSLSet3DRendererFlashRadius(YsGLSLSharedFlash3DRenderer(),0.2f,1.0f);
+		break;
+	}
+	YsGLSLEndUse3DRenderer(YsGLSLSharedFlash3DRenderer());
+
+
+#ifdef YSOGLERRORCHECK
+	FsOpenGlShowError("FsSetDirectionalLight Out");
+#endif
+
+}
+
 void FsFogOn(const YsColor &col,const double &visibility)
 {
 #ifdef YSOGLERRORCHECK

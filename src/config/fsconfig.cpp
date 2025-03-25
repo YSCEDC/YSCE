@@ -91,6 +91,9 @@ void FsFlightConfig::SetDefault(void)
 
 	aircraftReliability=95;
 	aircraftTroubleFrequency=0.1;
+
+	dayLength=120;
+	dayTime=0.0;
 }
 
 void FsFlightConfig::SetDetailedMode(void)
@@ -230,7 +233,12 @@ const char *const FsFlightConfig::keyWordSource[]=
 	"CONSTWIND", // 2023/07/29
 
 	"CLOUDLAYER", // 2023/07/29
+
 	"CENTERCAM",  // 2023/08/15
+
+	"DAYLENG",    // 2023/09/03
+
+	"DAYTIME",    // 2023/09/03
 
 	NULL
 };
@@ -553,8 +561,15 @@ YSRESULT FsFlightConfig::SendCommand(const char cmd[])
 				}
 			case 64: // CENTERCAM
 				return FsGetBool(centerCameraPerspective, av[1]);
-			
-		}
+
+			case 65: // 	"DAYLENG",    // 2023/09/03
+				dayLength=atoi(av[1]);
+				return YSOK;
+		
+			case 66: // 	"DAYTIME",    // 2023/09/03
+				dayTime = atof(av[1]);
+				return YSOK;
+			}
 		}
 		else
 		{
@@ -577,7 +592,7 @@ YSRESULT FsFlightConfig::Load(const wchar_t fn[])
 		{
 			if(SendCommand(buf)!=YSOK)
 			{
-				// fsStderr.Printf("Unrecognizable Line : %s\n",buf);
+				//printf("Unrecognizable Line : %s\n",buf);
 				res=YSERR;
 			}
 		}
@@ -733,6 +748,11 @@ YSRESULT FsFlightConfig::Save(const wchar_t fn[])
 				cloudLayer[i].y0,
 				cloudLayer[i].y1);
 		}
+
+		fprintf(fp,"DAYLENG %d\n",dayLength);
+
+		fprintf(fp,"DAYTIME %lf\n",dayTime);
+
 		fclose(fp);
 		return YSOK;
 	}
