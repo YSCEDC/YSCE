@@ -7188,8 +7188,6 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 //FOV and screen size (pixels) check for draw culling purposes
 bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const
 {
-	std::string id = obj->CommonProp().GetIdentifier();
-
 	//calculate object position in player's view
 	YsVec3 objPosInCamSpace = actualViewMode.viewMat * obj->GetPosition();
 
@@ -7198,7 +7196,7 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 	obj->vis.GetBoundingBox(boxMin, boxMax);
 
 	//calculate span of bounding box
-	double boundingBoxDiag = 1.0 * ((boxMin - boxMax).GetLength());
+	double boundingBoxDiag = ((boxMin - boxMax).GetLength());
 
 	//distance from object to camera (magnitude of obj position vector in camera space)
 	double objDistToCam = objPosInCamSpace.GetLength();
@@ -7206,9 +7204,9 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 	//compute obj size on screen
 	double apparentRadInPixels = boundingBoxDiag * proj.prjPlnDist / objDistToCam;
 
-	//if object is within bounding box span length of cam, draw it regardless of viewport visibility
+	//if object is within 2x bounding box span length of cam, draw it regardless of viewport visibility
 	//(angular culling method below sometimes fails for extreme angles at close distances to camera)
-	if (objDistToCam < boundingBoxDiag)
+	if (objDistToCam < 2.0 * boundingBoxDiag)
 	{
 		return true;
 	}
