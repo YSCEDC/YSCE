@@ -47,7 +47,6 @@ void FsFlightControl::Initialize(void)
 	ctlAileron=0.0;
 
 	ctlFireWeaponButtonExt=YSFALSE;
-	ctlJettisonWeaponButtonExt = YSFALSE;
 	ctlFireGunButtonExt=YSFALSE;
 	ctlFireAAMButtonExt=YSFALSE;
 	ctlFireAGMButtonExt=YSFALSE;
@@ -59,7 +58,6 @@ void FsFlightControl::Initialize(void)
 	ctlCycleSmokeSelectorButtonExt=YSFALSE;
 
 	ctlFireWeaponButton=YSFALSE;
-	ctlToggleJettisonWeaponButton = YSFALSE;
 	ctlFireGunButton=YSFALSE;
 	ctlFireAAMButton=YSFALSE;
 	ctlFireAGMButton=YSFALSE;
@@ -466,7 +464,6 @@ YSRESULT FsFlightControl::ProcessButtonFunction(const double &/*cTime*/,FsExiste
 	case FSBTF_BRAKEHOLD:                     //  Brake On While Holding
 	case FSBTF_FIREGUN:                       //  Fire Machine Gun
 	case FSBTF_SMOKE:                         //  Smoke
-	case FSBTF_TOGGLE_JETTISON_WEAPON:
 		break;
 
 	case FSBTF_TOGGLEALLDOOR:
@@ -601,7 +598,6 @@ YSRESULT FsFlightControl::ReadControl
 	// <<
 
 	ctlFireWeaponButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_FIREWEAPON,joy),ctlFireWeaponButtonExt);
-	ctlToggleJettisonWeaponButton = YsOr(ctlAssign.IsButtonPressed(FSBTF_TOGGLE_JETTISON_WEAPON, joy), ctlJettisonWeaponButtonExt);
 	ctlFireGunButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_FIREGUN,joy),ctlFireGunButtonExt);
 	ctlFireAAMButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_FIREAAM,joy),ctlFireAAMButtonExt);
 	ctlFireAGMButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_FIREAGM,joy),ctlFireAGMButtonExt);
@@ -613,7 +609,6 @@ YSRESULT FsFlightControl::ReadControl
 	ctlCycleSmokeSelectorButton=YsOr(ctlAssign.IsButtonPressed(FSBTF_CYCLESMOKESELECTOR,joy),ctlCycleSmokeSelectorButtonExt);
 
 	ctlFireWeaponButtonExt=YSFALSE;
-	ctlJettisonWeaponButtonExt = YSFALSE;
 	ctlFireGunButtonExt=YSFALSE;
 	ctlFireAAMButtonExt=YSFALSE;
 	ctlFireAGMButtonExt=YSFALSE;
@@ -1348,8 +1343,7 @@ static struct FsButtonFunctionString fsButtonFuncStr[]=
 	{FSBTF_SENSITIVITYUP,        "SENSITIVITYUP",        "Increase Sensitivity"},
 	{FSBTF_SENSITIVITYDOWN,      "SENSITIVITYDOWN",      "Decrease Sensitivity"},
 
-	{FSBTF_SWITCHVIEWTARGET,     "SWITCHVIEWTARGET",     "Switch View Target"},
-	{FSBTF_TOGGLE_JETTISON_WEAPON,      "JETTISONWEAPON",       "Toggle Jettison Selected Weapon"}
+	{FSBTF_SWITCHVIEWTARGET,     "SWITCHVIEWTARGET",     "Switch View Target"}
 };
 
 static struct FsKeyString fsKeyString[]=
@@ -1721,24 +1715,27 @@ void FsControlAssignment::SetDefaultKeyAssign(void)
 	AddKeyAssignment(FSKEY_T,       FSBTF_AUTOTRIM);
 	AddKeyAssignment(FSKEY_Q,       FSBTF_THROTTLEUP);
 	AddKeyAssignment(FSKEY_A,       FSBTF_THROTTLEDOWN);
+	AddKeyAssignment(FSKEY_W,       FSBTF_THROTTLEMAX);
+	AddKeyAssignment(FSKEY_S,       FSBTF_THROTTLEIDLE);
 	AddKeyAssignment(FSKEY_TAB,     FSBTF_AFTERBURNER);
 	AddKeyAssignment(FSKEY_PAGEUP,  FSBTF_NOZZLEUP);
 	AddKeyAssignment(FSKEY_PAGEDOWN,FSBTF_NOZZLEDOWN);
-	AddKeyAssignment(FSKEY_COMMA,   FSBTF_CYCLESENSITIVITY);
+	AddKeyAssignment(FSKEY_E,   FSBTF_CYCLESENSITIVITY);
 	AddKeyAssignment(FSKEY_G,       FSBTF_LANDINGGEAR);
-	AddKeyAssignment(FSKEY_B,       FSBTF_SPOILERBRAKE);
+	AddKeyAssignment(FSKEY_B,       FSBTF_BRAKEONOFF);
+	AddKeyAssignment(FSKEY_D,       FSBTF_SPOILER);
 	AddKeyAssignment(FSKEY_Z,       FSBTF_RUDDERLEFT);
 	AddKeyAssignment(FSKEY_X,       FSBTF_RUDDERCENTER);
 	AddKeyAssignment(FSKEY_C,       FSBTF_RUDDERRIGHT);
 	AddKeyAssignment(FSKEY_SPACE,   FSBTF_FIREWEAPON);
 	AddKeyAssignment(FSKEY_2,       FSBTF_SELECTWEAPON);
-	AddKeyAssignment(FSKEY_P,       FSBTF_CYCLESMOKESELECTOR);
+	AddKeyAssignment(FSKEY_SINGLEQUOTE, FSBTF_CYCLESMOKESELECTOR);
 	AddKeyAssignment(FSKEY_3,       FSBTF_RADAR);
 	AddKeyAssignment(FSKEY_4,       FSBTF_DISPENSEFLARE);
 	AddKeyAssignment(FSKEY_I,       FSBTF_TOGGLELIGHT);
 	AddKeyAssignment(FSKEY_V,       FSBTF_VELOCITYINDICATOR);
-	AddKeyAssignment(FSKEY_BS,      FSBTF_OPENAUTOPILOTMENU);
-	AddKeyAssignment(FSKEY_ENTER,   FSBTF_OPENRADIOCOMMMENU);
+	AddKeyAssignment(FSKEY_LBRACKET, FSBTF_OPENAUTOPILOTMENU);
+	AddKeyAssignment(FSKEY_RBRACKET, FSBTF_OPENRADIOCOMMMENU);
 	AddKeyAssignment(FSKEY_F1,      FSBTF_COCKPITVIEW);
 	AddKeyAssignment(FSKEY_F2,      FSBTF_OUTSIDEPLAYERVIEW);
 	AddKeyAssignment(FSKEY_F3,      FSBTF_COMPUTERAIRPLANEVIEW);
@@ -1746,8 +1743,8 @@ void FsControlAssignment::SetDefaultKeyAssign(void)
 	AddKeyAssignment(FSKEY_F5,      FSBTF_CHANGEAIRPLANE);
 	AddKeyAssignment(FSKEY_F6,      FSBTF_ILSVIEW);
 	AddKeyAssignment(FSKEY_F7,      FSBTF_OUTSIDEPLAYERVIEW2);
-	AddKeyAssignment(FSKEY_F8,      FSBTF_CONTROLTOWERVIEW);
-	AddKeyAssignment(FSKEY_F9,      FSBTF_SWITCHVIEWTARGET);
+	AddKeyAssignment(FSKEY_F9,      FSBTF_CONTROLTOWERVIEW); 
+	AddKeyAssignment(FSKEY_F11,     FSBTF_SWITCHVIEWTARGET); 
 	AddKeyAssignment(FSKEY_U,       FSBTF_LOOKFORWARD);
 	AddKeyAssignment(FSKEY_K,       FSBTF_LOOKRIGHT);
 	AddKeyAssignment(FSKEY_H,       FSBTF_LOOKLEFT);
@@ -1755,13 +1752,13 @@ void FsControlAssignment::SetDefaultKeyAssign(void)
 	AddKeyAssignment(FSKEY_J,       FSBTF_LOOKUP);
 	AddKeyAssignment(FSKEY_N,       FSBTF_LOOKDOWN);
 	AddKeyAssignment(FSKEY_DOT,     FSBTF_REVERSETHRUST);
-	AddKeyAssignment(FSKEY_W,       FSBTF_PROPFORWARD);
-	AddKeyAssignment(FSKEY_S,       FSBTF_PROPBACKWARD);
+	AddKeyAssignment(FSKEY_PLUS, FSBTF_VGWEXTEND);
+	AddKeyAssignment(FSKEY_MINUS, FSBTF_VGWRETRACT);
 	AddKeyAssignment(FSKEY_R,       FSBTF_FLAPUP);
 	AddKeyAssignment(FSKEY_F,       FSBTF_FLAPDOWN);
 	AddKeyAssignment(FSKEY_O,       FSBTF_OPENSUBWINDOWMENU);
 	AddKeyAssignment(FSKEY_9,       FSBTF_CHANGEHUDCOLOR);
-	AddKeyAssignment(FSKEY_PAUSEBREAK,FSBTF_PAUSE);
+	AddKeyAssignment(FSKEY_P,       FSBTF_PAUSE);
 	AddKeyAssignment(FSKEY_F10,     FSBTF_GHOSTVIEW);
 	AddKeyAssignment(FSKEY_L,       FSBTF_OPENVORMENU);
 	AddKeyAssignment(FSKEY_7,       FSBTF_ROTATEVORLEFT);
