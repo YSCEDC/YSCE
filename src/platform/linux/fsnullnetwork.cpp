@@ -643,7 +643,7 @@ YSRESULT FsSocketClient::ReceiveAssignSideWindow(unsigned char dat[])
 	return YSERR;
 }
 
-YSRESULT FsSocketClient::ReceiveVersionNotify(unsigned char dat[])
+YSRESULT FsSocketClient::ReceiveVersionNotify(unsigned packetLength,unsigned char dat[])
 {
 	return YSERR;
 }
