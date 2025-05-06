@@ -8299,6 +8299,9 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 			cmd=keyWordList.GetId("HRDPOINT");     //
 		}                                          //
 
+		//Dirty method to handle SUBSTNAM in IDENTIFY line because a lot of addons do it
+		if (cmd == 56 && av[2] != NULL && av[3] != NULL) { chSubstIdName.Set(av[3]); }
+
 		if(cmd>=0)
 		{
 			res=YSERR;
@@ -8381,6 +8384,7 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 				break;
 			case 24: //"WINGAREA", //##[M^2][IN^2]
 				res=FsGetArea(chWingArea,av[1]);
+				if (chWingArea == 0) { chWingArea = 1; }
 				break;
 			case 25: //"MXIPTAOA", //##[RAD][DEG]
 				res=FsGetAngle(chMaxInputAOA,av[1]);
@@ -8858,6 +8862,7 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 
 			case 129: // "GUNINTVL"   // Gun Interval
 				chGunInterval=atof(av[1]);
+				if (chGunInterval == 0) { chGunInterval = 0.001; }
 				res=YSOK;
 				break;
 

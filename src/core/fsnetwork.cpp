@@ -2686,7 +2686,7 @@ YSRESULT FsSocketServer::ReceiveLogOnUser(int clientId,int version,const char re
 
 		SendError(clientId,FSNETERR_VERSIONCONFLICT);
 
-		AddMessage("Connection is rejected because of versoin conflict.");
+		AddMessage("Connection is rejected because of version conflict.");
 		char str[256];
 		sprintf(str,"  SERVER NET-VERSION : %d",YSFLIGHT_NETVERSION);
 		AddMessage(str);

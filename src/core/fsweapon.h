@@ -232,7 +232,7 @@ public:
 
 	enum
 	{
-		NumBulletBuffer=1024,
+		NumBulletBuffer=32768,
 		NumSmokeTrailBuffer=32
 	};
 

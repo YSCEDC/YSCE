@@ -1,0 +1,40 @@
+﻿{
+  "configurations": [
+    {
+      "environments": [
+        {
+          "_VCPKG_INSTALLED_DIR": "C:\\Users\\Violet\\vcpkg\\installed",
+          "CURL_DIR": "C:\\Users\\Violet\\vcpkg\\installed\\x64-windows\\share\\curl",
+          "nlohmann_json_DIR": "C:\\Users\\Violet\\vcpkg\\installed\\x64-windows\\share\\nlohmann_json"
+        }
+      ],
+      "name": "x64-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "C:/Users/Violet/Documents/YSFLIGHT.COM/Source/output/${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": ""
+    },
+    {
+      "environments": [
+        {
+          "_VCPKG_INSTALLED_DIR": "C:\\Users\\Violet\\vcpkg\\installed",
+          "CURL_DIR": "C:\\Users\\Violet\\vcpkg\\installed\\x64-windows\\share\\curl",
+          "nlohmann_json_DIR": "C:\\Users\\Violet\\vcpkg\\installed\\x64-windows\\share\\nlohmann_json"
+        }
+      ],
+      "name": "x64-Release",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "buildRoot": "C:/Users/Violet/Documents/YSFLIGHT.COM/Source/output/${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ]
+    }
+  ]
+}

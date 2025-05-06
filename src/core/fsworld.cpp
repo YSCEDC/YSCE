@@ -37,7 +37,7 @@
 
 #include "fsgenmdl.h"
 
-
+YsString failedLoadThisVisual; //This should probably go somewhere else at some point
 
 static YSRESULT YsLoadFld(YsScenery &scn,const wchar_t fn[])
 {
@@ -242,11 +242,15 @@ FsVisualDnm FsAirplaneTemplate::GetVisual(void) const
 	if(nullptr==vis && GetVisualFileName()[0]!=0)
 	{
 		vis.Load(GetVisualFileName());
-		if(nullptr==vis)
+		YsString utf8;
+		utf8.EncodeUTF8 <wchar_t>(GetVisualFileName());
+		if (strncmp (failedLoadThisVisual, utf8.Txt(), sizeof(failedLoadThisVisual)) != 0)
 		{
-			YsString utf8;
-			utf8.EncodeUTF8 <wchar_t> (GetVisualFileName());
-			fsStderr.Printf("Load Error (VISUAL):%s\n",utf8.Txt());
+			if (nullptr == vis)
+			{
+				fsStderr.Printf("Load Error (VISUAL):%s\n", utf8.Txt());
+				failedLoadThisVisual = utf8.Txt();
+			}
 		}
 	}
 	return vis;
@@ -3975,74 +3979,75 @@ FsAirplane *FsWorld::AddMatchingAirplane(
 		matchDiff=0.0;
 
 		ptr=NULL;
-		while(NULL!=(ptr=airplaneTemplate.FindNext(ptr)))
-		{
-			if(ptr->dat.GetProperty()->GetAircraftClass()==airClass &&
-			   ptr->dat.GetProperty()->GetAirplaneCategory()==airCategory &&
-			   ptr->dat.GetProperty()->IsJet()==isJet)
-			{
-				diff=fabs(ptr->dat.GetProperty()->GetOutsideRadius()-dimension);
-				if(match==NULL || diff<matchDiff)
-				{
-					match=ptr;
-					matchDiff=diff;
-				}
-			}
-		}
+		//This autosubstitution search triggers all .dat file errors
+		//Disabled for now 20250504
+		// while(NULL!=(ptr=airplaneTemplate.FindNext(ptr)))
+		// {
+		// 	if(ptr->dat.GetProperty()->GetAircraftClass()==airClass &&
+		// 	   ptr->dat.GetProperty()->GetAirplaneCategory()==airCategory &&
+		// 	   ptr->dat.GetProperty()->IsJet()==isJet)
+		// 	{
+		// 		diff=fabs(ptr->dat.GetProperty()->GetOutsideRadius()-dimension);
+		// 		if(match==NULL || diff<matchDiff)
+		// 		{
+		// 			match=ptr;
+		// 			matchDiff=diff;
+		// 		}
+		// 	}
+		// }
+		
+		// if(match==NULL)  // No template with same class+category
+		// {
+		// 	ptr=NULL;
+		// 	while(NULL!=(ptr=airplaneTemplate.FindNext(ptr)))
+		// 	{
+		// 		if(ptr->dat.GetProperty()->GetAircraftClass()==airClass &&
+		// 		   ptr->dat.GetProperty()->IsJet()==isJet)
+		// 		{
+		// 			diff=fabs(ptr->dat.GetProperty()->GetOutsideRadius()-dimension);
+		// 			if(match==NULL || diff<matchDiff)
+		// 			{
+		// 				match=ptr;
+		// 				matchDiff=diff;
+		// 			}
+		// 		}
+		// 	}
+		// }
 
-		if(match==NULL)  // No template with same class+category
-		{
-			ptr=NULL;
-			while(NULL!=(ptr=airplaneTemplate.FindNext(ptr)))
-			{
-				if(ptr->dat.GetProperty()->GetAircraftClass()==airClass &&
-				   ptr->dat.GetProperty()->IsJet()==isJet)
-				{
-					diff=fabs(ptr->dat.GetProperty()->GetOutsideRadius()-dimension);
-					if(match==NULL || diff<matchDiff)
-					{
-						match=ptr;
-						matchDiff=diff;
-					}
-				}
-			}
-		}
+		// if(match==NULL)  // No template with same class+category+Jet/Prop
+		// {
+		// 	ptr=NULL;
+		// 	while(NULL!=(ptr=airplaneTemplate.FindNext(ptr)))
+		// 	{
+		// 		if(ptr->dat.GetProperty()->GetAircraftClass()==airClass)
+		// 		{
+		// 			diff=fabs(ptr->dat.GetProperty()->GetOutsideRadius()-dimension);
+		// 			if(match==NULL || diff<matchDiff)
+		// 			{
+		// 				match=ptr;
+		// 				matchDiff=diff;
+		// 			}
+		// 		}
+		// 	}
+		// }
 
-		if(match==NULL)  // No template with same class+category+Jet/Prop
-		{
-			ptr=NULL;
-			while(NULL!=(ptr=airplaneTemplate.FindNext(ptr)))
-			{
-				if(ptr->dat.GetProperty()->GetAircraftClass()==airClass)
-				{
-					diff=fabs(ptr->dat.GetProperty()->GetOutsideRadius()-dimension);
-					if(match==NULL || diff<matchDiff)
-					{
-						match=ptr;
-						matchDiff=diff;
-					}
-				}
-			}
-		}
-
-		if(match==NULL) // OK.  Take whatever the similar size.
-		{
-			ptr=NULL;
-			while(NULL!=(ptr=airplaneTemplate.FindNext(ptr)))
-			{
-				diff=fabs(ptr->dat.GetProperty()->GetOutsideRadius()-dimension);
-				if(match==NULL || diff<matchDiff)
-				{
-					match=ptr;
-					matchDiff=diff;
-				}
-			}
-		}
+		// if(match==NULL) // OK.  Take whatever the similar size.
+		// {
+		// 	ptr=NULL;
+		// 	while(NULL!=(ptr=airplaneTemplate.FindNext(ptr)))
+		// 	{
+		// 		diff=fabs(ptr->dat.GetProperty()->GetOutsideRadius()-dimension);
+		// 		if(match==NULL || diff<matchDiff)
+		// 		{
+		// 			match=ptr;
+		// 			matchDiff=diff;
+		// 		}
+		// 	}
+		// }
 
 
-
-		if(match!=NULL)
-		{
+		//if(match!=NULL)
+		//{
 			FsAirplane neo,*air;
 
 			const char *const *tmpl;
@@ -4086,17 +4091,19 @@ FsAirplane *FsWorld::AddMatchingAirplane(
 
 			neo.SetProperty(*match->dat.GetProperty(),match->dat.GetTemplateRootDirectory());
 
-			neo.vis=NULL; // match->dat.GetVisual();
-			neo.lod=NULL; // match->dat.GetLod();
-
+			neo.vis=NULL;
+			neo.lod=NULL;
 			neo.cockpit=NULL;
+			//neo.vis = match->dat.GetVisual(); //Enable these when enabling autosubstitution above
+			//neo.lod = match->dat.GetLod();
+			//neo.cockpit = match->dat.GetCockpit();
 
 			neo.isNetSubstitute=YSTRUE;
 
 			air=sim->AddAirplane(neo,isPlayerPlane,match->dat.GetTemplateRootDirectory(),netSearchKey);
 
 			return air;
-		}
+		//}
 	}
 	return NULL;
 }
@@ -4379,12 +4386,12 @@ FsField *FsWorld::AddField(
 				// 	  ("One or more field is added in the"
 				// 	   "static object definition file.\n");
 				// }
-				if(nAirCheck1!=nAirCheck2)
-				{
-					fsStderr.Printf
-					  ("One or more airplane is added in the"
-					   "static object definition file.\n");
-				}
+				// if(nAirCheck1!=nAirCheck2)
+				// {
+				//	fsStderr.Printf
+				//	  ("One or more airplane is added in the"
+				//	   "static object definition file.\n");
+				// }
 				// << This section is left for the compatibility
 			}
 			else

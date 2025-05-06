@@ -8,6 +8,7 @@
 #include "fssimulation.h"
 
 // Declaration /////////////////////////////////////////////
+
 class FsAirplaneTemplate
 {
 public:
