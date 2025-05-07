@@ -524,7 +524,7 @@ void FsGuiNewFlightDialogClass::InitializeDialog(FsWorld *world,const FsNewFligh
 	this->info=info;
 	this->world=world;
 
-	this->info.envInfo.specifyEnvironment = YSTRUE;  // By default, turn it off. 20250506 YSTRUE fixed crash to desktop. Why? Beats me
+	this->info.envInfo.specifyEnvironment = YSFALSE;  // By default, turn it off.
 
 	if(field!=NULL)
 	{

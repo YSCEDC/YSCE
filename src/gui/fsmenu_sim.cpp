@@ -497,7 +497,7 @@ void FsGuiMainCanvas::Sim_CreateFlight_Create(FsNewFlightDialogInfo &info)
 		world->SetFog(info.envInfo.fog);
 		world->SetFogVisibility(info.envInfo.fogVisibility);
 
-		for(int i=0; i<=info.envInfo.cloudLayer.GetN(); i++)
+		for(int i=0; i<info.envInfo.cloudLayer.GetN(); i++)
 		{
 			world->AddOvercastLayer(info.envInfo.cloudLayer[i].y0,info.envInfo.cloudLayer[i].y1);
 		}
