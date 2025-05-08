@@ -8299,8 +8299,14 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 			cmd=keyWordList.GetId("HRDPOINT");     //
 		}                                          //
 
-		//Dirty method to handle SUBSTNAM in IDENTIFY line because a lot of addons do it
-		if (cmd == 56 && av[2] != NULL && av[3] != NULL) { chSubstIdName.Set(av[3]); }
+		//Handle SUBSTNAM in IDENTIFY line because a lot of addons do it
+		if (cmd == 56 && av[2] != NULL && av[3] != NULL)
+		{
+			if ('S' == av[2][0] && 'U' == av[2][1] && 'B' == av[2][2] && 'S' == av[2][3] && 'T' == av[2][4])
+			{
+				chSubstIdName.Set(av[3]);
+			}
+		}
 
 		if(cmd>=0)
 		{
