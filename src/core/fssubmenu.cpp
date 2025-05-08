@@ -699,7 +699,7 @@ void FsSubMenu::Draw(const class FsSimulation *sim,class FsFlightConfig &cfg,int
 
 				sim->MakeSortedNdbList(stationInRange,stationDist,playerPlane->GetPosition());
 
-				for(i=0; i<stationInRange.GetN() && i<NSHOWMAX; i++)
+				for(i=0; subMenuBase+i<stationInRange.GetN() && i<NSHOWMAX; i++)
 				{
 					int ndbId;
 					ndbId=subMenuBase+i;
