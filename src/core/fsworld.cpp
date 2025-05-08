@@ -1292,7 +1292,10 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								record.thrVector=(unsigned char)thrVector;
 								record.thrReverser=(unsigned char)thrReverser;
 								record.bombBay=(unsigned char)bombBay;
-								air->Record(t,record,YSTRUE);
+								if (air != NULL)
+								{
+									air->Record(t, record, YSTRUE);
+								}
 							}
 						}
 						else if(version==2)
@@ -1351,7 +1354,10 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								record.thrVector=(unsigned char)thrVector;
 								record.thrReverser=(unsigned char)thrReverser;
 								record.bombBay=(unsigned char)bombBay;
-								air->Record(t,record,YSTRUE);
+								if (air != NULL)
+								{
+									air->Record(t, record, YSTRUE);
+								}
 							}
 						}
 						else if(version==1)
@@ -1407,7 +1413,10 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								record.thrVector=0;
 								record.thrReverser=0;
 								record.bombBay=0;
-								air->Record(t,record,YSTRUE);
+								if (air != NULL)
+								{
+									air->Record(t, record, YSTRUE);
+								}
 							}
 						}
 						else if(version==0) // Old Version
@@ -1456,7 +1465,10 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								record.thrVector=0;
 								record.thrReverser=0;
 								record.bombBay=0;
-								air->Record(t,record,YSTRUE);
+								if (air != NULL)
+								{
+									air->Record(t, record, YSTRUE);
+								}
 							}
 						}
 						break;
@@ -1473,7 +1485,10 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 						{
 							YsString cmd;
 							cmd.Set(readBuf.Txt()+9);
-							air->cmdLog.Append(cmd);
+							if (air != NULL)
+							{
+								air->cmdLog.Append(cmd);
+							}
 						}
 						break;
 					case 12: //"GROUNDOB",  // Ground Object
@@ -1489,221 +1504,235 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 						}
 						break;
 					case 13: //"GRNDCMND",  // Ground Command
-						gnd->SendCommand(readBuf.Txt()+9);
-						break;
+						if (gnd != NULL)
+						{
+							gnd->SendCommand(readBuf.Txt() + 9);
+							break;
+						}
 					case 14: //"NUMGDREC",  // Number of Ground Record
-						nr=atoi(args[1]);
-						version=atoi(args[2]);
-						if(3==version)
+						nr = atoi(args[1]);
+						version = atoi(args[2]);
+						if (3 == version)
 						{
 							YsString readBuf;
-							YsArray <YsString,16> args;
+							YsArray <YsString, 16> args;
 
-							for(i=0; i<nr; i++)
+							for (i = 0; i < nr; i++)
 							{
 								readBuf.Fgets(fp);
-								sscanf(readBuf,"%lf",&t);
+								sscanf(readBuf, "%lf", &t);
 								readBuf.Fgets(fp);
-								sscanf(readBuf,"%lf%lf%lf%lf%lf%lf",&x,&y,&z,&h,&p,&b);
+								sscanf(readBuf, "%lf%lf%lf%lf%lf%lf", &x, &y, &z, &h, &p, &b);
 								readBuf.Fgets(fp);
-								sscanf(readBuf,"%d%d",&state,&dmgTolerance);
-								gdRecord.pos.Set(x,y,z);
-								gdRecord.h=float(h);
-								gdRecord.p=float(p);
-								gdRecord.b=float(b);
-								gdRecord.state=(unsigned char)state;
-								gdRecord.dmgTolerance=(unsigned char)dmgTolerance;
+								sscanf(readBuf, "%d%d", &state, &dmgTolerance);
+								gdRecord.pos.Set(x, y, z);
+								gdRecord.h = float(h);
+								gdRecord.p = float(p);
+								gdRecord.b = float(b);
+								gdRecord.state = (unsigned char)state;
+								gdRecord.dmgTolerance = (unsigned char)dmgTolerance;
 
-								float h1,p1,b1,h2,p2,b2,h3,p3,b3;
+								float h1, p1, b1, h2, p2, b2, h3, p3, b3;
 								readBuf.Fgets(fp);
-								sscanf(readBuf,"%f%f%f%f%f%f%f%f%f",&h1,&p1,&b1,&h2,&p2,&b2,&h3,&p3,&b3);
-								gdRecord.aaaAimh=float(h1);
-								gdRecord.aaaAimp=float(p1);
-								gdRecord.aaaAimb=float(b1);
+								sscanf(readBuf, "%f%f%f%f%f%f%f%f%f", &h1, &p1, &b1, &h2, &p2, &b2, &h3, &p3, &b3);
+								gdRecord.aaaAimh = float(h1);
+								gdRecord.aaaAimp = float(p1);
+								gdRecord.aaaAimb = float(b1);
 
-								gdRecord.samAimh=float(h1);
-								gdRecord.samAimp=float(p1);
-								gdRecord.samAimb=float(b1);
+								gdRecord.samAimh = float(h1);
+								gdRecord.samAimp = float(p1);
+								gdRecord.samAimb = float(b1);
 
-								gdRecord.canAimh=float(h1);
-								gdRecord.canAimp=float(p1);
-								gdRecord.canAimb=float(b1);
+								gdRecord.canAimh = float(h1);
+								gdRecord.canAimp = float(p1);
+								gdRecord.canAimb = float(b1);
 
 								readBuf.Fgets(fp);
 								int steering;
-								unsigned int leftDoor,rightDoor,rearDoor,brake,lightState;
-								sscanf(readBuf,"%d%d%d%d%d%d",&steering,&leftDoor,&rightDoor,&rearDoor,&brake,&lightState);
-								gdRecord.steering=(char)steering;
-								gdRecord.leftDoor=(unsigned char)leftDoor;
-								gdRecord.rightDoor=(unsigned char)rightDoor;
-								gdRecord.rearDoor=(unsigned char)rearDoor;
-								gdRecord.brake=(unsigned char)brake;
-								gdRecord.lightState=(unsigned char)lightState;
+								unsigned int leftDoor, rightDoor, rearDoor, brake, lightState;
+								sscanf(readBuf, "%d%d%d%d%d%d", &steering, &leftDoor, &rightDoor, &rearDoor, &brake, &lightState);
+								gdRecord.steering = (char)steering;
+								gdRecord.leftDoor = (unsigned char)leftDoor;
+								gdRecord.rightDoor = (unsigned char)rightDoor;
+								gdRecord.rearDoor = (unsigned char)rearDoor;
+								gdRecord.brake = (unsigned char)brake;
+								gdRecord.lightState = (unsigned char)lightState;
 
 								readBuf.Fgets(fp);
-								if(YSOK==readBuf.Arguments(args)==YSOK && 0<args.GetN())
+								if (YSOK == readBuf.Arguments(args) == YSOK && 0 < args.GetN())
 								{
-									int j,n;
-									n=atoi(args[0]);
+									int j, n;
+									n = atoi(args[0]);
 									gdRecord.turret.Alloc(n);
-									for(j=0; j<n; j++)
+									for (j = 0; j < n; j++)
 									{
-										gdRecord.turret[j].h=(float)atof(args[1+j*3]);
-										gdRecord.turret[j].p=(float)atof(args[2+j*3]);
-										gdRecord.turret[j].turretState=atoi(args[3+j*3]);
+										gdRecord.turret[j].h = (float)atof(args[1 + j * 3]);
+										gdRecord.turret[j].p = (float)atof(args[2 + j * 3]);
+										gdRecord.turret[j].turretState = atoi(args[3 + j * 3]);
+									}
+								}
+								if (gnd != NULL)
+								{
+									gnd->Record(t, gdRecord, YSTRUE);
+								}
+							}
+						}
+						else if (version == 2)
+						{
+							YsString readBuf;
+							YsArray <YsString, 16> args;
+
+							for (i = 0; i < nr; i++)
+							{
+								readBuf.Fgets(fp);
+								sscanf(readBuf, "%lf", &t);
+								readBuf.Fgets(fp);
+								sscanf(readBuf, "%lf%lf%lf%lf%lf%lf", &x, &y, &z, &h, &p, &b);
+								readBuf.Fgets(fp);
+								sscanf(readBuf, "%d%d", &state, &dmgTolerance);
+								gdRecord.pos.Set(x, y, z);
+								gdRecord.h = float(h);
+								gdRecord.p = float(p);
+								gdRecord.b = float(b);
+								gdRecord.state = (unsigned char)state;
+								gdRecord.dmgTolerance = (unsigned char)dmgTolerance;
+
+								float h1, p1, b1, h2, p2, b2, h3, p3, b3;
+								readBuf.Fgets(fp);
+								sscanf(readBuf, "%f%f%f%f%f%f%f%f%f", &h1, &p1, &b1, &h2, &p2, &b2, &h3, &p3, &b3);
+								gdRecord.aaaAimh = float(h1);
+								gdRecord.aaaAimp = float(p1);
+								gdRecord.aaaAimb = float(b1);
+
+								gdRecord.samAimh = float(h1);
+								gdRecord.samAimp = float(p1);
+								gdRecord.samAimb = float(b1);
+
+								gdRecord.canAimh = float(h1);
+								gdRecord.canAimp = float(p1);
+								gdRecord.canAimb = float(b1);
+
+
+								readBuf.Fgets(fp);
+								if (YSOK == readBuf.Arguments(args) == YSOK && 0 < args.GetN())
+								{
+									int j, n;
+									n = atoi(args[0]);
+									gdRecord.turret.Alloc(n);
+									for (j = 0; j < n; j++)
+									{
+										gdRecord.turret[j].h = (float)atof(args[1 + j * 3]);
+										gdRecord.turret[j].p = (float)atof(args[2 + j * 3]);
+										gdRecord.turret[j].turretState = atoi(args[3 + j * 3]);
 									}
 								}
 
-								gnd->Record(t,gdRecord,YSTRUE);
-							}
-						}
-						else if(version==2)
-						{
-							YsString readBuf;
-							YsArray <YsString,16> args;
+								gdRecord.steering = 0;
+								gdRecord.leftDoor = 0;
+								gdRecord.rightDoor = 0;
+								gdRecord.rearDoor = 0;
+								gdRecord.brake = 0;
+								gdRecord.lightState = 0;
 
-							for(i=0; i<nr; i++)
-							{
-								readBuf.Fgets(fp);
-								sscanf(readBuf,"%lf",&t);
-								readBuf.Fgets(fp);
-								sscanf(readBuf,"%lf%lf%lf%lf%lf%lf",&x,&y,&z,&h,&p,&b);
-								readBuf.Fgets(fp);
-								sscanf(readBuf,"%d%d",&state,&dmgTolerance);
-								gdRecord.pos.Set(x,y,z);
-								gdRecord.h=float(h);
-								gdRecord.p=float(p);
-								gdRecord.b=float(b);
-								gdRecord.state=(unsigned char)state;
-								gdRecord.dmgTolerance=(unsigned char)dmgTolerance;
-
-								float h1,p1,b1,h2,p2,b2,h3,p3,b3;
-								readBuf.Fgets(fp);
-								sscanf(readBuf,"%f%f%f%f%f%f%f%f%f",&h1,&p1,&b1,&h2,&p2,&b2,&h3,&p3,&b3);
-								gdRecord.aaaAimh=float(h1);
-								gdRecord.aaaAimp=float(p1);
-								gdRecord.aaaAimb=float(b1);
-
-								gdRecord.samAimh=float(h1);
-								gdRecord.samAimp=float(p1);
-								gdRecord.samAimb=float(b1);
-
-								gdRecord.canAimh=float(h1);
-								gdRecord.canAimp=float(p1);
-								gdRecord.canAimb=float(b1);
-
-
-								readBuf.Fgets(fp);
-								if(YSOK==readBuf.Arguments(args)==YSOK && 0<args.GetN())
+								if (gnd != NULL)
 								{
-									int j,n;
-									n=atoi(args[0]);
-									gdRecord.turret.Alloc(n);
-									for(j=0; j<n; j++)
-									{
-										gdRecord.turret[j].h=(float)atof(args[1+j*3]);
-										gdRecord.turret[j].p=(float)atof(args[2+j*3]);
-										gdRecord.turret[j].turretState=atoi(args[3+j*3]);
-									}
+									gnd->Record(t, gdRecord, YSTRUE);
 								}
-
-								gdRecord.steering=0;
-								gdRecord.leftDoor=0;
-								gdRecord.rightDoor=0;
-								gdRecord.rearDoor=0;
-								gdRecord.brake=0;
-								gdRecord.lightState=0;
-
-								gnd->Record(t,gdRecord,YSTRUE);
 							}
 						}
-						else if(version==1)
+						else if (version == 1)
 						{
 							YsString readBuf;
-							YsArray <YsString,16> args;
+							YsArray <YsString, 16> args;
 
-							for(i=0; i<nr; i++)
+							for (i = 0; i < nr; i++)
 							{
 								readBuf.Fgets(fp);
-								sscanf(readBuf,"%lf",&t);
+								sscanf(readBuf, "%lf", &t);
 								readBuf.Fgets(fp);
-								sscanf(readBuf,"%lf%lf%lf%lf%lf%lf",&x,&y,&z,&h,&p,&b);
+								sscanf(readBuf, "%lf%lf%lf%lf%lf%lf", &x, &y, &z, &h, &p, &b);
 								readBuf.Fgets(fp);
-								sscanf(readBuf,"%d%d",&state,&dmgTolerance);
-								gdRecord.pos.Set(x,y,z);
-								gdRecord.h=float(h);
-								gdRecord.p=float(p);
-								gdRecord.b=float(b);
-								gdRecord.state=(unsigned char)state;
-								gdRecord.dmgTolerance=(unsigned char)dmgTolerance;
+								sscanf(readBuf, "%d%d", &state, &dmgTolerance);
+								gdRecord.pos.Set(x, y, z);
+								gdRecord.h = float(h);
+								gdRecord.p = float(p);
+								gdRecord.b = float(b);
+								gdRecord.state = (unsigned char)state;
+								gdRecord.dmgTolerance = (unsigned char)dmgTolerance;
 
-								float h1,p1,b1,h2,p2,b2,h3,p3,b3;
+								float h1, p1, b1, h2, p2, b2, h3, p3, b3;
 								readBuf.Fgets(fp);
-								sscanf(readBuf,"%f%f%f%f%f%f%f%f%f",&h1,&p1,&b1,&h2,&p2,&b2,&h3,&p3,&b3);
-								gdRecord.aaaAimh=float(h1);
-								gdRecord.aaaAimp=float(p1);
-								gdRecord.aaaAimb=float(b1);
+								sscanf(readBuf, "%f%f%f%f%f%f%f%f%f", &h1, &p1, &b1, &h2, &p2, &b2, &h3, &p3, &b3);
+								gdRecord.aaaAimh = float(h1);
+								gdRecord.aaaAimp = float(p1);
+								gdRecord.aaaAimb = float(b1);
 
-								gdRecord.samAimh=float(h1);
-								gdRecord.samAimp=float(p1);
-								gdRecord.samAimb=float(b1);
+								gdRecord.samAimh = float(h1);
+								gdRecord.samAimp = float(p1);
+								gdRecord.samAimb = float(b1);
 
-								gdRecord.canAimh=float(h1);
-								gdRecord.canAimp=float(p1);
-								gdRecord.canAimb=float(b1);
+								gdRecord.canAimh = float(h1);
+								gdRecord.canAimp = float(p1);
+								gdRecord.canAimb = float(b1);
 
-								gdRecord.steering=0;
-								gdRecord.leftDoor=0;
-								gdRecord.rightDoor=0;
-								gdRecord.rearDoor=0;
-								gdRecord.brake=0;
-								gdRecord.lightState=0;
+								gdRecord.steering = 0;
+								gdRecord.leftDoor = 0;
+								gdRecord.rightDoor = 0;
+								gdRecord.rearDoor = 0;
+								gdRecord.brake = 0;
+								gdRecord.lightState = 0;
 
-								gnd->Record(t,gdRecord,YSTRUE);
+								if (gnd != NULL)
+								{
+									gnd->Record(t, gdRecord, YSTRUE);
+								}
 							}
 						}
-						else if(version==0)
+						else if (version == 0)
 						{
 							YsString readBuf;
-							YsArray <YsString,16> args;
+							YsArray <YsString, 16> args;
 
-							for(i=0; i<nr; i++)
+							for (i = 0; i < nr; i++)
 							{
 								readBuf.Fgets(fp);
-								sscanf(readBuf,"%lf",&t);
+								sscanf(readBuf, "%lf", &t);
 								readBuf.Fgets(fp);
-								sscanf(readBuf,"%lf%lf%lf%lf%lf%lf",&x,&y,&z,&h,&p,&b);
+								sscanf(readBuf, "%lf%lf%lf%lf%lf%lf", &x, &y, &z, &h, &p, &b);
 								readBuf.Fgets(fp);
-								sscanf(readBuf,"%d%d",&state,&dmgTolerance);
-								gdRecord.pos.Set(x,y,z);
-								gdRecord.h=float(h);
-								gdRecord.p=float(p);
-								gdRecord.b=float(b);
-								gdRecord.state=(unsigned char)state;
-								gdRecord.dmgTolerance=(unsigned char)dmgTolerance;
+								sscanf(readBuf, "%d%d", &state, &dmgTolerance);
+								gdRecord.pos.Set(x, y, z);
+								gdRecord.h = float(h);
+								gdRecord.p = float(p);
+								gdRecord.b = float(b);
+								gdRecord.state = (unsigned char)state;
+								gdRecord.dmgTolerance = (unsigned char)dmgTolerance;
 
 								readBuf.Fgets(fp);
-								sscanf(readBuf,"%lf%lf%lf",&h,&p,&b);
-								gdRecord.aaaAimh=float(h);
-								gdRecord.aaaAimp=float(p);
-								gdRecord.aaaAimb=float(b);
+								sscanf(readBuf, "%lf%lf%lf", &h, &p, &b);
+								gdRecord.aaaAimh = float(h);
+								gdRecord.aaaAimp = float(p);
+								gdRecord.aaaAimb = float(b);
 
-								gdRecord.samAimh=gdRecord.aaaAimh;
-								gdRecord.samAimp=gdRecord.aaaAimp;
-								gdRecord.samAimb=gdRecord.aaaAimb;
+								gdRecord.samAimh = gdRecord.aaaAimh;
+								gdRecord.samAimp = gdRecord.aaaAimp;
+								gdRecord.samAimb = gdRecord.aaaAimb;
 
-								gdRecord.canAimh=gdRecord.aaaAimh;
-								gdRecord.canAimp=gdRecord.aaaAimp;
-								gdRecord.canAimb=gdRecord.aaaAimb;
+								gdRecord.canAimh = gdRecord.aaaAimh;
+								gdRecord.canAimp = gdRecord.aaaAimp;
+								gdRecord.canAimb = gdRecord.aaaAimb;
 
-								gdRecord.steering=0;
-								gdRecord.leftDoor=0;
-								gdRecord.rightDoor=0;
-								gdRecord.rearDoor=0;
-								gdRecord.brake=0;
-								gdRecord.lightState=0;
+								gdRecord.steering = 0;
+								gdRecord.leftDoor = 0;
+								gdRecord.rightDoor = 0;
+								gdRecord.rearDoor = 0;
+								gdRecord.brake = 0;
+								gdRecord.lightState = 0;
 
-								gnd->Record(t,gdRecord,YSTRUE);
+								if (gnd != NULL)
+								{
+									gnd->Record(t, gdRecord, YSTRUE);
+								}
 							}
 						}
 						break;
@@ -1712,19 +1741,25 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 						printf("GDINTENT is not implemented yet.\n");
 						break;
 					case 16: //"GNDPOSIT"
-						FsGetVec3(pos,args.GetN()-1,args.GetArray()+1);
-						pos=fieldMat*pos;
-						SettleGround(*gnd,pos);
-						break;
+						if (gnd != NULL)
+						{
+							FsGetVec3(pos, args.GetN() - 1, args.GetArray() + 1);
+							pos = fieldMat * pos;
+							SettleGround(*gnd, pos);
+							break;
+						}
 					case 17: //"GNDATTIT",  // Ground Attitude
-						FsGetAtt3(att,args.GetN()-1,args.GetArray()+1);
-						ev=att.GetForwardVector();
-						uv=att.GetUpVector();
-						fieldMat.Mul(ev,ev,0.0);
-						fieldMat.Mul(uv,uv,0.0);
-						att.SetTwoVector(ev,uv);
-						SettleGround(*gnd,att);
-						break;
+						if (gnd != NULL)
+						{
+							FsGetAtt3(att, args.GetN() - 1, args.GetArray() + 1);
+							ev = att.GetForwardVector();
+							uv = att.GetUpVector();
+							fieldMat.Mul(ev, ev, 0.0);
+							fieldMat.Mul(uv, uv, 0.0);
+							att.SetTwoVector(ev, uv);
+							SettleGround(*gnd, att);
+							break;
+						}
 					case 18: //	"ALLOWAAM",  // ALlow using AAM
 						sim->AllowAAM(YsStrToBool(args[1]));
 						break;
