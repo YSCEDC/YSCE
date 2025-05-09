@@ -8,7 +8,8 @@
 #include "fsoption.h"
 #include "platform/common/fswindow.h"
 
-
+#include "wtypes.h"
+#include <iostream>
 
 #include <ysport.h>
 
@@ -297,6 +298,13 @@ int FsGetActiveSplitWindow(void)
 
 void FsLoadWindowSize(int &x0,int &y0,int &wid,int &hei,const wchar_t fn[])
 {
+	int scrwid, scrhei;
+	const HWND desktop = GetDesktopWindow();
+	RECT screenres;
+	GetWindowRect(desktop, &screenres);
+	scrwid = screenres.right;
+	scrhei = screenres.bottom;
+
 	FILE *fp=YsFileIO::Fopen(fn,"r");
 	if(fp!=NULL)
 	{
@@ -318,8 +326,10 @@ void FsLoadWindowSize(int &x0,int &y0,int &wid,int &hei,const wchar_t fn[])
 						wid=atoi(args[3]);
 						hei=atoi(args[4]);
 
-						wid=YsGreater(320,wid);
-						hei=YsGreater(240,hei);
+						x0 = YsGreater(YsSmaller(x0,scrwid*3/4),-100);
+						y0 = YsGreater(YsSmaller(y0,scrhei*3/4),-10);
+						wid=YsGreater(480,YsSmaller(wid,scrwid));
+						hei=YsGreater(300,YsSmaller(hei,scrhei));
 					}
 					break;
 				}
@@ -420,10 +430,10 @@ void FsSaveWindowSize(const wchar_t fn[])
 	FsGetWindowPosition(x0,y0);
 	FsGetWindowSize(wid,hei);
 
-	x0&=(~3);
-	y0&=(~3);
-	wid&=(~3);
-	hei&=(~3);
+	//x0&=(~3); Rounding to nearest 4? Why?
+	//y0&=(~3);
+	//wid&=(~3);
+	//hei&=(~3);
 
 	YsFileIO::File fp(fn,"w");
 	if(fp!=nullptr)
