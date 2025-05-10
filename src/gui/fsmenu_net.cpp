@@ -172,6 +172,42 @@ void FsGuiMainCanvas::Net_StartClientMode_OptionSelected(FsGuiDialog *closedDial
 		cliDlg->hostAddrTxt->GetText(hostname);
 		cliDlg->userNameTxt->GetText(username);
 		int netPort=cliDlg->portTxt->GetInteger();
+		
+		for (int i = 0; hostname[i] != 0; i++)
+		{
+			if (' ' == hostname[i] || '\t' == hostname[i])
+			{
+				hostname.Delete(i);
+				i--;
+			}
+		}
+
+		//Handle port in IP field
+		YsString port;
+		for (int i = 0; i < hostname.Strlen(); ++i)
+		{
+			if ('(' == hostname[i] || ':' == hostname[i])
+			{
+				port.Set(hostname.Txt() + i + 1);
+				hostname.SetLength(i);
+				break;
+			}
+		}
+		if (0 < port.Strlen())
+		{
+			for (int i = 0; i < port.Strlen(); ++i)
+			{
+				if (')' == port[i])
+				{
+					port.SetLength(i);
+					break;
+				}
+			}
+			if (0 < port.Strlen())
+			{
+				netPort = atoi(port);
+			}
+		}
 
 		runLoop->StartNetClientMode(username,hostname,netPort);
 	}
