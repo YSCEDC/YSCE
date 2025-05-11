@@ -9806,6 +9806,9 @@ void FsAirplaneProperty::AutoCalculate(void)
 		v=30.0;
 		m=chCleanWeight+chMaxFuelLoad;
 		chBrakeConst=(v*v*m)/(2.0*refLNGRunway);
+
+		chDirectAttitudeControlReqThr1 = -0.1; //Force helicopters to be controllable at idle
+		chDirectAttitudeControlReqThr2 = -0.1;
 	}
 }
 
