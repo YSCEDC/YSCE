@@ -361,8 +361,93 @@ void FsRotatingTurretState::FireWeapon(
 				    chTurret.destructivePower,owner,YSTRUE,YSTRUE);
 				break;
 			case FSWEAPON_AIM9:
+			case FSWEAPON_AIM9X:
+			{
+				YSHASHKEY targetKey = YSNULLHASHKEY;
+
+				if (airTargetKey != YSNULLHASHKEY)
+				{
+					targetKey = airTargetKey;
+				}
+				else if (gndTargetKey != YSNULLHASHKEY)
+				{
+					targetKey = gndTargetKey;
+				}
+
+				bul.Fire(
+					ctime,
+					chTurret.wpnType,
+					gun,
+					att,
+					1.0,
+					1020,     // Max Speed
+					chTurret.range,
+					YsPi / 2.0,  // Mobility
+					YsPi / 6.0,  // Radar Range
+					chTurret.destructivePower,
+					owner,
+					targetKey,
+					YSTRUE, YSTRUE);
+			}
+			break;
 			case FSWEAPON_AGM65:
+			{
+				YSHASHKEY targetKey = YSNULLHASHKEY;
+
+				if (airTargetKey != YSNULLHASHKEY)
+				{
+					targetKey = airTargetKey;
+				}
+				else if (gndTargetKey != YSNULLHASHKEY)
+				{
+					targetKey = gndTargetKey;
+				}
+
+				bul.Fire(
+					ctime,
+					chTurret.wpnType,
+					gun,
+					att,
+					1.0,
+					340.0,     // Max Speed
+					chTurret.range,
+					YsPi / 2.0,  // Mobility
+					YsPi / 9.0,  // Radar Range
+					chTurret.destructivePower,
+					owner,
+					targetKey,
+					YSTRUE, YSTRUE);
+			}
+			break;
 			case FSWEAPON_ROCKET:
+			{
+				YSHASHKEY targetKey = YSNULLHASHKEY;
+
+				if (airTargetKey != YSNULLHASHKEY)
+				{
+					targetKey = airTargetKey;
+				}
+				else if (gndTargetKey != YSNULLHASHKEY)
+				{
+					targetKey = gndTargetKey;
+				}
+
+				bul.Fire(
+					ctime,
+					chTurret.wpnType,
+					gun,
+					att,
+					1.0,
+					800.0,     // Max Speed
+					chTurret.range,
+					YsPi / 2.0,  // Mobility
+					YsPi / 4.0,  // Radar Range
+					chTurret.destructivePower,
+					owner,
+					targetKey,
+					YSTRUE, YSTRUE);
+			}
+			break;
 			case FSWEAPON_AIM120:
 				{
 					YSHASHKEY targetKey=YSNULLHASHKEY;
@@ -382,10 +467,10 @@ void FsRotatingTurretState::FireWeapon(
 					    gun,
 					    att,
 					    1.0,
-					    800.0,     // Max Speed
+					    1360.0,     // Max Speed
 					    chTurret.range,
-					    YsPi/2.0,  // Mobility
-					    YsPi/4.0,  // Radar Range
+					    YsPi/3.0,  // Mobility
+					    YsPi/6.0,  // Radar Range
 					    chTurret.destructivePower,
 					    owner,
 					    targetKey,

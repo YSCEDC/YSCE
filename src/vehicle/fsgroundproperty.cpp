@@ -1590,20 +1590,82 @@ YSBOOL FsGroundProperty::FireMissile
 		mis=mis+samMount;
 		mis=mis+staPosition;
 
-		bul.Fire(ct,
-		         chSAMType,
-		         mis,
-		         staSamAim,
-		         0.0,
-		         340.0*3.0,
-		         chSAMRange,
-		         YsDegToRad(180.0),
-		         GetSAMRadarAngle(),
-		         12,
-		         own,
-		         targetKey, // <- Locked On Target
-		         YSTRUE,
-		         YSTRUE);
+
+
+		switch (chSAMType)
+		{
+			default:
+				break;
+			case FSWEAPON_AIM9:
+			case FSWEAPON_AIM9X:
+			{
+				bul.Fire(ct,
+					chSAMType,
+					mis,
+					staSamAim,
+					0.0,
+					1020,
+					chSAMRange,
+					YsPi / 2.0,
+					YsPi / 6.0,
+					12,
+					own,
+					targetKey, // <- Locked On Target
+					YSTRUE, YSTRUE);
+			}
+			break;
+			case FSWEAPON_AGM65:
+			{
+				bul.Fire(ct,
+					chSAMType,
+					mis,
+					staSamAim,
+					0.0,
+					340.0,
+					chSAMRange,
+					YsPi / 2.0,
+					YsPi / 9.0,
+					12,
+					own,
+					targetKey,
+					YSTRUE, YSTRUE);
+			}
+			break;
+			case FSWEAPON_ROCKET:
+			{
+				bul.Fire(ct,
+					chSAMType,
+					mis,
+					staSamAim,
+					0.0,
+					800.0,
+					chSAMRange,
+					YsPi / 2.0,
+					YsPi / 4.0,
+					10,
+					own,
+					targetKey,
+					YSTRUE, YSTRUE);
+			}
+			break;
+			case FSWEAPON_AIM120:
+			{
+				bul.Fire(ct,
+					chSAMType,
+					mis,
+					staSamAim,
+					0.0,
+					1360.0,
+					chSAMRange,
+					YsPi / 3.0,
+					YsPi / 6.0,
+					12,
+					own,
+					targetKey,
+					YSTRUE, YSTRUE);
+			}
+			break;
+		}
 
 		staSAM--;
 		if(staSamReloadCount>0)
