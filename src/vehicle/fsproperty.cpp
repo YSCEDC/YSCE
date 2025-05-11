@@ -413,9 +413,13 @@ void FsRotatingTurretState::FireWeapon(
 			this->shootGunTimer+=chTurret.shootInterval;
 		}
 	}
+	else if (this->shootGunTimer > 0)
+	{
+		this->shootGunTimer -= dt;
+	}
 	else
 	{
-		this->shootGunTimer=0.0;
+		this->shootGunTimer = 0.0;
 	}
 }
 
