@@ -4081,8 +4081,8 @@ FsAirplane *FsWorld::AddMatchingAirplane(
 		// }
 
 
-		//if(match!=NULL)
-		//{
+		if(match==NULL)
+		{
 			FsAirplane neo,*air;
 
 			const char *const *tmpl;
@@ -4124,7 +4124,7 @@ FsAirplane *FsWorld::AddMatchingAirplane(
 
 			neo.SetCollisionShell(*collPtr);
 
-			neo.SetProperty(*match->dat.GetProperty(),match->dat.GetTemplateRootDirectory());
+			//neo.SetProperty(*match->dat.GetProperty(),match->dat.GetTemplateRootDirectory());
 
 			neo.vis=NULL;
 			neo.lod=NULL;
@@ -4135,10 +4135,10 @@ FsAirplane *FsWorld::AddMatchingAirplane(
 
 			neo.isNetSubstitute=YSTRUE;
 
-			air=sim->AddAirplane(neo,isPlayerPlane,match->dat.GetTemplateRootDirectory(),netSearchKey);
+			air=sim->AddAirplane(neo,isPlayerPlane,NULL,netSearchKey);
 
 			return air;
-		//}
+		}
 	}
 	return NULL;
 }
