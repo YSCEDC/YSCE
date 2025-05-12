@@ -9503,7 +9503,7 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 				}
 				break;
 			case 175: // "NREALPRP",  // Number of (real) propeller engines
-				if(2<=ac)
+				/*if(2<=ac)
 				{
 					YsString raw(in);
 					raw.DropSingleLineComment("#");
@@ -9523,10 +9523,11 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 						propLever=1.0; // Full forward by default.
 					}
 					res=YSOK;
-				}
+				}*/
+				res = YSOK;
 				break;
 			case 176: // "REALPROP"
-				if(2<=ac)
+				/*if(2<=ac)
 				{
 					YsString raw(in);
 					raw.DropSingleLineComment("#");
@@ -9540,7 +9541,8 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 					{
 						res=chRealProp[engineIdx].SendCommand(ac-2,av+2);
 					}
-				}
+				}*/
+				res = YSOK;
 				break;
 			case 177: // "TIREFRIC",  // Tire friction coefficient
 				if(2<=ac)
