@@ -2319,7 +2319,7 @@ YSBOOL FsRunLoop::RunShowLandingPracticeInfoOneStep(void)
 	{
 		// This sequence is same as regular simulation after mission-goal dialog.
 		ChangeRunMode(YSRUNMODE_MENU);  // 2014/09/07 Was missing and added.  Why was it working until now?
-		TakeOff();
+		TakeOff(YSRUNMODE_MENU);
 	}
 	return YSTRUE;
 }
