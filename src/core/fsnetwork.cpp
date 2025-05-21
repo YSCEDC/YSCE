@@ -9384,7 +9384,8 @@ void FsSimulation::RunServerModeOneStep(FsServerRunLoop &svrSta)
 				if(timeElapsed>=resetTimer)
 				{
 					svrSta.resetServer=YSTRUE;
-					break;
+					server.quit = YSTRUE;
+					//break;
 				}
 				if(curTime!=svrSta.prvTime)
 				{
