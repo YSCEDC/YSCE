@@ -7198,6 +7198,10 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 	YsVec3 boxMin, boxMax;
 	obj->vis.GetBoundingBox(boxMin, boxMax);
 
+	YsVec3 empty(0.0, 0.0, 0.0);
+	if (boxMin == empty && boxMax == empty) //Blockplanes fail DNM bbox check. Simple hack to force drawing
+	{ return true; }
+
 	//calculate span of bounding box
 	double boundingBoxDiag = 1.0 * ((boxMin - boxMax).GetLength());
 
