@@ -2604,6 +2604,7 @@ void FsCenterJoystick::RunOneStep(void)
 		}
 
 		ctl->ReadControl(*ctlAssign,pJoy,joy);
+		Sleep(1); //Without this forced sleep, joystick preview renders as fast as it can and burns CPU needlessly
 	}
 	else if(WAITING_FOR_RELEASE==state)
 	{
