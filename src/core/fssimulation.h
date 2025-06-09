@@ -100,6 +100,7 @@ private:
 	int lastWindowWidth;
 	int lastWindowHeight;
 	double lastViewMagUser;
+	double lastViewMagFix;
 
 public:
 	enum FSSIMULATIONSTATE
