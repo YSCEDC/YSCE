@@ -794,7 +794,7 @@ void FsAirplane::MakeVaporVertexArray(class YsGLVertexBuffer &vtxBuf,class YsGLC
 
 	if(nullptr!=rec)
 	{
-		YSSIZE_T idx;
+		YSSIZE_T idx{};
 		double t,t0,t1;
 
 		// Catch the index
