@@ -5622,6 +5622,11 @@ YSRESULT FsSocketClient::SendGetDamage(FsExistence *victim,FsExistence *firedBy,
 	int victimIsAir,firedByAir;
 	int victimIdOnSvr,firedByIdOnSvr;
 
+	if (weaponType != 0) // Send powerless weapons (except gun) to prevent server double-counting impacts
+	{
+		power = 0;
+	}
+
 	ptr=dat;
 	FsPushInt(ptr,FSNETCMD_GETDAMAGE);
 
