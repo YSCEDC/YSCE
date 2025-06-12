@@ -4289,11 +4289,13 @@ void FsWorld::ReviveGround(FsGround *gnd)
 			pos=gnd->GetPosition();
 			att=gnd->GetAttitude();
 
-			gnd->Prop().CopyState(ptr->dat.prop);
-			gnd->netAlive=YSTRUE;
+			FsGroundProperty temp;
+			temp.CopyState(ptr->dat.prop);
+			temp.SetPosition(pos);
+			temp.SetAttitude(att);
 
-			gnd->Prop().SetPosition(pos);
-			gnd->Prop().SetAttitude(att);
+			gnd->Prop().CopyState(temp);
+			gnd->netAlive=YSTRUE;
 		}
 	}
 }

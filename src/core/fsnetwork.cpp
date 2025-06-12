@@ -8711,6 +8711,7 @@ YSRESULT FsSimulation::ServerState_StandBy(
 		case FSNCC_SVR_REVIVEGROUND:
 			ReviveGround();
 			svr.BroadcastReviveGround();
+			fsConsole.Printf("Reviving ground objects.");
 			break;
 		case FSNCC_COMMON_OBSERVERMODE:
 			if(FsIsConsoleServer()!=YSTRUE)
