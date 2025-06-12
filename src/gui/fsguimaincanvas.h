@@ -171,6 +171,7 @@ public:
 	void Sim_ChooseAircraft_Select(const class FsGuiChooseAircraft *dlg);
 
 	void Sim_DisableGroundFire(FsGuiPopUpMenuItem *);
+	void Sim_EnableGroundFire(FsGuiPopUpMenuItem*);
 
 	void Sim_EnduranceMode(FsGuiPopUpMenuItem *);
 	void Sim_EnduranceMode_DeleteConfirmed(FsGuiDialog *,int);

@@ -363,6 +363,8 @@ public:
 	YSRESULT SetMissionGoal(class FsMissionGoal &goal);
 	YSRESULT TieDownCarrier(void);
 	YSRESULT DisableGroundFire(void);
+	YSRESULT EnableGroundFire(void);
+	YSBOOL GroundFireDisabled = YSFALSE;
 	YSRESULT SetEnvironment(FSENVIRONMENT env);
 	FSENVIRONMENT GetEnvironment(void);
 	FsAirplane *AddAirplane(const char idName[],YSBOOL isPlayerPlane,unsigned netSearchKey=0);

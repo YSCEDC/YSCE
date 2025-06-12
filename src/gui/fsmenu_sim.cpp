@@ -872,6 +872,16 @@ void FsGuiMainCanvas::Sim_DisableGroundFire(FsGuiPopUpMenuItem *)
 {
 	auto world=runLoop->GetWorld();
 	world->DisableGroundFire();
+	mainMenu->Initialize();
+	mainMenu->Make();
+}
+
+void FsGuiMainCanvas::Sim_EnableGroundFire(FsGuiPopUpMenuItem*)
+{
+	auto world = runLoop->GetWorld();
+	world->EnableGroundFire();
+	mainMenu->Initialize();
+	mainMenu->Make();
 }
 
 ////////////////////////////////////////////////////////////

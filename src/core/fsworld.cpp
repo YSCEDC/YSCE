@@ -3892,18 +3892,18 @@ YSRESULT FsWorld::DisableGroundFire(void)
 	printf("FsWorld::DisableGroundFire()\n");
 	if(NULL!=sim)
 	{
-		FsGround *gnd;
-		gnd=NULL;
-		while((gnd=sim->FindNextGround(gnd))!=NULL)
-		{
-			if(YSTRUE==gnd->Prop().HasWeapon())
-			{
-				gnd->SendCommand("INITIGUN 0");
-				gnd->SendCommand("INITISAM 0");
-				gnd->SendCommand("MAXSPEED 0kt");
-				gnd->SendCommand("MAXROTAT 0deg");
-			}
-		}
+		GroundFireDisabled = YSTRUE;
+		return YSOK;
+	}
+	return YSERR;
+}
+
+YSRESULT FsWorld::EnableGroundFire(void)
+{
+	printf("FsWorld::EnableGroundFire()\n");
+	if (NULL != sim)
+	{
+		GroundFireDisabled = YSFALSE;
 		return YSOK;
 	}
 	return YSERR;

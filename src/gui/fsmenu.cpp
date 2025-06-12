@@ -96,7 +96,8 @@ void FsGuiMainMenu::Make(void)
 		simMenu->AddTextItem(MakeIdent("sim/replay"),   FSKEY_R,FSMENU_SIM_REPLAY)->BindCallBack(&FsGuiMainCanvas::Sim_ReplayRecord,canvas);
 		simMenu->AddTextItem(MakeIdent("sim/create"),   FSKEY_C,FSMENU_SIM_CREATE)->BindCallBack(&FsGuiMainCanvas::Sim_CreateFlight,canvas);
 		simMenu->AddTextItem(MakeIdent("sim/env"),      FSKEY_D,FSMENU_SIM_DAYNIGHT)->BindCallBack(&FsGuiMainCanvas::Sim_SelectDayOrNight,canvas);
-		simMenu->AddTextItem(MakeIdent("sim/disgnd"),   FSKEY_G,FSMENU_SIM_DISABLEGNDFIRE)->BindCallBack(&FsGuiMainCanvas::Sim_DisableGroundFire,canvas);
+		if (world->GroundFireDisabled == YSFALSE) { simMenu->AddTextItem(MakeIdent("sim/disgnd"), FSKEY_G, FSMENU_SIM_DISABLEGNDFIRE)->BindCallBack(&FsGuiMainCanvas::Sim_DisableGroundFire, canvas); }
+		else { simMenu->AddTextItem(MakeIdent("sim/enagnd"), FSKEY_G, FSMENU_SIM_ENABLEGNDFIRE)->BindCallBack(&FsGuiMainCanvas::Sim_EnableGroundFire, canvas); }
 		simMenu->AddTextItem(MakeIdent("sim/aircomb"),  FSKEY_B,FSMENU_SIM_AIRCOMBAT)->BindCallBack(&FsGuiMainCanvas::Sim_CreateAirCombat,canvas);
 		simMenu->AddTextItem(MakeIdent("sim/createg"),  FSKEY_G,FSMENU_SIM_CREATEINGND)->BindCallBack(&FsGuiMainCanvas::Sim_CreateInGroundObject,canvas);
 		simMenu->AddTextItem(MakeIdent("sim/selair"),   FSKEY_A,FSMENU_SIM_SELECTAIR)->BindCallBack(&FsGuiMainCanvas::Sim_ChooseAircraft,canvas);

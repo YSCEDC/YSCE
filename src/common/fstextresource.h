@@ -527,6 +527,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSMENU_SIM_CREATE                                 FsGetTextResource("menu/simulation-Create",L"Create New Flight (C)")
 #define FSMENU_SIM_DAYNIGHT                               FsGetTextResource("menu/simulation-DayNight",L"Select Day/Night (D)")
 #define FSMENU_SIM_DISABLEGNDFIRE                         FsGetTextResource("menu/simulation-DisableGroundFire",L"Disable Ground Fire (G)")
+#define FSMENU_SIM_ENABLEGNDFIRE                          FsGetTextResource("menu/simulation-EnableGroundFire",L"Enable Ground Fire ")
 #define FSMENU_SIM_AIRCOMBAT                              FsGetTextResource("menu/simulation-AirCombat",L"Create Air Combat (B)")
 #define FSMENU_SIM_SELECTAIR                              FsGetTextResource("menu/simulation-SelectAir",L"Select Airplane (A)")
 #define FSMENU_SIM_SELECTSTP                              FsGetTextResource("menu/simulation-SelectStp",L"Select Starting Position (T)")

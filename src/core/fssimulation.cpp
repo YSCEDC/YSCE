@@ -3850,7 +3850,7 @@ void FsSimulation::SimMove(const double &dt)
 		{
 			// Don't shoot.
 		}
-		else if(ground->isPlayingRecord!=YSTRUE)
+		else if(ground->isPlayingRecord!=YSTRUE && world->GroundFireDisabled != YSTRUE)
 		{
 			ground->Prop().FireGun(currentTime,dt,this,bulletHolder,ground);
 			if(ground->netType==FSNET_LOCAL)
