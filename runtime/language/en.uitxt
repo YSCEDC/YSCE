@@ -105,7 +105,7 @@ $BGCOL 0
 +airdlg/search                                     #Search
 +airdlg/normal                                     #Normal
 +airdlg/utility                                    #Utility
-+airdlg/aerobatic                                  #Category
++airdlg/aerobatic                                  #Aerobatic
 +airdlg/fighter                                    #Fighter
 +airdlg/attacker                                   #Attacker
 +airdlg/trainer                                    #Trainer
