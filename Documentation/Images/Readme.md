@@ -1,3 +1,3 @@
 # Image Folder
 
-This folder is where all Image files associated with YSCE Documentation should be located.
+This folder is where all Image files associated with YSCE Wiki pages should be located.
