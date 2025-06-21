@@ -45,7 +45,7 @@ typedef int SOCKET;
 
 
 #include <yssocket.h>
-
+#include <string>
 #include "fstextresource.h"
 
 YSBOOL FsVerboseMode=YSFALSE;
@@ -1780,11 +1780,31 @@ YSRESULT FsSocketServer::BroadcastGetDamage
 	unsigned char dat[256],*ptr;
 	ptr=dat;
 	FsPushInt(ptr,FSNETCMD_GETDAMAGE);
+	int victimHealth = victim->CommonProp().GetDamageTolerance();
+	int victimStrength = victim->CommonProp().GetStrength();
 
 	int isAir,idOnSvr;
 	EncodeObject(isAir,idOnSvr,victim);
 	FsPushInt(ptr,isAir);
 	FsPushInt(ptr,idOnSvr);
+
+	printf("Health %i\n", victimHealth);
+	if (victimHealth <= 1) //Force aircraft with health between 2^15 and 2^16 (underflow) to STRENGTH 0 (can't AirCmd health directly)
+	{
+		BroadcastAirCmd(idOnSvr, "STRENGTH 0");
+	}
+
+	if (victimHealth > victimStrength) //Force aircraft with health between STRENGTH and 2^15 to reset STRENGTH
+	{
+		printf("ILLEGAL HEALTH: User %i (%s) has strength %i\n", victim->SearchKey(),victim->name,victimHealth);
+		char strengthOverride[15] = "STRENGTH ";
+		char strSTR[32];
+
+		sprintf(strSTR, "%d", victimStrength);
+		strcat(strengthOverride, strSTR);
+
+		BroadcastAirCmd(idOnSvr, strengthOverride);
+	}
 
 	EncodeObject(isAir,idOnSvr,firedBy);
 	FsPushInt(ptr,isAir);
@@ -1806,7 +1826,6 @@ YSRESULT FsSocketServer::BroadcastAirCmd(int airId,const char cmd[])
 	FsPushInt(ptr,FSNETCMD_AIRCMD);
 	FsPushInt(ptr,airId);
 	strcpy((char *)(dat+8),cmd);
-
 	packetLength=8+strlen(cmd)+1;
 	return BroadcastPacket(packetLength,dat,20010624);
 }

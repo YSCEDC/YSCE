@@ -382,6 +382,11 @@ void FsVehicleProperty::SetDamageTolerance(int tol)
 	staDamageTolerance=tol;
 }
 
+int FsVehicleProperty::GetStrength(void) const
+{
+	return staStrength;
+}
+
 YSBOOL FsVehicleProperty::IsOnCarrier(void) const
 {
 	return (staOnThisCarrier!=NULL ? YSTRUE : YSFALSE);

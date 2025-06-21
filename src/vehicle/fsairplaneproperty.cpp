@@ -8559,6 +8559,7 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 			case 66: //"STRENGTH"
 				res=YSOK;
 				staDamageTolerance=atoi(av[1]);
+				staStrength = atoi(av[1]);
 				break;
 			case 67: //"PROPELLR"
 				res=FsGetJoulePerSecond(chThrMil,av[1]);

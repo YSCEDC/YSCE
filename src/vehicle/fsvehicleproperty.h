@@ -22,6 +22,7 @@ protected:
 	YSBOOL staGunnerFirePermission;
 
 	int staDamageTolerance;
+	int staStrength;
 
 	class FsGround *staOnThisCarrier;
 
@@ -100,6 +101,7 @@ public:
 
 	void SetDamageTolerance(int t);
 	int GetDamageTolerance(void) const;
+	int GetStrength(void) const;
 
 	YSBOOL IsOnCarrier(void) const;
 	class FsGround *OnThisCarrier(void) const;
