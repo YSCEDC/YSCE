@@ -287,8 +287,8 @@ int FsGroundAttack::GetNumAGMReleasePerPass(const FsAirplane &air) const
 {
 	if(NULL!=target)
 	{
-		int dmgTol=target->Prop().GetDamageTolerance();
-		int nRelease=(dmgTol+air.Prop().GetAGMDestructivePower()-1)/air.Prop().GetAGMDestructivePower();;
+		int curHealth=target->Prop().GetCurrentHealth();
+		int nRelease=(curHealth+air.Prop().GetAGMDestructivePower()-1)/air.Prop().GetAGMDestructivePower();;
 		if(0<nRelease)
 		{
 			return nRelease;

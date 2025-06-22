@@ -307,7 +307,7 @@ YSRESULT FsSimulation::Save(
 
 				fprintf(fp,"%d %d %d %d ",r->state      ,r->vgw         ,r->spoiler,r->gear);
 				fprintf(fp,"%d %d %d %d ",r->flap       ,r->brake       ,r->smoke  ,r->vapor);
-				fprintf(fp,"%d %d %d %d ",r->flags      ,r->dmgTolerance,r->thr    ,r->elv);
+				fprintf(fp,"%d %d %d %d ",r->flags      ,r->curHealth,r->thr    ,r->elv);
 				fprintf(fp,"%d %d %d %d ",r->ail        ,r->rud         ,r->elvTrim,r->thrVector);
 				fprintf(fp,"%d %d\n"     ,r->thrReverser,r->bombBay);
 
@@ -441,7 +441,7 @@ YSRESULT FsSimulation::Save(
 
 				fprintf(fp,"%d %d\n",
 				    r->state,
-				    r->dmgTolerance);
+				    r->curHealth);
 				fprintf(fp,"%.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f 0 0 0\n",
 				    r->aaaAimh,r->aaaAimp,r->aaaAimb,
 				    r->samAimh,r->samAimp,r->samAimb,

@@ -1082,7 +1082,7 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 
 		double t;
 		double x,y,z,h,p,b,g;
-		int state,vgw,spoiler,gear,flap,brake,smoke,vapor,dmgTolerance,thr,elv,ail,rud,elvTrim;
+		int state,vgw,spoiler,gear,flap,brake,smoke,vapor,curHealth,thr,elv,ail,rud,elvTrim;
 		int thrVector,thrReverser,bombBay;
 		unsigned flags;
 
@@ -1240,7 +1240,7 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								    &smoke,
 								    &vapor,
 								    &flags,
-								    &dmgTolerance,
+								    &curHealth,
 								    &thr,
 								    &elv,
 								    &ail,
@@ -1283,7 +1283,7 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								record.smoke=(unsigned char)smoke;
 								record.vapor=(unsigned char)vapor;
 								record.flags=(unsigned short)flags;
-								record.dmgTolerance=(unsigned char)dmgTolerance;
+								record.curHealth=(unsigned char)curHealth;
 								record.thr=(unsigned char)thr;
 								record.elv=(char)elv;
 								record.ail=(char)ail;
@@ -1322,7 +1322,7 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								    &smoke,
 								    &vapor,
 								    &flags,
-								    &dmgTolerance,
+								    &curHealth,
 								    &thr,
 								    &elv,
 								    &ail,
@@ -1345,7 +1345,7 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								record.smoke=(unsigned char)smoke;
 								record.vapor=(unsigned char)vapor;
 								record.flags=(unsigned short)flags;
-								record.dmgTolerance=(unsigned char)dmgTolerance;
+								record.curHealth=(unsigned char)curHealth;
 								record.thr=(unsigned char)thr;
 								record.elv=(char)elv;
 								record.ail=(char)ail;
@@ -1384,7 +1384,7 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								    &smoke,
 								    &vapor,
 								    &flags,
-								    &dmgTolerance,
+								    &curHealth,
 								    &thr,
 								    &elv,
 								    &ail,
@@ -1404,7 +1404,7 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								record.smoke=(unsigned char)smoke;
 								record.vapor=(unsigned char)vapor;
 								record.flags=(unsigned short)flags;
-								record.dmgTolerance=(unsigned char)dmgTolerance;
+								record.curHealth=(unsigned char)curHealth;
 								record.thr=(unsigned char)thr;
 								record.elv=(char)elv;
 								record.ail=(char)ail;
@@ -1441,7 +1441,7 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								    &smoke,
 								    &vapor,
 								    &flags,
-								    &dmgTolerance);
+								    &curHealth);
 								record.pos.Set(x,y,z);
 								record.h=float(h);
 								record.p=float(p);
@@ -1456,7 +1456,7 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								record.smoke=(unsigned char)smoke;
 								record.vapor=(unsigned char)vapor;
 								record.flags=(flags!=0 ? (FsFlightRecord::FLAGS_AB) : 0);
-								record.dmgTolerance=(unsigned char)dmgTolerance;
+								record.curHealth =(unsigned char)curHealth;
 								record.thr=0;
 								record.elv=0;
 								record.ail=0;
@@ -1524,13 +1524,13 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								readBuf.Fgets(fp);
 								sscanf(readBuf, "%lf%lf%lf%lf%lf%lf", &x, &y, &z, &h, &p, &b);
 								readBuf.Fgets(fp);
-								sscanf(readBuf, "%d%d", &state, &dmgTolerance);
+								sscanf(readBuf, "%d%d", &state, &curHealth);
 								gdRecord.pos.Set(x, y, z);
 								gdRecord.h = float(h);
 								gdRecord.p = float(p);
 								gdRecord.b = float(b);
 								gdRecord.state = (unsigned char)state;
-								gdRecord.dmgTolerance = (unsigned char)dmgTolerance;
+								gdRecord.curHealth = (unsigned char)curHealth;
 
 								float h1, p1, b1, h2, p2, b2, h3, p3, b3;
 								readBuf.Fgets(fp);
@@ -1589,13 +1589,13 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								readBuf.Fgets(fp);
 								sscanf(readBuf, "%lf%lf%lf%lf%lf%lf", &x, &y, &z, &h, &p, &b);
 								readBuf.Fgets(fp);
-								sscanf(readBuf, "%d%d", &state, &dmgTolerance);
+								sscanf(readBuf, "%d%d", &state, &curHealth);
 								gdRecord.pos.Set(x, y, z);
 								gdRecord.h = float(h);
 								gdRecord.p = float(p);
 								gdRecord.b = float(b);
 								gdRecord.state = (unsigned char)state;
-								gdRecord.dmgTolerance = (unsigned char)dmgTolerance;
+								gdRecord.curHealth = (unsigned char)curHealth;
 
 								float h1, p1, b1, h2, p2, b2, h3, p3, b3;
 								readBuf.Fgets(fp);
@@ -1652,13 +1652,13 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								readBuf.Fgets(fp);
 								sscanf(readBuf, "%lf%lf%lf%lf%lf%lf", &x, &y, &z, &h, &p, &b);
 								readBuf.Fgets(fp);
-								sscanf(readBuf, "%d%d", &state, &dmgTolerance);
+								sscanf(readBuf, "%d%d", &state, &curHealth);
 								gdRecord.pos.Set(x, y, z);
 								gdRecord.h = float(h);
 								gdRecord.p = float(p);
 								gdRecord.b = float(b);
 								gdRecord.state = (unsigned char)state;
-								gdRecord.dmgTolerance = (unsigned char)dmgTolerance;
+								gdRecord.curHealth = (unsigned char)curHealth;
 
 								float h1, p1, b1, h2, p2, b2, h3, p3, b3;
 								readBuf.Fgets(fp);
@@ -1700,13 +1700,13 @@ YSRESULT FsWorld::LoadInternal(const wchar_t fn[],const YsVec3 &fieldPos,const Y
 								readBuf.Fgets(fp);
 								sscanf(readBuf, "%lf%lf%lf%lf%lf%lf", &x, &y, &z, &h, &p, &b);
 								readBuf.Fgets(fp);
-								sscanf(readBuf, "%d%d", &state, &dmgTolerance);
+								sscanf(readBuf, "%d%d", &state, &curHealth);
 								gdRecord.pos.Set(x, y, z);
 								gdRecord.h = float(h);
 								gdRecord.p = float(p);
 								gdRecord.b = float(b);
 								gdRecord.state = (unsigned char)state;
-								gdRecord.dmgTolerance = (unsigned char)dmgTolerance;
+								gdRecord.curHealth = (unsigned char)curHealth;
 
 								readBuf.Fgets(fp);
 								sscanf(readBuf, "%lf%lf%lf", &h, &p, &b);

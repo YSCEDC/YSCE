@@ -551,7 +551,7 @@ YSRESULT FsDogfight::MakeDecision(FsAirplane &air,FsSimulation *sim,const double
 	}
 
 	//if AI aircraft just took damage, evade
-	double currDamageValue = air.Prop().GetDamageTolerance();
+	double currDamageValue = air.Prop().GetCurrentHealth();
 	if (fabs(currDamageValue - lastDamageValue) >= YsTolerance && mode != DFMODE_TARGET_ONBACK_BREAK)
 	{
 		lastDamageValue = currDamageValue;

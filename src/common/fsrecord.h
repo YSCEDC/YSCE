@@ -528,7 +528,7 @@ public:
 	float g;
 	unsigned char state,vgw,spoiler,gear,flap,brake,smoke,vapor;
 	unsigned short flags;
-	unsigned char dmgTolerance;
+	unsigned char curHealth;
 	unsigned char thr;
 	char elv,ail,rud,elvTrim;
 	unsigned char thrVector,bombBay,thrReverser;  // 2003/04/11
@@ -553,7 +553,7 @@ inline int operator==(const FsFlightRecord &a,const FsFlightRecord &b)
 			a.smoke==b.smoke &&
 			a.vapor==b.vapor &&
 			a.flags==b.flags &&
-			a.dmgTolerance==b.dmgTolerance &&
+			a.curHealth==b.curHealth &&
 			a.thr==b.thr &&
 			a.elv==b.elv &&
 			a.ail==b.ail &&
@@ -574,7 +574,7 @@ class FsGroundRecord
 public:
 	YsVec3 pos;
 	float h,p,b;
-	unsigned char state,dmgTolerance;
+	unsigned char state,curHealth;
 	char steering;
 	unsigned char leftDoor,rightDoor,rearDoor,brake;
 	unsigned char lightState;
@@ -599,7 +599,7 @@ inline int operator==(const FsGroundRecord &a,const FsGroundRecord &b)
 	        a.brake==b.brake &&
 	        a.lightState==b.lightState &&
 	        a.state==b.state &&
-	        a.dmgTolerance==b.dmgTolerance &&
+	        a.curHealth==b.curHealth &&
 	        YsAbs(a.aaaAimh-b.aaaAimh)<YsTolerance &&
 	        YsAbs(a.aaaAimp-b.aaaAimp)<YsTolerance &&
 	        YsAbs(a.aaaAimb-b.aaaAimb)<YsTolerance &&

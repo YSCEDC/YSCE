@@ -581,7 +581,7 @@ void FsNetReceivedAirplaneState::Decode(const unsigned char dat[],const double &
 		aam=FsPopUnsignedChar(ptr);    // FsPushUnsignedChar(ptr,(unsigned char)aam);
 		agm=FsPopUnsignedChar(ptr);    // FsPushUnsignedChar(ptr,(unsigned char)agm);
 		bomb=FsPopUnsignedChar(ptr);   // FsPushUnsignedChar(ptr,(unsigned char)bom);
-		life=FsPopUnsignedChar(ptr);   // FsPushUnsignedChar(ptr,(unsigned char)GetDamageTolerance());
+		life=FsPopUnsignedChar(ptr);   // FsPushUnsignedChar(ptr,(unsigned char)GetCurrentHealth());
 
 		g=double(FsPopChar(ptr))/10.0; // FsPushChar(ptr,(char)g);
 
@@ -1466,7 +1466,7 @@ YSRESULT FsSocketServer::BroadcastGroundState(void)
 			   YsEqual(gnd->GetAttitude().b(),gnd->netAtt.b())!=YSTRUE ||
 			   gnd->Prop().IsFiringAaa()!=gnd->netShootingAaa ||
 			   gnd->Prop().IsFiringCannon()!=gnd->netShootingCannon ||
-			   gnd->Prop().GetDamageTolerance()!=gnd->netDamageTolerance)
+			   gnd->Prop().GetCurrentHealth()!=gnd->netCurrentHealth)
 			{
 				unsigned int packetSizeShort;
 				unsigned char datShort[256];
@@ -1493,7 +1493,7 @@ YSRESULT FsSocketServer::BroadcastGroundState(void)
 				gnd->netAtt=gnd->GetAttitude();
 				gnd->netShootingAaa=gnd->Prop().IsFiringAaa();
 				gnd->netShootingCannon=gnd->Prop().IsFiringCannon();
-				gnd->netDamageTolerance=gnd->Prop().GetDamageTolerance();
+				gnd->netCurrentHealth=gnd->Prop().GetCurrentHealth();
 			}
 			else
 			{
@@ -1556,7 +1556,7 @@ YSRESULT FsSocketServer::BroadcastReviveGround(void)
 	gnd=NULL;
 	while((gnd=sim->FindNextGround(gnd))!=NULL)
 	{
-		gnd->netDamageTolerance=gnd->Prop().GetDamageTolerance()+1;  // <- This will trigger BroadcastGroundState
+		gnd->netCurrentHealth =gnd->Prop().GetCurrentHealth()+1;  // <- This will trigger BroadcastGroundState
 		gnd->Settle(gnd->initPosition);  // 2004/09/03
 		gnd->Settle(gnd->initAttitude);  // 2004/09/03
 		gnd->motionPathIndex=0;  // 2004/09/03
@@ -1780,7 +1780,7 @@ YSRESULT FsSocketServer::BroadcastGetDamage
 	unsigned char dat[256],*ptr;
 	ptr=dat;
 	FsPushInt(ptr,FSNETCMD_GETDAMAGE);
-	int victimHealth = victim->CommonProp().GetDamageTolerance();
+	int victimHealth = victim->CommonProp().GetCurrentHealth();
 	int victimStrength = victim->CommonProp().GetStrength();
 
 	int isAir,idOnSvr;
@@ -5371,7 +5371,7 @@ YSRESULT FsSocketClient::NotifyGroundState(void)
 			   YsEqual(gnd->GetAttitude().b(),gnd->netAtt.b())!=YSTRUE ||
 			   gnd->Prop().IsFiringAaa()!=gnd->netShootingAaa ||
 			   gnd->Prop().IsFiringCannon()!=gnd->netShootingCannon ||
-			   gnd->Prop().GetDamageTolerance()!=gnd->netDamageTolerance)
+			   gnd->Prop().GetCurrentHealth()!=gnd->netCurrentHealth)
 			{
 				unsigned int packetSize;
 				unsigned char dat[512];
@@ -9103,7 +9103,7 @@ void FsSimulation::RunServerModeOneStep(FsServerRunLoop &svrSta)
 				{
 					if(gnd->Prop().GetNumSAM()>0 || gnd->Prop().GetNumAaaBullet()>0)
 					{
-						gnd->Prop().SetDamageTolerance(0);
+						gnd->Prop().SetCurrentHealth(0);
 						gnd->Prop().SetState(FSGNDDEAD);
 					}
 				}

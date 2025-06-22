@@ -665,7 +665,7 @@ const double &FsAirplaneProperty::GetVariableGeometryWingState(void) const
 
 void FsAirplaneProperty::Crash(FSDIEDOF diedOf)
 {
-	staDamageTolerance=0;
+	staCurrentHealth=0;
 	SetState(FSDEAD,diedOf);
 	printf("Died of: %d\n",diedOf);
 	printf("Position: %s\n",GetPosition().Txt());
@@ -2686,7 +2686,7 @@ unsigned FsAirplaneProperty::NetworkEncode(unsigned char dat[],int idOnSvr,const
 		   -32768<vp && vp<32768 &&
 		   -32768<vy && vy<32768 &&
 		   -128<g && g<128 &&
-		   GetDamageTolerance()<256)
+		   GetCurrentHealth()<256)
 		{
 			int version,thrVec,thrRev,bomDor;
 			thrVec=int(GetThrustVector()*255.0);
@@ -2737,7 +2737,7 @@ unsigned FsAirplaneProperty::NetworkEncode(unsigned char dat[],int idOnSvr,const
 			FsPushUnsignedChar(ptr,(unsigned char)YsSmaller(aam,255));
 			FsPushUnsignedChar(ptr,(unsigned char)YsSmaller(agm,255));
 			FsPushUnsignedChar(ptr,(unsigned char)YsSmaller(bom,255));
-			FsPushUnsignedChar(ptr,(unsigned char)YsSmaller(GetDamageTolerance(),255));
+			FsPushUnsignedChar(ptr,(unsigned char)YsSmaller(GetCurrentHealth(),255));
 
 			FsPushChar(ptr,(char)g);
 
@@ -2785,7 +2785,7 @@ unsigned FsAirplaneProperty::NetworkEncode(unsigned char dat[],int idOnSvr,const
 		FsPushShort(ptr,(short)GetSmokeOil());
 		FsPushFloat(ptr,(float)GetFuelLeft());
 		FsPushFloat(ptr,(float)staPayload);
-		FsPushShort(ptr,(short)GetDamageTolerance());
+		FsPushShort(ptr,(short)GetCurrentHealth());
 		FsPushUnsignedChar(ptr,(unsigned char)GetFlightState());
 		FsPushUnsignedChar(ptr,(unsigned char)YsBound(int(GetVariableGeometryWingState()*255.0),0,255));
 		FsPushUnsignedChar(ptr,(unsigned char)YsBound(int(GetSpoiler()*255.0),0,255));
@@ -2864,7 +2864,7 @@ void FsAirplaneProperty::NetworkDecode(FsNetReceivedAirplaneState &prevState,FsN
 		}
 		staFuelLoad=recvState.fuel;
 		staPayload= recvState.payload;
-		staDamageTolerance=recvState.life;
+		staCurrentHealth=recvState.life;
 
 		SetState(recvState.state,FSDIEDOF_NULL);
 		staVgw=recvState.vgw;
@@ -6570,26 +6570,26 @@ YSBOOL FsAirplaneProperty::GetDamage(YSBOOL &killed,int dmg,FSDIEDOF diedOf)
 	killed=YSFALSE;
 	if(IsActive()==YSTRUE)
 	{
-		staDamageTolerance-=dmg;
-		if(staDamageTolerance<=0)
+		staCurrentHealth-=dmg;
+		if(staCurrentHealth<=0)
 		{
 			switch((rand()%700)/100)
 			{
 			case 0:
 				SetState(FSDEAD,diedOf);
-				staDamageTolerance=0;
+				staCurrentHealth=0;
 				break;
 			case 1:
 			case 2:
 			case 3:
 				SetState(FSDEADSPIN,diedOf);
-				staDamageTolerance=1;
+				staCurrentHealth =1;
 				break;
 			case 4:
 			case 5:
 			case 6:
 				SetState(FSDEADFLATSPIN,diedOf);
-				staDamageTolerance=1;
+				staCurrentHealth=1;
 				break;
 			}
 			killed=YSTRUE;
@@ -7684,7 +7684,7 @@ YSRESULT FsAirplaneProperty::EncodeProperty(
 	MakeShortFormat(str,cmdStr,netVersion);
 	cmd.Append(str);
 
-	sprintf(cmdStr,"STRENGTH %d",(int)staDamageTolerance);
+	sprintf(cmdStr,"STRENGTH %d",(int)staCurrentHealth);
 	MakeShortFormat(str,cmdStr,netVersion);
 	cmd.Append(str);
 
@@ -8558,7 +8558,7 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 				break;
 			case 66: //"STRENGTH"
 				res=YSOK;
-				staDamageTolerance=atoi(av[1]);
+				staCurrentHealth =atoi(av[1]);
 				staStrength = atoi(av[1]);
 				break;
 			case 67: //"PROPELLR"
@@ -10173,7 +10173,7 @@ void FsAirplaneProperty::WriteFlightRecord(FsFlightRecord &rec) const
 	rec.gear=(unsigned char)(YsBound(int(staGear*255.0),0,255));
 	rec.flap=(unsigned char)(YsBound(int(staFlap*255.0),0,255));
 	rec.brake=(unsigned char)(YsBound(int(staBrake*255.0),0,255));
-	rec.dmgTolerance=(unsigned char)staDamageTolerance;
+	rec.curHealth=(unsigned char)staCurrentHealth;
 
 	rec.flags=0;
 	if(staAb==YSTRUE)
@@ -10276,7 +10276,7 @@ void FsAirplaneProperty::ReadbackFlightRecord(
 	staGear=double(rec.gear)/255.0;
 	staFlap=double(rec.flap)/255.0;
 	staBrake=double(rec.brake)/255.0;
-	staDamageTolerance=rec.dmgTolerance;
+	staCurrentHealth=rec.curHealth;
 	staAb=((rec.flags&FsFlightRecord::FLAGS_AB)!=0 ? YSTRUE : YSFALSE);
 	// staIls=((rec.flags&FsFlightRecord::FLAGS_ILS)!=0 ? YSTRUE : YSFALSE);
 	staVectorMarker=((rec.flags&FsFlightRecord::FLAGS_VECTOR)!=0 ? YSTRUE : YSFALSE);

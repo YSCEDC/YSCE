@@ -5562,7 +5562,7 @@ void FsSimulation::SimProcessLoadingDialog(YSBOOL lb,YSBOOL mb,YSBOOL rb,int mx,
 			tmpl=world->GetAirplaneTemplate(playerPlane->Prop().GetIdentifier());
 			if(tmpl!=NULL)
 			{
-				sprintf(str,"STRENGTH %d",tmpl->GetProperty()->GetDamageTolerance());
+				sprintf(str,"STRENGTH %d",tmpl->GetProperty()->GetCurrentHealth());
 
 				playerPlane->Prop().SendCommand(str);
 
@@ -7864,7 +7864,7 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 
 			sx/=2;
 
-			const double percent=YsGreater(0.0,100.0*(double)playerPlane->Prop().GetDamageTolerance()/(double)playerPlane->GetDefaultDamageTolerance());
+			const double percent=YsGreater(0.0,100.0*(double)playerPlane->Prop().GetCurrentHealth()/(double)playerPlane->GetDefaultHealth());
 
 			YsColor col;
 			if(50.0<percent)

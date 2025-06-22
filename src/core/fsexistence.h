@@ -91,7 +91,7 @@ public:
 	FsAirplane *netAirTarget;
 	FsGround *netGndTarget;
 	YSBOOL netAlive;
-	int netDamageTolerance;
+	int netCurrentHealth;
 	// Usage of netAlive
 	//   Set YSTRUE in FsExistence::Initialize(), which is always called when an object is added.
 	//   In Server
@@ -264,7 +264,7 @@ public:
 
 protected:
 	FsAirplaneProperty prop;
-	int defDamageTolerance; // <- defDamageTolerance is set in FsAirplane::SetProperty
+	int defaultHealth; // <- defaultHealth is set in FsAirplane::SetProperty
 
 	// Autopilot >>
 	int curAutoPilotIdx;
@@ -364,7 +364,7 @@ public:
 
 	YSRESULT SetProperty(const class FsAirplaneProperty &prp,const wchar_t tmplRootDir[]);
 	const class FsAirplaneProperty &Prop(void) const;
-	int GetDefaultDamageTolerance(void) const;
+	int GetDefaultHealth(void) const;
 	class FsAirplaneProperty &Prop(void);
 	virtual FsVehicleProperty &CommonProp(void);
 	virtual const FsVehicleProperty &CommonProp(void) const;

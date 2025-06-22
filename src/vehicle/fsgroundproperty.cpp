@@ -1704,11 +1704,11 @@ YSBOOL FsGroundProperty::GetDamage(YSBOOL &killed,int dmg)
 	{
 		if(dmg>chMinimumDamage)
 		{
-			staDamageTolerance-=dmg;
-			if(staDamageTolerance<=0)
+			staCurrentHealth-=dmg;
+			if(staCurrentHealth<=0)
 			{
 				staState=FSGNDDEAD;
-				staDamageTolerance=0;
+				staCurrentHealth=0;
 				killed=YSTRUE;
 			}
 			return YSTRUE;
@@ -1785,7 +1785,7 @@ const YsVec3 &FsGroundProperty::GetCannonMountPoint(void) const
 
 YSBOOL FsGroundProperty::IsAlive(void) const
 {
-	if(staState!=FSGNDDEAD && staDamageTolerance>0)
+	if(staState!=FSGNDDEAD && staCurrentHealth>0)
 	{
 		return YSTRUE;
 	}
@@ -2057,7 +2057,7 @@ void FsGroundProperty::CopyState(const FsGroundProperty &from)
 	staFiringAaa=from.staFiringAaa;
 	staFiringCannon=from.staFiringCannon;
 
-	staDamageTolerance=from.staDamageTolerance;
+	staCurrentHealth=from.staCurrentHealth;
 
 	staSpeed=from.staSpeed;
 	staRotation=from.staRotation;
@@ -2247,7 +2247,7 @@ void FsGroundProperty::WriteRecord(FsGroundRecord &rec) const
 	rec.b=float(staAttitude.b());
 
 	rec.state=(unsigned char)staState;
-	rec.dmgTolerance=(unsigned char)staDamageTolerance;
+	rec.curHealth=(unsigned char)staCurrentHealth;
 
 	rec.steering=(char)YsBound((int)(staSteering*127.0),-128,127);
 	rec.leftDoor=(unsigned char)YsBound <unsigned int> ((unsigned int)(staLeftDoor*255.0),0,255);
@@ -2312,7 +2312,7 @@ void FsGroundProperty::ReadbackRecord(FsGroundRecord &rec,const double &dt,const
 
 
 	staState=FSGNDSTATE(rec.state);
-	staDamageTolerance=rec.dmgTolerance;
+	staCurrentHealth=rec.curHealth;
 	staSpeed.Set(0.0,0.0,velocity);
 
 	staAaaAim.Set(rec.aaaAimh,rec.aaaAimp,rec.aaaAimb);
@@ -2348,7 +2348,7 @@ void FsGroundProperty::CaptureState(YsArray <YsString> &stateStringArray) const
 	stateStringArray.GetEnd().Printf("ATTITUDE %.2lfrad %.2lfrad %.2lfrad",staAttitude.h(),staAttitude.p(),staAttitude.b());
 
 	stateStringArray.Increment();
-	stateStringArray.GetEnd().Printf("STRENGTH %d",staDamageTolerance);
+	stateStringArray.GetEnd().Printf("STRENGTH %d",staCurrentHealth);
 
 	stateStringArray.Increment();
 	stateStringArray.GetEnd().Printf("INITIGUN %d",staGunBullet);
@@ -2678,7 +2678,7 @@ YSRESULT FsGroundProperty::SendCommand(const char in[])
 				break;
 			case 3: //"STRENGTH",
 				res=YSOK;
-				staDamageTolerance=atoi(args[1]);
+				staCurrentHealth=atoi(args[1]);
 				break;
 			case 4: //"INITIGUN",
 				staGunBullet=atoi(args[1]);
@@ -3489,7 +3489,7 @@ unsigned FsGroundProperty::NetworkEncode(unsigned char dat[],int idOnSvr,const d
 	FsPushInt(ptr,FSNETCMD_GROUNDSTATE);             // 4 bytes (Total  4 bytes)
 	FsPushFloat(ptr,(float)currentTime);             // 4 bytes (Total  8 bytes)
 	FsPushInt  (ptr,idOnSvr);                        // 4 bytes (Total 12 bytes)
-	FsPushShort(ptr,(short)staDamageTolerance);     // 2 bytes (Total 14 bytes)
+	FsPushShort(ptr,(short)staCurrentHealth);     // 2 bytes (Total 14 bytes)
 
 	if(shortFormat==YSTRUE)
 	{
@@ -3593,7 +3593,7 @@ void FsGroundProperty::NetworkDecode(
 		short version;
 
 		FsPopInt(ptr); // Skip idOnSvr
-		staDamageTolerance=FsPopShort(ptr);
+		staCurrentHealth=FsPopShort(ptr);
 		version=FsPopShort(ptr);
 
 		if(version==1)  // Short Format

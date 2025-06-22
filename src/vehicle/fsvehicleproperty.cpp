@@ -39,7 +39,7 @@ void FsVehicleProperty::InitializeState(void)
 	staSavedTurret.ClearDeep();
 	staGunnerFirePermission=YSTRUE;  // Should be true by default.  Otherwise, ground object will not shoot at you!
 
-	staDamageTolerance=10;
+	staCurrentHealth=10;
 
 	staOnThisCarrier=NULL;
 }
@@ -372,14 +372,14 @@ YSRESULT FsVehicleProperty::DecodeTurretState(unsigned char dat[],unsigned int p
 	return YSOK;
 }
 
-int FsVehicleProperty::GetDamageTolerance(void) const
+int FsVehicleProperty::GetCurrentHealth(void) const
 {
-	return staDamageTolerance;
+	return staCurrentHealth;
 }
 
-void FsVehicleProperty::SetDamageTolerance(int tol)
+void FsVehicleProperty::SetCurrentHealth(int tol)
 {
-	staDamageTolerance=tol;
+	staCurrentHealth =tol;
 }
 
 int FsVehicleProperty::GetStrength(void) const

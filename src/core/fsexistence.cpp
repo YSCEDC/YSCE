@@ -294,7 +294,7 @@ void FsExistence::Initialize(void)
 	netAirTarget=NULL;
 	netGndTarget=NULL;
 	netAlive=YSTRUE;
-	netDamageTolerance=0;
+	netCurrentHealth=0;
 
 	prevPos=YsOrigin();
 	prevDt=0.1;
@@ -677,7 +677,7 @@ void FsAdjustPrecisionOfFlightRecord(FsRecord <T> *rec,const double &precPos,con
 FsAirplane::FsAirplane()
 {
 	instPanel=NULL;
-	defDamageTolerance=1;
+	defaultHealth=1;
 	Initialize();
 }
 
@@ -2037,9 +2037,9 @@ FsAirplaneProperty &FsAirplane::Prop(void)
 	return prop;
 }
 
-int FsAirplane::GetDefaultDamageTolerance(void) const
+int FsAirplane::GetDefaultHealth(void) const
 {
-	return YsGreater(1,defDamageTolerance);
+	return YsGreater(1,defaultHealth);
 }
 
 FsVehicleProperty &FsAirplane::CommonProp(void)
@@ -2056,7 +2056,7 @@ YSRESULT FsAirplane::SetProperty(const FsAirplaneProperty &prp,const wchar_t tmp
 {
 	prop=prp;
 	prop.belongTo=this;
-	defDamageTolerance=prop.GetDamageTolerance();
+	defaultHealth=prop.GetCurrentHealth();
 
 	if(YSTRUE==prop.HasInstPanel())
 	{
