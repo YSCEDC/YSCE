@@ -6666,10 +6666,10 @@ int FsAirplaneProperty::AddWeaponToSlot(const FSWEAPONTYPE wpnType,const int n) 
 				{
 					if(0==staWeaponSlot[i].nLoaded)
 					{
-						const double actualLoad=(double)YsSmaller <double> (toLoad,chWeaponSlot[i].nSubLoad[wpnType]);
+						//const double actualLoad=(double)YsSmaller <double> (toLoad,chWeaponSlot[i].nSubLoad[wpnType]); //toLoad is only being updated by the value of the first listed tank for some reason
 						staWeaponSlot[i].wpnType=FSWEAPON_FUELTANK;
 						staWeaponSlot[i].nLoaded=1;
-						staWeaponSlot[i].fuelLoaded=actualLoad;
+						staWeaponSlot[i].fuelLoaded = chWeaponSlot[i].nSubLoad[wpnType]; //Set fuel tanks to full when loading instead of limiting by actualLoad. Only time tanks load partway is LOADWEPN FUEL
 						nLoaded=1;
 						toLoad=0;
 						break;
