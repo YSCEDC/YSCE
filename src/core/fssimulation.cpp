@@ -6661,10 +6661,7 @@ void FsSimulation::SimDrawShadowMap(const ActualViewMode &actualViewMode)
 				airSeeker=NULL;
 				while((airSeeker=FindNextAirplane(airSeeker))!=NULL)
 				{
-					// only draw if apparent radius is larger than 1 pixel AND object is within camera's view
-					if (cfgPtr->shadowOfDeadAirplane == YSTRUE
-						&& airSeeker->IsAlive() == YSTRUE
-						&& IsObjectVisible(airSeeker, actualViewMode, proj))
+					if (airSeeker->isSubpixel == YSFALSE && (cfgPtr->shadowOfDeadAirplane == YSTRUE || airSeeker->IsAlive() == YSTRUE))
 					{
 						airSeeker->DrawShadow(viewMat, projMat, YsIdentity4x4());
 						if (cfgPtr->drawOrdinance == YSTRUE)
@@ -6679,10 +6676,7 @@ void FsSimulation::SimDrawShadowMap(const ActualViewMode &actualViewMode)
 				gndSeeker=NULL;
 				while((gndSeeker=FindNextGround(gndSeeker))!=NULL)
 				{
-					if (cfgPtr->shadowOfDeadAirplane == YSTRUE
-						&& gndSeeker->IsAlive() == YSTRUE
-						&& gndSeeker->Prop().NoShadow() != YSTRUE
-						&& IsObjectVisible(gndSeeker, actualViewMode, proj))
+					if (gndSeeker->isSubpixel == YSFALSE && gndSeeker->Prop().NoShadow() != YSTRUE && (cfgPtr->shadowOfDeadAirplane == YSTRUE || gndSeeker->IsAlive() == YSTRUE))
 					{
 						gndSeeker->DrawShadow(viewMat, projMat, YsIdentity4x4());
 					}
@@ -7189,7 +7183,8 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 //FOV and screen size (pixels) check for draw culling purposes
 bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const
 {
-	std::string id = obj->CommonProp().GetIdentifier();
+	obj->isOnScreen = YSFALSE;
+	obj->isSubpixel = YSTRUE;
 
 	//calculate object position in player's view
 	YsVec3 objPosInCamSpace = actualViewMode.viewMat * obj->GetPosition();
@@ -7200,7 +7195,11 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 
 	YsVec3 empty(0.0, 0.0, 0.0);
 	if (boxMin == empty && boxMax == empty) //Blockplanes fail DNM bbox check. Simple hack to force drawing
-	{ return true; }
+	{
+		obj->isOnScreen = YSTRUE;
+		obj->isSubpixel = YSFALSE;
+		return true;
+	}
 
 	//calculate span of bounding box
 	double boundingBoxDiag = 1.0 * ((boxMin - boxMax).GetLength());
@@ -7215,12 +7214,16 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 	//(angular culling method below sometimes fails for extreme angles at close distances to camera)
 	if (objDistToCam < boundingBoxDiag)
 	{
+		obj->isOnScreen = YSTRUE;
+		obj->isSubpixel = YSFALSE;
 		return true;
 	}
 
 	//don't perform FOV check if obj too small to see
 	if (apparentRadInPixels < 1.0)
 	{
+		obj->isOnScreen = YSFALSE;
+		obj->isSubpixel = YSTRUE;
 		return false;
 	}
 
@@ -7260,6 +7263,9 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 	//check if the object is within horizontal and vertical FOV +/- angular rad 
 	bool objIsInFov = objHorizViewAngle >= -horizFovAngle - objAngularRad && objHorizViewAngle <= horizFovAngle + objAngularRad &&
 		objVertViewAngle >= -vertFovAngle - objAngularRad && objVertViewAngle <= vertFovAngle + objAngularRad;
+
+	obj->isSubpixel = YSFALSE;
+	if (objIsInFov == true) { obj->isOnScreen = YSTRUE; }
 
 	return objIsInFov;
 }

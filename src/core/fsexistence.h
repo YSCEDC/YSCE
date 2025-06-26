@@ -120,6 +120,10 @@ public:
 	YsVec3 motionPathOffset;
 	YSSIZE_T motionPathIndex;
 
+	//Object visible check
+	YSBOOL isOnScreen;
+	YSBOOL isSubpixel;
+
 protected:
 	FsExistence();
 	~FsExistence(); // Protected & Non-Virtual Destructor: Preventing deletion through base-class pointer.  See "C++ Coding Standard" pp. 90
