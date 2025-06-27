@@ -7241,8 +7241,8 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
     //     objPosInCamSpace.z()
     //
     // angular offset (x): x = atan2(boundingBoxDiag, abs(objPosInCamSpace.z()))
-	double objAngularRad = atan2(boundingBoxDiag, abs(objPosInCamSpace.z()));
-
+	double objAngularRad = atan2(boundingBoxDiag/2, objDistToCam);
+	
     //compute view angles from camera axis
     //      +X/+Y  . objPosInCamSpace
     //      ^     /|
