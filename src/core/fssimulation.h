@@ -333,6 +333,7 @@ protected:
 	const FsGround *focusGnd;
 	int towerViewId;
 	YsVec3 towerViewPos;
+	YSBOOL centerThisCamera;
 
 	ActualViewMode mainWindowActualViewMode;
 	ActualViewMode subWindowActualViewMode[FsMaxNumSubWindow];

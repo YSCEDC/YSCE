@@ -6917,7 +6917,7 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode)
 
 	sizx=hei*4/3;
 	sizy=hei;
-	if (cfgPtr->centerCameraPerspective == YSFALSE)
+	if (centerThisCamera == YSFALSE)
 	{
 		hud->SetAreaByCenter(wid / 2, hei * 2 / 3, sizx * 2 / 3, sizy * 2 / 3);
 	}
@@ -9769,8 +9769,17 @@ void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualV
 	FsGetDrawingAreaSize(wid,hei);
 
 	playerPlane = GetPlayerAirplane();
+
+	if (cfgPtr->centerCameraPerspective == YSFALSE && (mainWindowViewmode == FSCOCKPITVIEW || mainWindowViewmode == FSADDITIONALAIRPLANEVIEW))
+	{
+		centerThisCamera = YSFALSE;
+	}
+	else
+	{
+		centerThisCamera = YSTRUE;
+	}
 	
-	if(cfgPtr->centerCameraPerspective == YSFALSE && NULL != playerPlane)
+	if(centerThisCamera == YSFALSE && NULL != playerPlane)
 	{
 		const YsVec2 scrnCen = playerPlane->Prop().GetScreenCenter();
 		prj.cx = (int)((double)wid * (1.0 + scrnCen.x()) / 2.0);
@@ -10405,7 +10414,7 @@ void FsSimulation::SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWM
 {
 	actualViewMode.actualViewMode=mode;  // by Default
 	actualViewMode.viewMagFix=1.0;       // by Default
-
+	
 	switch(mode)
 	{
 	case FSCOCKPITVIEW:
