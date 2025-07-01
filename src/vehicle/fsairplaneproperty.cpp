@@ -1910,6 +1910,12 @@ void FsAirplaneProperty::CalculateRotationalAcceleration(void)
 			{
 				staDVRoll+=effectiveness*chRollManConst*(chPostStallVRoll*ctlDirectRoll-staVRoll);
 			}
+			if (chClass == FSCL_HELICOPTER)
+			{
+				staDVPitch += chPitchManConst * (chPostStallVPitch * ctlDirectPitch - staVPitch);
+				staDVYaw += chYawManConst * (chPostStallVYaw * ctlDirectYaw - staVYaw);
+				staDVYaw += chYawManConst * (chPostStallVYaw * ctlDirectYaw - staVYaw);
+			}
 		}
 	}
 	else if(staState==FSDEADSPIN)
