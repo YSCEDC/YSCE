@@ -1825,6 +1825,10 @@ void FsAirplaneProperty::CalculateRotationalAcceleration(void)
 		else // if(chClass==FSCL_HELICOPTER)
 		{
 			staDVPitch=0.0;
+			if (IsOnGround() == YSTRUE) //Jankish fix for helicopter uncommanded pitch on touchdown
+			{
+				staVPitch = 0.0;
+			}
 		}
 
 		double inputSsaCorrection;                              // 2005/10/02
