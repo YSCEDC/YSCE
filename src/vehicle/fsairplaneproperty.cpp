@@ -1898,15 +1898,15 @@ void FsAirplaneProperty::CalculateRotationalAcceleration(void)
 				effectiveness*=t;
 			}
 
-			if(fabs(staVPitch)<chPostStallVPitch)
+			if(fabs(staVPitch)<chPostStallVPitch || (staVPitch > 0 && ctlDirectPitch < 0) || (staVPitch < 0 && ctlDirectPitch > 0))
 			{
 				staDVPitch+=effectiveness*chPitchManConst*(chPostStallVPitch*ctlDirectPitch-staVPitch);
 			}
-			if(fabs(staVYaw)<chPostStallVYaw)
+			if(fabs(staVYaw)<chPostStallVYaw || (staVYaw > 0 && ctlDirectYaw < 0) || (staVYaw < 0 && ctlDirectYaw > 0))
 			{
 				staDVYaw+=effectiveness*chYawManConst*(chPostStallVYaw*ctlDirectYaw-staVYaw);
 			}
-			if(fabs(staVRoll)<chPostStallVRoll)
+			if(fabs(staVRoll)<chPostStallVRoll || (staVRoll > 0 && ctlDirectRoll < 0) || (staVRoll < 0 && ctlDirectRoll > 0))
 			{
 				staDVRoll+=effectiveness*chRollManConst*(chPostStallVRoll*ctlDirectRoll-staVRoll);
 			}
