@@ -10124,12 +10124,12 @@ YSBOOL FsAirplaneProperty::CheckSafeTouchDown(FSDIEDOF &diedOf) const
 		diedOf=FSDIEDOF_LANDINGGEARNOTEXTENDED;
 		return YSFALSE;
 	}
-	if(staTDAtt.b()<YsDegToRad(-45.0) || YsDegToRad(45.0)<staTDAtt.b())
+	if(staTDAtt.b()<YsDegToRad(-60.0) || YsDegToRad(60.0)<staTDAtt.b())
 	{
 		diedOf=FSDIEDOF_BADBANKANGLE;
 		return YSFALSE;
 	}
-	if(staTDAtt.p()<YsDegToRad(-10.0) || YsDegToRad(45.0)<staTDAtt.p())
+	if(staTDAtt.p()<YsDegToRad(-30.0) || YsDegToRad(60.0)<staTDAtt.p())
 	{
 		diedOf=FSDIEDOF_BADPITCHANGLE;
 		return YSFALSE;
