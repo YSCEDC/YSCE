@@ -1961,24 +1961,30 @@ void FsAirplaneProperty::CalculateRotation(const double &dt)
 
 void FsAirplaneProperty::CalculateCarrierLanding(const double &dt,const YsArray <FsGround *> &carrierList)
 {
-	if(staOnThisCarrier==NULL)
+	YsVec3 nose, left, right;
+
+	nose = staMatrix * chWheel;
+	left = staMatrix * chMainGearL;
+	right = staMatrix * chMainGearR;
+
+	if(staOnThisCarrier == NULL)
 	{
-		YsVec3 nose,left,right;
-
-		nose=staMatrix*chWheel;
-		left=staMatrix*chMainGearL;
-		right=staMatrix*chMainGearR;
-
 		int i;
 		for(i=0; i<carrierList.GetNumItem(); i++)
 		{
 			FsAircraftCarrierProperty *prop;
 			prop=carrierList[i]->Prop().GetAircraftCarrierProperty();
-			if(prop!=NULL && prop->LandedOnTheDeck(staPPos,staPosition,nose,left,right)==YSTRUE)
+			YsVec3 cPos = carrierList[i]->Prop().GetPosition();
+			double cRadius = carrierList[i]->Prop().GetOutsideRadius();
+			YsVec3 difference = staPosition - cPos;
+			if (difference.GetLength() < cRadius)
 			{
-				// staOnThisCarrier=carrierList[i];  This should be done from LoadAirplane
-				prop->LoadAirplane(belongTo);
-				break;
+				if (prop != NULL && prop->LandedOnTheDeck(staPPos, staPosition, nose, left, right) == YSTRUE)
+				{
+					// staOnThisCarrier=carrierList[i];  This should be done from LoadAirplane
+					prop->LoadAirplane(belongTo);
+					break;
+				}
 			}
 		}
 	}
@@ -1988,8 +1994,7 @@ void FsAirplaneProperty::CalculateCarrierLanding(const double &dt,const YsArray 
 		if(prop!=NULL)
 		{
 			YsVec3 deckNom;
-			if(prop->IsOnDeck(staPosition)!=YSTRUE ||
-			   prop->GetDeckHeightAndNormal(deckNom,staPosition)+GetGroundStandingHeight()+1.0<staPosition.y())  // 2003/04/08 Avoid catapult in the air
+			if((prop->IsOnDeck(nose)!=YSTRUE && prop->IsOnDeck(left) != YSTRUE && prop->IsOnDeck(right) != YSTRUE))  // 2003/04/08 Avoid catapult in the air  || prop->GetDeckHeightAndNormal(deckNom, staPosition) + GetGroundStandingHeight() + 1.0 < staPosition.y()
 			{
 				prop->UnloadAirplane(belongTo);  // <- This will call back AfterUnloadedFromCarrier, which cleans up stuffs.
 			}

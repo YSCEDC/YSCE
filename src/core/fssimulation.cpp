@@ -4227,18 +4227,29 @@ void FsSimulation::SimProcessCollisionAndTerrain(const double & /*dt*/)
 			{
 				airPos=airPtr->GetPosition();
 				onCarrier=YSFALSE;
+				YsVec3 nose, left, right;
+				nose = airPtr->Prop().GetTirePosition(2) + airPos; //This assumes aircraft is level at touchdown
+				left = airPtr->Prop().GetTirePosition(0) + airPos;
+				right = airPtr->Prop().GetTirePosition(1) + airPos;
+
 				for(i=0; i<aircraftCarrierList.GetN(); i++)
 				{
 					FsAircraftCarrierProperty *prop;
 					prop=aircraftCarrierList[i]->Prop().GetAircraftCarrierProperty();
-					if(prop->IsOnDeck(airPos)==YSTRUE)
+					YsVec3 cPos = aircraftCarrierList[i]->Prop().GetPosition();
+					double cRadius = aircraftCarrierList[i]->Prop().GetOutsideRadius();
+					YsVec3 difference = airPos - cPos;
+					if (difference.GetLength() < cRadius)
 					{
-						// Even if flight state is FSGROUND and the airplane is not on
-						// the runway, possibly the airplane is on the flight deck of
-						// an aircraft carrier.
-						airPtr->Prop().SetOutOfRunway(YSFALSE);
-						onCarrier=YSTRUE;
-						break;
+						if (prop->IsOnDeck(nose) == YSTRUE || prop->IsOnDeck(left) == YSTRUE || prop->IsOnDeck(right) == YSTRUE)
+						{
+							// Even if flight state is FSGROUND and the airplane is not on
+							// the runway, possibly the airplane is on the flight deck of
+							// an aircraft carrier.
+							airPtr->Prop().SetOutOfRunway(YSFALSE);
+							onCarrier = YSTRUE;
+							break;
+						}
 					}
 				}
 

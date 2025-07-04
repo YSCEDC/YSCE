@@ -391,22 +391,26 @@ YSBOOL FsAircraftCarrierProperty::LandedOnTheDeck
     (const YsVec3 &prv,const YsVec3 &now,
      const YsVec3 &gear1,const YsVec3 &gear2,const YsVec3 &gear3) const
 {
-	YsVec3 deckNom;
-	double deckHeight;
-	deckHeight=GetDeckHeightAndNormal(deckNom,now);
+	YsVec3 deckNom1;
+	YsVec3 deckNom2;
+	YsVec3 deckNom3;
+	double g1deckHeight = GetDeckHeightAndNormal(deckNom1, gear1);
+	double g2deckHeight = GetDeckHeightAndNormal(deckNom2, gear2);
+	double g3deckHeight = GetDeckHeightAndNormal(deckNom3, gear3);
 
 	// At least one gear must be touching the deck
-	if(gear1.y()<=deckHeight+YsTolerance ||
-	   gear2.y()<=deckHeight+YsTolerance ||
-	   gear3.y()<=deckHeight+YsTolerance)
+	if(gear1.y()<=g1deckHeight+YsTolerance ||
+	   gear2.y()<=g2deckHeight+YsTolerance ||
+	   gear3.y()<=g3deckHeight+YsTolerance)
 	{
 		// Did it approach from the top of the deck?
 		// (Previously higher than deck and Currently descending)
-		if(prv.y()>=deckHeight+YsTolerance && now.y()<=prv.y())
+		if(now.y()<=prv.y())
 		{
 			// Now above the deck
-			if(IsOnDeck(now)==YSTRUE)
+			if(IsOnDeck(gear1)==YSTRUE || IsOnDeck(gear2) == YSTRUE || IsOnDeck(gear3) == YSTRUE)
 			{
+				printf("\n");
 				return YSTRUE;
 			}
 		}

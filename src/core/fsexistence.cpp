@@ -2184,12 +2184,20 @@ YSBOOL FsAirplane::HitGround(
     FsExplosionHolder * /*explosion*/)
 {
 	collType=0;
+
 	if(prop.IsAlive()==YSTRUE)
 	{
 		const YsVec3 *pos;
 		YSBOOL isOnRunway;
 
 		pos=&prop.GetPosition();
+		double elv;
+		field.GetFieldElevation(elv, pos->x(), pos->z());
+		if (pos->y() >= elv + YsTolerance) //Fix edge case where falling off carrier would kill player instead of dropping them
+		{
+			prop.SetState(FSFLYING, FSDIEDOF_NULL);
+		}
+
 		isOnRunway=YSFALSE;
 
 		if(YSTRUE==field.GetFieldShellCollision(UntransformedCollisionShell().Conv(),GetMatrix()))
@@ -2267,6 +2275,7 @@ YSBOOL FsAirplane::HitGround(
 
 						YSSCNAREATYPE areaType;
 						areaType=field.GetAreaType(GetPosition());
+						printf("Touchdown\n");
 
 						if(areaType!=YSSCNAREA_LAND)
 						{
