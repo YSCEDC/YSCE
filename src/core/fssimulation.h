@@ -364,6 +364,9 @@ protected:
 	class FsGroundSky *groundSky;
 
 	unsigned long long lastTime;
+	unsigned long long lastRealTime;
+	double currentRealTime;
+	double realTimeStep;
 
 	FsJoystick pJoy[FsMaxNumJoystick];
 	FsFlightControl userInput;
@@ -844,6 +847,7 @@ protected:
 	YsArray <const FsAirplane *> MakeAvailableViewTargetAirplane(YSBOOL includePlayer) const;
 
 	double PassedTime(void);
+	double RealTimeStep(void);
 
 	void SimMove(const double &deltaTime);
 	void SimCheckTailStrike(void);

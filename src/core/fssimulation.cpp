@@ -1875,7 +1875,7 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 		break;
 	case FSSIMSTATE_RUNNING:
 		{
-			double passedTime,actualPassedTime;
+			double passedTime;
 			FSREPLAYMODE prevMode;
 
 			// MEMO: replayMode is updated in SimControlByUser();
@@ -1886,7 +1886,6 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 				YSBOOL startResume=YSFALSE;
 
 				passedTime=PassedTime();
-				actualPassedTime=passedTime;  // To control view point during pause.
 
 				const double prevCurrentTime=currentTime;
 
@@ -1914,7 +1913,8 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 					strcpy(systemMessage,"PLAY");
 					break;
 				case FSREPLAY_FASTFORWARD:
-					passedTime*=4.0;
+					currentTime += passedTime * 4.0;
+					passedTime=0.01;
 					strcpy(systemMessage,"FAST FORWARD");
 					break;
 				case FSREPLAY_VERYFASTFORWARD:
@@ -1923,7 +1923,7 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 					strcpy(systemMessage,"VERY FAST FORWARD");
 					break;
 				case FSREPLAY_STEPFORWARD:
-					passedTime=0.05;
+					passedTime = YsSmaller(0.05, endTime - currentTime);
 					replayMode=FSREPLAY_PAUSE;
 					break;
 				case FSREPLAY_STEPBACK:
@@ -2011,19 +2011,6 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 				SimulateOneStep(passedTime,YSFALSE,YSFALSE,YSTRUE,YSFALSE,FSUSC_ENABLE/*YSTRUE*/,YSFALSE);
 				SimCheckEndOfFlightRecord();
 
-				if(passedTime<YsTolerance)
-				{
-					SimControlByUser(actualPassedTime,FSUSC_ENABLE);
-					// MEMO:
-					//  SimControlByUser is supposed to be called inside SimulateOneStep function,
-					//  when the parameter userControl!=FSUSC_DISABLE.  However, when
-					//  replayMode==FSREPLAY_PAUSE, the parameter passedTime will be zero, and
-					//  SimControlByUser will not move viewing angle, because the rate of
-					//  rotation depends on passedTime.  So, to allow the user to control
-					//  the viewing angle when the replay is paused, SimControlByUser must
-					//  be called here.
-				}
-
 				if((prevMode==FSREPLAY_BACKWARD ||
 				    prevMode==FSREPLAY_FASTREWIND ||
 				    prevMode==FSREPLAY_VERYFASTREWIND ||
@@ -2054,11 +2041,6 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 				{
 					currentTime=endTime-YsTolerance;
 					replayMode=FSREPLAY_PAUSE;
-				}
-
-				if(replayMode==FSREPLAY_PAUSE)
-				{
-					FsSleep(20);
 				}
 
 				if(YSTRUE==terminate || YSTRUE==startResume)
@@ -2515,7 +2497,7 @@ void FsSimulation::SimulateOneStep(
 	#ifdef CRASHINVESTIGATION
 		printf("S0\n");
 	#endif
-
+	RealTimeStep();
 
 	if(NULL==firstPlayer.GetObject(this) && NULL!=GetPlayerObject())
 	{
@@ -2529,7 +2511,7 @@ void FsSimulation::SimulateOneStep(
 	}
 	airTrafficSequence->RefreshRunwayUsage(this);
 
-	if(pause!=YSTRUE)
+	if (pause != YSTRUE && (replayMode != FSREPLAY_PAUSE && replayMode != FSREPLAY_FASTREWIND && replayMode != FSREPLAY_VERYFASTREWIND && replayMode != FSREPLAY_BACKWARD))
 	{
 		double deltaTime=YsSmaller(passedTime,3.0);
 
@@ -2594,7 +2576,7 @@ void FsSimulation::SimulateOneStep(
 
 			if(demoMode!=YSTRUE && networkStandby!=YSTRUE && userControl!=FSUSC_DISABLE)
 			{
-				SimControlByUser(dt,userControl);  // CAUTION: SimControlByUser must be after SimControlByComputer
+				SimControlByUser(realTimeStep,userControl);  // CAUTION: SimControlByUser must be after SimControlByComputer
 			}
 
 		#ifdef CRASHINVESTIGATION
@@ -2691,7 +2673,7 @@ void FsSimulation::SimulateOneStep(
 	}
 	else // if(pause==YSTRUE)
 	{
-		SimControlByUser(passedTime,userControl);
+		SimControlByUser(realTimeStep,userControl); //Must use realTimeStep otherwise sim cannot process input when FSREPLAY_PAUSE
 	}
 
 
@@ -12572,6 +12554,16 @@ double FsSimulation::PassedTime(void)  // <- This function must wait at least 0.
 	lastTime=clk;
 
 	return passed;
+}
+
+double FsSimulation::RealTimeStep(void)
+{
+	unsigned long long current = FsSubSecondTimer();
+	realTimeStep = (double)(current - lastRealTime)/1000;
+
+	lastRealTime = current;
+	currentRealTime = (double)current / 1000;
+	return realTimeStep;
 }
 
 YSRESULT FsSimulation::SetAllowedWeaponType(unsigned int allowedWeaponType)
