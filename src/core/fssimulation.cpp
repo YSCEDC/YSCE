@@ -1667,6 +1667,7 @@ void FsSimulation::DeleteFlightRecord(const double &t1,const double &t2)
 
 void FsSimulation::RunSimulationOneStep(FsSimulation::FSSIMULATIONSTATE &simState)
 {
+	playingReplay = YSFALSE;
 	switch(simState)
 	{
 	case FSSIMSTATE_CENTERJOYSTICK:
@@ -1838,6 +1839,7 @@ void FsSimulation::ReplayInfo::Initialize(const double beginTimeIn,YSBOOL editMo
 
 void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimulation::ReplayInfo &replayInfo)
 {
+	playingReplay = YSTRUE;
 	switch(simState)
 	{
 	case FSSIMSTATE_CENTERJOYSTICK:
@@ -5258,22 +5260,34 @@ void FsSimulation::SimProcessRawKey(int rawKey)
 		}
 		break;
 	case FSKEY_Z:
-		replayMode=FSREPLAY_VERYFASTREWIND;
+		if (playingReplay == YSTRUE) {
+			replayMode = FSREPLAY_VERYFASTREWIND;
+		}
 		break;
 	case FSKEY_X:
-		replayMode=FSREPLAY_FASTREWIND;
+		if (playingReplay == YSTRUE) {
+			replayMode = FSREPLAY_FASTREWIND;
+		}
 		break;
 	case FSKEY_C:
-		replayMode=FSREPLAY_PLAY;
+		if (playingReplay == YSTRUE) {
+			replayMode = FSREPLAY_PLAY;
+		}
 		break;
 	case FSKEY_V:
-		replayMode=FSREPLAY_FASTFORWARD;
+		if (playingReplay == YSTRUE) {
+			replayMode = FSREPLAY_FASTFORWARD;
+		}
 		break;
 	case FSKEY_B:
-		replayMode=FSREPLAY_VERYFASTFORWARD;
+		if (playingReplay == YSTRUE) {
+			replayMode = FSREPLAY_VERYFASTFORWARD;
+		}
 		break;
 	case FSKEY_D:
-		replayMode=FSREPLAY_PAUSE;
+		if (playingReplay == YSTRUE) {
+			replayMode = FSREPLAY_PAUSE;
+		}
 		break;
 	case FSKEY_HOME:
 		if(EveryAirplaneIsRecordedAirplane()==YSTRUE)

@@ -296,6 +296,7 @@ protected:
 	int escKeyCount;
 	YSBOOL pause;
 	YSBOOL canContinue;
+	YSBOOL playingReplay;
 
 	FSENVIRONMENT env;
 	YsColor fogColor;
