@@ -2082,6 +2082,7 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 			else  // Resumed mode
 			{
 				passedTime=PassedTime();
+				playingReplay = YSFALSE;
 
 				SimulateOneStep(passedTime,YSFALSE,YSTRUE,YSFALSE,YSFALSE,FSUSC_ENABLE /*YSTRUE*/,YSFALSE);
 
