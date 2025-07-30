@@ -257,21 +257,25 @@ void FsGuiMainCanvas::Sim_CreateFlight_Create(FsNewFlightDialogInfo &info)
 
 	FsAirplane *air;
 	air=world->AddAirplane(info.playerAirInfo.typeName,YSTRUE);
-	air->iff=FS_IFF0;
-	air->AutoSendCommand(info.playerAirInfo.weaponConfig.GetN(),info.playerAirInfo.weaponConfig,info.playerAirInfo.fuel);
-	world->SettleAirplane(*air,info.playerAirInfo.startPos);
+	if (air != nullptr) {
+		air->iff = FS_IFF0;
+		air->AutoSendCommand(info.playerAirInfo.weaponConfig.GetN(), info.playerAirInfo.weaponConfig, info.playerAirInfo.fuel);
+		world->SettleAirplane(*air, info.playerAirInfo.startPos);
 
 
-	if(air->Prop().GetVelocity()>YsTolerance &&
-	   air->Prop().GetLandingGear()<YsTolerance)
-	{
-		inTheAir=YSTRUE;
+		if (air->Prop().GetVelocity() > YsTolerance &&
+			air->Prop().GetLandingGear() < YsTolerance)
+		{
+			inTheAir = YSTRUE;
+		}
+		else
+		{
+			inTheAir = YSFALSE;
+		}
 	}
-	else
-	{
-		inTheAir=YSFALSE;
+	else {
+		fsStderr.Printf("Cannot load airplane: invalid IDENTIFY");
 	}
-
 
 	switch(info.fomType)
 	{
