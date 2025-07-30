@@ -65,7 +65,7 @@
 // #define CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
 
 
-
+#include "ui/fsrunloop.h"
 
 
 YsListAllocator <FsAirplane> FsAirplaneAllocator;
@@ -2062,11 +2062,14 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 							endTime=0.0;
 							SetTerminate(YSFALSE);
 							pause=YSTRUE;
+							replayMode = FSREPLAY_PLAY;
+							strcpy(systemMessage, "");
 
 							ClearKeyBuffer();
 							simEvent->DeleteFutureEventForResume(currentTime);
 
 							replayInfo.resumed=YSTRUE;
+							world->SetReplayResumed(YSTRUE);
 						}
 						else  // Failed to resume.
 						{

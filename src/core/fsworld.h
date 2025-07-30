@@ -413,6 +413,9 @@ public:
 	YSBOOL CheckCloseAirSupportMissionAvailable(void) const;
 
 	YSRESULT RunReplayOneStep(FsSimulation::FSSIMULATIONSTATE &state,FsSimulation::ReplayInfo &replayInfo);
+	YSRESULT SetReplayResumed(YSBOOL resume);
+	YSBOOL IsReplayResumed(void);
+	YSBOOL replayResumed;
 	YSRESULT RunDemoMode
 	   (FsDemoModeInfo &info,YSBOOL &terminatedByUser,const char sysMsg[],const double &maxTime,
 	    YSBOOL drawSmokeAndVapor,YSBOOL preserveFlightRecord);

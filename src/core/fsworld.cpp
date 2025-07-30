@@ -36,6 +36,7 @@
 #include "graphics/common/fsopengl.h"
 
 #include "fsgenmdl.h"
+#include "ui/fsrunloop.h"
 
 YsString failedLoadThisVisual; //This should probably go somewhere else at some point
 
@@ -4710,6 +4711,16 @@ YSRESULT FsWorld::RunReplayOneStep(FsSimulation::FSSIMULATIONSTATE &state,FsSimu
 		return YSOK;
 	}
 	return YSERR;
+}
+
+YSRESULT FsWorld::SetReplayResumed(YSBOOL resume)
+{
+	replayResumed = resume;
+	return YSOK;
+}
+YSBOOL FsWorld::IsReplayResumed(void)
+{
+	return replayResumed;
 }
 
 YSRESULT FsWorld::PrepareRunDemoMode(FsDemoModeInfo &info,const char sysMsg[],const double &maxTime)

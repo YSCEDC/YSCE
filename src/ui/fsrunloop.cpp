@@ -1878,10 +1878,15 @@ YSBOOL FsRunLoop::RunOneStep(void)
 			break;
 		case YSRUNMODE_FLY_REGULAR:
 		case YSRUNMODE_FLY_DEMOMODE:
-		case YSRUNMODE_REPLAYRECORD:
 		case YSRUNMODE_FLY_CLIENTMODE:
 		case YSRUNMODE_FLY_SERVERMODE:
 			res=RunSimulationOneStep();
+			break;
+		case YSRUNMODE_REPLAYRECORD:
+			if (world->IsReplayResumed() == YSTRUE) {
+				ChangeRunMode(YSRUNMODE_FLY_REGULAR);
+			}
+			res = RunSimulationOneStep();
 			break;
 		default:
 			ChangeRunMode(YSRUNMODE_MENU);
