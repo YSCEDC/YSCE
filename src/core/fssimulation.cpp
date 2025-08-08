@@ -7250,8 +7250,8 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
     //     objPosInCamSpace.z()
     //
     // angular offset (x): x = atan2(boundingBoxDiag, abs(objPosInCamSpace.z()))
-	double objAngularRad = atan2(boundingBoxDiag/2, objDistToCam);
-	
+	double objAngularRad = atan2(YsGreatestOf((boxMax).GetLength(), (boxMin).GetLength(),0.00), objDistToCam); //Must check both directions in case of offset center i.e. towers	
+
     //compute view angles from camera axis
     //      +X/+Y  . objPosInCamSpace
     //      ^     /|
@@ -7269,9 +7269,11 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 	double horizFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fov : proj.fovSecondary;
 	double vertFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fovSecondary : proj.fov;
 
-	//check if the object is within horizontal and vertical FOV +/- angular rad 
+	//check if the object is within horizontal and vertical FOV +/- angular rad
+	//centerCameraPerspective check accounts for additional 1/6th FOV at top edge in cockpit view
+	//temporary fudge factor 0.9 on negative vertical to bandaid tall tower edge cases
 	bool objIsInFov = objHorizViewAngle >= -horizFovAngle - objAngularRad && objHorizViewAngle <= horizFovAngle + objAngularRad &&
-		objVertViewAngle >= -vertFovAngle - objAngularRad && objVertViewAngle <= vertFovAngle + objAngularRad;
+		0.9*objVertViewAngle >= -vertFovAngle - objAngularRad && objVertViewAngle <= vertFovAngle * (1.67 - 0.67 * cfgPtr->centerCameraPerspective) + objAngularRad;
 
 	obj->isSubpixel = YSFALSE;
 	if (objIsInFov == true) { obj->isOnScreen = YSTRUE; }
