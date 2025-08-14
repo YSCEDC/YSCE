@@ -588,6 +588,8 @@ public:
 	YSRESULT ToggleBeacon(void);
 	YSRESULT ToggleStrobe(void);
 	YSRESULT ToggleLandingLight(void);
+	YSRESULT TurnOnAllLight(void);
+	YSRESULT TurnOffAllLight(void);
 
 
 	int LoadWeaponToSlot(FSWEAPONTYPE wpnType,int n); // Returns number of weapons actually loaded

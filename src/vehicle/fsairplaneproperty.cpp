@@ -6647,6 +6647,24 @@ YSRESULT FsAirplaneProperty::ToggleLandingLight(void)
 	return YSOK;
 }
 
+YSRESULT FsAirplaneProperty::TurnOnAllLight(void)
+{
+	staBeacon = YSTRUE;
+	staNavLight = staBeacon;
+	staStrobe = staBeacon;
+	staLandingLight = staBeacon;
+	return YSOK;
+}
+
+YSRESULT FsAirplaneProperty::TurnOffAllLight(void)
+{
+	staBeacon = YSFALSE;
+	staNavLight = staBeacon;
+	staStrobe = staBeacon;
+	staLandingLight = staBeacon;
+	return YSOK;
+}
+
 int FsAirplaneProperty::LoadWeaponToSlot(FSWEAPONTYPE wpnType,int n)
 {
 	if(FSWEAPON_FLARE_INTERNAL==wpnType)

@@ -10016,6 +10016,7 @@ YSRESULT FsSimulation::ClientState_StandBy(
 				pGear=air->Prop().GetLandingGear();
 				ppGear=air->Prop().GetLandingGear();
 				userInput.hasAb=air->Prop().GetHasAfterburner();
+				air->Prop().TurnOnAllLight();
 
 				// 2001/06/24
 				int idOnSvr;
