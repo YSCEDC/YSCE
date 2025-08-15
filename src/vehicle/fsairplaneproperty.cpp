@@ -2225,7 +2225,7 @@ void FsAirplaneProperty::CalculateGround(const double &dt)
 		}
 	}
 
-	if(gDist>1.0 && staState!=FSDEADSPIN && staState!=FSDEADFLATSPIN)
+	if(gDist>YsTolerance && staState!=FSDEADSPIN && staState!=FSDEADFLATSPIN)
 	{
 		SetState(FSFLYING,FSDIEDOF_NULL);
 	}
