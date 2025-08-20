@@ -2421,7 +2421,12 @@ YSRESULT FsSocketServer::AddMessage(const char *txt)
 	}
 	else
 	{
-		return YSERR;
+		for (int i = 1; i < nMsg; i++)
+		{
+			strcpy(msg[i - 1], msg[i]);
+		}
+		strcpy(msg[MAXNUMMESSAGE - 1], txt);
+		return YSOK;
 	}
 }
 
@@ -5412,7 +5417,12 @@ YSRESULT FsSocketClient::AddMessage(const char *txt)
 	}
 	else
 	{
-		return YSERR;
+		for (int i = 1; i < nMsg; i++)
+		{
+			strcpy(msg[i-1],msg[i]);
+		}
+		strcpy(msg[MAXNUMMESSAGE-1], txt);
+		return YSOK;
 	}
 }
 

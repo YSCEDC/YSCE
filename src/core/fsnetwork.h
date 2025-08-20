@@ -329,7 +329,7 @@ public:
 protected:
 	enum
 	{
-		MAXNUMMESSAGE=16
+		MAXNUMMESSAGE=256
 	};
 	int nMsg;
 	char msg[MAXNUMMESSAGE][256];
@@ -638,7 +638,7 @@ public:
 protected:
 	enum
 	{
-		MAXNUMMESSAGE=16,
+		MAXNUMMESSAGE=256,
 		COMBUFSIZE=8192,
 		SENDQUEUESIZE=8192
 	};
