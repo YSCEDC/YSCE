@@ -1680,7 +1680,7 @@ void FsAirplaneProperty::CalculateForce(void)
 	{
 		const double normalForce=-staGndNormal*(staTotalGravityForce+staTotalAerodynamicForce);
 		const double tireFrictionForce=(0.0<normalForce ? normalForce*chTireFrictionConst : 0.0);
-		const double brakingForce=(chClass==FSCL_AIRPLANE ? CalculateForceByBrake(staBrake) : CalculateForceByBrake(1.0));
+		const double brakingForce=CalculateForceByBrake(staBrake);
 
 		const double frictionForce=YsGreater(tireFrictionForce,brakingForce);
 
@@ -1766,9 +1766,7 @@ void FsAirplaneProperty::CalculateForce(void)
 
 void FsAirplaneProperty::CalculateTranslation(const double &dt)
 {
-	if(staVHorizontal<FsMinimumAirspeed &&
-	   (staBrake>=0.9 || chClass==FSCL_HELICOPTER) &&
-	   IsOnGround()==YSTRUE)
+	if(staVHorizontal<FsMinimumAirspeed &&staBrake>=0.9 && IsOnGround()==YSTRUE)
 	{
 		staVelocity=staVelocity+(staTotalAerodynamicForce+staTotalGravityForce)/GetTotalWeight()*dt;
 		staVelocity.SetX(0.0);
@@ -2224,8 +2222,14 @@ void FsAirplaneProperty::CalculateGround(const double &dt)
 			// staVelocity.Set(0.0,staVelocity.y(),0.0); <- Before 2005/10/02
 		}
 	}
+	
+	double groTransitionAlt = 1.0;     //Small transition alt causes erroneous state changes in takeoff roll
+	if (chClass == FSCL_HELICOPTER)
+	{
+		groTransitionAlt = YsTolerance;
+	}
 
-	if(gDist>YsTolerance && staState!=FSDEADSPIN && staState!=FSDEADFLATSPIN)
+	if(gDist>groTransitionAlt && staState!=FSDEADSPIN && staState!=FSDEADFLATSPIN)
 	{
 		SetState(FSFLYING,FSDIEDOF_NULL);
 	}
@@ -8784,6 +8788,7 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 				        strcmp(av[1],"helicopter")==0)
 				{
 					chClass=FSCL_HELICOPTER;
+					chTireFrictionConst = 0.5; //Assume helicopters have skids by default
 					res=YSOK;
 				}
 				else
