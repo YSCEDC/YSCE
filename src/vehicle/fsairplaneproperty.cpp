@@ -2413,7 +2413,7 @@ double FsAirplaneProperty::GetThrust(const double &thr,const double &alt,const d
 		{
 			thrust=chThrMil*thr;
 		}
-		thrust=thrust*FsGetJetEngineEfficiency(alt);
+		thrust=thrust*FsGetJetEngineEfficiency(alt + staBaseElevation);
 	}
 	else
 	{
@@ -3833,9 +3833,9 @@ void FsAirplaneProperty::ControlSpeed(const double &spd,const double &dt)
 
 	if(0<chRealProp.GetN())
 	{
-		const double thr0=GetConvergentThrust(0.0,staPosition.y()+staBaseElevation,spd,YSFALSE);
-		const double thrCurrent=GetConvergentThrust(staThrottle,staPosition.y()+staBaseElevation,spd,YSFALSE);
-		const double thr1=GetConvergentThrust(1.0,staPosition.y()+staBaseElevation,spd,YSFALSE);
+		const double thr0=GetConvergentThrust(0.0,staPosition.y(),spd,YSFALSE);
+		const double thrCurrent=GetConvergentThrust(staThrottle,staPosition.y(),spd,YSFALSE);
+		const double thr1=GetConvergentThrust(1.0,staPosition.y(),spd,YSFALSE);
 
 		double throttleCorrection=0.0;
 		if(YsTolerance<refSpdCruise)
@@ -3933,7 +3933,7 @@ void FsAirplaneProperty::ControlSpeed(const double &spd,const double &dt)
 				while(thr2-thr1>0.01)
 				{
 					thrm=(thr1+thr2)/2.0;
-					if(requiredThrust<GetThrust(thrm,staPosition.y()+staBaseElevation,staV,YSFALSE))
+					if(requiredThrust<GetThrust(thrm,staPosition.y(),staV,YSFALSE))
 					{
 						thr2=thrm;
 					}
