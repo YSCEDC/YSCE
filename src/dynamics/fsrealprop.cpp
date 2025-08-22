@@ -127,7 +127,7 @@ void FsPropellerEngine::Initialize(void)
 
 void FsPropellerEngine::Move(const YsVec3 &relVelAirframe,const double throttle,const double dt,YSBOOL engineOut)
 {
-	const double airDensityBias=rho/FsGetZeroAirDensity();
+	const double airDensityBias=rho/FsGetSeaLevelAirDensity();
 	const double joulePerSec=(YSTRUE==engineOut ? 0.0 : this->idleJoulePerSec*(1.0-throttle)+this->maxJoulePerSec*throttle)*airDensityBias;
 
 	YsVec3 relVelInPropCoord;

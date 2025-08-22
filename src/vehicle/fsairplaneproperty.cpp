@@ -4278,7 +4278,7 @@ double FsAirplaneProperty::CalculatePropellerThrust(const double &thr,const doub
 	double rhoRef,rhoZero;
 
 	rhoRef=FsGetAirDensity(alt+staBaseElevation);
-	rhoZero=FsGetZeroAirDensity();
+	rhoZero=FsGetSeaLevelAirDensity();
 	if(chPropV0<vel)
 	{
 		double power;
