@@ -178,7 +178,7 @@ double FsGetAirPressure(const double& alt)
 
 const double& FsGetSeaLevelAirPressure(void)
 {
-	static const double kilopascals = 288.15;
+	static const double kilopascals = 101.325;
 	return kilopascals;
 }
 
