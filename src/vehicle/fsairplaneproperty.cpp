@@ -9199,8 +9199,22 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 						view.showInstPanelIfAvailable=YSTRUE;
 						res=YSOK;
 
+						int commentPosition = 9999;
+
+						for (int i = 8; i < ac; ++i)
+						{
+							if (av[i][0] == '#')
+							{
+								commentPosition = i;
+							}
+						}
+
 						for(int i=8; i<ac; ++i)
 						{
+							if (i >= commentPosition)
+							{
+								break;
+							}
 							if(0==strcmp(av[i],"INSIDE"))
 							{
 								view.vpType=FS_ADVW_INSIDE;
