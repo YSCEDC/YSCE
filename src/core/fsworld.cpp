@@ -2197,6 +2197,59 @@ YSRESULT FsWorld::LoadAirplaneTemplate(
 		propFullPath.MakeFullPathName(rootDir,prop);
 
 		FILE *fp=YsFileIO::Fopen(propFullPath,"r");
+		//Check common .lst filepath case issues (user/User, dat/Dat/DAT) to stop Linux freaking out
+		if (fp == NULL) //Try user instead of User
+		{
+			YsWString propPathModified;
+			propPathModified.Append(propFullPath);
+
+			if (propFullPath[2] == L'U')
+			{
+				propPathModified.Set(2, L'u');
+			}
+
+			fp = YsFileIO::Fopen(propPathModified, "r");
+		}
+
+		if (fp == NULL)  //Try dat
+		{
+			YsWString propPathModified;
+			propPathModified.Append(propFullPath);
+			propPathModified.resize(propPathModified.size() - 3);
+
+			propPathModified.Append(L'd');
+			propPathModified.Append(L'a');
+			propPathModified.Append(L't');
+
+			fp = YsFileIO::Fopen(propPathModified, "r");
+		}
+
+		if (fp == NULL)  //Try Dat
+		{
+			YsWString propPathModified;
+			propPathModified.Append(propFullPath);
+			propPathModified.resize(propPathModified.size() - 3);
+
+			propPathModified.Append(L'D');
+			propPathModified.Append(L'a');
+			propPathModified.Append(L't');
+
+			fp = YsFileIO::Fopen(propPathModified, "r");
+		}
+
+		if (fp == NULL)  //Try DAT
+		{
+			YsWString propPathModified;
+			propPathModified.Append(propFullPath);
+			propPathModified.resize(propPathModified.size() - 3);
+
+			propPathModified.Append(L'D');
+			propPathModified.Append(L'A');
+			propPathModified.Append(L'T');
+
+			fp = YsFileIO::Fopen(propPathModified, "r");
+		}
+
 		if(fp!=NULL)
 		{
 			YsString str;

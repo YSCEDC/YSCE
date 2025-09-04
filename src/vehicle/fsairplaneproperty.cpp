@@ -734,9 +734,62 @@ YSRESULT FsAirplaneProperty::LoadProperty(const wchar_t fn[])
 	YsArray <YsString,8> initLoading;
 	YsString str;
 
-	
-
 	fp=YsFileIO::Fopen(fn,"r");
+
+	//Check common .lst filepath case issues (user/User, dat/Dat/DAT) to stop Linux freaking out
+	if (fp == NULL) //Try user instead of User
+	{
+		YsWString propPathModified;
+		propPathModified.Append(fn);
+
+		if (fn[2] == L'U')
+		{
+			propPathModified.Set(2, L'u');
+		}
+
+		fp = YsFileIO::Fopen(propPathModified, "r");
+	}
+
+	if (fp == NULL)  //Try dat
+	{
+		YsWString propPathModified;
+		propPathModified.Append(fn);
+		wchar_t test;
+		propPathModified.resize(propPathModified.size() - 3);
+
+		propPathModified.Append(L'd');
+		propPathModified.Append(L'a');
+		propPathModified.Append(L't');
+
+		fp = YsFileIO::Fopen(propPathModified, "r");
+	}
+
+	if (fp == NULL)  //Try Dat
+	{
+		YsWString propPathModified;
+		propPathModified.Append(fn);
+		wchar_t test;
+		propPathModified.resize(propPathModified.size() - 3);
+
+		propPathModified.Append(L'D');
+		propPathModified.Append(L'a');
+		propPathModified.Append(L't');
+
+		fp = YsFileIO::Fopen(propPathModified, "r");
+	}
+
+	if (fp == NULL)  //Try DAT
+	{
+		YsWString propPathModified;
+		propPathModified.Append(fn);
+		propPathModified.resize(propPathModified.size() - 3);
+
+		propPathModified.Append(L'D');
+		propPathModified.Append(L'A');
+		propPathModified.Append(L'T');
+
+		fp = YsFileIO::Fopen(propPathModified, "r");
+	}
 	if(fp!=NULL)
 	{
 		while(fgets(dat,256,fp)!=NULL)
