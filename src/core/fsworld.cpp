@@ -2203,9 +2203,12 @@ YSRESULT FsWorld::LoadAirplaneTemplate(
 			int ac;
 			char *av[16];
 			char buf[256];
+			char strCaps[256];
 			while(str.Fgets(fp)!=NULL)
 			{
-				if(strncmp(str,"IDENTIFY",8)==0)
+				strncpy(strCaps, str, 255);
+				YsCapitalize(strCaps);    //Stop throwing errors if Identify case isn't capitals
+				if(strncmp(strCaps,"IDENTIFY",8)==0)
 				{
 					strncpy(buf,str,255);
 					buf[255]=0;
@@ -2226,7 +2229,7 @@ YSRESULT FsWorld::LoadAirplaneTemplate(
 						}
 					}
 				}
-				else if(strncmp(str,"CATEGORY",8)==0)
+				else if(strncmp(strCaps,"CATEGORY",8)==0)
 				{
 					strncpy(buf,str,255);
 					buf[255]=0;

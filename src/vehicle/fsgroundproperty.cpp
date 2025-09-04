@@ -881,6 +881,22 @@ YSRESULT FsGroundProperty::LoadProperty(const wchar_t fn[],YsWString &aircraftCa
 		char dat[256];
 		while(fgets(dat,256,fp)!=NULL)
 		{
+			char datCaps[256];
+			strncpy(datCaps, dat, 8);
+			YsCapitalize(datCaps);
+
+			if (strncmp(datCaps, "WPNSHAPE", 8) == 0 || strncmp(datCaps, "CARRIER", 7))  //Protect included filepaths from capitalization 20250904
+			{
+				for (int c = 0; c < 8; c++)
+				{
+					dat[c] = datCaps[c];
+				}
+			}
+			else
+			{
+				YsCapitalize(dat); //Stop throwing errors if argument case isn't capitals
+			}
+
 			if(strncmp(dat,"CARRIER",7)==0)
 			{
 				int ac;

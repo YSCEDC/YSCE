@@ -734,13 +734,29 @@ YSRESULT FsAirplaneProperty::LoadProperty(const wchar_t fn[])
 	YsArray <YsString,8> initLoading;
 	YsString str;
 
-
+	
 
 	fp=YsFileIO::Fopen(fn,"r");
 	if(fp!=NULL)
 	{
 		while(fgets(dat,256,fp)!=NULL)
 		{
+			char datCaps[256];
+			strncpy(datCaps, dat, 8);
+			YsCapitalize(datCaps);
+
+			if (strncmp(datCaps, "INSTPANL", 8) == 0 || strncmp(datCaps, "WPNSHAPE", 8) == 0 || strncmp(datCaps, "CARRIER", 7))  //Protect included filepaths from capitalization 20250904
+			{
+				for (int c = 0; c < 8; c++)
+				{
+					dat[c] = datCaps[c];
+				}
+			}
+			else
+			{
+				YsCapitalize(dat); //Stop throwing errors if argument case isn't capitals
+			}
+
 			if(dat[0]=='I' && dat[1]=='N' && dat[2]=='I' && dat[3]=='T')
 			{
 				if(strncmp(dat+4,"IAAM",4)==0 || strncmp(dat+4,"IAGM",4)==0 ||
@@ -8339,7 +8355,7 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 		//Handle SUBSTNAM in IDENTIFY line because a lot of addons do it
 		if (cmd == 56 && av[2] != NULL && av[3] != NULL)
 		{
-			if ('S' == av[2][0] && 'U' == av[2][1] && 'B' == av[2][2] && 'S' == av[2][3] && 'T' == av[2][4])
+			if (strncmp(av[2], "SUBSTNAM", 8) == 0)
 			{
 				chSubstIdName.Set(av[3]);
 			}
@@ -8783,9 +8799,7 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 					chClass=FSCL_AIRPLANE;
 					res=YSOK;
 				}
-				else if(strcmp(av[1],"HELICOPTER")==0 ||
-				        strcmp(av[1],"Helicopter")==0 ||
-				        strcmp(av[1],"helicopter")==0)
+				else if(strcmp(av[1],"HELICOPTER")==0)
 				{
 					chClass=FSCL_HELICOPTER;
 					chTireFrictionConst = 0.5; //Assume helicopters have skids by default
