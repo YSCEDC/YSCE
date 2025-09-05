@@ -2,7 +2,8 @@
 
 #include <ysclass.h>
 #include <windows.h>
-
+DWORD mainWindowProcId = NULL;
+HWND mainWindowHWnd = NULL;
 class FsWin32ApplicationWindowFinder
 {
 public:
@@ -18,11 +19,18 @@ private:
 HWND FsWin32ApplicationWindowFinder::Find(const YsWString &title)
 {
 	titleStr=title;
-
 	return SearchTopLevelWindow(NULL,GetCurrentProcessId());
 }
 HWND FsWin32ApplicationWindowFinder::SearchTopLevelWindow(HWND hWnd,DWORD procId)
 {
+	wchar_t win[256];
+	GetWindowTextW(mainWindowHWnd, win, 255);
+	YsWString winTitle(win);
+	if (mainWindowProcId == procId && YSTRUE == winTitle.FindWord(NULL, titleStr))
+	{
+		return mainWindowHWnd;
+	}
+
 	DWORD windowProcId;
 	GetWindowThreadProcessId(hWnd,&windowProcId);
 	if(windowProcId==procId)
@@ -31,12 +39,10 @@ HWND FsWin32ApplicationWindowFinder::SearchTopLevelWindow(HWND hWnd,DWORD procId
 		{
 			wchar_t str[256];
 			GetWindowTextW(hWnd,str,255);
-
 			YsWString wstr(str);
 			if(YSTRUE==wstr.FindWord(NULL,titleStr))
 			{
-				// printf("Window Title=%ls\n",str);
-				// printf("Match %ls\n",titleStr.Txt());
+				//printf("Window Title=%ls matches find '%ls'\n",str, titleStr.Txt());
 				return hWnd;
 			}
 		}
@@ -48,6 +54,8 @@ HWND FsWin32ApplicationWindowFinder::SearchTopLevelWindow(HWND hWnd,DWORD procId
 		auto found=SearchTopLevelWindow(hWndChild,procId);
 		if(NULL!=found)
 		{
+			mainWindowHWnd = hWndChild;
+			GetWindowThreadProcessId(mainWindowHWnd, &mainWindowProcId);
 			return found;
 		}
 	}
