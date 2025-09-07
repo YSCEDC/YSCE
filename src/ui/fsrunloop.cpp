@@ -33,6 +33,7 @@
 #include "fssimextension_intercept.h"
 #include "fssimextension_closeairsupport.h"
 #include "fssimextension_groundtoair.h"
+#include <fsstdout.h>
 
 
 extern FsScreenMessage fsConsole;
@@ -1389,8 +1390,17 @@ void FsRunLoop::PopRunMode(void)
 
 void FsRunLoop::TakeOff(RUNMODE nextRunMode)
 {
-	ChangeSimulationState(FsSimulation::FSSIMSTATE_CENTERJOYSTICK);
-	ChangeRunMode(nextRunMode);
+	if (world->CheckJoystickAssignmentAndFixIfNecessary() != YSOK)
+	{
+		fsStderr.Printf("Unable to assign joystick\n");
+		ChangeSimulationState(FsSimulation::FSSIMSTATE_OVER);
+		ChangeRunMode(YSRUNMODE_MENU);
+	}
+	else
+	{
+		ChangeSimulationState(FsSimulation::FSSIMSTATE_CENTERJOYSTICK);
+		ChangeRunMode(nextRunMode);
+	}
 }
 
 YSRESULT FsRunLoop::SetUpEnduranceMode(
@@ -2324,7 +2334,7 @@ YSBOOL FsRunLoop::RunShowLandingPracticeInfoOneStep(void)
 	{
 		// This sequence is same as regular simulation after mission-goal dialog.
 		ChangeRunMode(YSRUNMODE_MENU);  // 2014/09/07 Was missing and added.  Why was it working until now?
-		TakeOff(YSRUNMODE_MENU);
+		TakeOff(YSRUNMODE_FLY_REGULAR);
 	}
 	return YSTRUE;
 }
