@@ -8972,17 +8972,24 @@ void FsSimulation::RunServerModeOneStep(FsServerRunLoop &svrSta)
 			}
 			else
 			{
-				++svrSta.startServerRetryCount;
-				if(6<=svrSta.startServerRetryCount)
+				if (svrSta.resetServer == YSTRUE)
 				{
-					svrSta.fatalError=FsServerRunLoop::SERVER_FATAL_CANNOT_START;
-					svrSta.runState=FsServerRunLoop::SERVER_RUNSTATE_TERMINATED;
+					++svrSta.startServerRetryCount;
+					if (6 <= svrSta.startServerRetryCount)
+					{
+						svrSta.fatalError = FsServerRunLoop::SERVER_FATAL_CANNOT_START;
+						svrSta.runState = FsServerRunLoop::SERVER_RUNSTATE_TERMINATED;
+					}
+					fsConsole.Printf("Failed to start server.\n");
+					fsConsole.Printf("Retry (Count=%d)\n", svrSta.startServerRetryCount);
+
+					svrSta.nextServerStartCountDown = time(NULL) + 5;
+					svrSta.nextServerStartTryTime = time(NULL) + 90;
 				}
 				fsConsole.Printf("Failed to start server.\n");
-				fsConsole.Printf("Retry (Count=%d)\n",svrSta.startServerRetryCount);
-
-				svrSta.nextServerStartCountDown=time(NULL)+5;
-				svrSta.nextServerStartTryTime=time(NULL)+90;
+				fsStderr.Printf("Failed to start server.\n");
+				svrSta.fatalError = FsServerRunLoop::SERVER_FATAL_CANNOT_START;
+				svrSta.runState = FsServerRunLoop::SERVER_RUNSTATE_TERMINATED;
 			}
 		}
 		else if(svrSta.nextServerStartCountDown<=time(NULL))
