@@ -8448,9 +8448,11 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 				break;
 			case  8: //"LEFTGEAR", //X Y Z [M][IN]
 				res=FsGetVec3(chMainGearL,ac-1,av+1);
+				chMainGearL.SetX(-abs(chMainGearL.x()));
 				break;
 			case  9: //"RIGHGEAR", //X Y Z [M][IN]
 				res=FsGetVec3(chMainGearR,ac-1,av+1);
+				chMainGearR.SetX(abs(chMainGearR.x()));
 				break;
 			case 10: //"WHELGEAR", //X Y Z [M][IN]
 				res=FsGetVec3(chWheel,ac-1,av+1);
