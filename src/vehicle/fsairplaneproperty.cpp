@@ -1290,8 +1290,13 @@ const double FsAirplaneProperty::GetClimbRatio(void) const // <- For some reason
 	return staVelocity.y();
 }
 
-YSBOOL FsAirplaneProperty::CheckTouchDownAndLayOnGround(double &gDistance)
+YSBOOL FsAirplaneProperty::CheckTouchDownAndLayOnGround(double& gDistance)
 {
+	if (staGear < 0.5)
+	{
+		return YSFALSE;
+	}
+	
 	YsVec3 nose,left,right;
 	YsVec3 nosevc,leftvc,rightvc;
 	YsVec3 nosert,leftrt,rightrt;
