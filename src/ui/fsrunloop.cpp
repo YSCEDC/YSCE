@@ -1360,6 +1360,14 @@ void FsRunLoop::ChangeRunMode(RUNMODE runMode)
 	{
 		FsPollDevice();
 	}
+	if (runMode == YSRUNMODE_FLY_CLIENTMODE)
+	{
+		world->SetIsNetClient(YSTRUE);
+	}
+	else if (runMode != YSRUNMODE_NONE && runMode != YSRUNMODE_MENU && runMode != YSRUNMODE_SHOWLANDINGPRACTICEINFO)
+	{
+		world->SetIsNetClient(YSFALSE);
+	}
 }
 
 void FsRunLoop::ChangeSimulationState(FsSimulation::FSSIMULATIONSTATE simState)

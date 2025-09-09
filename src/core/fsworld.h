@@ -468,6 +468,9 @@ public:
 	YSBOOL PlayerPlaneIsReady(void) const;
 	YSBOOL PlayerGroundIsReady(void) const;
 	YSBOOL IsFlightRecord(void);
+	YSBOOL isNetClient;
+	YSRESULT SetIsNetClient(YSBOOL client);
+	YSBOOL GetIsNetClient(void);
 	FsAirplane *GetPlayerAirplane(void) const;
 	FsGround *GetPlayerGround(void) const;
 	int GetNumAirplaneLoaded(void);

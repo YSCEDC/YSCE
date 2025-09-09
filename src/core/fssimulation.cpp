@@ -4133,58 +4133,63 @@ void FsSimulation::SimComputeAirToObjCollision(void)
 		airPtr->airCollision.CleanUp();
 		airPtr->gndCollision.CleanUp();
 	}
+	
+	int playerId = FsExistence::GetSearchKey(GetPlayerAirplane());
 
 	for(FsAirplane *air1=NULL; NULL!=(air1=FindNextAirplane(air1)); )
 	{
-		if(air1->IsAlive()==YSTRUE)
+		if (world->GetIsNetClient() == YSFALSE || air1->SearchKey() == playerId) //Skip collision check for non-player aircraft as client
 		{
-			GetLattice().GetAirCollisionCandidate(airCandidate,air1);
-
-			for(int j=0; j<airCandidate.GetN(); j++)
+			if (air1->IsAlive() == YSTRUE)
 			{
-				FsAirplane *air2=airCandidate[j];
-				if(YSTRUE==cfgPtr->midAirCollision || YSTRUE==air2->Prop().IsRacingCheckPoint())
-				{
-					if(air1->SearchKey()<air2->SearchKey() &&
-					   air2->IsAlive()==YSTRUE &&
-					  (air1->Prop().IsActive()==YSTRUE || air2->Prop().IsActive()==YSTRUE))  // 2005/03/03
-					{
-						YsVec3 collPos;
-						if(CheckMidAir(collPos,*air1,*air2)==YSTRUE)
-						{
-							air1->airCollision.Increment();
-							air1->airCollision.Last().objKey=air2->SearchKey();
-							air1->airCollision.Last().pos=collPos;
+				GetLattice().GetAirCollisionCandidate(airCandidate, air1);
 
-							air2->airCollision.Increment();
-							air2->airCollision.Last().objKey=air1->SearchKey();
-							air2->airCollision.Last().pos=collPos;
+				for (int j = 0; j < airCandidate.GetN(); j++)
+				{
+					FsAirplane* air2 = airCandidate[j];
+					if (YSTRUE == cfgPtr->midAirCollision || YSTRUE == air2->Prop().IsRacingCheckPoint())
+					{
+						if ((air1->SearchKey() < air2->SearchKey() || world->GetIsNetClient() == YSTRUE) &&
+							air2->IsAlive() == YSTRUE &&
+							(air1->Prop().IsActive() == YSTRUE || air2->Prop().IsActive() == YSTRUE))  // 2005/03/03
+						{
+							YsVec3 collPos;
+							if (CheckMidAir(collPos, *air1, *air2) == YSTRUE)
+							{
+								air1->airCollision.Increment();
+								air1->airCollision.Last().objKey = air2->SearchKey();
+								air1->airCollision.Last().pos = collPos;
+
+								air2->airCollision.Increment();
+								air2->airCollision.Last().objKey = air1->SearchKey();
+								air2->airCollision.Last().pos = collPos;
+							}
 						}
 					}
 				}
 			}
-		}
 
-		if(air1->GetPosition().y()-air1->GetApproximatedCollideRadius()<tallestGroundObjectHeight)
-		{
-			GetLattice().GetGndCollisionCandidate(gndCandidate,air1);
-			for(int j=0; j<gndCandidate.GetN(); j++)
+			if (air1->GetPosition().y() - air1->GetApproximatedCollideRadius() < tallestGroundObjectHeight)
 			{
-				FsGround *gnd2=gndCandidate[j];
-				if(YSTRUE==cfgPtr->midAirCollision || YSTRUE==gnd2->Prop().IsRacingCheckPoint())
+				GetLattice().GetGndCollisionCandidate(gndCandidate, air1);
+				for (int j = 0; j < gndCandidate.GetN(); j++)
 				{
-					if(gnd2->IsAlive()==YSTRUE)
+					FsGround* gnd2 = gndCandidate[j];
+					if (YSTRUE == cfgPtr->midAirCollision || YSTRUE == gnd2->Prop().IsRacingCheckPoint())
 					{
-						YsVec3 collPos;
-						if(CheckMidAir(collPos,*air1,*gnd2)==YSTRUE)
+						if (gnd2->IsAlive() == YSTRUE)
 						{
-							air1->gndCollision.Increment();
-							air1->gndCollision.Last().objKey=gnd2->SearchKey();
-							air1->gndCollision.Last().pos=collPos;
+							YsVec3 collPos;
+							if (CheckMidAir(collPos, *air1, *gnd2) == YSTRUE)
+							{
+								air1->gndCollision.Increment();
+								air1->gndCollision.Last().objKey = gnd2->SearchKey();
+								air1->gndCollision.Last().pos = collPos;
 
-							gnd2->airCollision.Increment();
-							gnd2->airCollision.Last().objKey=air1->SearchKey();
-							gnd2->airCollision.Last().pos=collPos;
+								gnd2->airCollision.Increment();
+								gnd2->airCollision.Last().objKey = air1->SearchKey();
+								gnd2->airCollision.Last().pos = collPos;
+							}
 						}
 					}
 				}

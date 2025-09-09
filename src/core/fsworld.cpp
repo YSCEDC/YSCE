@@ -8021,6 +8021,18 @@ YSBOOL FsWorld::IsFlightRecord(void)
 	}
 }
 
+YSRESULT FsWorld::SetIsNetClient(YSBOOL client)
+{
+	isNetClient = client;
+	return YSOK;
+}
+
+YSBOOL FsWorld::GetIsNetClient(void)
+{
+	return isNetClient;
+}
+
+
 FsAirplane *FsWorld::GetPlayerAirplane(void) const
 {
 	if(NULL!=sim)
