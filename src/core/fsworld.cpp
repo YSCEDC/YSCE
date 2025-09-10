@@ -4541,7 +4541,7 @@ FsField *FsWorld::AddField(
 						air->airFlag=airList[i]->GetFlag();
 						air->landWhenLowFuelThr=airList[i]->GetLandWhenLowFuel();
 
-						sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm\n",p.x(),p.y(),p.z());
+						sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm",p.x(),p.y(),p.z());
 						air->SendCommand(cmd);
 						sprintf(cmd,"ATTITUDE %.2lfdeg %.2lfdeg %.2lfdeg",
 						    YsRadToDeg(att.h()),YsRadToDeg(att.p()),YsRadToDeg(att.b()));

@@ -115,7 +115,7 @@ YSRESULT FsSimulation::Save(
 	{
 		if(air->actualIdName[0]==0)
 		{
-			fprintf(fp,"AIRPLANE %s ",air->Prop().GetIdentifier());
+			fprintf(fp,"\nAIRPLANE %s ",air->Prop().GetIdentifier());
 			fprintf(fp,"%s",FsTrueFalseString(IsPlayerAirplane(air)));
 
 			const char *substId;
@@ -128,7 +128,7 @@ YSRESULT FsSimulation::Save(
 		}
 		else
 		{
-			fprintf(fp,"AIRPLANE %s ",(const char *)air->actualIdName);
+			fprintf(fp,"\nAIRPLANE %s ",(const char *)air->actualIdName);
 			fprintf(fp,"%s",FsTrueFalseString(IsPlayerAirplane(air)));
 
 			fprintf(fp," SUBST:%s",air->Prop().GetIdentifier());
@@ -323,6 +323,7 @@ YSRESULT FsSimulation::Save(
 
 	FsGround *gnd;
 	gnd=NULL;
+	fprintf(fp, "\n");
 	while((gnd=FindNextGround(gnd))!=NULL)
 	{
 		fprintf(fp,"GROUNDOB %s",gnd->Prop().GetIdentifier());
@@ -464,7 +465,7 @@ YSRESULT FsSimulation::Save(
 			}
 		}
 	}
-
+	fprintf(fp, "\n");
 	bulletHolder.Save(fp,this,wpnPosPrecision,wpnAttPrecision);
 	explosionHolder.Save(fp,this);
 	weather->Save(fp);

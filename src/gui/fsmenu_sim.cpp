@@ -345,7 +345,7 @@ void FsGuiMainCanvas::Sim_CreateFlight_Create(FsNewFlightDialogInfo &info)
 					a.Mul(p,p);
 					p+=air->GetPosition();
 
-					sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm\n",p.x(),p.y(),p.z());
+					sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm",p.x(),p.y(),p.z());
 					wingman->SendCommand(cmd);
 					sprintf(cmd,"ATTITUDE %.2lfdeg %.2lfdeg %.2lfdeg",
 					    YsRadToDeg(a.h()),YsRadToDeg(a.p()),YsRadToDeg(a.b()));
@@ -406,7 +406,7 @@ void FsGuiMainCanvas::Sim_CreateFlight_Create(FsNewFlightDialogInfo &info)
 					elv=world->GetFieldElevation(p.x(),p.z());
 					p.SetY(elv+air->Prop().GetGroundStandingHeight());
 
-					sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm\n",p.x(),p.y(),p.z());
+					sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm",p.x(),p.y(),p.z());
 					air->SendCommand(cmd);
 				}
 
@@ -428,7 +428,7 @@ void FsGuiMainCanvas::Sim_CreateFlight_Create(FsNewFlightDialogInfo &info)
 					a.Mul(p,p);
 					p+=air->GetPosition();
 
-					sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm\n",p.x(),p.y(),p.z());
+					sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm",p.x(),p.y(),p.z());
 					wingman[i]->SendCommand(cmd);
 					sprintf(cmd,"ATTITUDE %.2lfdeg %.2lfdeg %.2lfdeg",
 					    YsRadToDeg(a.h()),YsRadToDeg(a.p()),YsRadToDeg(a.b()));
@@ -1432,7 +1432,7 @@ void FsGuiMainCanvas::Sim_RacingMode_Create(FsNewFlightDialogInfo &info)
 					a.Mul(p,p);
 					p+=air->GetPosition();
 
-					sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm\n",p.x(),p.y(),p.z());
+					sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm",p.x(),p.y(),p.z());
 					wingman->SendCommand(cmd);
 					sprintf(cmd,"ATTITUDE %.2lfdeg %.2lfdeg %.2lfdeg",
 					    YsRadToDeg(a.h()),YsRadToDeg(a.p()),YsRadToDeg(a.b()));
@@ -1493,7 +1493,7 @@ void FsGuiMainCanvas::Sim_RacingMode_Create(FsNewFlightDialogInfo &info)
 					elv=world->GetFieldElevation(p.x(),p.z());
 					p.SetY(elv+air->Prop().GetGroundStandingHeight());
 
-					sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm\n",p.x(),p.y(),p.z());
+					sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm",p.x(),p.y(),p.z());
 					air->SendCommand(cmd);
 				}
 
@@ -1515,7 +1515,7 @@ void FsGuiMainCanvas::Sim_RacingMode_Create(FsNewFlightDialogInfo &info)
 					a.Mul(p,p);
 					p+=air->GetPosition();
 
-					sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm\n",p.x(),p.y(),p.z());
+					sprintf(cmd,"POSITION %.2lfm %.2lfm %.2lfm",p.x(),p.y(),p.z());
 					wingman[i]->SendCommand(cmd);
 					sprintf(cmd,"ATTITUDE %.2lfdeg %.2lfdeg %.2lfdeg",
 					    YsRadToDeg(a.h()),YsRadToDeg(a.p()),YsRadToDeg(a.b()));
