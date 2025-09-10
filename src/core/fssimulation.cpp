@@ -7176,7 +7176,7 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 		if((actualViewMode.actualViewMode==FSCOCKPITVIEW ||
 		    actualViewMode.actualViewMode==FSADDITIONALAIRPLANEVIEW ||
 		    actualViewMode.actualViewMode==FSADDITIONALAIRPLANEVIEW_CABIN) &&
-		   IsPlayerAirplane(seeker)==YSTRUE)
+		   IsPlayerAirplane(seeker)==YSTRUE && seeker->IsAlive() == YSTRUE)
 		{
 			if(seeker->cockpit!=nullptr)
 			{
