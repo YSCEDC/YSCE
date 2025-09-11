@@ -25,7 +25,6 @@ void FsSimulation::SimDrawBlackout(const ActualViewMode &actualViewMode) const
 	if(cfgPtr->blackOut==YSTRUE &&
 	   actualViewMode.actualViewMode==FSCOCKPITVIEW &&
 	   playerPlane!=NULL &&
-	   playerPlane->isPlayingRecord!=YSTRUE &&
 	   playerPlane->IsAlive()==YSTRUE &&
 	   (playerPlane->Prop().GetG()>plusGLimit ||
 	    playerPlane->Prop().GetG()<minusGLimit))
