@@ -1182,7 +1182,7 @@ void FsWeapon::HitGround(
 							pos=shellItsc;
 						}
 
-						if(evg==NULL && collType==1 && areaType==YSSCNAREA_WATER)
+						if(collType==1 && areaType==YSSCNAREA_WATER)
 						{
 							explode->WaterPlume(ctime,pos,3.0,1.0,10.0,NULL,YSFALSE);
 						}
@@ -1205,7 +1205,7 @@ void FsWeapon::HitGround(
 					{
 						pos=shellItsc;
 					}
-					if(evg==NULL && collType==1 && areaType==YSSCNAREA_WATER)
+					if(collType==1 && areaType==YSSCNAREA_WATER)
 					{
 						if (shouldJettison == YSTRUE)
 						{
@@ -1239,7 +1239,7 @@ void FsWeapon::HitGround(
 					{
 						pos=shellItsc;
 					}
-					if(evg==NULL && collType==1 && areaType==YSSCNAREA_WATER)
+					if(collType==1 && areaType==YSSCNAREA_WATER)
 					{
 						if (shouldJettison == YSTRUE)
 						{
@@ -1276,7 +1276,7 @@ void FsWeapon::HitGround(
 					{
 						pos=shellItsc;
 					}
-					if(evg==NULL && collType==1 && areaType==YSSCNAREA_WATER)
+					if(collType==1 && areaType==YSSCNAREA_WATER)
 					{
 						if (shouldJettison == YSTRUE)
 						{
