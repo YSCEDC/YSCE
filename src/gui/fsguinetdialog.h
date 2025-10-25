@@ -2,6 +2,7 @@
 #define FSGUINETDIALOG_IS_INCLUDED
 /* { */
 
+#include <string>
 #include <fsgui.h>
 
 ////////////////////////////////////////////////////////////
