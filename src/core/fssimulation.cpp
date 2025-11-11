@@ -2704,18 +2704,18 @@ void FsSimulation::SimulateOneStep(
 
 		needRedraw=YSTRUE;
 
-		if(focusAir==NULL)
-		{
-			focusAir=GetPlayerAirplane();
-			if(focusAir==NULL)
-			{
-				focusAir=FindNextAirplane(NULL);
-			}
-		}
-
 		if(CheckNoExtAirView()==YSTRUE)  // 2006/06/11
 		{
 			focusAir=GetPlayerAirplane();
+		}
+		else if (focusAir == NULL || focusAir == GetPlayerAirplane() || focusAir->IsAlive() != YSTRUE)
+		{
+			focusAir = FindNextAirplane(focusAir);
+
+			if (focusAir == NULL)
+			{
+				focusAir = GetPlayerAirplane();
+			}
 		}
 
 		DecideAllViewPoint(passedTime);
@@ -6931,7 +6931,7 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode)
 
 	sizx=hei*4/3;
 	sizy=hei;
-	if (centerThisCamera == YSFALSE)
+	if (actualViewMode.centerThisCamera == YSFALSE)
 	{
 		hud->SetAreaByCenter(wid / 2, hei * 2 / 3, sizx * 2 / 3, sizy * 2 / 3);
 	}
@@ -9786,16 +9786,7 @@ void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualV
 
 	playerPlane = GetPlayerAirplane();
 
-	if (cfgPtr->centerCameraPerspective == YSFALSE && (mainWindowViewmode == FSCOCKPITVIEW || mainWindowViewmode == FSADDITIONALAIRPLANEVIEW))
-	{
-		centerThisCamera = YSFALSE;
-	}
-	else
-	{
-		centerThisCamera = YSTRUE;
-	}
-	
-	if(centerThisCamera == YSFALSE && NULL != playerPlane)
+	if(actualViewMode.centerThisCamera == YSFALSE && NULL != playerPlane)
 	{
 		const YsVec2 scrnCen = playerPlane->Prop().GetScreenCenter();
 		prj.cx = (int)((double)wid * (1.0 + scrnCen.x()) / 2.0);
@@ -10430,12 +10421,14 @@ void FsSimulation::SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWM
 {
 	actualViewMode.actualViewMode=mode;  // by Default
 	actualViewMode.viewMagFix=1.0;       // by Default
-	
+	actualViewMode.centerThisCamera = YSTRUE; //default to centered, overwrite where required
+
 	switch(mode)
 	{
 	case FSCOCKPITVIEW:
 		if(playerPlane->Prop().IsActive()==YSTRUE || playerPlane->Prop().IsAlive()==YSFALSE)
 		{
+			actualViewMode.centerThisCamera = cfgPtr->centerCameraPerspective;
 			YsVec3 cock;
 			YsMatrix4x4 mat;
 			playerPlane->Prop().GetCockpitPosition(cock);
@@ -10585,7 +10578,7 @@ void FsSimulation::SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWM
 				{
 					actualViewMode.viewPoint.SetY(air->Prop().GetGroundElevation()+0.5);
 				}
-
+				
 				return;
 			}
 		}
@@ -11214,6 +11207,7 @@ void FsSimulation::SimDecideViewpoint_Common(ActualViewMode &actualViewMode,FSVI
 	case FSADDITIONALAIRPLANEVIEW:
 		if(playerObj!=NULL)
 		{
+			actualViewMode.centerThisCamera = cfgPtr->centerCameraPerspective;
 			const FsAdditionalViewpoint *vp;
 			vp=playerObj->GetAdditionalView(mainWindowAdditionalAirplaneViewId);
 			if(vp!=NULL)
