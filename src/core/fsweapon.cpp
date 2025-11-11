@@ -909,6 +909,7 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 		{
 		case FSWEAPON_GUN:
 			vec.Set(vec.x(),vec.y()-FsGravityConst*dt,vec.z());
+			att.SetForwardVector(vec);
 			break;
 		case FSWEAPON_BOMB:
 		case FSWEAPON_BOMB250:
@@ -1033,12 +1034,9 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 				vec.Set(vec.x(),vec.y()-FsGravityConst*dt,vec.z());
 				att.SetForwardVector(vec);
 				velocity=vec.GetLength();
-				if(velocity>maxVelocity)
-				{
-					velocity-=20.0*dt;
-					vec.Set(0.0,0.0,velocity);
-					att.Mul(vec,vec); // vec=att.GetMatrix()*vec;
-				}
+				velocity -= velocity * 0.1*dt;
+				vec.Set(0.0,0.0,velocity);
+				att.Mul(vec,vec); // vec=att.GetMatrix()*vec;
 			}
 			break;
 		case FSWEAPON_DEBRIS:
