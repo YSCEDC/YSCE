@@ -2194,7 +2194,8 @@ YSBOOL FsAirplane::HitGround(
 		double elv;
 		field.GetFieldElevation(elv, pos->x(), pos->z());
 		
-		if (pos->y() >= elv + YsTolerance + prop.GetOutsideRadius())    //Fix edge case where falling off carrier would kill player instead of dropping them
+		if (prop.IsActive() == YSTRUE &&
+			pos->y() >= elv + YsTolerance + prop.GetOutsideRadius())    //Fix edge case where falling off carrier would kill player instead of dropping them
 		{																//Without HTRADIUS, landed aircraft will constantly HitGround but never enter landed state
 			prop.SetState(FSFLYING, FSDIEDOF_NULL);						//To do it properly, need to check the world position of the gears
 		}
