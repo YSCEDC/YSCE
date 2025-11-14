@@ -329,6 +329,42 @@ YSRESULT FsAircraftCarrierProperty::UnloadGround(FsGround *gnd)
 	return YSERR;
 }
 
+YSRESULT FsAircraftCarrierProperty::UnloadAllCargo(void)
+{
+	FsAircraftCarrierProperty* carrier = this;
+	for (int i = 0; i < airList.GetN(); i++)
+	{
+		FsAirplane *air = airList[i];
+		if (air->Prop().OnThisCarrier()->Prop().GetAircraftCarrierProperty() == carrier)
+		{
+			YsVec3 shipSpeed, airSpeed;
+			belongTo->GetVelocity(shipSpeed);
+			air->Prop().GetVelocity(airSpeed);
+			airSpeed += shipSpeed;
+			air->Prop().SetVelocity(airSpeed);
+			airList.Delete(i);
+
+			air->Prop().AfterUnloadedFromCarrier();
+		}
+	}
+
+	for (int i = 0; i < gndList.GetN(); i++)
+	{
+		FsGround *gnd = gndList[i];
+		if (gnd->Prop().OnThisCarrier()->Prop().GetAircraftCarrierProperty() == carrier)
+		{
+			YsVec3 shipSpeed, gndSpeed;
+			belongTo->GetVelocity(shipSpeed);
+			gnd->Prop().GetVelocity(gndSpeed);
+			gndSpeed += shipSpeed;
+			gnd->Prop().SetVelocity(gndSpeed);
+			gndList.DeleteBySwapping(i);
+			gnd->Prop().AfterUnloadedFromCarrier();
+		}
+	}
+	return YSOK;
+}
+
 YSBOOL FsAircraftCarrierProperty::IsAirplaneLoaded(const FsAirplane *air) const
 {
 	for(int i=0; i<airList.GetN(); i++)
@@ -1730,6 +1766,10 @@ YSBOOL FsGroundProperty::GetDamage(YSBOOL &killed,int dmg)
 				staState=FSGNDDEAD;
 				staCurrentHealth=0;
 				killed=YSTRUE;
+				if (isAircraftCarrier == YSTRUE)
+				{
+					GetAircraftCarrierProperty()->UnloadAllCargo();
+				}
 			}
 			return YSTRUE;
 		}

@@ -2044,18 +2044,21 @@ void FsAirplaneProperty::CalculateCarrierLanding(const double &dt,const YsArray 
 		int i;
 		for(i=0; i<carrierList.GetNumItem(); i++)
 		{
-			FsAircraftCarrierProperty *prop;
-			prop=carrierList[i]->Prop().GetAircraftCarrierProperty();
-			YsVec3 cPos = carrierList[i]->Prop().GetPosition();
-			double cRadius = carrierList[i]->Prop().GetOutsideRadius();
-			YsVec3 difference = staPosition - cPos;
-			if (difference.GetLength() < cRadius)
+			if (carrierList[i]->IsAlive() == YSTRUE)
 			{
-				if (prop != NULL && prop->LandedOnTheDeck(staPPos, staPosition, nose, left, right) == YSTRUE)
+				FsAircraftCarrierProperty* prop;
+				prop = carrierList[i]->Prop().GetAircraftCarrierProperty();
+				YsVec3 cPos = carrierList[i]->Prop().GetPosition();
+				double cRadius = carrierList[i]->Prop().GetOutsideRadius();
+				YsVec3 difference = staPosition - cPos;
+				if (difference.GetLength() < cRadius)
 				{
-					// staOnThisCarrier=carrierList[i];  This should be done from LoadAirplane
-					prop->LoadAirplane(belongTo);
-					break;
+					if (prop != NULL && prop->LandedOnTheDeck(staPPos, staPosition, nose, left, right) == YSTRUE)
+					{
+						// staOnThisCarrier=carrierList[i];  This should be done from LoadAirplane
+						prop->LoadAirplane(belongTo);
+						break;
+					}
 				}
 			}
 		}

@@ -35,6 +35,7 @@ public:
 	YSRESULT UnloadAirplane(FsAirplane *air); // When unload, add velocity
 	YSRESULT LoadGround(FsGround *gnd);
 	YSRESULT UnloadGround(FsGround *gnd);
+	YSRESULT UnloadAllCargo(void);
 
 	YSBOOL IsAirplaneLoaded(const FsAirplane *air) const;
 	YSBOOL IsGroundLoaded(const FsGround *gnd) const;
