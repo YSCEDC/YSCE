@@ -2739,6 +2739,7 @@ YSRESULT FsGroundProperty::SendCommand(const char in[])
 			case 3: //"STRENGTH",
 				res=YSOK;
 				staCurrentHealth=atoi(args[1]);
+				staStrength = atoi(args[1]);
 				break;
 			case 4: //"INITIGUN",
 				staGunBullet=atoi(args[1]);
