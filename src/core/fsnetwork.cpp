@@ -1780,28 +1780,37 @@ YSRESULT FsSocketServer::BroadcastGetDamage
 	unsigned char dat[256],*ptr;
 	ptr=dat;
 	FsPushInt(ptr,FSNETCMD_GETDAMAGE);
-	int victimHealth = victim->CommonProp().GetCurrentHealth();
-	int victimStrength = victim->CommonProp().GetStrength();
+	int victimHealth = victim->CommonProp().GetCurrentHealth(); //Health as presented by client
+	int victimStrength = victim->CommonProp().GetStrength(); //Strength from server files
+	if (victimStrength < 0) //Ground object GetStrength() returns underflow value for some reason
+	{
+		victimStrength = 10; //10 is a good default strength
+	}
 
 	int isAir,idOnSvr;
 	EncodeObject(isAir,idOnSvr,victim);
 	FsPushInt(ptr,isAir);
 	FsPushInt(ptr,idOnSvr);
 
-	printf("Health %i\n", victimHealth);
-	if (victimHealth <= 1) //Force aircraft with health between 2^15 and 2^16 (underflow) to STRENGTH 0 (can't AirCmd health directly)
+	if (isAir == 1 && victimHealth < 0) //Force aircraft with health between 2^15 and 2^16 (underflow) to STRENGTH 0 (can't AirCmd health directly)
 	{
-		BroadcastAirCmd(idOnSvr, "STRENGTH 0");
+		BroadcastAirCmd(idOnSvr, "STRENGTH 0"); //This could trigger in regular play, so set to 0 to prevent accidental revives
 	}
 
-	if (victimHealth > victimStrength) //Force aircraft with health between STRENGTH and 2^15 to reset STRENGTH
+	if (isAir == 1 && victimHealth > victimStrength) //Force aircraft with health between STRENGTH and 2^15 to reset STRENGTH
 	{
-		printf("ILLEGAL HEALTH: User %i (%s) has strength %i\n", victim->SearchKey(),victim->name,victimHealth);
-		char strengthOverride[15] = "STRENGTH ";
-		char strSTR[32];
-
-		sprintf(strSTR, "%d", victimStrength);
-		strcat(strengthOverride, strSTR);
+		printf("ILLEGAL HEALTH: User %i (%s) has health %i of %i\n", victim->SearchKey(), victim->name, victimHealth, victimStrength);
+		char strengthOverride[15];
+		if (victimStrength - power >= 0)
+		{
+			sprintf(strengthOverride, "STRENGTH %d", victimStrength - power);
+			printf("Reduced illegal health to %d\n", victimStrength - power);
+		}
+		else
+		{
+			sprintf(strengthOverride, "STRENGTH 0");
+			printf("Reduced illegal health to 0\n");
+		}
 
 		BroadcastAirCmd(idOnSvr, strengthOverride);
 	}
