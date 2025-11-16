@@ -10204,7 +10204,7 @@ YSRESULT FsSimulation::ClientState_SideWindow(const double &,class FsSocketClien
 	userInput.viewPch=pch;
 	if(air!=NULL && air->IsAlive()==YSTRUE)
 	{
-		SetPlayerAirplane(air);
+		SetPlayerAirplane(air, YSFALSE);
 	}
 
 	if(air==NULL || air->IsAlive()!=YSTRUE || escKeyCount>=2 ||

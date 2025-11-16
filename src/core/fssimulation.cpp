@@ -1066,7 +1066,7 @@ FsAirplane *FsSimulation::AddAirplane(FsAirplane &airplane,YSBOOL isPlayerPlane,
 		airplaneList.Encache();
 		if(isPlayerPlane==YSTRUE)
 		{
-			SetPlayerAirplane(&neo->dat);
+			SetPlayerAirplane(&neo->dat, YSTRUE);
 		}
 
 		if(netSearchKey!=0)
@@ -9193,7 +9193,7 @@ void FsSimulation::SimPlayTimedEvent(const double &ctime)
 			case FSEVENT_PLAYEROBJCHANGE:
 				{
 					const FsExistence *newPlayer=FindObject(simEvent->eventList[i].objKey);
-					if(NULL!=newPlayer)
+					if(NULL!=newPlayer && GetPlayerObject()->isPlayingRecord == YSTRUE)
 					{
 						SetPlayerObject(newPlayer,YSFALSE);  // <- YSFALSE: Should not record.
 					}
@@ -12331,7 +12331,7 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 					}
 					if(next->IsAlive()==YSTRUE)
 					{
-						SetPlayerAirplane(next);
+						SetPlayerAirplane(next, YSFALSE);
 						break;
 					}
 				}
