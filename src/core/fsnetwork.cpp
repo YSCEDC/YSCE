@@ -10556,6 +10556,13 @@ printf("%s %d\n",__FUNCTION__,__LINE__);
 					   air->netNextState.tRemote>air->netPrevState.tRemote)
 					{
 						air->Prop().NetworkDecode(air->netPrevState,air->netNextState);
+						if (air == GetPlayerAirplane() && (mainWindowActualViewMode.actualViewMode == FSCOCKPITVIEW || mainWindowActualViewMode.actualViewMode == FSADDITIONALAIRPLANEVIEW))
+						{
+							//To prevent jitter in observer mode cockpit view
+							//Currently camera is decided before packets are processed for some reason
+							//Reupdate camera position after aircraft position changes
+							DecideAllViewPoint(0.0);
+						}
 					}
 				}
 			}
