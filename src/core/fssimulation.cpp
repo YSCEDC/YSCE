@@ -2057,7 +2057,8 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 							playerPlane->isPlayingRecord=YSFALSE;
 							playerPlane->rec->DeleteRecord(currentTime,YsInfinity);
 							bulletHolder.DeleteRecordForResumeFlight(playerPlane,currentTime);
-							playerPlane->Prop().ReadBackControl(userInput);
+							playerPlane->Prop().SetControlsFromFlightState(userInput); //Instead of Prop().ReadBackControl which was setting userInput to air end state 
+							playerPlane->SetAutopilot(NULL);
 
 							endTime=0.0;
 							SetTerminate(YSFALSE);

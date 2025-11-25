@@ -646,6 +646,7 @@ void FsRunLoop::StartReplayRecord(YSBOOL editMode)
 {
 	replayInfo.Initialize(world->GetSimulation()->GetFirstRecordTime(),editMode);
 	simState=FsSimulation::FSSIMSTATE_INITIALIZE;
+	world->SetReplayResumed(YSFALSE);
 	ChangeRunMode(YSRUNMODE_REPLAYRECORD);
 }
 

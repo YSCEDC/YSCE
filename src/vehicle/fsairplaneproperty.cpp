@@ -2662,7 +2662,7 @@ void FsAirplaneProperty::ApplyControl(const FsFlightControl &ctl,unsigned int wh
 }
 
 void FsAirplaneProperty::ReadBackControl(FsFlightControl &ctl) const
-{
+	{
 	ctl.ctlGear=ctlGear;
 	ctl.ctlBrake=ctlBrake;
 	//ctl.ctlSpoiler=ctlSpoiler;
@@ -2692,6 +2692,41 @@ void FsAirplaneProperty::ReadBackControl(FsFlightControl &ctl) const
 void FsAirplaneProperty::CaptureState(YsArray <YsString> &stateStringArray) const
 {
 	// To be implemented
+}
+
+void FsAirplaneProperty::SetControlsFromFlightState(FsFlightControl& ctl)
+{
+	ctl.ctlAb = staAb;
+	ctl.ctlBombBayDoor = staBombBayDoor > 0.5 ? YSTRUE : YSFALSE;
+	ctl.ctlBrake = staBrake > 0.5 ? 1.0 : 0.0;
+	ctl.ctlElvTrim = ctlElvTrim;
+	ctl.ctlFlap = staFlap > 0.875 ? 1.0 : staFlap > 0.625 ? 0.75 : staFlap > 0.375 ? 0.5 : 0.0;
+	ctl.ctlGear = staGear > 0.5 ? 1.0 : 0.0;
+	ctl.ctlRudder = 0;
+	ctl.ctlSpoiler = staSpoiler > 0.875 ? 1.0 : staSpoiler > 0.625 ? 0.75 : staSpoiler > 0.375 ? 0.5 : 0.0;
+	ctl.ctlThrottle = staThrottle;
+	ctl.ctlThrRev = staThrRev > 0.5 ? 1.0 : 0.0;
+	ctl.ctlThrVec = staThrVec;
+	//ctl.ctlVgw = ;
+	ctl.ctlVectorMarker = YSTRUE;
+	//ctl.ctlPropeller = staPropLever[];
+	//ctl.ctlLeftDoor = ;
+	//ctl.ctlRightDoor = ;
+	//ctl.ctlRearDoor = ;
+
+	if (staTurret.GetN() > 0)
+	{
+		int i;
+		for (i = 0; i < staTurret.GetN(); i++)
+		{
+			if (chTurret[i].controlledBy == FSTURRET_CTRL_BY_PILOT)
+			{
+				ctl.ctlTurretHdg = staTurret[i].h / 3.141593;
+				ctl.ctlTurretPch = staTurret[i].p / 1.570796;
+				break;
+			}
+		}
+	}
 }
 
 unsigned FsAirplaneProperty::NetworkEncode(unsigned char dat[],int idOnSvr,const double &currentTime,YSBOOL shortFormat) const

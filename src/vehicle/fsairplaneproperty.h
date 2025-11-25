@@ -906,6 +906,7 @@ public:
 	 const YsAtt3 &vRot,const YsVec3 &totalForce,const YsVec3 &unitVelocityVector);
 	void ComputeCarrierLandingAfterReadingFlightRecord(const double &dt,const YsArray <FsGround *> &carrierList);
 	virtual void CaptureState(YsArray <YsString> &stateStringArray) const;
+	void SetControlsFromFlightState(FsFlightControl& ctl);
 
 
 	unsigned NetworkEncode(unsigned char dat[],int idOnSvr,const double &currentTime,YSBOOL shortFormat) const;
