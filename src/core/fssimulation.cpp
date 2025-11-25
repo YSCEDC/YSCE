@@ -1888,9 +1888,9 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 				YSBOOL startResume=YSFALSE;
 
 				passedTime=PassedTime();
-
+	
 				const double prevCurrentTime=currentTime;
-
+				
 				switch(replayMode)
 				{
 				case FSREPLAY_VERYFASTREWIND:
@@ -1925,7 +1925,7 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 					strcpy(systemMessage,"VERY FAST FORWARD");
 					break;
 				case FSREPLAY_STEPFORWARD:
-					passedTime = YsSmaller(0.05, endTime - currentTime);
+					currentTime += 0.05;
 					replayMode=FSREPLAY_PAUSE;
 					break;
 				case FSREPLAY_STEPBACK:
