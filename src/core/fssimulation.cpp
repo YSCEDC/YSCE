@@ -12432,21 +12432,33 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 		}
 		break;
 	case FSBTF_OUTSIDEPLAYERVIEW2:
-	case FSBTF_OUTSIDEPLAYERVIEW3:
-		if(FSOUTSIDEPLAYER2!=mainWindowViewmode && FSOUTSIDEPLAYER3!=mainWindowViewmode)
+		if (mainWindowViewmode != FSOUTSIDEPLAYER2)
 		{
 			relViewAtt.SetB(0.0);
-			focusAir=GetPlayerAirplane();
-		}
-
-		if(FSOUTSIDEPLAYER2==mainWindowViewmode)
-		{
-			mainWindowViewmode=FSOUTSIDEPLAYER3;
+			focusAir = GetPlayerAirplane();
+			relViewDist = 2.0;
+			mainWindowViewmode = FSOUTSIDEPLAYER2;
 		}
 		else
 		{
-			mainWindowViewmode=FSOUTSIDEPLAYER2;
+			relViewDist *= 2;
+			if (relViewDist > 8.0) { relViewDist = 1.0; }
 		}
+		break;
+	case FSBTF_OUTSIDEPLAYERVIEW3:
+		if (mainWindowViewmode != FSOUTSIDEPLAYER3)
+		{
+			relViewAtt.SetB(0.0);
+			focusAir = GetPlayerAirplane();
+			relViewDist = 2.0;
+			mainWindowViewmode = FSOUTSIDEPLAYER3;
+		}
+		else
+		{
+			relViewDist *= 2;
+			if (relViewDist > 8.0) { relViewDist = 1.0; }
+		}
+
 		break;
 	case FSBTF_GHOSTVIEW:
 		{
