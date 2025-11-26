@@ -787,7 +787,7 @@ void FsAirplane::CleanUp(void)
 	FsExistence::CleanUp();
 }
 
-void FsAirplane::MakeVaporVertexArray(class YsGLVertexBuffer &vtxBuf,class YsGLColorBuffer &colBuf,double currentTime,double remainTime,int step) const
+void FsAirplane::MakeVaporVertexArray(class YsGLVertexBuffer &vtxBuf,class YsGLColorBuffer &colBuf,double currentTime,double remainTime,int step, double colorScale) const
 {
 	vtxBuf.CleanUp();
 	colBuf.CleanUp();
@@ -903,14 +903,15 @@ void FsAirplane::MakeVaporVertexArray(class YsGLVertexBuffer &vtxBuf,class YsGLC
 					alpha=(float)YsSqr((t-t0)/(t1-t0));
 
 					// Transparency: alpha=1.0 at t=t1, alpha=0.0 at t=t0
-					colBuf.Add<float>(1.0f,1.0f,1.0f,alpha);
+					double col = 1.0 * colorScale;
+					colBuf.Add<float>(col, col, col,alpha);
 					vtxBuf.Add(vap00);
-					colBuf.Add<float>(1.0f,1.0f,1.0f,prevAlpha);
+					colBuf.Add<float>(col, col, col,prevAlpha);
 					vtxBuf.Add(vap10);
 
-					colBuf.Add<float>(1.0f,1.0f,1.0f,alpha);
+					colBuf.Add<float>(col, col, col,alpha);
 					vtxBuf.Add(vap01);
-					colBuf.Add<float>(1.0f,1.0f,1.0f,prevAlpha);
+					colBuf.Add<float>(col, col, col,prevAlpha);
 					vtxBuf.Add(vap11);
 
 					drewPrevious=YSTRUE;

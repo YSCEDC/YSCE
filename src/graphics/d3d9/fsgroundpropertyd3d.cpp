@@ -16,9 +16,13 @@ void FsAircraftCarrierProperty::EndDrawArrestingWire(void)
 {
 }
 
-YSRESULT FsAircraftCarrierProperty::DrawArrestingWire(void) const
+YSRESULT FsAircraftCarrierProperty::DrawArrestingWire(double colorScale) const
 {
 	auto ysD3dDev=YsD3dDevice::GetCurrent();
+	int r, g, b;
+	r = (int)165*colorScale;
+	g = (int)165*colorScale;
+	b = (int)165*colorScale;
 	if(drawArrestingWire==YSTRUE)
 	{
 		YsVec3 wire[2];
@@ -41,9 +45,9 @@ YSRESULT FsAircraftCarrierProperty::DrawArrestingWire(void) const
 				if(ev*(hook-wireCen)>0.0)
 				{
 					ysD3dDev->d3dDev->SetRenderState(D3DRS_LIGHTING,FALSE);
-					ysD3dDev->AddXyzCol(D3DPT_LINESTRIP,wire[0],255,255,255,255);
-					ysD3dDev->AddXyzCol(D3DPT_LINESTRIP,hook   ,255,255,255,255);
-					ysD3dDev->AddXyzCol(D3DPT_LINESTRIP,wire[1],255,255,255,255);
+					ysD3dDev->AddXyzCol(D3DPT_LINESTRIP,wire[0],r,g,b,255);
+					ysD3dDev->AddXyzCol(D3DPT_LINESTRIP,hook   ,r,g,b,255);
+					ysD3dDev->AddXyzCol(D3DPT_LINESTRIP,wire[1],r,g,b,255);
 					ysD3dDev->FlushXyzCol(D3DPT_LINESTRIP);
 
 					// glColor3d(1.0,1.0,1.0);
@@ -58,8 +62,8 @@ YSRESULT FsAircraftCarrierProperty::DrawArrestingWire(void) const
 		}
 
 		ysD3dDev->d3dDev->SetRenderState(D3DRS_LIGHTING,FALSE);
-		ysD3dDev->AddXyzCol(D3DPT_LINESTRIP,wire[0],255,255,255,255);
-		ysD3dDev->AddXyzCol(D3DPT_LINESTRIP,wire[1],255,255,255,255);
+		ysD3dDev->AddXyzCol(D3DPT_LINESTRIP,wire[0],r,g,b,255);
+		ysD3dDev->AddXyzCol(D3DPT_LINESTRIP,wire[1],r,g,b,255);
 		ysD3dDev->FlushXyzCol(D3DPT_LINESTRIP);
 		// glDisable(GL_LIGHTING);
 		// glColor3d(1.0,1.0,1.0);

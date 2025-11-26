@@ -7347,13 +7347,21 @@ void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsPr
 		}
 	}
 
+	double colorScale;
+	if (GetEnvironment() == FSDAYLIGHT)
+	{
+		colorScale = 1.0;
+	}
+	else {
+		colorScale = 0.1;
+	}
 	FsAircraftCarrierProperty::BeginDrawArrestingWire();
 	for(int i=0; i<aircraftCarrierList.GetN(); i++)
 	{
 		if(aircraftCarrierList[i]->IsAlive()==YSTRUE)
 		{
 			aircraftCarrierList[i]->Prop().GetAircraftCarrierProperty()->DrawBridge(viewMat);
-			aircraftCarrierList[i]->Prop().GetAircraftCarrierProperty()->DrawArrestingWire();
+			aircraftCarrierList[i]->Prop().GetAircraftCarrierProperty()->DrawArrestingWire(colorScale);
 		}
 	}
 	FsAircraftCarrierProperty::EndDrawArrestingWire();
@@ -7363,11 +7371,20 @@ void FsSimulation::SimDrawAirplaneVaporSmoke(void) const
 {
 	FsAirplane *seeker;
 	seeker=NULL;
+	double colorScale;
+	if (GetEnvironment() == FSDAYLIGHT)
+	{
+		colorScale = 1.0;
+	}
+	else {
+		colorScale = 0.1;
+	}
+
 	while((seeker=FindNextAirplane(seeker))!=NULL)
 	{
 		if(seeker->IsAlive()==YSTRUE)
 		{
-			seeker->DrawVapor(currentTime,0.5,4,cfgPtr->drawTransparentVapor);
+			seeker->DrawVapor(currentTime,0.5,4,cfgPtr->drawTransparentVapor, colorScale);
 		}
 		if(YSTRUE!=cfgPtr->useParticle)
 		{

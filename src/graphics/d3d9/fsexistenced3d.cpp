@@ -18,7 +18,7 @@
 
 extern D3DCAPS9 ysD3dDevCaps;
 
-void FsAirplane::DrawVapor(double currentTime,double remainTime,int step,YSBOOL) const
+void FsAirplane::DrawVapor(double currentTime,double remainTime,int step,YSBOOL, double colorScale) const
 {
 	auto ysD3dDev=YsD3dDevice::GetCurrent();
 

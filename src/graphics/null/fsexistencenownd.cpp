@@ -2,12 +2,13 @@
 #include <yscompilerwarning.h>
 #include "fs.h"
 
-void FsAirplane::DrawVapor(double currentTime,double remainTime,int step,YSBOOL transparency) const
+void FsAirplane::DrawVapor(double currentTime,double remainTime,int step,YSBOOL transparency, double colorScale) const
 {
 	YsDisregardVariable(currentTime);
 	YsDisregardVariable(remainTime);
 	YsDisregardVariable(step);
 	YsDisregardVariable(transparency);
+	YsDisregardVariable(colorScale);
 }
 
 void FsAirplane::DrawSingleSmoke(int smkId,double currentTime,double remainTime,FSSMOKETYPE smk,int step,YSBOOL transparency) const

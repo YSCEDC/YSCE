@@ -35,7 +35,7 @@ static FsAirplaneGraphicCache *FsGetAirplaneGraphicCache(void)
 
 ////////////////////////////////////////////////////////////
 
-void FsAirplane::DrawVapor(double currentTime,double remainTime,int step,YSBOOL /*transparency*/ ) const
+void FsAirplane::DrawVapor(double currentTime,double remainTime,int step,YSBOOL /*transparency*/, double colorScale) const
 {
 #ifdef YSOGLERRORCHECk
 	FsOpenGlShowError("FsAirplane::DrawVapor In");
@@ -43,7 +43,7 @@ void FsAirplane::DrawVapor(double currentTime,double remainTime,int step,YSBOOL 
 
 	YsGLVertexBuffer vtxBuf;
 	YsGLColorBuffer colBuf;
-	this->MakeVaporVertexArray(vtxBuf,colBuf,currentTime,remainTime,step);
+	this->MakeVaporVertexArray(vtxBuf,colBuf,currentTime,remainTime,step,colorScale);
 
 	YsGLSL3DRenderer *renderer=YsGLSLSharedVariColor3DRenderer();
 	YsGLSLUse3DRenderer(renderer);

@@ -5,7 +5,7 @@
 #include "fsgl2.0util.h"
 
 static FsGL2VariableVertexStorage vtxBuf;
-
+double r, g, b;
 void FsAircraftCarrierProperty::BeginDrawArrestingWire(void)
 {
 	vtxBuf.CleanUp();
@@ -16,15 +16,18 @@ void FsAircraftCarrierProperty::EndDrawArrestingWire(void)
 	YsGLSL3DRenderer *renderer=YsGLSLSharedFlat3DRenderer();
 	YsGLSLUse3DRenderer(renderer);
 
-	GLfloat color[4]={1.0f,1.0f,1.0f,1.0f};
+	GLfloat color[4]={r,g,b,1.0f};
 	YsGLSLSet3DRendererUniformColorfv(renderer,color);
 
 	YsGLSLDrawPrimitiveVtxfv(renderer,GL_LINES,vtxBuf.nVtx,vtxBuf.vtxArray);
 	YsGLSLEndUse3DRenderer(renderer);
 }
 
-YSRESULT FsAircraftCarrierProperty::DrawArrestingWire(void) const
+YSRESULT FsAircraftCarrierProperty::DrawArrestingWire(double colorScale) const
 {
+	r = 0.65 * colorScale;
+	g = 0.65 * colorScale;
+	b = 0.65 * colorScale;
 	if(drawArrestingWire==YSTRUE)
 	{
 		YsVec3 wire[2];

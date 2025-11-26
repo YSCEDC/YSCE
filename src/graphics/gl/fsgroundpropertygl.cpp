@@ -21,8 +21,12 @@ void FsAircraftCarrierProperty::EndDrawArrestingWire(void)
 {
 }
 
-YSRESULT FsAircraftCarrierProperty::DrawArrestingWire(void) const
+YSRESULT FsAircraftCarrierProperty::DrawArrestingWire(double colorScale) const
 {
+	double r, g, b;
+	r = 0.65 * colorScale;
+	g = 0.65 * colorScale;
+	b = 0.65 * colorScale;
 	if(drawArrestingWire==YSTRUE)
 	{
 		YsVec3 wire[2];
@@ -45,7 +49,7 @@ YSRESULT FsAircraftCarrierProperty::DrawArrestingWire(void) const
 				if(ev*(hook-wireCen)>0.0)
 				{
 					glDisable(GL_LIGHTING);
-					glColor3d(1.0,1.0,1.0);
+					glColor3d(r,g,b);
 					glBegin(GL_LINE_STRIP);
 					glVertex3dv(wire[0]);
 					glVertex3dv(hook);
@@ -57,7 +61,7 @@ YSRESULT FsAircraftCarrierProperty::DrawArrestingWire(void) const
 		}
 
 		glDisable(GL_LIGHTING);
-		glColor3d(1.0,1.0,1.0);
+		glColor3d(r,g,b);
 		glBegin(GL_LINES);
 		glVertex3dv(wire[0]);
 		glVertex3dv(wire[1]);

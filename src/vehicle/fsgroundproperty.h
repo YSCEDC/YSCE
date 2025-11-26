@@ -61,7 +61,7 @@ public:
 
 	YSRESULT DrawBridge(const YsMatrix4x4 &viewMat) const;
 	static void BeginDrawArrestingWire(void);
-	YSRESULT DrawArrestingWire(void) const;
+	YSRESULT DrawArrestingWire(double colorScale) const;
 	static void EndDrawArrestingWire(void);
 
 

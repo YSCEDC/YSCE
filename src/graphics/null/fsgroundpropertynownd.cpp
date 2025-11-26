@@ -9,7 +9,7 @@ void FsAircraftCarrierProperty::EndDrawArrestingWire(void)
 {
 }
 
-YSRESULT FsAircraftCarrierProperty::DrawArrestingWire(void) const
+YSRESULT FsAircraftCarrierProperty::DrawArrestingWire(double colorScale) const
 {
 	return YSOK;
 }

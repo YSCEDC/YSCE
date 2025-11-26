@@ -288,7 +288,7 @@ public:
 	void Initialize(void);
 	void CleanUp(void);
 
-	void MakeVaporVertexArray(class YsGLVertexBuffer &vtxBuf,class YsGLColorBuffer &colBuf,double currentTime,double remainTime,int step) const;
+	void MakeVaporVertexArray(class YsGLVertexBuffer &vtxBuf,class YsGLColorBuffer &colBuf,double currentTime,double remainTime,int step, double colorScale) const;
 	void MakeSmokeVertexArray(class YsGLVertexBuffer &vtxBuf,class YsGLNormalBuffer &nomBuf,class YsGLColorBuffer &colBuf,double currentTime,double remainTime,FSSMOKETYPE smk,int step) const;
 private:
 	void AddSingleSmokeVertexArray(
@@ -331,7 +331,7 @@ public:
 
 	void DrawSmoke(double currentTime,double remainTime,FSSMOKETYPE smk,int d,YSBOOL transparency) const;
 	void DrawSingleSmoke(int smkId,double currentTime,double remainTime,FSSMOKETYPE smk,int d,YSBOOL transparency) const;
-	void DrawVapor(double currentTime,double remainTime,int d,YSBOOL transparency) const;
+	void DrawVapor(double currentTime,double remainTime,int d,YSBOOL transparency, double colorScale) const;
 	YSBOOL HitGround
 	  (FSDIEDOF &diedOf,
 	   int &collType,  // 1:Ground  2:Shell
