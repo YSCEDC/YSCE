@@ -1879,8 +1879,6 @@ void FsGuiKeyAssignDialogClass::OnButtonClick(FsGuiButton *btn)
 			dlg->BindCloseModalCallBack(&FsGuiKeyAssignDialogClass::OnCloseAxisAssignDialog,this);
 			AttachModalDialog(dlg);
 		}
-
-		RestoreListBoxPos();
 	}
 	if(btn==changeJoyTrigFuncBtn)
 	{
@@ -1902,8 +1900,6 @@ void FsGuiKeyAssignDialogClass::OnButtonClick(FsGuiButton *btn)
 			dlg->BindCloseModalCallBack(&FsGuiKeyAssignDialogClass::OnCloseTriggerAssignDialog,this);
 			AttachModalDialog(dlg);
 		}
-
-		RestoreListBoxPos();
 	}
 	if(btn==changeKeyFuncBtn)
 	{
@@ -1923,8 +1919,6 @@ void FsGuiKeyAssignDialogClass::OnButtonClick(FsGuiButton *btn)
 			dlg->BindCloseModalCallBack(&FsGuiKeyAssignDialogClass::OnCloseKeyAssignDialog,this);
 			AttachModalDialog(dlg);
 		}
-
-		RestoreListBoxPos();
 	}
 }
 
@@ -1938,7 +1932,7 @@ void FsGuiKeyAssignDialogClass::OnCloseAxisAssignDialog(FsGuiDialog *dlg,int ret
 		auto newRev=assignDlg->newRev;
 		auto funcType=assignDlg->funcType;
 		printf("%d %d %d\n",newJoy,newAxis,newRev);
-		if(newJoy>=0)
+		if(newJoy>=0 && newAxis >=0)
 		{
 			ctlAssign.AddAxisAssignment(newJoy,newAxis,(FSAXISFUNCTION)funcType,newRev);
 		}
@@ -1948,6 +1942,7 @@ void FsGuiKeyAssignDialogClass::OnCloseAxisAssignDialog(FsGuiDialog *dlg,int ret
 		}
 		ctlAssign.BuildMapping();
 		Initialize();
+		RestoreListBoxPos();
 	}
 }
 
@@ -1959,7 +1954,7 @@ void FsGuiKeyAssignDialogClass::OnCloseTriggerAssignDialog(FsGuiDialog *dlg,int 
 		auto newJoy=assignDlg->newJoy;
 		auto newTrig=assignDlg->newTrig;
 		auto funcType=assignDlg->funcType;
-		if(newJoy>=0)
+		if(newJoy>=0 && newTrig >= 0)
 		{
 			ctlAssign.AddTriggerAssignment(newJoy,newTrig,(FSBUTTONFUNCTION)funcType);
 		}
@@ -1969,6 +1964,7 @@ void FsGuiKeyAssignDialogClass::OnCloseTriggerAssignDialog(FsGuiDialog *dlg,int 
 		}
 		ctlAssign.BuildMapping();
 		Initialize();
+		RestoreListBoxPos();
 	}
 }
 
@@ -1989,6 +1985,7 @@ void FsGuiKeyAssignDialogClass::OnCloseKeyAssignDialog(FsGuiDialog *dlg,int retu
 		}
 		ctlAssign.BuildMapping();
 		Initialize();
+		RestoreListBoxPos();
 	}
 }
 void FsGuiKeyAssignDialogClass::OnClosePrimaryJoystickDialog(FsGuiDialog *dlg,int returnCode)
