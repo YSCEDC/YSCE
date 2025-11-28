@@ -6432,13 +6432,13 @@ void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL show
 }
 
 void FsSimulation::SimDrawScreen(
-    const double &dt,const FsCockpitIndicationSet &cockpitIndicationSet,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker,const ActualViewMode &actualViewMode)
+	const double& dt, const FsCockpitIndicationSet& cockpitIndicationSet, YSBOOL demoMode, YSBOOL showTimer, YSBOOL showTimeMarker, const ActualViewMode& actualViewMode)
 {
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-1\n");
 #endif
 	FsProjection prj;
-	GetProjection(prj,actualViewMode);
+	GetProjection(prj, actualViewMode);
 
 
 	// printf("%s\n",ViewmodeToStr(actualViewMode.actualViewMode));
@@ -6447,30 +6447,30 @@ void FsSimulation::SimDrawScreen(
 	YsGLParticleManager partMan;
 	{
 		particleStore.AddToParticleManager(partMan);
-		if(YSTRUE==cfgPtr->useParticle)
+		if (YSTRUE == cfgPtr->useParticle)
 		{
-			solidCloud->AddToParticleManager(partMan,env,*weather,actualViewMode.viewAttitude.GetForwardVector(),actualViewMode.viewMat,prj.nearz,prj.farz,prj.tanFov);
-			bulletHolder.AddToParticleManager(partMan,currentTime);
+			solidCloud->AddToParticleManager(partMan, env, *weather, actualViewMode.viewAttitude.GetForwardVector(), actualViewMode.viewMat, prj.nearz, prj.farz, prj.tanFov);
+			bulletHolder.AddToParticleManager(partMan, currentTime);
 
-			for(FsAirplane *seeker=nullptr; nullptr!=(seeker=FindNextAirplane(seeker)); )
+			for (FsAirplane* seeker = nullptr; nullptr != (seeker = FindNextAirplane(seeker)); )
 			{
-				seeker->AddSmokeToParticleManager(partMan,currentTime,cfgPtr->smkRemainTime);
+				seeker->AddSmokeToParticleManager(partMan, currentTime, cfgPtr->smkRemainTime);
 			}
 		}
-		partMan.Sort(actualViewMode.viewPoint,actualViewMode.viewAttitude.GetForwardVector(),threadPool);	
+		partMan.Sort(actualViewMode.viewPoint, actualViewMode.viewAttitude.GetForwardVector(), threadPool);
 
-		auto &commonTexture=FsCommonTexture::GetCommonTexture();
+		auto& commonTexture = FsCommonTexture::GetCommonTexture();
 		commonTexture.GetParticleSpriteTexture();
 
-		if(YSTRUE==FsIsPointSpriteAvailable())
+		if (YSTRUE == FsIsPointSpriteAvailable())
 		{
-			const double pointSpriteDistThreshold=1000.0;
-			partMan.MakeBufferForTriangle(actualViewMode.viewAttitude.GetForwardVector(),0.125,pointSpriteDistThreshold);
+			const double pointSpriteDistThreshold = 1000.0;
+			partMan.MakeBufferForTriangle(actualViewMode.viewAttitude.GetForwardVector(), 0.125, pointSpriteDistThreshold);
 			partMan.MakeBufferForPointSprite(pointSpriteDistThreshold);
 		}
 		else
 		{
-			partMan.MakeBufferForTriangle(actualViewMode.viewAttitude.GetForwardVector(),0.125,prj.farz);
+			partMan.MakeBufferForTriangle(actualViewMode.viewAttitude.GetForwardVector(), 0.125, prj.farz);
 		}
 	}
 
@@ -6486,24 +6486,24 @@ void FsSimulation::SimDrawScreen(
 	printf("SIMDRAW-3\n");
 #endif
 
-	if(weather->GetFog()==YSTRUE)
+	if (weather->GetFog() == YSTRUE)
 	{
-		FsFogOn(fogColor,actualViewMode.fogVisibility);
+		FsFogOn(fogColor, actualViewMode.fogVisibility);
 	}
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-4\n");
 #endif
 
-	if(YSTRUE==FsIsShadowMapAvailable())
+	if (YSTRUE == FsIsShadowMapAvailable())
 	{
 		SimDrawShadowMap(actualViewMode);
 	}
 
 
-	auto projTfmBkg=SimDrawPrepareBackground(actualViewMode);
-	SimDrawBackground(actualViewMode,projTfmBkg);
-	if(weather->GetFog()==YSTRUE)
+	auto projTfmBkg = SimDrawPrepareBackground(actualViewMode);
+	SimDrawBackground(actualViewMode, projTfmBkg);
+	if (weather->GetFog() == YSTRUE)
 	{
 		FsFogOff();
 	}
@@ -6514,24 +6514,24 @@ void FsSimulation::SimDrawScreen(
 	printf("SIMDRAW-5\n");
 #endif
 
-// LARGE_INTEGER ctr1,ctr2,ctr3,ctr4,ctr5;
-// QueryPerformanceCounter(&ctr1);
+	// LARGE_INTEGER ctr1,ctr2,ctr3,ctr4,ctr5;
+	// QueryPerformanceCounter(&ctr1);
 
 	{
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
-	printf("SIMDRAW-5.1\n");
+		printf("SIMDRAW-5.1\n");
 #endif
 
 
-		if(actualViewMode.actualViewMode!=FSCOCKPITVIEW &&
-		   actualViewMode.actualViewMode!=FSADDITIONALAIRPLANEVIEW &&
-		   actualViewMode.actualViewMode!=FSADDITIONALAIRPLANEVIEW_CABIN)
+		if (actualViewMode.actualViewMode != FSCOCKPITVIEW &&
+			actualViewMode.actualViewMode != FSADDITIONALAIRPLANEVIEW &&
+			actualViewMode.actualViewMode != FSADDITIONALAIRPLANEVIEW_CABIN)
 		{
-			prj.nearz=1.0;
+			prj.nearz = 1.0;
 		}
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
-	printf("SIMDRAW-5.2\n");
+		printf("SIMDRAW-5.2\n");
 #endif
 
 		// See update.txt for changes of depth intervals.
@@ -6539,60 +6539,60 @@ void FsSimulation::SimDrawScreen(
 		//   Protect Polygon are drawn with side walls to prevent
 		//   something to be seen through the protect polygon due to
 		//   the clipping.
-		if(cfgPtr->zbuffQuality<=0)
+		if (cfgPtr->zbuffQuality <= 0)
 		{
-			auto usedProj=SimDrawPrepareRange(actualViewMode,prj.nearz,prj.farz);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet,partMan,actualViewMode,usedProj);
+			auto usedProj = SimDrawPrepareRange(actualViewMode, prj.nearz, prj.farz);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
 		}
-		else if(cfgPtr->zbuffQuality==1)
+		else if (cfgPtr->zbuffQuality == 1)
 		{
-			auto usedProj=SimDrawPrepareRange(actualViewMode,200.0    ,prj.farz);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet,partMan,actualViewMode,usedProj);
-			usedProj=SimDrawPrepareRange(actualViewMode,prj.nearz,201.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet,partMan,actualViewMode,usedProj);
+			auto usedProj = SimDrawPrepareRange(actualViewMode, 200.0, prj.farz);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
+			usedProj = SimDrawPrepareRange(actualViewMode, prj.nearz, 201.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
 		}
-		else if(cfgPtr->zbuffQuality==2)
+		else if (cfgPtr->zbuffQuality == 2)
 		{
-			auto usedProj=SimDrawPrepareRange(actualViewMode,400.0    ,prj.farz);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet,partMan,actualViewMode,usedProj);
-			usedProj=SimDrawPrepareRange(actualViewMode,100.0    ,401.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet,partMan,actualViewMode,usedProj);
-			usedProj=SimDrawPrepareRange(actualViewMode,prj.nearz,101.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet,partMan,actualViewMode,usedProj);
+			auto usedProj = SimDrawPrepareRange(actualViewMode, 400.0, prj.farz);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
+			usedProj = SimDrawPrepareRange(actualViewMode, 100.0, 401.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
+			usedProj = SimDrawPrepareRange(actualViewMode, prj.nearz, 101.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
 		}
-		else if(cfgPtr->zbuffQuality>=3)
+		else if (cfgPtr->zbuffQuality >= 3)
 		{
-			auto usedProj=SimDrawPrepareRange(actualViewMode,1000.0   ,prj.farz);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet,partMan,actualViewMode,usedProj);
-			usedProj=SimDrawPrepareRange(actualViewMode,500.0    ,1001.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet,partMan,actualViewMode,usedProj);
-			usedProj=SimDrawPrepareRange(actualViewMode,300.0    ,501.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet,partMan,actualViewMode,usedProj);
-			usedProj=SimDrawPrepareRange(actualViewMode,100.0    ,301.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet,partMan,actualViewMode,usedProj);
-			usedProj=SimDrawPrepareRange(actualViewMode,prj.nearz,101.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet,partMan,actualViewMode,usedProj);
+			auto usedProj = SimDrawPrepareRange(actualViewMode, 1000.0, prj.farz);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
+			usedProj = SimDrawPrepareRange(actualViewMode, 500.0, 1001.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
+			usedProj = SimDrawPrepareRange(actualViewMode, 300.0, 501.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
+			usedProj = SimDrawPrepareRange(actualViewMode, 100.0, 301.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
+			usedProj = SimDrawPrepareRange(actualViewMode, prj.nearz, 101.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
 		}
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
-	printf("SIMDRAW-5.y\n");
+		printf("SIMDRAW-5.y\n");
 #endif
 
 	}
 
-	auto projForeGround=SimDrawPrepareNormal(actualViewMode);
+	auto projForeGround = SimDrawPrepareNormal(actualViewMode);
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-6\n");
 #endif
 
-// QueryPerformanceCounter(&ctr2);
+	// QueryPerformanceCounter(&ctr2);
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-7\n");
 #endif
 
-	if(cfgPtr->drawVirtualJoystick==YSTRUE)
+	if (cfgPtr->drawVirtualJoystick == YSTRUE)
 	{
 		SimDrawJoystick(actualViewMode);
 	}
@@ -6601,7 +6601,7 @@ void FsSimulation::SimDrawScreen(
 	printf("SIMDRAW-8\n");
 #endif
 
-	SimDrawForeground(actualViewMode,projForeGround,cockpitIndicationSet,demoMode,showTimer,showTimeMarker);
+	SimDrawForeground(actualViewMode, projForeGround, cockpitIndicationSet, demoMode, showTimer, showTimeMarker);
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-9\n");
@@ -6609,18 +6609,21 @@ void FsSimulation::SimDrawScreen(
 
 	SimDrawBlackout(actualViewMode);
 
-// QueryPerformanceCounter(&ctr3);
-
-	nFrameForFpsCount++;
-	auto fpsTimer=FsSubSecondTimer();
-	if(nextFpsUpdateTime<fpsTimer)
+	// QueryPerformanceCounter(&ctr3);
+	if (FsIsMainWindowActive() == YSTRUE)
 	{
-		auto dtMS=fpsTimer-lastFpsUpdateTime;
-		double dt=(double)dtMS/1000.0;
-		fps=(double)nFrameForFpsCount/dt;
-		nFrameForFpsCount=0;
-		lastFpsUpdateTime=fpsTimer;
-		nextFpsUpdateTime=fpsTimer+500;
+		nFrameForFpsCount++;
+		auto fpsTimer=FsSubSecondTimer();
+	
+		if (nextFpsUpdateTime < fpsTimer)
+		{
+			auto dtMS = fpsTimer - lastFpsUpdateTime;
+			double dt = (double)dtMS / 1000.0;
+			fps = (double)nFrameForFpsCount / dt;
+			nFrameForFpsCount = 0;
+			lastFpsUpdateTime = fpsTimer;
+			nextFpsUpdateTime = fpsTimer + 500;
+		}
 	}
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
