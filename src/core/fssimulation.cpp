@@ -177,10 +177,12 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	mainWindowAdditionalAirplaneViewId=0;
 	mainWindowActualViewMode.viewPoint=YsOrigin();
 	mainWindowActualViewMode.viewAttitude=YsZeroAtt();
+	mainWindowActualViewMode.viewMagFix = 1.0;
 	for(auto &swavm : subWindowActualViewMode)
 	{
 		swavm.viewPoint=YsOrigin();
 		swavm.viewAttitude=YsZeroAtt();
+		swavm.viewMagFix = 1.0;
 	}
 	viewAttitudeTransition=YsZeroAtt();
 	viewMagUser=1.0;
@@ -307,10 +309,18 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	skyColor.SetIntRGB(0,128,192);
 
 	//lastProjection();
-	lastWindowWidth = 0;
-	lastWindowHeight = 0;
 	lastViewMagUser = 1.0;
-	lastViewMagFix = 1.0;
+	lastProjMainWindow.viewMagFix = 1.0;
+	lastProjSubWindow1.viewMagFix = 1.0;
+	lastProjSubWindow2.viewMagFix = 1.0;
+
+	lastProjMainWindow.viewportDim.SetX(0);
+	lastProjMainWindow.viewportDim.SetY(0);
+	lastProjSubWindow1.viewportDim.SetX(0);
+	lastProjSubWindow1.viewportDim.SetY(0);
+	lastProjSubWindow2.viewportDim.SetX(0);
+	lastProjSubWindow2.viewportDim.SetY(0);
+
 }
 
 FsSimulation::~FsSimulation()
@@ -6912,7 +6922,7 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode)
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-2.2\n");
 #endif
-
+	
 	GetProjection(prj,actualViewMode);
 	nearZ=prj.nearz;
 	farZ=prj.farz;
@@ -6980,7 +6990,7 @@ FsProjection FsSimulation::SimDrawPrepareRange(const ActualViewMode &actualViewM
 	FsGetWindowSize(wid,hei);
 
 	FsFlushScene();
-
+	
 	GetProjection(prj,actualViewMode);
 	prj.nearz=nZ;
 	prj.farz=fZ;
@@ -7003,7 +7013,7 @@ FsProjection FsSimulation::SimDrawPrepareNormal(const ActualViewMode &actualView
 	FsGetWindowSize(wid,hei);
 
 	FsFlushScene();
-
+	
 	GetProjection(prj,actualViewMode);
 	nearZ=prj.nearz;
 	farZ=prj.farz;
@@ -7275,8 +7285,8 @@ bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actua
 	double objVertViewAngle = atan2(objPosInCamSpace.y(), objPosInCamSpace.z());
 
 	//determine FOV angles based on portrait or landscape aspect ratio
-	double horizFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fov : proj.fovSecondary;
-	double vertFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fovSecondary : proj.fov;
+	double horizFovAngle = lastProjection->viewportDim.x() >= lastProjection->viewportDim.y() ? proj.fov : proj.fovSecondary;
+	double vertFovAngle = lastProjection->viewportDim.x() >= lastProjection->viewportDim.y() ? proj.fovSecondary : proj.fov;
 
 	//check if the object is within horizontal and vertical FOV +/- angular rad
 	//centerCameraPerspective check accounts for additional 1/6th FOV at top edge in cockpit view
@@ -9802,10 +9812,26 @@ void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualV
 {
 	int wid, hei;
 	const FsAirplane *playerPlane;
+	playerPlane = GetPlayerAirplane();
 
 	FsGetDrawingAreaSize(wid,hei);
+	YsVec2i drawingArea(wid, hei);
 
-	playerPlane = GetPlayerAirplane();
+	if (FsIsMainWindowActive() == YSFALSE)
+	{
+		if (FsIsSubWindowActive(0) == YSTRUE)
+		{
+			lastProjection = &lastProjSubWindow1;
+		}
+		else if (FsIsSubWindowActive(1) == YSTRUE)
+		{
+			lastProjection = &lastProjSubWindow2;
+		}
+	}
+	else
+	{
+		lastProjection = &lastProjMainWindow;
+	}
 
 	if(actualViewMode.centerThisCamera == YSFALSE && NULL != playerPlane)
 	{
@@ -9819,12 +9845,10 @@ void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualV
 		prj.cy = hei / 2;
 	}
 
-	if (wid != lastWindowWidth || hei != lastWindowHeight || viewMagUser != lastViewMagUser || actualViewMode.viewMagFix != lastViewMagFix)
+	if (drawingArea != lastProjection->viewportDim || viewMagUser != lastViewMagUser || actualViewMode.viewMagFix != lastProjection->viewMagFix)
 	{
-		lastWindowWidth = wid;
-		lastWindowHeight = hei;
 		lastViewMagUser = viewMagUser;
-		lastViewMagFix = actualViewMode.viewMagFix;
+		prj.viewMagFix = actualViewMode.viewMagFix;
 
 		prj.fovInPixels = YsGreater(wid / 2, hei / 2);  // 2010/07/05 It was ...,prj.cx,prj.cy);
 
@@ -9842,22 +9866,22 @@ void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualV
 
 		prj.UncacheMatrix();
 
-		lastProjection = prj;
+		*lastProjection = prj;
 	}
 	else
 	{
-		prj.fovInPixels = lastProjection.fovInPixels;
-		prj.prjMode = lastProjection.prjMode;
-		prj.prjPlnDist = lastProjection.prjPlnDist;
-		prj.tanFov = lastProjection.tanFov;
-		prj.tanFovSecondary = lastProjection.tanFovSecondary;
-		prj.fov = lastProjection.fov;
-		prj.fovSecondary = lastProjection.fovSecondary;
-		prj.viewportDim.Set(lastWindowWidth, lastWindowHeight);
-		prj.nearz = lastProjection.nearz;
-		prj.farz = lastProjection.farz;
+		prj.fovInPixels = lastProjection->fovInPixels;
+		prj.prjMode = lastProjection->prjMode;
+		prj.prjPlnDist = lastProjection->prjPlnDist;
+		prj.tanFov = lastProjection->tanFov;
+		prj.tanFovSecondary = lastProjection->tanFovSecondary;
+		prj.fov = lastProjection->fov;
+		prj.fovSecondary = lastProjection->fovSecondary;
+		prj.viewportDim.Set(wid, hei);
+		prj.nearz = lastProjection->nearz;
+		prj.farz = lastProjection->farz;
+		prj.viewMagFix = lastProjection->viewMagFix;
 	}
-
 	
 }
 
@@ -9893,6 +9917,8 @@ void FsSimulation::GetStandardProjection(class FsProjection &prj)
 
 	prj.nearz=0.1;
 	prj.farz=20000.0;
+
+	prj.viewMagFix = 1.0;
 
 	prj.UncacheMatrix();
 }

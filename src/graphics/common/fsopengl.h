@@ -29,6 +29,8 @@ public:
 
 	int cx,cy;
 
+	double viewMagFix;
+
 protected:
 	mutable YSBOOL matrixCached;
 	mutable YsMatrix4x4 projMatCache;

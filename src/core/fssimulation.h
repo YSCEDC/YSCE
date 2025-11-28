@@ -96,9 +96,10 @@ private:
 
 	YsArray <std::shared_ptr <FsSimExtensionBase> > addOnList;
 
-	FsProjection lastProjection;
-	int lastWindowWidth;
-	int lastWindowHeight;
+	FsProjection *lastProjection;
+	FsProjection lastProjMainWindow;
+	FsProjection lastProjSubWindow1;
+	FsProjection lastProjSubWindow2;
 	double lastViewMagUser;
 	double lastViewMagFix;
 
