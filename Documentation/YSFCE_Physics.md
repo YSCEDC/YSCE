@@ -84,12 +84,17 @@ $$T = \eta   \times   Thr   \times   THRMILIT$$
 
 For afterburning operations: 
 
-$$T = \eta   \times   THRMILIT   \times   (THRAFTBN   -   THRMILIT)   \times   Thr$$
+$$T = \eta   \times  \left[ THRMILIT   +   (THRAFTBN   -   THRMILIT)   \times   Thr \right]$$
 
 Where:
 - $\eta$ is the Jet Engine Thrust Efficiency
 - $Thr$ is the throttle (0 to 1, where 0 = idle, 1 = max)
 <br>
+
+The YSFlight and YSCE the minimum throttle possible with afterburner engaged is 60%. Therefore the minimum afterburner thrust can be simplified to this equation. Note that this often leaves a gap between the maximum non-afterburning thust and the minimum afterburning thrust.
+
+$$T_{MinAB} = \eta \times  \left( 0.4 * THRMILIT + 0.6 * THRAFTBN  \right)$$
+
 
 ## Jet Engine Thrust Efficiency
 
@@ -138,7 +143,7 @@ $$\dot{F} = dt   \times   FUELABRN   \times   \left( \frac{T}{THRAFTBN} \right)$
 
 For Non-Afterburning Operations:
 
-$$\dot{F} = dt   \times   FUELMILI   \times   Thr \times   \left( \frac{T}{THRAFTBN} \right)$$
+$$\dot{F} = dt   \times   FUELMILI   \times   Thr \times   \left( \frac{T}{THRMILIT} \right)$$
 
 Where:
 - $\dot{F}$ is the change in fuel weight
@@ -387,7 +392,11 @@ $$C_{D_{MAX}} = \frac{T_{V_{MAX}}}{0.5  \times \rho_{REVACRUS} \times  MAXSPEED^
 
 ### Helicopter Drag Coefficient Fundementals
 
-Need to calculate properties for the propeller engine.
+Need to calculate properties for the propeller engine. YSFlight assumes that at zero air speed, the propeller thrust will be equal to:
+
+$$T = g \times WEIGHCLN + WEIGLOAD + WEIGFUEL$$
+
+We start calculating propeller 
 
 $$PropK = - \left(\frac{PROPELLR   \times   PROPEFCY}{PROPVMIN^2}\right)$$
 
@@ -613,8 +622,6 @@ YSFCE uses the following equations to convert units to the default units used fo
 | Length | sm | $1609.0 \times sm$ | m |
 | Length | nm | $1852 \times nm$ | m |
 | Power | HP | $740 \times HP$ | W |
-
-
 
 
 
