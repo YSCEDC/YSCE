@@ -5418,30 +5418,30 @@ void FsSimulation::SimProcessGhostView(const double dt)
 	vp=userInput.ctlElevator*(YsPi/2.0)*dt;
 	vb=userInput.ctlAileron*(YsPi)*dt;
 	vh=(sin(viewAttitude.b())/5.0*dt)*YsAbs(cos(viewAttitude.p()));
-	vy=userInput.ctlRudder*dt;
-
+	//vy=userInput.ctlRudder*dt;
+	double speedMult = userInput.ctlThrottle;
 
 #if 1
 	{
-		viewAttitude.SetP(YsBound(viewAttitude.p()+vp,-YsPi/2.5,YsPi/2.5));
+		viewAttitude.SetP(YsBound(viewAttitude.p()+vp,-YsPi/2,YsPi/2));
 		viewAttitude.SetH(viewAttitude.h()+vb);  // vb~=Aileron.  Let aileron control heading.
-		if(viewAttitude.p()<-YsPi/2.5)
+		if(viewAttitude.p()<-YsPi/2)
 		{
-			viewAttitude.SetP(-YsPi/2.5);
+			viewAttitude.SetP(-YsPi/2);
 		}
-		else if(viewAttitude.p()>YsPi/2.5)
+		else if(viewAttitude.p()>YsPi/2)
 		{
-			viewAttitude.SetP(YsPi/2.5);
+			viewAttitude.SetP(YsPi/2);
 		}
 		viewAttitude.SetB(viewAttitude.b()/2.0);
 
 		if(userInput.ctlFireWeaponButton==YSTRUE)
 		{
-			desigSpd=280.0;
+			desigSpd=350.0*speedMult+5;
 		}
 		else if(userInput.ctlCycleWeaponButton==YSTRUE)
 		{
-			desigSpd=-280.0;
+			desigSpd=-350.0*speedMult+5;
 		}
 		else
 		{
@@ -5476,16 +5476,16 @@ void FsSimulation::SimProcessGhostView(const double dt)
 			ghostViewSpeed=desigSpd;
 		}
 	}
-
+	
 	YsVec3 displacement;
 	displacement=viewAttitude.GetForwardVector()*ghostViewSpeed*dt;
 	viewPoint+=displacement;
 
 	double elv;
 	elv=GetFieldElevation(viewPoint.x(),viewPoint.z());
-	if(viewPoint.y()<elv+10.0)
+	if(viewPoint.y()<elv+0.25)
 	{
-		viewPoint.SetY(elv+10.0);
+		viewPoint.SetY(elv+0.25);
 	}
 }
 
@@ -6525,7 +6525,8 @@ void FsSimulation::SimDrawScreen(
 
 		if (actualViewMode.actualViewMode != FSCOCKPITVIEW &&
 			actualViewMode.actualViewMode != FSADDITIONALAIRPLANEVIEW &&
-			actualViewMode.actualViewMode != FSADDITIONALAIRPLANEVIEW_CABIN)
+			actualViewMode.actualViewMode != FSADDITIONALAIRPLANEVIEW_CABIN &&
+			actualViewMode.actualViewMode != FSGHOSTVIEW)
 		{
 			prj.nearz = 1.0;
 		}
@@ -10428,6 +10429,7 @@ void FsSimulation::SimDecideViewpoint(ActualViewMode &actualViewMode,FSVIEWMODE 
 	actualViewMode.viewMagFix=1.0;       // by Default
 	actualViewMode.actualViewHdg=userInput.viewHdg;  // by Default
 	actualViewMode.actualViewPch=userInput.viewPch;  // by Default
+	actualViewMode.centerThisCamera = YSTRUE; //default to centered, overwrite where required
 
 	if(mode==FSGHOSTVIEW)
 	{
@@ -10471,7 +10473,7 @@ void FsSimulation::SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWM
 {
 	actualViewMode.actualViewMode=mode;  // by Default
 	actualViewMode.viewMagFix=1.0;       // by Default
-	actualViewMode.centerThisCamera = YSTRUE; //default to centered, overwrite where required
+	printf("Center? %i\n", cfgPtr->centerCameraPerspective);
 
 	switch(mode)
 	{
@@ -11036,6 +11038,7 @@ void FsSimulation::SimDecideViewpoint_Gnd(ActualViewMode &actualViewMode,FSVIEWM
 
 			actualViewMode.viewPoint=playerGround->GetMatrix()*cock;
 			actualViewMode.viewAttitude=playerGround->GetAttitude();
+			actualViewMode.centerThisCamera = cfgPtr->centerCameraPerspective;
 
 			const YsAtt3 &neutAtt=YsZeroAtt(); // Will be added.
 
