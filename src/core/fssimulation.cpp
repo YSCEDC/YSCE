@@ -2719,7 +2719,7 @@ void FsSimulation::SimulateOneStep(
 		{
 			focusAir=GetPlayerAirplane();
 		}
-		else if (focusAir == NULL || focusAir == GetPlayerAirplane() || focusAir->IsAlive() != YSTRUE)
+		else if (focusAir == NULL || focusAir->IsAlive() != YSTRUE)
 		{
 			focusAir = FindNextAirplane(focusAir);
 
