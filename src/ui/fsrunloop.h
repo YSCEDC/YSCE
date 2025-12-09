@@ -12,6 +12,8 @@
 #include "fscmdparaminfo.h"
 #include "fssimulation.h"
 
+#include "YsClock.h"
+
 ////////////////////////////////////////////////////////////
 
 class FsShowLandingPracticeInfo
@@ -49,6 +51,7 @@ public:
 class FsRunLoop
 {
 public:
+	YsClock programClock{};
 	enum INITIALIZATION_STAGE
 	{
 		INIT_STARTED

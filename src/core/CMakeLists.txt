@@ -84,7 +84,7 @@ add_library(${TARGET_NAME}
 	fssimextension_intercept.h
 	fssimextension_closeairsupport.h
 	fssimextension_groundtoair.h
-)
+ "YsClock.h" "YsClock.cpp" "FsTime.cpp")
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(${TARGET_NAME} 
 	geblkernel
