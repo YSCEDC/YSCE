@@ -38,6 +38,7 @@
 #include "graphics/common/fsopengl.h"
 
 #include "fssimextension.h"
+#include "FsTime.h"
 
 class FsWorld;
 
@@ -236,9 +237,13 @@ public:
 		double tStart,tEnd;
 	};
 
-
-
 	class FsWorld *world;
+
+	class FsTime *fstime;
+	YsClock *programClock;
+	YsClock *loadingClock;
+	YsClock *worldClock;
+	double clockError;
 
 	YSBOOL showReplayDlg;
 	class FsReplayDialog *replayDlg;
@@ -266,7 +271,7 @@ public:
 	double aircraftTroubleTimer;
 
 	mutable int nFrameForFpsCount;
-	mutable YSSIZE_T lastFpsUpdateTime,nextFpsUpdateTime;
+	mutable double lastFpsUpdateTime,nextFpsUpdateTime;
 	mutable double fps;
 
 protected:
@@ -438,6 +443,7 @@ public:
 	void CenterJoystickOneStep(FSSIMULATIONSTATE &simState);
 	void CenterJoystickDraw(void) const;
 
+	void SetPause(YSBOOL p);
 	YSBOOL Paused(void) const;
 	FsWorld *GetWorldPtr(void);
 	unsigned int GetAllowedWeaponType(void) const;
@@ -848,7 +854,7 @@ protected:
 	YsArray <ViewModeAndIndexAndPosition> MakeAvailableILSView(void) const;
 	YsArray <ViewModeAndIndexAndPosition> MakeAvailableTowerView(void) const;
 	YsArray <const FsAirplane *> MakeAvailableViewTargetAirplane(YSBOOL includePlayer) const;
-
+	
 	double PassedTime(void);
 	double RealTimeStep(void);
 

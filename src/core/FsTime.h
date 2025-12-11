@@ -5,13 +5,14 @@
 #include <ysclass11.h>
 #include "YsClock.h"
 
+
 class FsTime
 {
 public:
 	FsTime();
 
-	YSBOOL timeInitialized;
-	long long int currentRawTime;
+	YSBOOL timeInitialized{};
+	long long int currentRawTime{};
 	long long int rawTimeOverflow;
 	double currentRealTime;
 	double realTimeStep;
@@ -37,7 +38,22 @@ public:
 	YSRESULT GetIndexByClock(YsClock& clk, int idx);
 	YSBOOL CompareClocks(YsClock clk1, YsClock clk2);
 
-	YsClock programClock;
-	YsClock worldClock;
-	YsClock flightClock;
+	YsClock programClock{};
+	YsClock worldClock{};
+	YsClock loadingClock{};
+	YsClock flightClock{};
+
+	void MakeMeAFuckingTimeHolder(FsTime *holder);
+
+};
+
+class TimeUtil
+{
+public:
+	TimeUtil();
+	void SetUp();
+	FsTime *asd;
+
+	FsTime GetTimeSys(FsTime *holder);
+	class FsTime *timelink;
 };

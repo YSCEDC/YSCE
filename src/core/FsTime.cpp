@@ -1,35 +1,26 @@
 #include "FsTime.h"
 
-YSBOOL FsTime::CompareClocks(YsClock clk1, YsClock clk2)
-{
-	if (clk1.startTime == clk2.startTime &&
-		clk1.currTime == clk2.currTime &&
-		clk1.prevTime == clk2.prevTime &&
-		clk1.endTime == clk2.endTime &&
-		clk1.elapsedTime == clk2.elapsedTime &&
-		clk1.timeStep == clk2.timeStep &&
-		clk1.tickSpeed == clk2.tickSpeed &&
-		clk1.state == clk2.state &&
-		clk1.name == clk2.name)
-	{
-		return YSTRUE;
-	}
-	YSFALSE;
-}
-
 FsTime::FsTime() : clockList(FsClockAllocator)
 {
+	if (timeInitialized != YSTRUE)
+	{
+		InitializeTime();
+	}
 }
 
 void FsTime::InitializeTime()
 {
-	currentRawTime = 0;
+	currentRawTime = GetTickCount();
 	rawTimeOverflow = 0;
 	currentRealTime = 0.0;
 	realTimeStep = 0.0;
 	timeInitialized = YSTRUE;
-	programClock.InitializeClock();
-	worldClock.InitializeClock();
+}
+
+void FsTime::MakeMeAFuckingTimeHolder(FsTime *holder)
+{
+	FsTime *FuckityFuck = new FsTime();
+	holder = FuckityFuck;
 }
 
 void FsTime::UpdateCurrentRawTime(void)
@@ -86,13 +77,16 @@ double FsTime::GetRealTimeStep()
 void FsTime::IncrementAllClocks()
 {
 	UpdateRealTime();
+	programClock.Increment(realTimeStep);
+	worldClock.Increment(realTimeStep);
+	loadingClock.Increment(realTimeStep);
 
-	for (int i = 0; i < clockList.GetN(); i++)
+	/*for (int i = 0; i < clockList.GetN(); i++)
 	{
 		YsListItem <YsClock>* neo;
 		neo = clockList.GetItemFromId(i);
 		IncrementThisClock(neo->dat);
-	}
+	}*/
 }
 
 void FsTime::IncrementThisClock(YsClock& clk)
@@ -140,6 +134,23 @@ void FsTime::IncrementThisClock(YsClock& clk)
 		break;
 	}
 
+}
+
+YSBOOL FsTime::CompareClocks(YsClock clk1, YsClock clk2)
+{
+	if (clk1.startTime == clk2.startTime &&
+		clk1.currTime == clk2.currTime &&
+		clk1.prevTime == clk2.prevTime &&
+		clk1.endTime == clk2.endTime &&
+		clk1.elapsedTime == clk2.elapsedTime &&
+		clk1.timeStep == clk2.timeStep &&
+		clk1.tickSpeed == clk2.tickSpeed &&
+		clk1.state == clk2.state &&
+		clk1.name == clk2.name)
+	{
+		return YSTRUE;
+	}
+	YSFALSE;
 }
 
 //--------------------------------------
@@ -232,4 +243,32 @@ YSRESULT FsTime::GetIndexByClock(YsClock& clk, int idx)
 		}
 	}
 	return YSERR;
+}
+
+TimeUtil::TimeUtil()
+{
+	printf("------------------------------TimeUtil init\n");
+	SetUp();
+}
+
+void TimeUtil::SetUp()
+{
+	printf("FUUUUUUUUUUUUCK\n");
+	timelink->MakeMeAFuckingTimeHolder(asd);
+	asd->InitializeTime();
+	//timelink = asd;
+	printf("------------------------------TimeUtil SetUp\n");
+	//fstime->InitializeTime();
+	
+}
+
+FsTime TimeUtil::GetTimeSys(FsTime *holder)
+{
+	//FsTime fuckThis = new FsTime();
+	//SetUp();
+	//fuckThis->InitializeTime();
+	//holder = fuckThis;
+	//return holder;
+	FsTime fuck;
+	return fuck;
 }

@@ -26,12 +26,12 @@ class YsClock
 
 		YsClock();
 
-		void Increment();
+		void Increment(double step);
 		void InitializeClock();
-		void StartClock();
+		void StartClock(double initTime);
 		void PauseClock();
 		void UnpauseClock();
-		void StopClock();
+		void StopClock(double stopTime);
 		void ResetClock();
 		void SetClockSpeed(double mult);
 };

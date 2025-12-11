@@ -834,6 +834,16 @@ FsWorld::FsWorld() :
 	lastError=ERROR_NOERROR;
 	extensionRegistry.reset(new FsSimExtensionRegistry);
 	extensionRegistry->RegisterKnownExtension();
+	
+	fstime = new FsTime();
+	fstime->InitializeTime();
+	//timeSys->SetUp();
+	//fstime = timeSys->asd;
+	//FsTime* jgjgj{};
+	//timeSys->GetTimeSys(jgjgj);
+	//fstime = jgjgj;
+	//timeSys->SetUp();
+	//fstime = timeSys->timelink;
 }
 
 FsWorld::~FsWorld()

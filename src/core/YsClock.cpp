@@ -13,8 +13,15 @@ YsClock::YsClock()
 	state = IDLE;
 }
 
-void YsClock::Increment()
+void YsClock::Increment(double step)
 {
+	if (state == RUN)
+	{
+		prevTime = currTime;
+		currTime += step * tickSpeed;
+		elapsedTime = currTime - startTime;
+		timeStep = currTime - prevTime;
+	}
 }
 
 
@@ -23,9 +30,16 @@ void YsClock::InitializeClock()
 	YsClock();
 }
 
-void YsClock::StartClock()
+void YsClock::StartClock(double initTime)
 {
-	state = START;
+	startTime = initTime;
+	currTime = 0;
+	prevTime = 0;
+	endTime = -1;
+	elapsedTime = 0;
+	timeStep = 0;
+	tickSpeed = 1.0;
+	state = YsClock::CLOCKSTATE::RUN;
 }
 
 void YsClock::PauseClock()
@@ -38,14 +52,24 @@ void YsClock::UnpauseClock()
 	state = RUN;
 }
 
-void YsClock::StopClock()
+void YsClock::StopClock(double stopTime)
 {
+	endTime = stopTime;
+	elapsedTime = endTime - startTime;
+	currTime = endTime;
 	state = STOP;
 }
 
 void YsClock::ResetClock()
 {
-	state = RESET;
+	startTime = 0;
+	currTime = 0;
+	prevTime = 0;
+	endTime = -1;
+	elapsedTime = 0;
+	timeStep = 0;
+	tickSpeed = 1.0;
+	state = YsClock::CLOCKSTATE::IDLE;
 }
 
 void YsClock::SetClockSpeed(double mult)

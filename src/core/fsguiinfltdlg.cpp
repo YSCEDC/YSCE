@@ -386,46 +386,57 @@ void FsReplayDialog::OnButtonClick(FsGuiButton *btn)
 	else if(btn==rewindAllTheWay)
 	{
 		sim->world->JumpToFirstRecordTime();
+		sim->SetPause(YSFALSE);
 	}
 	else if(btn==veryFastRewind)
 	{
 		sim->SetReplayMode(FsSimulation::FSREPLAY_VERYFASTREWIND);
+		sim->SetPause(YSFALSE);
 	}
 	else if(btn==fastRewind)
 	{
 		sim->SetReplayMode(FsSimulation::FSREPLAY_FASTREWIND);
+		sim->SetPause(YSFALSE);
 	}
 	else if(btn==backward)
 	{
 		sim->SetReplayMode(FsSimulation::FSREPLAY_BACKWARD);
+		sim->SetPause(YSFALSE);
 	}
 	else if(btn==stepBack)
 	{
 		sim->SetReplayMode(FsSimulation::FSREPLAY_STEPBACK);
+		sim->SetPause(YSFALSE);
 	}
 	else if(btn==pause)
 	{
 		sim->SetReplayMode(FsSimulation::FSREPLAY_PAUSE);
+		sim->SetPause(YSTRUE);
 	}
 	else if(btn==stepPlay)
 	{
 		sim->SetReplayMode(FsSimulation::FSREPLAY_STEPFORWARD);
+		sim->SetPause(YSFALSE);
 	}
 	else if(btn==play)
 	{
 		sim->SetReplayMode(FsSimulation::FSREPLAY_PLAY);
+		sim->SetPause(YSFALSE);
 	}
 	else if(btn==fastForward)
 	{
 		sim->SetReplayMode(FsSimulation::FSREPLAY_FASTFORWARD);
+		sim->SetPause(YSFALSE);
 	}
 	else if(btn==veryFastForward)
 	{
 		sim->SetReplayMode(FsSimulation::FSREPLAY_VERYFASTFORWARD);
+		sim->SetPause(YSFALSE);
 	}
 	else if(btn==forwardAllTheWay)
 	{
 		sim->world->JumpToLastRecordTime();
+		sim->SetPause(YSFALSE);
 	}
 	else if(btn==hideBtn)
 	{

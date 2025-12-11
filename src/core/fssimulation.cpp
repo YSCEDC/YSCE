@@ -152,6 +152,12 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	goal=new FsMissionGoal;
 	goal->SetIsActiveMission(YSFALSE);  // By default, FsSimulation doesn't have an active mission.
 	simEvent=new FsSimulationEventStore;
+	
+	//fstime = timeUtil->fstime;
+	fstime = world->fstime;
+	programClock = &fstime->programClock;
+	loadingClock = &fstime->loadingClock;
+	worldClock = &fstime->worldClock;
 
 	airTrafficSequence=FsAirTrafficSequence::Create();
 
@@ -166,7 +172,7 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	localUser=new FsLocalUser;
 
 	SetTerminate(YSFALSE);
-	pause=YSFALSE;
+	SetPause(YSFALSE);
 	canContinue=YSTRUE;
 
 	escKeyCount=0;
@@ -711,6 +717,19 @@ void FsSimulation::CenterJoystickDraw(void) const
 	}
 }
 
+void FsSimulation::SetPause(YSBOOL p)
+{
+	pause = p;
+	if (pause == YSTRUE)
+	{
+		worldClock->PauseClock();
+	}
+	else
+	{
+		worldClock->UnpauseClock();
+	}
+}
+
 YSBOOL FsSimulation::Paused(void) const
 {
 	return pause;
@@ -728,7 +747,7 @@ unsigned int FsSimulation::GetAllowedWeaponType(void) const
 
 double FsSimulation::CurrentTime(void) const
 {
-	return currentTime;
+	return worldClock->currTime;
 }
 
 void FsSimulation::RegisterExtension(std::shared_ptr <FsSimExtensionBase> addOnPtr)
@@ -921,10 +940,10 @@ void FsSimulation::RecordPlayerChange(const FsExistence *newPlayer)
 	{
 		FsSimulationEvent evt;
 		evt.Initialize();
-		evt.eventTime=currentTime;
+		evt.eventTime = worldClock->currTime;
 		evt.eventType=FSEVENT_PLAYEROBJCHANGE;
 		evt.objKey=newPlayer->SearchKey();
-		simEvent->AddEvent(currentTime,evt);
+		simEvent->AddEvent(worldClock->currTime, evt);
 	}
 }
 
@@ -950,12 +969,12 @@ YSRESULT FsSimulation::GetPlayerVehicleHistory(YsArray <PlayerVehicleHistoryInfo
 			{
 				if(0<playerHist.GetN())
 				{
-					playerHist.GetEnd().tEnd=simEvent->eventList[evtIdx].eventTime;
+					playerHist.GetEnd().tEnd=simEvent->eventList[evtIdx].eventTime; //Set end time for prev vehicle
 				}
 
 				playerHist.Increment();
 				playerHist.GetEnd().vehicle=obj;
-				playerHist.GetEnd().tStart=simEvent->eventList[evtIdx].eventTime;
+				playerHist.GetEnd().tStart=simEvent->eventList[evtIdx].eventTime; //Set start time for current vehicle
 
 				if(FSEX_AIRPLANE==obj->GetType())
 				{
@@ -1635,16 +1654,16 @@ void FsSimulation::FastForward(const double &targetTime)
 	bulletHolder.Clear();
 	explosionHolder.Clear();
 
-	while(currentTime<targetTime-YsTolerance)
+	while (worldClock->currTime < targetTime - YsTolerance)
 	{
 		double dt;
 
-		dt=YsSmaller(targetTime-currentTime,0.25);
+		dt = YsSmaller(targetTime - worldClock->currTime, 0.25);
 
-		bulletHolder.PlayRecord(currentTime,dt);
-		explosionHolder.PlayRecord(currentTime,dt);
+		bulletHolder.PlayRecord(worldClock->currTime, dt);
+		explosionHolder.PlayRecord(worldClock->currTime, dt);
 
-		currentTime+=dt;
+		worldClock->currTime += dt;
 	}
 
 	FsAirplane *seeker;
@@ -1744,7 +1763,7 @@ void FsSimulation::RunSimulationOneStep(FsSimulation::FSSIMULATIONSTATE &simStat
 				}
 			}
 
-			if(endTime>YsTolerance && currentTime>endTime)
+			if (endTime > YsTolerance && worldClock->currTime > endTime)
 			{
 				SetTerminate(YSTRUE);
 			}
@@ -1776,8 +1795,8 @@ void FsSimulation::RunSimulationOneStep(FsSimulation::FSSIMULATIONSTATE &simStat
 		}
 		break;
 	case FSSIMSTATE_TERMINATING:
-		SimRecordAir(currentTime,YSTRUE);
-		SimRecordGnd(currentTime,YSTRUE);
+		SimRecordAir(worldClock->currTime,YSTRUE);
+		SimRecordGnd(worldClock->currTime,YSTRUE);
 		AfterSimulation();
 		for(auto ptr : addOnList)
 		{
@@ -1862,7 +1881,7 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 		ClearKeyBuffer();
 		PrepareRunSimulation();
 
-		currentTime=YsGreater(replayInfo.beginTime-30.0,0.0);
+		worldClock->currTime = YsGreater(replayInfo.beginTime - 30.0, 0.0);
 		FastForward(replayInfo.beginTime);
 
 		if(replayInfo.editMode==YSTRUE)
@@ -1899,53 +1918,52 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 
 				passedTime=PassedTime();
 	
-				const double prevCurrentTime=currentTime;
+				//const double prevCurrentTime=currentTime;
 				
 				switch(replayMode)
 				{
 				case FSREPLAY_VERYFASTREWIND:
 					strcpy(systemMessage,"VERY FAST REWIND");
-					currentTime-=passedTime*8.0;
 					SimMove(0.0);
-					passedTime=0.0;
+					worldClock->tickSpeed = -8.0;
 					break;
 				case FSREPLAY_FASTREWIND:
 					strcpy(systemMessage,"FAST REWIND");
-					currentTime-=passedTime*4.0;
 					SimMove(0.0);
-					passedTime=0.0;
+					worldClock->tickSpeed = -4.0;
 					break;
 				case FSREPLAY_BACKWARD:
 					strcpy(systemMessage,"BACKWARD");
-					currentTime-=passedTime;
 					SimMove(0.0);
-					passedTime=0.0;
+					worldClock->tickSpeed = -1.0;
 					break;
 				case FSREPLAY_PLAY:
 					strcpy(systemMessage,"PLAY");
+					worldClock->tickSpeed = 1.0;
 					break;
 				case FSREPLAY_FASTFORWARD:
-					currentTime += passedTime * 4.0;
-					passedTime=0.01;
 					strcpy(systemMessage,"FAST FORWARD");
+					worldClock->tickSpeed = 4.0;
 					break;
 				case FSREPLAY_VERYFASTFORWARD:
-					currentTime+=passedTime*8.0;
-					passedTime=0.01;
 					strcpy(systemMessage,"VERY FAST FORWARD");
+					worldClock->tickSpeed = 8.0;
 					break;
 				case FSREPLAY_STEPFORWARD:
-					currentTime += 0.05;
-					replayMode=FSREPLAY_PAUSE;
+					worldClock->tickSpeed = 0.25;
+					strcpy(systemMessage, "SLOW FORWARD");
 					break;
 				case FSREPLAY_STEPBACK:
-					currentTime=YsGreater(currentTime-0.05,0.0);
 					SimMove(0.0);
-					replayMode=FSREPLAY_PAUSE;
+					strcpy(systemMessage, "SLOW BACKWARD");
+					worldClock->tickSpeed = -0.25;
 					break;
 				case FSREPLAY_PAUSE:
-					passedTime=0.0;
-					strcpy(systemMessage,"PAUSE [ESC KEY TO END REPLAY]");
+					strcpy(systemMessage, "");
+					if (endTime > YsTolerance && worldClock->currTime > endTime - YsTolerance)
+					{
+						strcpy(systemMessage, "END [ESC KEY TO QUIT REPLAY]");
+					}
 					SimMove(0.0);
 					break;
 				}
@@ -1974,11 +1992,12 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 				}
 		#endif
 
-				if(currentTime<0.0 && 
+				if(worldClock->currTime < 0.0 &&
 				  (replayMode==FSREPLAY_FASTREWIND || replayMode==FSREPLAY_VERYFASTREWIND || replayMode==FSREPLAY_BACKWARD || replayMode==FSREPLAY_STEPBACK))
 				{
-					currentTime=0.0;
-					replayMode=FSREPLAY_PAUSE;
+					worldClock->currTime = 0.0;
+					SetPause(YSTRUE);
+					replayMode=FSREPLAY_PLAY;
 				}
 
 				if(replayMode==FSREPLAY_FASTREWIND ||
@@ -1994,8 +2013,8 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 					{
 						if(air->IsAlive()==YSTRUE)
 						{
-							air->refTime1=YsSmaller(air->refTime1,currentTime);
-							air->refTime2=YsSmaller(air->refTime2,currentTime);
+							air->refTime1=YsSmaller(air->refTime1, worldClock->currTime);
+							air->refTime2=YsSmaller(air->refTime2, worldClock->currTime);
 						}
 					}
 
@@ -2004,8 +2023,8 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 					{
 						if(gnd->IsAlive()==YSTRUE)
 						{
-							gnd->refTime1=YsSmaller(gnd->refTime1,currentTime);
-							gnd->refTime2=YsSmaller(gnd->refTime2,currentTime);
+							gnd->refTime1=YsSmaller(gnd->refTime1, worldClock->currTime);
+							gnd->refTime2=YsSmaller(gnd->refTime2, worldClock->currTime);
 						}
 					}
 				}
@@ -2016,24 +2035,26 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 				   FSREPLAY_PLAY==replayMode ||
 				   FSREPLAY_STEPBACK==replayMode)
 				{
-					SimResetPlayerObjectFromRecord(currentTime,prevCurrentTime);
+					SimResetPlayerObjectFromRecord(worldClock->currTime,worldClock->prevTime);
 				}
 
 				prevMode=replayMode;
 				SimulateOneStep(passedTime,YSFALSE,YSFALSE,YSTRUE,YSFALSE,FSUSC_ENABLE/*YSTRUE*/,YSFALSE);
 				SimCheckEndOfFlightRecord();
 
-				if((prevMode==FSREPLAY_BACKWARD ||
+				if((prevMode == FSREPLAY_STEPBACK ||
+					prevMode==FSREPLAY_BACKWARD ||
 				    prevMode==FSREPLAY_FASTREWIND ||
 				    prevMode==FSREPLAY_VERYFASTREWIND ||
 				    prevMode==FSREPLAY_VERYFASTFORWARD)&&
-				   (replayMode!=FSREPLAY_BACKWARD &&
+				   (replayMode!=FSREPLAY_STEPBACK &&
+					replayMode!=FSREPLAY_BACKWARD &&
 				    replayMode!=FSREPLAY_FASTREWIND &&
 				    replayMode!=FSREPLAY_VERYFASTREWIND &&
 				    replayMode!=FSREPLAY_VERYFASTFORWARD))
 				{
 					double targetTime;
-					targetTime=currentTime;
+					targetTime= worldClock->currTime;
 
 					// 2007/09/22 Disabled weapon flushing
 					// currentTime=YsGreater(0.0,currentTime-30.0);
@@ -2041,17 +2062,18 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 
 					if(cfgPtr->drawOrdinance==YSTRUE)
 					{
-						RefreshOrdinanceByWeaponRecord(currentTime);
+						RefreshOrdinanceByWeaponRecord(worldClock->currTime);
 					}
 
-					simEvent->SeekNextEventPointereToCurrentTime(currentTime);
+					simEvent->SeekNextEventPointereToCurrentTime(worldClock->currTime);
 				}
 
-				if(endTime>YsTolerance && currentTime>endTime &&
-				   (replayMode==FSREPLAY_PLAY || replayMode==FSREPLAY_FASTFORWARD ||
-				    replayMode==FSREPLAY_VERYFASTFORWARD))
+				if(endTime>YsTolerance && worldClock->currTime >= endTime &&
+				   (replayMode==FSREPLAY_PLAY || replayMode == FSREPLAY_STEPFORWARD || replayMode==FSREPLAY_FASTFORWARD ||
+				    replayMode==FSREPLAY_VERYFASTFORWARD || replayMode == FSREPLAY_FASTFORWARD))
 				{
-					currentTime=endTime-YsTolerance;
+					worldClock->currTime = endTime;
+					SetPause(YSTRUE);
 					replayMode=FSREPLAY_PAUSE;
 				}
 
@@ -2065,19 +2087,19 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 						if(playerPlane!=NULL && playerPlane->Prop().IsActive()==YSTRUE)
 						{
 							playerPlane->isPlayingRecord=YSFALSE;
-							playerPlane->rec->DeleteRecord(currentTime,YsInfinity);
-							bulletHolder.DeleteRecordForResumeFlight(playerPlane,currentTime);
+							playerPlane->rec->DeleteRecord(worldClock->currTime,YsInfinity);
+							bulletHolder.DeleteRecordForResumeFlight(playerPlane, worldClock->currTime);
 							playerPlane->Prop().SetControlsFromFlightState(userInput); //Instead of Prop().ReadBackControl which was setting userInput to air end state 
 							playerPlane->SetAutopilot(NULL);
 
 							endTime=0.0;
 							SetTerminate(YSFALSE);
-							pause=YSTRUE;
+							SetPause(YSTRUE);
 							replayMode = FSREPLAY_PLAY;
 							strcpy(systemMessage, "");
 
 							ClearKeyBuffer();
-							simEvent->DeleteFutureEventForResume(currentTime);
+							simEvent->DeleteFutureEventForResume(worldClock->currTime);
 
 							replayInfo.resumed=YSTRUE;
 							world->SetReplayResumed(YSTRUE);
@@ -2100,15 +2122,15 @@ void FsSimulation::RunReplaySimulationOneStep(FSSIMULATIONSTATE &simState,FsSimu
 
 				SimulateOneStep(passedTime,YSFALSE,YSTRUE,YSFALSE,YSFALSE,FSUSC_ENABLE /*YSTRUE*/,YSFALSE);
 
-				if(endTime>YsTolerance && currentTime>endTime)
+				if(endTime>YsTolerance && worldClock->currTime >endTime)
 				{
 					SetTerminate(YSTRUE);
 				}
 
 				if(YSTRUE==terminate)
 				{
-					SimRecordAir(currentTime,YSTRUE);
-					SimRecordGnd(currentTime,YSTRUE);
+					SimRecordAir(worldClock->currTime,YSTRUE);
+					SimRecordGnd(worldClock->currTime,YSTRUE);
 					simState=FSSIMSTATE_TERMINATING;
 				}
 			}
@@ -2243,7 +2265,7 @@ void FsSimulation::PrepareRunSimulation(void)
 
 	endTime=0.0;
 	SetTerminate(YSFALSE);
-	pause=YSFALSE;
+	SetPause(YSFALSE);
 	escKeyCount=0;
 
 
@@ -2392,6 +2414,7 @@ void FsSimulation::PrepareRunSimulation(void)
 	airTrafficSequence->MakeSlotArray(this);
 	airTrafficSequence->RefreshAirTrafficSlot(this);
 
+	worldClock->StartClock(0.0);
 }
 
 void FsSimulation::SetTerminate(YSBOOL termi)
@@ -2415,7 +2438,7 @@ void FsSimulation::PrepareContinueSimulation(void)
 			evt.eventType=FSEVENT_AIRCOMMAND;
 			evt.objKey=FsExistence::GetSearchKey(playerPlane);
 			evt.str=playerPlane->cmdLog[i];
-			simEvent->AddEvent(currentTime,evt);
+			simEvent->AddEvent(worldClock->currTime,evt);
 		}
 
 		playerPlane->Prop().ReadBackControl(userInput);
@@ -2435,11 +2458,11 @@ void FsSimulation::PrepareContinueSimulation(void)
 			evt.eventType=FSEVENT_GNDCOMMAND;
 			evt.objKey=FsExistence::GetSearchKey(playerGround);
 			evt.str=playerGround->cmdLog[i];
-			simEvent->AddEvent(currentTime,evt);
+			simEvent->AddEvent(worldClock->currTime,evt);
 		}
 	}
 
-	simEvent->DeleteFutureEventForResume(currentTime);
+	simEvent->DeleteFutureEventForResume(worldClock->currTime);
 
 	ClearUserInterface();    // 2009/03/29
 
@@ -2522,13 +2545,18 @@ void FsSimulation::SimulateOneStep(
 	}
 
 
-	if(airTrafficSequence->GetNextUpdateTime()<currentTime)
+	if(airTrafficSequence->GetNextUpdateTime()< worldClock->currTime)
 	{
 		airTrafficSequence->RefreshAirTrafficSlot(this);
 	}
 	airTrafficSequence->RefreshRunwayUsage(this);
 
-	if (pause != YSTRUE && (replayMode != FSREPLAY_PAUSE && replayMode != FSREPLAY_FASTREWIND && replayMode != FSREPLAY_VERYFASTREWIND && replayMode != FSREPLAY_BACKWARD))
+	if (pause != YSTRUE &&
+		(replayMode != FSREPLAY_PAUSE && 
+		replayMode != FSREPLAY_FASTREWIND && 
+		replayMode != FSREPLAY_VERYFASTREWIND && 
+		replayMode != FSREPLAY_BACKWARD && 
+		replayMode != FSREPLAY_STEPBACK))
 	{
 		double deltaTime=YsSmaller(passedTime,3.0);
 
@@ -2562,29 +2590,29 @@ void FsSimulation::SimulateOneStep(
 		#ifdef CRASHINVESTIGATION
 			printf("S2\n");
 		#endif
-			bulletHolder.PlayRecord(currentTime,dt);
+			bulletHolder.PlayRecord(worldClock->currTime,dt);
 
 		#ifdef CRASHINVESTIGATION
 			printf("S3\n");
 		#endif
-			explosionHolder.PlayRecord(currentTime,dt);
+			explosionHolder.PlayRecord(worldClock->currTime,dt);
 
 
-			SimPlayTimedEvent(currentTime);
+			SimPlayTimedEvent(worldClock->currTime);
 
 
-			currentTime+=dt;
+			worldClock->currTime +=dt;
 			deltaTime-=dt;
 
 		#ifdef CRASHINVESTIGATION
 			printf("S4\n");
 		#endif
 			// For some reason, FsFormation doesn't work for higher fps
-			if(currentTime>=nextControlTime)
+			if(worldClock->currTime >=nextControlTime)
 			{
-				SimControlByComputer(currentTime-lastControlledTime);
-				lastControlledTime=currentTime;
-				nextControlTime=currentTime+0.025;
+				SimControlByComputer(worldClock->currTime -lastControlledTime);
+				lastControlledTime= worldClock->currTime;
+				nextControlTime= worldClock->currTime +0.025;
 			}
 
 		#ifdef CRASHINVESTIGATION
@@ -2593,7 +2621,7 @@ void FsSimulation::SimulateOneStep(
 
 			if(demoMode!=YSTRUE && networkStandby!=YSTRUE && userControl!=FSUSC_DISABLE)
 			{
-				SimControlByUser(realTimeStep,userControl);  // CAUTION: SimControlByUser must be after SimControlByComputer
+				SimControlByUser(programClock->timeStep,userControl);  // CAUTION: SimControlByUser must be after SimControlByComputer
 			}
 
 		#ifdef CRASHINVESTIGATION
@@ -2601,15 +2629,15 @@ void FsSimulation::SimulateOneStep(
 		#endif
 			if(record==YSTRUE)
 			{
-				if(currentTime>nextAirRecordTime)
+				if(worldClock->currTime >nextAirRecordTime)
 				{
-					SimRecordAir(currentTime,YSFALSE);
-					nextAirRecordTime=currentTime+0.05;
+					SimRecordAir(worldClock->currTime,YSFALSE);
+					nextAirRecordTime= worldClock->currTime +0.05;
 				}
-				if(currentTime>nextGndRecordTime)
+				if(worldClock->currTime >nextGndRecordTime)
 				{
-					SimRecordGnd(currentTime,YSFALSE);
-					nextGndRecordTime=currentTime+1.0;
+					SimRecordGnd(worldClock->currTime,YSFALSE);
+					nextGndRecordTime= worldClock->currTime +1.0;
 				}
 			}
 
@@ -2673,7 +2701,7 @@ void FsSimulation::SimulateOneStep(
 				}
 			}
 
-			FsPlugInCallInterval(currentTime,this);
+			FsPlugInCallInterval(worldClock->currTime,this);
 			for(auto &addOnPtr : addOnList)
 			{
 				addOnPtr->OnInterval(this,dt);
@@ -2690,7 +2718,7 @@ void FsSimulation::SimulateOneStep(
 	}
 	else // if(pause==YSTRUE)
 	{
-		SimControlByUser(realTimeStep,userControl); //Must use realTimeStep otherwise sim cannot process input when FSREPLAY_PAUSE
+		SimControlByUser(programClock->timeStep,userControl); //Must use realTimeStep otherwise sim cannot process input when FSREPLAY_PAUSE
 	}
 
 
@@ -2785,6 +2813,7 @@ void FsSimulation::AfterSimulation(void)
 	FsSplitMainWindow(YSFALSE);
 
 	*weather=*iniWeather;
+	worldClock->StopClock(worldClock->currTime);
 }
 
 
@@ -3606,7 +3635,7 @@ void FsSimulation::AddTimedMessage(const char str[])
 
 void FsSimulation::AddEvent(const class FsSimulationEvent &evt)
 {
-	simEvent->AddEvent(currentTime,evt);
+	simEvent->AddEvent(worldClock->currTime,evt);
 }
 
 void FsSimulation::SimMove(const double &dt)
@@ -3632,7 +3661,7 @@ void FsSimulation::SimMove(const double &dt)
 
 		if(airplane->isPlayingRecord==YSTRUE)
 		{
-			airplane->PlayRecord(currentTime+dt,dt);
+			airplane->PlayRecord(worldClock->currTime + dt,dt);
 			airplane->Prop().ComputeCarrierLandingAfterReadingFlightRecord(dt,aircraftCarrierList);
 		}
 		else if(airplane->IsAlive()==YSTRUE)
@@ -3700,7 +3729,7 @@ void FsSimulation::SimMove(const double &dt)
 		{
 			if(cfgPtr->useParticle==YSTRUE)
 			{
-				if(airplane->refTime1<currentTime || airplane->refTime2<currentTime)
+				if(airplane->refTime1< worldClock->currTime || airplane->refTime2< worldClock->currTime)
 				{
 					YsVec3 vel;
 					airplane->Prop().GetVelocity(vel);
@@ -3708,7 +3737,7 @@ void FsSimulation::SimMove(const double &dt)
 
 					const YsVec3 particlePos=airplane->GetPosition()+vel*airplane->Prop().GetOutsideRadius()*0.5;
 
-					if(airplane->refTime1<currentTime)
+					if(airplane->refTime1< worldClock->currTime)
 					{
 						int i;
 						FsParticle *particle;
@@ -3751,21 +3780,21 @@ void FsSimulation::SimMove(const double &dt)
 							particle->SetColorTransition(FSPARTICLECOLOR_BURN);
 						}
 
-						airplane->refTime1=currentTime+0.03;  // 30 times per sec
+						airplane->refTime1= worldClock->currTime +0.03;  // 30 times per sec
 					}
-					if(airplane->refTime2<currentTime)
+					if(airplane->refTime2< worldClock->currTime)
 					{
-						bulletHolder.ThrowRandomDebris(currentTime,particlePos,airplane->GetAttitude(),60.0);
-						airplane->refTime2=currentTime+0.18;
+						bulletHolder.ThrowRandomDebris(worldClock->currTime,particlePos,airplane->GetAttitude(),60.0);
+						airplane->refTime2= worldClock->currTime +0.18;
 					}
 				}
 			}
 			else
 			{
-				if(currentTime>airplane->refTime1)
+				if(worldClock->currTime >airplane->refTime1)
 				{
-					explosionHolder.Explode(currentTime,airplane->GetPosition(),0.7,7.0,15.0,YSFALSE,NULL,YSFALSE);
-					airplane->refTime1=currentTime+0.15;
+					explosionHolder.Explode(worldClock->currTime,airplane->GetPosition(),0.7,7.0,15.0,YSFALSE,NULL,YSFALSE);
+					airplane->refTime1= worldClock->currTime +0.15;
 				}
 			}
 		}
@@ -3818,7 +3847,7 @@ void FsSimulation::SimMove(const double &dt)
 		{
 			YSBOOL prevAlive;
 			prevAlive=ground->IsAlive();
-			ground->PlayRecord(currentTime+dt,dt);
+			ground->PlayRecord(worldClock->currTime +dt,dt);
 			if(YSTRUE==prevAlive && YSTRUE!=ground->IsAlive())
 			{
 				if(YSTRUE==cfgPtr->useParticle && replayMode==FSREPLAY_PLAY)
@@ -3851,11 +3880,11 @@ void FsSimulation::SimMove(const double &dt)
 		}
 		else if(ground->isPlayingRecord!=YSTRUE && world->GroundFireDisabled != YSTRUE)
 		{
-			ground->Prop().FireGun(currentTime,dt,this,bulletHolder,ground);
+			ground->Prop().FireGun(worldClock->currTime,dt,this,bulletHolder,ground);
 			if(ground->netType==FSNET_LOCAL)
 			{
 				// Missiles will be notified by packets
-				ground->Prop().FireMissile(currentTime,bulletHolder,ground);
+				ground->Prop().FireMissile(worldClock->currTime,bulletHolder,ground);
 			}
 		}
 
@@ -3869,7 +3898,7 @@ void FsSimulation::SimMove(const double &dt)
 		printf("S1-20\n");
 #endif
 
-	bulletHolder.Move(dt,currentTime,*weather);
+	bulletHolder.Move(dt, worldClock->currTime,*weather);
 	if(NULL!=GetPlayerGround() && NULL!=GetPlayerGround()->Prop().GetAirTarget())
 	{
 		FsExistence *target=GetPlayerGround()->Prop().GetAirTarget();
@@ -3889,11 +3918,11 @@ void FsSimulation::SimMove(const double &dt)
 	{
 		if(airplane->isPlayingRecord!=YSTRUE && airplane->IsAlive()==YSTRUE)
 		{
-			airplane->Prop().FireGunIfVirtualTriggerIsPressed(currentTime,dt,this,bulletHolder,airplane);
+			airplane->Prop().FireGunIfVirtualTriggerIsPressed(worldClock->currTime,dt,this,bulletHolder,airplane);
 
 			YSBOOL fired,blockedByBombBay,jettisoned;
 			FSWEAPONTYPE woc;
-			fired=airplane->Prop().ProcessVirtualButtonPress(blockedByBombBay,woc,this,currentTime,bulletHolder,airplane, jettisoned);
+			fired=airplane->Prop().ProcessVirtualButtonPress(blockedByBombBay,woc,this, worldClock->currTime,bulletHolder,airplane, jettisoned);
 			if (fired == YSTRUE && jettisoned == YSTRUE && airplane == GetPlayerAirplane())
 			{
 				if (woc == FSWEAPON_FLARE)
@@ -4212,8 +4241,8 @@ void FsSimulation::SimComputeAirToObjCollision(void)
 void FsSimulation::SimProcessCollisionAndTerrain(const double & /*dt*/)
 {
 	// Call HitObject BEFORE HitGround
-	bulletHolder.HitObject(currentTime,&explosionHolder,this,tallestGroundObjectHeight);
-	bulletHolder.HitGround(currentTime,field,&explosionHolder,this);
+	bulletHolder.HitObject(worldClock->currTime,&explosionHolder,this,tallestGroundObjectHeight);
+	bulletHolder.HitGround(worldClock->currTime,field,&explosionHolder,this);
 
 	YsArray <FsAirplane *,256> airCandidate;
 	YsArray <FsGround *,256> gndCandidate;
@@ -4267,7 +4296,7 @@ void FsSimulation::SimProcessCollisionAndTerrain(const double & /*dt*/)
 			FSDIEDOF diedOf;
 			int collType;
 			if(airPtr->HitGround(
-			    diedOf,collType,currentTime,field,cfgPtr->takeCrash,cfgPtr->canLandAnywhere,&explosionHolder)==YSTRUE)
+			    diedOf,collType, worldClock->currTime,field,cfgPtr->takeCrash,cfgPtr->canLandAnywhere,&explosionHolder)==YSTRUE)
 			{
 				AirplaneCrash(airPtr,diedOf,collType);
 			}
@@ -4296,14 +4325,14 @@ void FsSimulation::SimProcessCollisionAndTerrain(const double & /*dt*/)
 						if(killed==YSTRUE)
 						{
 							bulletHolder.ThrowMultiDebris
-							   (5,currentTime,air1->GetPosition(),air1->GetAttitude(),60.0);
+							   (5, worldClock->currTime,air1->GetPosition(),air1->GetAttitude(),60.0);
 						}
 
 						air2->GetDamage(killed,12,FSDIEDOF_COLLISION);
 						if(killed==YSTRUE)
 						{
 							bulletHolder.ThrowMultiDebris
-							   (5,currentTime,air2->GetPosition(),air2->GetAttitude(),60.0);
+							   (5, worldClock->currTime,air2->GetPosition(),air2->GetAttitude(),60.0);
 						}
 					}
 				}
@@ -4330,7 +4359,7 @@ void FsSimulation::SimProcessCollisionAndTerrain(const double & /*dt*/)
 							if(killed==YSTRUE)
 							{
 								bulletHolder.ThrowMultiDebris
-								   (5,currentTime,air1->GetPosition(),air1->GetAttitude(),60.0);
+								   (5, worldClock->currTime,air1->GetPosition(),air1->GetAttitude(),60.0);
 							}
 
 							if(gnd2->Prop().GetAircraftCarrierProperty()!=NULL)
@@ -4342,7 +4371,7 @@ void FsSimulation::SimProcessCollisionAndTerrain(const double & /*dt*/)
 							if(killed==YSTRUE)
 							{
 								bulletHolder.ThrowMultiDebris
-								   (5,currentTime,gnd2->GetPosition(),gnd2->GetAttitude(),60.0);
+								   (5, worldClock->currTime,gnd2->GetPosition(),gnd2->GetAttitude(),60.0);
 							}
 						}
 					}
@@ -4594,19 +4623,19 @@ void FsSimulation::KillCallBack(FsExistence &obj,const YsVec3 &pos)
 	const double &rad=obj.GetApproximatedCollideRadius();
 	if(obj.IsAirplane()==YSTRUE)
 	{
-		explosionHolder.Explode(currentTime,pos,10.0,1.0,rad+15.0,YSTRUE,NULL,YSTRUE);
+		explosionHolder.Explode(worldClock->currTime,pos,10.0,1.0,rad+15.0,YSTRUE,NULL,YSTRUE);
 	}
 	else
 	{
 		if(cfgPtr->useParticle==YSTRUE)
 		{
-			explosionHolder.Explode(currentTime,pos,1.0,1.0,rad+15.0,YSTRUE,NULL,YSTRUE);
+			explosionHolder.Explode(worldClock->currTime,pos,1.0,1.0,rad+15.0,YSTRUE,NULL,YSTRUE);
 			auto partGenPtr=particleStore.CreateGenerator(FSPARTICLEGENERATOR_BURN,pos,YsYVec(),10.0,pos.y());
 			partGenPtr->SetSize(3.0,20.0,3.0);
 		}
 		else
 		{
-			explosionHolder.Explode(currentTime,pos,10.0,1.0,rad+15.0,YSTRUE,NULL,YSTRUE);
+			explosionHolder.Explode(worldClock->currTime,pos,10.0,1.0,rad+15.0,YSTRUE,NULL,YSTRUE);
 		}
 	}
 }
@@ -4625,11 +4654,11 @@ void FsSimulation::SimCheckEndOfSimulation(void)
 		        playerObj->isPlayingRecord!=YSTRUE &&
 		        playerObj->IsActive()!=YSTRUE)
 		{
-			endTime=currentTime+3.0;
+			endTime= worldClock->currTime +3.0;
 		}
 		else if(GetNumAirplane()==0)
 		{
-			endTime=currentTime;
+			endTime= worldClock->currTime;
 		}
 	}
 }
@@ -4641,8 +4670,8 @@ void FsSimulation::SimCheckEndOfFlightRecord(void)
 		double lastRecordTime;
 		if(AllRecordedFlightsAreOver(lastRecordTime)==YSTRUE)
 		{
-			currentTime=lastRecordTime;
-			endTime=currentTime;  // Stop Right Away
+			worldClock->currTime =lastRecordTime;
+			endTime= worldClock->currTime;  // Stop Right Away
 		}
 	}
 }
@@ -4911,7 +4940,7 @@ void FsSimulation::SimControlByUser(const double &dt,FSUSERCONTROL userControl)
 		}
 		else*/ if(mainWindowViewmode==FSGHOSTVIEW)
 		{
-			SimProcessGhostView(dt);
+			SimProcessGhostView(programClock->timeStep);
 		}
 		else if(NULL!=playerObj)
 		{
@@ -5039,9 +5068,9 @@ void FsSimulation::SimControlByUser(const double &dt,FSUSERCONTROL userControl)
 void FsSimulation::SimPlayerAircraftGetTrouble(void)
 {
 	FsAirplane *playerAir=GetPlayerAirplane();
-	if(NULL!=playerAir && aircraftTroubleTimer+10.0<currentTime)
+	if(NULL!=playerAir && aircraftTroubleTimer+10.0< worldClock->currTime)
 	{
-		aircraftTroubleTimer=currentTime+10.0;
+		aircraftTroubleTimer= worldClock->currTime +10.0;
 
 		const double luck=(double)rand()/(double)RAND_MAX;
 
@@ -5220,7 +5249,7 @@ void FsSimulation::SendAircraftTrouble(FsAirplane &air,FSAIRCRAFTTROUBLE trouble
 			evt.eventType=FSEVENT_AIRCOMMAND;
 			evt.objKey=air.SearchKey();
 			evt.str=troubleCmd;
-			simEvent->AddEvent(currentTime,evt);
+			simEvent->AddEvent(worldClock->currTime,evt);
 		}
 	}
 }
@@ -5241,7 +5270,7 @@ void FsSimulation::ClearAircraftTrouble(FsAirplane &air,FSAIRCRAFTTROUBLE troubl
 			evt.eventType=FSEVENT_AIRCOMMAND;
 			evt.objKey=air.SearchKey();
 			evt.str=troubleCmd;
-			simEvent->AddEvent(currentTime,evt);
+			simEvent->AddEvent(worldClock->currTime,evt);
 		}
 	}
 }
@@ -5283,31 +5312,49 @@ void FsSimulation::SimProcessRawKey(int rawKey)
 	case FSKEY_Z:
 		if (playingReplay == YSTRUE) {
 			replayMode = FSREPLAY_VERYFASTREWIND;
+			SetPause(YSFALSE);
 		}
 		break;
 	case FSKEY_X:
 		if (playingReplay == YSTRUE) {
 			replayMode = FSREPLAY_FASTREWIND;
+			SetPause(YSFALSE);
 		}
 		break;
 	case FSKEY_C:
 		if (playingReplay == YSTRUE) {
 			replayMode = FSREPLAY_PLAY;
+			SetPause(YSFALSE);
 		}
 		break;
 	case FSKEY_V:
 		if (playingReplay == YSTRUE) {
 			replayMode = FSREPLAY_FASTFORWARD;
+			SetPause(YSFALSE);
 		}
 		break;
 	case FSKEY_B:
 		if (playingReplay == YSTRUE) {
 			replayMode = FSREPLAY_VERYFASTFORWARD;
+			SetPause(YSFALSE);
 		}
 		break;
 	case FSKEY_D:
 		if (playingReplay == YSTRUE) {
 			replayMode = FSREPLAY_PAUSE;
+			SetPause(YSTRUE);
+		}
+		break;
+	case FSKEY_S:
+		if (playingReplay == YSTRUE) {
+			replayMode = FSREPLAY_STEPBACK;
+			SetPause(YSFALSE);
+		}
+		break;
+	case FSKEY_F:
+		if (playingReplay == YSTRUE) {
+			replayMode = FSREPLAY_STEPFORWARD;
+			SetPause(YSFALSE);
 		}
 		break;
 	case FSKEY_HOME:
@@ -5317,7 +5364,7 @@ void FsSimulation::SimProcessRawKey(int rawKey)
 			t0=GetFirstRecordTime();
 			prevT=YsGreater(0.0,t0-30.0);
 
-			currentTime=prevT;
+			worldClock->currTime = prevT;
 			FastForward(t0);
 			RefreshOrdinanceByWeaponRecord(prevT);
 			replayMode=FSREPLAY_PLAY;
@@ -5340,7 +5387,7 @@ void FsSimulation::SimProcessRawKey(int rawKey)
 	if(FSKEY_0<=rawKey && rawKey<=FSKEY_9)
 	{
 		const int i=rawKey-FSKEY_0;
-		timeMarker[i]=currentTime;
+		timeMarker[i]= worldClock->currTime;
 	}
 	if(rawKey==FSKEY_ESC)
 	{
@@ -5534,7 +5581,7 @@ void FsSimulation::SimProcessLoadingDialog(YSBOOL lb,YSBOOL mb,YSBOOL rb,int mx,
 						evt.eventType=FSEVENT_AIRCOMMAND;
 						evt.objKey=FsExistence::GetSearchKey(playerPlane);
 						evt.str.Set(cmd);
-						simEvent->AddEvent(currentTime,evt);
+						simEvent->AddEvent(worldClock->currTime,evt);
 					}
 				}
 				loading.Append(FSWEAPON_FLARE_INTERNAL);
@@ -5546,7 +5593,7 @@ void FsSimulation::SimProcessLoadingDialog(YSBOOL lb,YSBOOL mb,YSBOOL rb,int mx,
 				evt.eventType=FSEVENT_SETWEAPONCONFIG;
 				evt.objKey=FsExistence::GetSearchKey(playerPlane);
 				evt.weaponCfg.Set(loading.GetN(),loading);
-				simEvent->AddEvent(currentTime,evt);
+				simEvent->AddEvent(worldClock->currTime,evt);
 
 				if(playerPlane->netType==FSNET_LOCAL)
 				{
@@ -5570,7 +5617,7 @@ void FsSimulation::SimProcessLoadingDialog(YSBOOL lb,YSBOOL mb,YSBOOL rb,int mx,
 					evt.eventType=FSEVENT_AIRCOMMAND;
 					evt.objKey=FsExistence::GetSearchKey(playerPlane);
 					evt.str.Set("SMOKEOIL 100.0kg");
-					simEvent->AddEvent(currentTime,evt);
+					simEvent->AddEvent(worldClock->currTime,evt);
 				}
 			}
 
@@ -5584,7 +5631,7 @@ void FsSimulation::SimProcessLoadingDialog(YSBOOL lb,YSBOOL mb,YSBOOL rb,int mx,
 				evt.eventType=FSEVENT_AIRCOMMAND;
 				evt.objKey=FsExistence::GetSearchKey(playerPlane);
 				evt.str.Set(str);
-				simEvent->AddEvent(currentTime,evt);
+				simEvent->AddEvent(worldClock->currTime,evt);
 			}
 
 			tmpl=world->GetAirplaneTemplate(playerPlane->Prop().GetIdentifier());
@@ -5598,7 +5645,7 @@ void FsSimulation::SimProcessLoadingDialog(YSBOOL lb,YSBOOL mb,YSBOOL rb,int mx,
 				evt.eventType=FSEVENT_AIRCOMMAND;
 				evt.objKey=FsExistence::GetSearchKey(playerPlane);
 				evt.str.Set(str);
-				simEvent->AddEvent(currentTime,evt);
+				simEvent->AddEvent(worldClock->currTime,evt);
 			}
 		}
 
@@ -5734,7 +5781,14 @@ void FsSimulation::SimProcessButtonFunction(FSBUTTONFUNCTION fnc,FSUSERCONTROL u
 	case FSBTF_PAUSE:
 		if(netServer==NULL && netClient==NULL && userControl!=FSUSC_DISABLE)
 		{
-			YsFlip(pause);
+			if (pause == YSTRUE)
+			{
+				SetPause(YSFALSE);
+			}
+			else
+			{
+				SetPause(YSTRUE);
+			}
 		}
 		else if(EveryAirplaneIsRecordedAirplane()==YSTRUE)  // Playing record.  Do nothing.
 		{
@@ -5827,7 +5881,7 @@ void FsSimulation::SimProcessButtonFunction(FSBUTTONFUNCTION fnc,FSUSERCONTROL u
 		break;
 	}
 
-	userInput.ProcessButtonFunction(currentTime,playerObj,fnc);
+	userInput.ProcessButtonFunction(programClock->currTime,playerObj,fnc);
 	ViewingControl(fnc,userControl);
 }
 
@@ -6136,7 +6190,7 @@ void FsSimulation::SimMakeUpCockpitIndicationSet(class FsCockpitIndicationSet &c
 		cockpitIndicationSet.inst.airSpeed=vel.GetLength();
 
 		playerGround->Prop().GetWeaponConfig(loading);
-		samInterval=(int)(1000.0*playerGround->Prop().GetTimeBeforeNextMissileCanBeShot(currentTime));
+		samInterval=(int)(1000.0*playerGround->Prop().GetTimeBeforeNextMissileCanBeShot(worldClock->currTime));
 		woc=playerGround->Prop().GetWeaponOfChoice();
 	}
 
@@ -6450,11 +6504,11 @@ void FsSimulation::SimDrawScreen(
 		if (YSTRUE == cfgPtr->useParticle)
 		{
 			solidCloud->AddToParticleManager(partMan, env, *weather, actualViewMode.viewAttitude.GetForwardVector(), actualViewMode.viewMat, prj.nearz, prj.farz, prj.tanFov);
-			bulletHolder.AddToParticleManager(partMan, currentTime);
+			bulletHolder.AddToParticleManager(partMan, worldClock->currTime);
 
 			for (FsAirplane* seeker = nullptr; nullptr != (seeker = FindNextAirplane(seeker)); )
 			{
-				seeker->AddSmokeToParticleManager(partMan, currentTime, cfgPtr->smkRemainTime);
+				seeker->AddSmokeToParticleManager(partMan, worldClock->currTime, cfgPtr->smkRemainTime);
 			}
 		}
 		partMan.Sort(actualViewMode.viewPoint, actualViewMode.viewAttitude.GetForwardVector(), threadPool);
@@ -6614,16 +6668,17 @@ void FsSimulation::SimDrawScreen(
 	if (FsIsMainWindowActive() == YSTRUE)
 	{
 		nFrameForFpsCount++;
-		auto fpsTimer=FsSubSecondTimer();
+		//auto fpsTimer=FsSubSecondTimer();
+		double fpsTimer = programClock->currTime;
 	
 		if (nextFpsUpdateTime < fpsTimer)
 		{
-			auto dtMS = fpsTimer - lastFpsUpdateTime;
-			double dt = (double)dtMS / 1000.0;
+			//auto dtMS = fpsTimer - lastFpsUpdateTime;
+			double dt = fpsTimer - lastFpsUpdateTime;
 			fps = (double)nFrameForFpsCount / dt;
 			nFrameForFpsCount = 0;
 			lastFpsUpdateTime = fpsTimer;
-			nextFpsUpdateTime = fpsTimer + 500;
+			nextFpsUpdateTime = fpsTimer + 0.500;
 		}
 	}
 
@@ -6809,7 +6864,7 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 		SimDrawGround(actualViewMode,proj,FSVISUAL_DRAWALL);
 		bulletHolder.BeginDraw();
 		bulletHolder.Draw(
-		    cfgPtr->drawCoarseOrdinance,actualViewMode.viewMat,proj.GetMatrix(),cfgPtr->drawTransparentSmoke,smokeTrailType,currentTime,FSVISUAL_DRAWALL);
+		    cfgPtr->drawCoarseOrdinance,actualViewMode.viewMat,proj.GetMatrix(),cfgPtr->drawTransparentSmoke,smokeTrailType, worldClock->currTime,FSVISUAL_DRAWALL);
 		bulletHolder.EndDraw();
 	}
 	else
@@ -6818,7 +6873,7 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 		SimDrawGround(actualViewMode,proj,FSVISUAL_DRAWOPAQUE);
 		bulletHolder.BeginDraw();
 		bulletHolder.Draw(
-		    cfgPtr->drawCoarseOrdinance,actualViewMode.viewMat,proj.GetMatrix(),cfgPtr->drawTransparentSmoke,smokeTrailType,currentTime,FSVISUAL_DRAWOPAQUE);
+		    cfgPtr->drawCoarseOrdinance,actualViewMode.viewMat,proj.GetMatrix(),cfgPtr->drawTransparentSmoke,smokeTrailType, worldClock->currTime,FSVISUAL_DRAWOPAQUE);
 		bulletHolder.EndDraw();
 	}
 
@@ -6860,7 +6915,7 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 		SimDrawGround(actualViewMode,proj,FSVISUAL_DRAWTRANSPARENT);
 		bulletHolder.BeginDraw();
 		bulletHolder.Draw(
-		    cfgPtr->drawCoarseOrdinance,actualViewMode.viewMat,proj.GetMatrix(),cfgPtr->drawTransparentSmoke,smokeTrailType,currentTime,FSVISUAL_DRAWTRANSPARENT);
+		    cfgPtr->drawCoarseOrdinance,actualViewMode.viewMat,proj.GetMatrix(),cfgPtr->drawTransparentSmoke,smokeTrailType, worldClock->currTime,FSVISUAL_DRAWTRANSPARENT);
 		bulletHolder.EndDraw();
 	}
 
@@ -7112,7 +7167,7 @@ void FsSimulation::SimDrawMap(const ActualViewMode &actualViewMode,const FsProje
 	field.CacheMapDrawingOrder();
 	field.DrawMapVisual
 	   (env,
-	    actualViewMode.viewPoint,actualViewMode.viewAttitude,proj.GetMatrix(),elvMin,elvMax,drawPset,currentTime,
+	    actualViewMode.viewPoint,actualViewMode.viewAttitude,proj.GetMatrix(),elvMin,elvMax,drawPset, worldClock->currTime,
 	    cfgPtr->useOpenGlGroundTexture,cfgPtr->useOpenGlRunwayLightTexture);
 
 	int nGndShadowDrawn,nAirShadowDrawn;
@@ -7163,19 +7218,19 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 						lodDist *= viewMagUser; // 2006/08/01
 						if ((airPos - viewPoint).GetSquareLength() < lodDist * lodDist)
 						{
-							seeker->Draw(0, actualViewMode.viewMat, proj.GetMatrix(), viewPoint, drawFlag, currentTime);
+							seeker->Draw(0, actualViewMode.viewMat, proj.GetMatrix(), viewPoint, drawFlag, worldClock->currTime);
 						}
 						else
 						{
-							seeker->Draw(1, actualViewMode.viewMat, proj.GetMatrix(), viewPoint, drawFlag, currentTime);
+							seeker->Draw(1, actualViewMode.viewMat, proj.GetMatrix(), viewPoint, drawFlag, worldClock->currTime);
 							drawCoarseOrdinance = YSTRUE;
 						}
 						break;
 					case 1: // Always High Quality
-						seeker->Draw(0, actualViewMode.viewMat, proj.GetMatrix(), viewPoint, drawFlag, currentTime);
+						seeker->Draw(0, actualViewMode.viewMat, proj.GetMatrix(), viewPoint, drawFlag, worldClock->currTime);
 						break;
 					case 2: // Always Coarse
-						seeker->Draw(1, actualViewMode.viewMat, proj.GetMatrix(), viewPoint, drawFlag, currentTime);
+						seeker->Draw(1, actualViewMode.viewMat, proj.GetMatrix(), viewPoint, drawFlag, worldClock->currTime);
 						break;
 					case 3: // Super-coarse
 						seeker->UntransformedCollisionShell().Draw(
@@ -7328,18 +7383,18 @@ void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsPr
 				case 0: // Default
 					if((seeker->GetPosition()-viewPoint).GetSquareLength()<(seeker->Prop().GetOutsideRadius() * seeker->Prop().GetOutsideRadius())*400.0)
 					{
-						seeker->Draw(0,viewMat,proj.GetMatrix(),viewPoint,drawFlag,currentTime);
+						seeker->Draw(0,viewMat,proj.GetMatrix(),viewPoint,drawFlag, worldClock->currTime);
 					}
 					else
 					{
-						seeker->Draw(1,viewMat,proj.GetMatrix(),viewPoint,drawFlag,currentTime);
+						seeker->Draw(1,viewMat,proj.GetMatrix(),viewPoint,drawFlag, worldClock->currTime);
 					}
 					break;
 				case 1: // Always High Quality
-					seeker->Draw(0,viewMat,proj.GetMatrix(),viewPoint,drawFlag,currentTime);
+					seeker->Draw(0,viewMat,proj.GetMatrix(),viewPoint,drawFlag, worldClock->currTime);
 					break;
 				case 2: // Always Coarse
-					seeker->Draw(1,viewMat,proj.GetMatrix(),viewPoint,drawFlag,currentTime);
+					seeker->Draw(1,viewMat,proj.GetMatrix(),viewPoint,drawFlag, worldClock->currTime);
 					break;
 				case 3: // Super-coarse
 					seeker->UntransformedCollisionShell().Draw(
@@ -7398,11 +7453,11 @@ void FsSimulation::SimDrawAirplaneVaporSmoke(void) const
 	{
 		if(seeker->IsAlive()==YSTRUE)
 		{
-			seeker->DrawVapor(currentTime,0.5,4,cfgPtr->drawTransparentVapor, colorScale);
+			seeker->DrawVapor(worldClock->currTime,0.5,4,cfgPtr->drawTransparentVapor, colorScale);
 		}
 		if(YSTRUE!=cfgPtr->useParticle)
 		{
-			seeker->DrawSmoke(currentTime,cfgPtr->smkRemainTime,cfgPtr->smkType,cfgPtr->smkStep,cfgPtr->drawTransparentSmoke);
+			seeker->DrawSmoke(worldClock->currTime,cfgPtr->smkRemainTime,cfgPtr->smkType,cfgPtr->smkStep,cfgPtr->drawTransparentSmoke);
 		}
 	}
 }
@@ -7844,7 +7899,7 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 		if(0!=(instDrawSwitch&FSISS_2DHUD) && YSTRUE==NeedToDrawInstrument(actualViewMode) && YSTRUE==playerPlane->Prop().CheckHUDVisible())
 		{
 			YSBOOL autoPilot=(NULL!=playerPlane->GetAutopilot() ? YSTRUE : YSFALSE);
-			if(long(currentTime*2.0)%2==0)
+			if(long(worldClock->currTime * 2.0)%2==0)
 			{
 				hud->Draw(autoPilot, cockpitIndicationSet, playerPlane->Prop().GetShouldJettisonWeapon());
 			}
@@ -8107,7 +8162,7 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 
 			s1x+=8;
 			s1y=20;
-			sprintf(str,"%.2lf",currentTime);
+			sprintf(str,"%.2lf", worldClock->currTime);
 			FsDrawString(s1x,s1y,str,YsBlack());
 		}
 	} // if(FsIsMainWindowActive()==YSTRUE)
@@ -8117,7 +8172,7 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 	printf("SimDrawForeground-12\n");
 #endif
 
-	FsPlugInCallDrawForeground(currentTime);
+	FsPlugInCallDrawForeground(worldClock->currTime);
 	for(auto &addOnPtr : addOnList)
 	{
 		int windowId=0;
@@ -8385,7 +8440,7 @@ void FsSimulation::SimDrawHud3d(const YsVec3 &fakeViewPos,const YsAtt3 &instView
 
 			if(YSTRUE==inst.autoPilot)
 			{
-				if(long(currentTime*2.0)%2==0)
+				if(long(worldClock->currTime * 2.0)%2==0)
 				{
 					hud2->DrawAutoPilot(-0.6,-0.7,0.2,0.08,YSTRUE);
 				}
@@ -8716,7 +8771,7 @@ YSRESULT FsSimulation::GetVorIlsIndication(
 void FsSimulation::SimDrawFlush(void) const
 {
 	FsSwapBuffers();
-	FsPlugInCallWindowBufferSwapped(currentTime,this);
+	FsPlugInCallWindowBufferSwapped(worldClock->currTime,this);
 }
 
 void FsSimulation::SimDrawContainer(const ActualViewMode &actualViewMode) const
@@ -8839,7 +8894,7 @@ void FsSimulation::SimDrawContainer(const ActualViewMode &actualViewMode) const
 					if(distance<range/2.0)
 					{
 						const YsColor *col;
-						col=(int(currentTime*2.0)&1 ? &YsRed() : &hud->hudCol);
+						col=(int(worldClock->currTime * 2.0)&1 ? &YsRed() : &hud->hudCol);
 						hud->DrawCircleContainer(mat,viewAttitude,*trg,*trg,*col,"",NULL,YSFALSE,90,90);
 					}
 					else
@@ -8863,7 +8918,7 @@ void FsSimulation::SimDrawContainer(const ActualViewMode &actualViewMode) const
 				if(distance<playerPlane->Prop().GetAGMRange())
 				{
 					const YsColor *col;
-					col=(int(currentTime*2.0)&1 ? &YsRed() : &hud->hudCol);
+					col=(int(worldClock->currTime * 2.0)&1 ? &YsRed() : &hud->hudCol);
 					hud->DrawCircleContainer
 					    (mat,viewAttitude,gnd->GetPosition(),gnd->GetPosition(),*col,"SHOOT",NULL,YSFALSE,45,90);
 				}
@@ -9225,9 +9280,15 @@ void FsSimulation::SimPlayTimedEvent(const double &ctime)
 			case FSEVENT_PLAYEROBJCHANGE:
 				{
 					const FsExistence *newPlayer=FindObject(simEvent->eventList[i].objKey);
-					if(NULL!=newPlayer && GetPlayerObject()->isPlayingRecord == YSTRUE)
+					if(NULL!=newPlayer)
 					{
-						SetPlayerObject(newPlayer,YSFALSE);  // <- YSFALSE: Should not record.
+						if (GetPlayerObject() != NULL && GetPlayerObject()->isPlayingRecord != YSTRUE) //Player is flying this plane currently. Don't switch
+						{
+						}
+						else
+						{
+							SetPlayerObject(newPlayer, YSFALSE);  // <- YSFALSE: Should not record.
+						}
 					}
 				}
 				break;
@@ -9265,7 +9326,7 @@ void FsSimulation::SimPlayTimedEvent(const double &ctime)
 
 void FsSimulation::SimProcessAirTrafficController(void)
 {
-	primaryAtc.Process(this,currentTime);
+	primaryAtc.Process(this, worldClock->currTime);
 	if(YSTRUE==primaryAtc.GetAndClearNeedNoticeFlag())
 	{
 		FsSoundSetOneTime(FSSND_ONETIME_NOTICE);
@@ -9274,7 +9335,7 @@ void FsSimulation::SimProcessAirTrafficController(void)
 
 void FsSimulation::SimInFlightDialogTransition(void)
 {
-	if(0.5>currentTime)
+	if(0.5> worldClock->currTime)
 	{
 		// When objects are loaded from .YFS file, objects may not be put in lattice yet.
 		// Wait for at least a few frames to make sure they are in.
@@ -10030,7 +10091,7 @@ YSBOOL FsSimulation::AllRecordedFlightsAreOver(double &lastRecordTime)
 					double lastTime;
 					air->rec->GetLastElement(lastTime);
 					lastRecordTime=YsGreater(lastRecordTime,lastTime);
-					if(lastTime<=currentTime)
+					if(lastTime<= worldClock->currTime)
 					   // Does not count
 					{
 						nOver++;
@@ -10053,7 +10114,7 @@ YSBOOL FsSimulation::AllRecordedFlightsAreOver(double &lastRecordTime)
 				double lastTime;
 				gnd->rec->GetLastElement(lastTime);
 				lastRecordTime=YsGreater(lastRecordTime,lastTime);
-				if(lastTime<=currentTime)
+				if(lastTime<= worldClock->currTime)
 				{
 					nOver++;
 				}
@@ -10107,7 +10168,7 @@ YSBOOL FsSimulation::Explode(FsExistence &obj,YSBOOL sound)
 	const YsVec3 p=obj.GetPosition();
 	const double r=obj.GetApproximatedCollideRadius();
 
-	explosionHolder.Explode(currentTime,p,10.0,1.0,r+15.0,YSTRUE,NULL,YSTRUE);
+	explosionHolder.Explode(worldClock->currTime,p,10.0,1.0,r+15.0,YSTRUE,NULL,YSTRUE);
 	if(YSTRUE==sound)
 	{
 		FsSoundSetOneTime(FSSND_ONETIME_BLAST);
@@ -10473,7 +10534,6 @@ void FsSimulation::SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWM
 {
 	actualViewMode.actualViewMode=mode;  // by Default
 	actualViewMode.viewMagFix=1.0;       // by Default
-	printf("Center? %i\n", cfgPtr->centerCameraPerspective);
 
 	switch(mode)
 	{
@@ -11240,7 +11300,7 @@ void FsSimulation::SimDecideViewpoint_Common(ActualViewMode &actualViewMode,FSVI
 				dir.Set(0,0,dist);
 
 				YsAtt3 airAtt;
-				if(cfgPtr->externalCameraDelay!=YSTRUE || toLookAt->GetAttitudeFromRecord(airAtt,currentTime-0.8)!=YSOK)
+				if(cfgPtr->externalCameraDelay!=YSTRUE || toLookAt->GetAttitudeFromRecord(airAtt,programClock->currTime-0.8)!=YSOK)
 				{
 					airAtt=toLookAt->GetAttitude();
 				}
@@ -11404,7 +11464,7 @@ void FsSimulation::AirplaneCrash(FsAirplane *crashedPlane,FSDIEDOF diedOf,int co
 		areaType=YSSCNAREA_LAND;
 	}
 
-	crashedPlane->Crash(currentTime,cfgPtr->takeCrash,&explosionHolder,diedOf,areaType);
+	crashedPlane->Crash(worldClock->currTime,cfgPtr->takeCrash,&explosionHolder,diedOf,areaType);
 
 	if(IsPlayerAirplane(crashedPlane)==YSTRUE)
 	{
@@ -11555,7 +11615,7 @@ void FsSimulation::CheckContinueDraw(void)
 
 const double &FsSimulation::GetClock(void)
 {
-	return currentTime;
+	return worldClock->currTime;
 }
 
 FsAirplane *FsSimulation::GetPlayerAirplane(void)
@@ -12612,39 +12672,43 @@ double FsSimulation::PassedTime(void)  // <- This function must wait at least 0.
                                        //    SimulateOneStep, and FsAirplane's collision shell
                                        //    location will not be updated -> Yields unexpected crash.
 {
-	unsigned long long clk=FsSubSecondTimer();
-	if(clk<lastTime)
-	{
-		lastTime=clk;
-	}
-	double passed=(double)(clk-lastTime)/1000.0;
-	if(passed<0.010)
-	{
-		FsSleep(5);  // Let's give 10ms rest
-	}
-	while(passed<0.010 && lastTime<=clk)
-	{
-		clk=FsSubSecondTimer();
-		passed=(double)(clk-lastTime)/1000.0;
-	}
+	double passed = worldClock->timeStep;
 
-	if(clk<lastTime)  // Underflow took place.
-	{
-		passed=0.02;
-	}
+	//unsigned long long clk=FsSubSecondTimer();
+	//if(clk<lastTime)
+	//{
+	//	lastTime=clk;
+	//}
+	//double passed=(double)(clk-lastTime)/1000.0;
+	//if(passed<0.010)
+	//{
+	//	FsSleep(5);  // Let's give 10ms rest
+	//}
+	//while(passed<0.010 && lastTime<=clk)
+	//{
+	//	clk=FsSubSecondTimer();
+	//	passed=(double)(clk-lastTime)/1000.0;
+	//}
 
-	lastTime=clk;
+	//if(clk<lastTime)  // Underflow took place.
+	//{
+	//	passed=0.02;
+	//}
+
+	//lastTime=clk;
 
 	return passed;
 }
 
 double FsSimulation::RealTimeStep(void)
 {
-	unsigned long long current = FsSubSecondTimer();
+	double realTimeStep = programClock->timeStep;
+
+	/*unsigned long long current = FsSubSecondTimer();
 	realTimeStep = (double)(current - lastRealTime)/1000;
 
 	lastRealTime = current;
-	currentRealTime = (double)current / 1000;
+	currentRealTime = (double)current / 1000;*/
 	return realTimeStep;
 }
 
@@ -14069,7 +14133,7 @@ void FsSimulation::SetNetClient(class FsSocketClient *cli)
 
 void FsSimulation::NetWeaponLaunch(const FsWeaponRecord &rec)
 {
-	bulletHolder.LaunchRecord(rec,currentTime,YSTRUE,YSFALSE);
+	bulletHolder.LaunchRecord(rec, worldClock->currTime,YSTRUE,YSFALSE);
 	//                                               ^^^^^^^Prevents packet bouncing back
 }
 

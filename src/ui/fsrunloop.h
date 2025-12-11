@@ -12,7 +12,9 @@
 #include "fscmdparaminfo.h"
 #include "fssimulation.h"
 
-#include "YsClock.h"
+//#include "YsClock.h"
+#include "FsTime.h"
+
 
 ////////////////////////////////////////////////////////////
 
@@ -51,7 +53,11 @@ public:
 class FsRunLoop
 {
 public:
-	YsClock programClock{};
+	YsClock *programClock{};
+	YsClock *loadingClock{};
+	YsClock *worldClock{};
+	class FsTime *fstime;
+
 	enum INITIALIZATION_STAGE
 	{
 		INIT_STARTED

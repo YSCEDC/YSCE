@@ -577,8 +577,23 @@ YSBOOL FsRunLoop::InitializeOneStep(FsWorld::InitializationOption worldOpt)
 	case 0:
 		ChangeRunMode(YSRUNMODE_MENU);
 		Free();
-		world=new FsWorld;
+
+		world = new FsWorld;
 		world->LoadAirplaneTemplate(worldOpt);
+
+		fstime = world->fstime;
+		programClock = &fstime->programClock;
+		loadingClock = &fstime->loadingClock;
+		worldClock = &fstime->worldClock;
+		fstime->InitializeTime();
+		fstime->UpdateRealTime();
+
+		
+		programClock->StartClock(fstime->GetRealTime());
+		loadingClock->StartClock(0.0);
+		worldClock->ResetClock();
+		
+		fstime->IncrementAllClocks();
 		break;
 	case 1:
 		world->LoadGroundTemplate(worldOpt);
@@ -600,6 +615,8 @@ YSBOOL FsRunLoop::InitializeOneStep(FsWorld::InitializationOption worldOpt)
 			simFlyMsgBmp.LoadPng("misc/simflymsg.png");
 			simRepMsgBmp.LoadPng("misc/simrepmsg.png");
 		}
+		fstime->IncrementAllClocks();
+		loadingClock->PauseClock();
 		break;
 	case 4:
 		nTitleBmp=0;
@@ -1874,6 +1891,8 @@ void FsRunLoop::StartNetClientMode(const char username[],const char hostname[],i
 
 YSBOOL FsRunLoop::RunOneStep(void)
 {
+	fstime->IncrementAllClocks();
+
 #ifdef CRASHINVESTIGATION
 	printf("%s %d\n",__FUNCTION__,__LINE__);
 #endif

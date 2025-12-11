@@ -6,6 +6,7 @@
 
 #include "fsgroundproperty.h"
 #include "fssimulation.h"
+#include "FsTime.h"
 
 // Declaration /////////////////////////////////////////////
 
@@ -267,7 +268,8 @@ public:
 			loadUserGnd=YSTRUE;
 		}
 	};
-
+	FsTime* fstime;
+	class TimeUtil* timeSys;
 private:
 	mutable ERRORCODE lastError;
 	mutable YsWString lastErrorMessage;
