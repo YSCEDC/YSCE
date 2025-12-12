@@ -46,22 +46,11 @@ long long int FsTime::GetCurrentRawTime()
 
 void FsTime::UpdateRealTime()
 {
-	double timeSinceLastUpdate;
-	UpdateCurrentRawTime();
-	timeSinceLastUpdate = GetCurrentRawTime() / 1000.0 - currentRealTime;
 
-	if (timeSinceLastUpdate >= 0.010)
-	{
-		double prev = currentRealTime;
-		UpdateCurrentRawTime();
-		currentRealTime = GetCurrentRawTime() / 1000.0;
-		realTimeStep = currentRealTime - prev;
-	}
-	else //Frame time is too low, sleep a while
-	{
-		Sleep(5);
-		UpdateRealTime();
-	}
+	double prev = currentRealTime;
+	UpdateCurrentRawTime();
+	currentRealTime = GetCurrentRawTime() / 1000.0;
+	realTimeStep = currentRealTime - prev;
 }
 
 double FsTime::GetRealTime()
