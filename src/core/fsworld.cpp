@@ -2579,13 +2579,15 @@ YSRESULT FsWorld::LoadAirplaneTemplateList(const wchar_t rootDir[],const wchar_t
 	res=YSOK;
 
 	FsFindFileList(filelist,dir,prefix,ext);
+	int numFiles = filelist.GetN();
 	for(i=0; i<filelist.GetN(); i++)
 	{
 		ful.MakeFullPathName(dir,filelist[i]);
 
 		YsString cStr;
 		cStr.EncodeUTF8 <wchar_t> (ful);
-		fsConsole.Printf("%s",cStr.Txt());
+		fsConsole.Printf("%i/%i %s",i+1,numFiles, cStr.Txt());
+		fsConsole.Show();
 
 		FILE *fp=YsFileIO::Fopen(ful,"r");
 		if(fp!=NULL)
@@ -2886,13 +2888,15 @@ YSRESULT FsWorld::LoadGroundTemplateList(const wchar_t rootDir[],const wchar_t s
 	dir.MakeFullPathName(rootDir,subDir);
 
 	FsFindFileList(filelist,dir,prefix,ext);
+	int numFiles = filelist.GetN();
 	for(i=0; i<filelist.GetN(); i++)
 	{
 		ful.MakeFullPathName(dir,filelist[i]);
 
 		YsString cStr;
 		cStr.EncodeUTF8 <wchar_t> (ful);
-		fsConsole.Printf("%s",cStr.Txt());
+		fsConsole.Printf("%i/%i %s",i+1, numFiles,cStr.Txt());
+		fsConsole.Show();
 
 		FILE *fp=YsFileIO::Fopen(ful,"r");
 		if(fp!=NULL)
@@ -2969,13 +2973,15 @@ YSRESULT FsWorld::LoadFieldTemplateList(const wchar_t rootDir[],const wchar_t su
 	dir.MakeFullPathName(rootDir,subDir);
 
 	FsFindFileList(filelist,dir,prefix,ext);
+	int numFiles = filelist.GetN();
 	for(i=0; i<filelist.GetN(); i++)
 	{
 		ful.MakeFullPathName(dir,filelist[i]);
 
 		YsString cStr;
 		cStr.EncodeUTF8 <wchar_t> (ful);
-		fsConsole.Printf("%s",(const char *)cStr.Txt());
+		fsConsole.Printf("%i/%i %s",i+1, numFiles,(const char *)cStr.Txt());
+		fsConsole.Show();
 
 		FILE *fp=YsFileIO::Fopen(ful,"r");
 
