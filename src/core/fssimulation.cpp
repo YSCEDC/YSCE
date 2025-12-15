@@ -10473,7 +10473,6 @@ void FsSimulation::SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWM
 {
 	actualViewMode.actualViewMode=mode;  // by Default
 	actualViewMode.viewMagFix=1.0;       // by Default
-	printf("Center? %i\n", cfgPtr->centerCameraPerspective);
 
 	switch(mode)
 	{
@@ -12618,15 +12617,15 @@ double FsSimulation::PassedTime(void)  // <- This function must wait at least 0.
 		lastTime=clk;
 	}
 	double passed=(double)(clk-lastTime)/1000.0;
-	if(passed<0.010)
-	{
-		FsSleep(5);  // Let's give 10ms rest
-	}
-	while(passed<0.010 && lastTime<=clk)
-	{
-		clk=FsSubSecondTimer();
-		passed=(double)(clk-lastTime)/1000.0;
-	}
+	//if(passed<0.010)
+	//{
+	//	FsSleep(5);  // Let's give 10ms rest
+	//}
+	//while(passed<0.010 && lastTime<=clk)
+	//{
+	//	clk=FsSubSecondTimer();
+	//	passed=(double)(clk-lastTime)/1000.0;
+	//}
 
 	if(clk<lastTime)  // Underflow took place.
 	{
