@@ -506,6 +506,7 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 			switch(cfg.smkType)
 			{
 			default:
+				cfg.smkType = FSSMKPARTICLE;
 				break;
 			case FSSMKTOWEL:
 				cfg.smkType=FSSMKPARTICLE;
@@ -925,7 +926,7 @@ void FsSubMenu::Draw(const class FsSimulation *sim,class FsFlightConfig &cfg,int
 			FsDrawString(sx,sy,"M: Smoke Type (Now: PARTICLE)",YsWhite());
 			break;
 		case FSSMKTOWEL:
-			FsDrawString(sx,sy,"M: Smoke Type (Now: TOWEL)",YsWhite());
+			FsDrawString(sx,sy,"M: Smoke Type (Now: FLAT)",YsWhite());
 			break;
 		case FSSMKSOLID:
 			FsDrawString(sx,sy,"M: Smoke Type (Now: SOLID)",YsWhite());

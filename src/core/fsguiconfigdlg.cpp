@@ -326,7 +326,7 @@ void FsGuiConfigDialog::MakeGraphicDialog(FsWorld *,FsFlightConfig &)
 	label->SetFill(YSFALSE);
 	label->SetDrawFrame(YSFALSE);
 
-	const char *const smkTypeStr[]={"Towel","Solid","Particle","NOSMOKE"};
+	const char *const smkTypeStr[]={"No Smoke", "Flat smoke","Solid smoke","Particle smoke"};
 	smokeTypeLbx=AddDropList(MkId("smokeType"),FSKEY_NULL,"Smoke Type",4,smkTypeStr,4,16,16,YSFALSE);
 
 	smokeRemainTime=AddTextBox(MkId("smokeTime"),FSKEY_NULL,FSGUI_CFGDLG_SMOKEREMAIN,"",8,YSTRUE);
@@ -568,16 +568,16 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 	case FSSMKNOODLE:
 	case FSSMKCIRCLE:
 	case FSSMKTOWEL:
-		smokeTypeLbx->Select(0);
-		break;
-	case FSSMKSOLID:
 		smokeTypeLbx->Select(1);
 		break;
-	case FSSMKPARTICLE:
+	case FSSMKSOLID:
 		smokeTypeLbx->Select(2);
 		break;
-	case FSSMKNULL:
+	case FSSMKPARTICLE:
 		smokeTypeLbx->Select(3);
+		break;
+	case FSSMKNULL:
+		smokeTypeLbx->Select(0);
 		break;
 	}
 	//smokeTypeLbx->SetEnabled(YsReverseBool(cfg.useParticle));
@@ -740,11 +740,15 @@ void FsGuiConfigDialog::RetrieveConfig(FsFlightConfig &cfg)
 		break;
 	case 1:
 		cfg.drawCloud=YSTRUE;
-		cfg.cloudType=FSCLOUDSOLID;
+		cfg.cloudType=FSCLOUDFLAT;
 		break;
 	case 2:
 		cfg.drawCloud=YSTRUE;
-		cfg.cloudType=FSCLOUDFLAT;
+		cfg.cloudType=FSCLOUDSOLID;
+		break;
+	case 3:
+		cfg.drawCloud = YSTRUE;
+		cfg.cloudType = FSCLOUDPARTICLE;
 		break;
 	}
 	cfg.airLod=airplaneGraphicsLbx->GetSelection();
@@ -752,13 +756,16 @@ void FsGuiConfigDialog::RetrieveConfig(FsFlightConfig &cfg)
 	{
 	default:
 	case 0:
-		cfg.smkType=FSSMKTOWEL;
+		cfg.smkType = FSSMKNULL;
 		break;
 	case 1:
-		cfg.smkType=FSSMKSOLID;
+		cfg.smkType=FSSMKTOWEL;
 		break;
 	case 2:
-		cfg.smkType=FSSMKNULL;
+		cfg.smkType=FSSMKSOLID;
+		break;
+	case 3:
+		cfg.smkType=FSSMKPARTICLE;
 		break;
 	}
 	cfg.smkRemainTime=YsBound(smokeRemainTime->GetRealNumber(),10.0,160.0);
