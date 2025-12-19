@@ -251,8 +251,8 @@ $BGCOL 0
 +configdlg/fog                                     #Fog
 +configdlg/visibility                              #Visibility (NM)
 +configdlg/zbuffquality                            #Z-Buffer Quality
-+configdlg/trspobj                                 #Trasnparent Object
-+configdlg/trspsmoke                               #Trasnparent Smoke
++configdlg/trspobj                                 #Transparent Object
++configdlg/trspsmoke                               #Transparent Smoke
 +configdlg/trspvapor                               #Trasnparent Vapor
 +configdlg/reducepeephole                          #Reduce Peep Hole Effect
 +configdlg/usedisplistcloud                        #Use Display List for Drawing Cloud
@@ -261,7 +261,8 @@ $BGCOL 0
 +configdlg/groundtexture                           #Use Ground Texture
 +configdlg/runwaylighttexture                      #Use Runway Light Texture
 +configdlg/showfps                                 #Show Frames Per Second
-+configdlg/drawsmokebyparticle                     #Draw Burning Smoke by Particles
++configdlg/drawparticlefire                        #Draw Fire With Particles
++configdlg/drawparticleflare                       #Draw Flares With Particles
 +configdlg/useantialiasing                         #Use Antialiasing
 +configdlg/antialiasingneedrestart                 #You need to restart the program to have\nantialiasing option take effect.
 +configdlg/troublefreq                             #Aircraft Trouble Frequency (times/hour)

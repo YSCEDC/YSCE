@@ -49,7 +49,8 @@ public:
 	FsGuiTextBox *smokeRemainTime;
 	FsGuiTextBox *smokeDrawEveryNStep;
 	FsGuiButton *showFpsBtn;
-	FsGuiButton *drawBurningSmokeByParticle;
+	FsGuiButton *drawParticleFire;
+	FsGuiButton* drawParticleFlare;
 
 	FsGuiButton *fogBtn;
 	FsGuiTextBox *fogVisibility;

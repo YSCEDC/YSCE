@@ -13,8 +13,10 @@ FsFlightConfig::FsFlightConfig()
 
 void FsFlightConfig::SetDefault(void)
 {
-	smkType=FSSMKSOLID;
-	useParticle=YSTRUE;
+	useParticle = YSTRUE;
+	useParticleFire = YSTRUE;
+	useParticleFlare = YSTRUE;
+	smkType=FSSMKPARTICLE;
 	smkRemainTime=30.0;
 	smkStep=4;
 	takeCrash=YSTRUE;
@@ -23,13 +25,13 @@ void FsFlightConfig::SetDefault(void)
 	drawShadow=YSTRUE;
 	drawCloud=YSTRUE;
 	ceiling=4000.0;
-	cloudType=FSCLOUDSOLID;
+	cloudType=FSCLOUDPARTICLE;
 	blackOut=YSTRUE;
 	canLandAnywhere=YSTRUE;
 	midAirCollision=YSTRUE;
 	noTailStrike=YSTRUE;
 	autoCoordination=YSTRUE;
-	shadowOfDeadAirplane=YSTRUE;
+	shadowOfDeadAirplane=YSFALSE;
 	drawOrdinance=YSTRUE;
 	drawFog=YSTRUE;
 	perPixelShading=YSFALSE;
@@ -95,13 +97,15 @@ void FsFlightConfig::SetDefault(void)
 
 void FsFlightConfig::SetDetailedMode(void)
 {
-	smkType=FSSMKSOLID;
+	useParticleFire = YSTRUE;
+	useParticleFlare = YSTRUE;
+	smkType=FSSMKPARTICLE;
 	smkRemainTime=60.0;
 	smkStep=1;
 	drawShadow=YSTRUE;
 	horizonGradation=YSTRUE;
 	drawCloud=YSTRUE;
-	cloudType=FSCLOUDSOLID;
+	cloudType=FSCLOUDPARTICLE;
 	drawOrdinance=YSTRUE;
 	drawCoarseOrdinance=YSFALSE;
 	drawTransparency=YSTRUE;
@@ -119,12 +123,15 @@ void FsFlightConfig::SetDetailedMode(void)
 
 void FsFlightConfig::SetFastMode(void)
 {
-	smkType=FSSMKCIRCLE;
+	useParticleFire = YSFALSE;
+	useParticleFlare = YSFALSE;
+	smkType=FSSMKTOWEL;
 	smkRemainTime=15.0;
 	smkStep=8;
 	drawShadow=YSFALSE;
 	horizonGradation=YSFALSE;
-	drawCloud=YSFALSE;
+	drawCloud=YSTRUE;
+	cloudType = FSCLOUDFLAT;
 	drawOrdinance=YSFALSE;
 	drawCoarseOrdinance=YSTRUE;
 	drawTransparency=YSFALSE;
@@ -232,6 +239,10 @@ const char *const FsFlightConfig::keyWordSource[]=
 	"CLOUDLAYER", // 2023/07/29
 	"CENTERCAM",  // 2023/08/15
 
+	"USEPARTCL", //2025/12/19
+	"FLRPARTCL", //2025/12/19
+	"FIREPRTCL", //2025/12/19
+
 	NULL
 };
 YsKeyWordList FsFlightConfig::keyWordList;
@@ -242,6 +253,7 @@ static const char *const cmdSmokeType[]=
 	"CIRCLE",
 	"TOWEL",
 	"SOLID",
+	"PARTICLE",
 	"NULL",
 
 	NULL
@@ -287,11 +299,7 @@ YSRESULT FsFlightConfig::SendCommand(const char cmd[])
 					switch(t)
 					{
 					case 0:
-						smkType=FSSMKNOODLE;
-						break;
 					case 1:
-						smkType=FSSMKCIRCLE;
-						break;
 					case 2:
 						smkType=FSSMKTOWEL;
 						break;
@@ -299,8 +307,10 @@ YSRESULT FsFlightConfig::SendCommand(const char cmd[])
 						smkType=FSSMKSOLID;
 						break;
 					case 4:
-						smkType=FSSMKNULL;
+						smkType=FSSMKPARTICLE;
 						break;
+					case 5:
+						smkType = FSSMKNULL;
 					default:
 						// fsStderr.Printf("Unknown Smoke Type: %s\n",av[1]);
 						break;
@@ -459,6 +469,10 @@ YSRESULT FsFlightConfig::SendCommand(const char cmd[])
 				{
 					cloudType=FSCLOUDSOLID;
 				}
+				else if (strcmp(av[1], "PARTICLE") == 0 || strcmp(av[1], "particle") == 0)
+				{
+					cloudType = FSCLOUDPARTICLE;
+				}
 				else
 				{
 					cloudType=FSNOCLOUD;
@@ -495,7 +509,7 @@ YSRESULT FsFlightConfig::SendCommand(const char cmd[])
 			case 53: // "FRMPERSEC",  // 2009/06/01
 				return FsGetBool(showFps,av[1]);
 
-			case 54: // "SMKPARTCL",  // 2010/01/23
+			case 54: // "SMKPARTCL",  // 2010/01/23 //Retired for USEPARTCL 2025/12/19
 				return FsGetBool(useParticle,av[1]);
 
 			case 55: // "ANTIALIAS",  // 2010/02/03
@@ -553,7 +567,12 @@ YSRESULT FsFlightConfig::SendCommand(const char cmd[])
 				}
 			case 64: // CENTERCAM
 				return FsGetBool(centerCameraPerspective, av[1]);
-			
+			case 65: // FLRPARTCL
+				return FsGetBool(useParticle, av[1]);
+			case 66: // FLRPARTCL
+				return FsGetBool(useParticleFlare, av[1]);
+			case 67: // "FIREPRTCL",  // 2010/01/23
+				return FsGetBool(useParticleFire, av[1]);
 		}
 		}
 		else
@@ -607,6 +626,9 @@ YSRESULT FsFlightConfig::Save(const wchar_t fn[])
 		case FSSMKSOLID:
 			fprintf(fp,"SMOKETYPE SOLID\n");
 			break;
+		case FSSMKPARTICLE:
+			fprintf(fp, "SMOKETYPE PARTICLE\n");
+			break;
 		case FSSMKNULL:
 			fprintf(fp,"SMOKETYPE NULL\n");
 			break;
@@ -629,6 +651,9 @@ YSRESULT FsFlightConfig::Save(const wchar_t fn[])
 			break;
 		case FSCLOUDSOLID:
 			fprintf(fp,"CLOUDTYPE SOLID\n");
+			break;
+		case FSCLOUDPARTICLE:
+			fprintf(fp, "CLOUDTYPE PARTICLE\n");
 			break;
 		}
 
@@ -711,7 +736,9 @@ YSRESULT FsFlightConfig::Save(const wchar_t fn[])
 
 		fprintf(fp,"FRMPERSEC %s\n",FsTrueFalseString(showFps));
 
-		fprintf(fp,"SMKPARTCL %s\n",FsTrueFalseString(useParticle));
+		fprintf(fp,"USEPARTCL %s\n",FsTrueFalseString(useParticle));
+		fprintf(fp, "FIREPRTCL %s\n", FsTrueFalseString(useParticleFire));
+		fprintf(fp, "FLRPARTCL %s\n", FsTrueFalseString(useParticleFlare));
 
 		fprintf(fp,"ANTIALIAS %s\n",FsTrueFalseString(useOpenGlAntiAliasing));
 

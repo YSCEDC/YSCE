@@ -263,7 +263,8 @@ $BGCOL 0
 +configdlg/groundtexture                           #地上のテクスチャ
 +configdlg/runwaylighttexture                      #灯火のテクスチャ
 +configdlg/showfps                                 #フレームレート表示
-+configdlg/drawsmokebyparticle                     #パーティクルでスモークを描画
++configdlg/drawparticlefire                        #パーティクルでスモークを描画
++configdlg/drawparticleflare                       #パーティクルで・フレアを描画
 +configdlg/useantialiasing                         #アンチエイリアシング
 +configdlg/antialiasingneedrestart                 #アンチエイリアシングを有効にするには\nプログラムを再起動する必要があります。
 +configdlg/troublefreq                             #航空機トラブル頻度(回/時間)

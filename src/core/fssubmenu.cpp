@@ -418,7 +418,7 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 			SetSubMenu(sim,FSSUBMENU_WAITKEYRELEASE);
 			break;
 		case FSKEY_1:
-			cfg.smkType=FSSMKCIRCLE;
+			cfg.smkType=FSSMKTOWEL;
 			cfg.smkRemainTime=15.0;
 			cfg.smkStep=8;
 			cfg.drawShadow=YSFALSE;
@@ -434,7 +434,7 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 			cfg.zbuffQuality=0;
 			break;
 		case FSKEY_2:
-			cfg.smkType=FSSMKTOWEL;
+			cfg.smkType=FSSMKSOLID;
 			cfg.smkRemainTime=30.0;
 			cfg.smkStep=4;
 			cfg.drawShadow=YSTRUE;
@@ -445,12 +445,12 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 			cfg.drawTransparentLater=YSFALSE;
 			cfg.airLod=0;
 			cfg.gndLod=0;
-			cfg.shadowOfDeadAirplane=YSTRUE;
+			cfg.shadowOfDeadAirplane=YSFALSE;
 			cfg.drawCoarseOrdinance=YSFALSE;
 			cfg.zbuffQuality=1;
 			break;
 		case FSKEY_3:
-			cfg.smkType=FSSMKSOLID;
+			cfg.smkType=FSSMKPARTICLE;
 			cfg.smkRemainTime=60.0;
 			cfg.smkStep=1;
 			cfg.drawShadow=YSTRUE;
@@ -461,7 +461,7 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 			cfg.drawTransparentLater=YSTRUE;
 			cfg.airLod=1;
 			cfg.gndLod=1;
-			cfg.shadowOfDeadAirplane=YSTRUE;
+			cfg.shadowOfDeadAirplane=YSFALSE;
 			cfg.drawCoarseOrdinance=YSFALSE;
 			cfg.zbuffQuality=2;
 			break;
@@ -498,6 +498,8 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 			YsFlip(cfg.drawTransparentLater);
 			break;
 		case FSKEY_Q:
+			YsFlip(cfg.useParticleFire);
+			YsFlip(cfg.useParticleFlare);
 			YsFlip(cfg.useParticle);
 			break;
 		case FSKEY_M:
@@ -505,24 +507,32 @@ void FsSubMenu::ProcessSubMenu(class FsSimulation *sim,class FsFlightConfig &cfg
 			{
 			default:
 				break;
-			case FSSMKCIRCLE:
-				cfg.smkType=FSSMKNOODLE;
-				cfg.useParticle=YSFALSE;
-				break;
-			case FSSMKNOODLE:
-				cfg.smkType=FSSMKTOWEL;
-				cfg.useParticle=YSFALSE;
-				break;
 			case FSSMKTOWEL:
-				cfg.smkType=FSSMKSOLID;
-				cfg.useParticle=YSFALSE;
+				cfg.smkType=FSSMKPARTICLE;
 				break;
 			case FSSMKSOLID:
-				cfg.smkType=FSSMKCIRCLE;
-				cfg.useParticle=YSFALSE;
+				cfg.smkType=FSSMKTOWEL;
+				break;
+			case FSSMKPARTICLE:
+				cfg.smkType = FSSMKSOLID;
 				break;
 			}
 			break;
+		case FSKEY_N:
+			switch (cfg.cloudType)
+			{
+			default:
+				break;
+			case FSCLOUDFLAT:
+				cfg.cloudType = FSCLOUDPARTICLE;
+				break;
+			case FSCLOUDSOLID:
+				cfg.cloudType = FSCLOUDFLAT;
+				break;
+			case FSCLOUDPARTICLE:
+				cfg.cloudType = FSCLOUDSOLID;
+				break;
+			}
 		case FSKEY_H:
 			YsFlip(cfg.useHudAlways);
 			break;
@@ -889,31 +899,37 @@ void FsSubMenu::Draw(const class FsSimulation *sim,class FsFlightConfig &cfg,int
 		}
 		sy+=fsAsciiRenderer.GetFontHeight();
 
-
-		if(YSTRUE==cfg.useParticle)
+		switch (cfg.cloudType)
 		{
-			FsDrawString(sx,sy,"M: Smoke Type (Now: Particle)",YsWhite());
+		default:
+			FsDrawString(sx, sy, "N: Cloud Type", YsWhite());
+			break;
+		case FSCLOUDFLAT:
+			FsDrawString(sx, sy, "N: Cloud Type (Now: FLAT)", YsWhite());
+			break;
+		case FSCLOUDSOLID:
+			FsDrawString(sx, sy, "N: Cloud Type (Now: SOLID)", YsWhite());
+			break;
+		case FSCLOUDPARTICLE:
+			FsDrawString(sx, sy, "N: Cloud Type (Now: PARTICLE)", YsWhite());
+			break;
 		}
-		else
+		sy += fsAsciiRenderer.GetFontHeight();
+
+		switch(cfg.smkType)
 		{
-			switch(cfg.smkType)
-			{
-			default:
-				FsDrawString(sx,sy,"M: Smoke Type",YsWhite());
-				break;
-			case FSSMKCIRCLE:
-				FsDrawString(sx,sy,"M: Smoke Type (Now: DOT)",YsWhite());
-				break;
-			case FSSMKNOODLE:
-				FsDrawString(sx,sy,"M: Smoke Type (Now: NOODLE)",YsWhite());
-				break;
-			case FSSMKTOWEL:
-				FsDrawString(sx,sy,"M: Smoke Type (Now: TOWEL)",YsWhite());
-				break;
-			case FSSMKSOLID:
-				FsDrawString(sx,sy,"M: Smoke Type (Now: SOLID)",YsWhite());
-				break;
-			}
+		default:
+			FsDrawString(sx,sy,"M: Smoke Type",YsWhite());
+			break;
+		case FSSMKPARTICLE:
+			FsDrawString(sx,sy,"M: Smoke Type (Now: PARTICLE)",YsWhite());
+			break;
+		case FSSMKTOWEL:
+			FsDrawString(sx,sy,"M: Smoke Type (Now: TOWEL)",YsWhite());
+			break;
+		case FSSMKSOLID:
+			FsDrawString(sx,sy,"M: Smoke Type (Now: SOLID)",YsWhite());
+			break;
 		}
 		sy+=fsAsciiRenderer.GetFontHeight();
 

@@ -29,7 +29,7 @@ REM ###########################################################################
 
 GUI:CLICK $mainMenu option/config
 WAITFOR:MODAL
-GUI:UNCHECK $activeModalDialog smokeParticle 
+GUI:UNCHECK $activeModalDialog fireParticle 
 GUI:CHECK $activeModalDialog day
 GUI:CLICK $activeModalDialog ok
 
@@ -77,7 +77,7 @@ REM ###########################################################################
 
 GUI:CLICK $mainMenu option/config
 WAITFOR:MODAL
-GUI:CHECK $activeModalDialog smokeParticle
+GUI:CHECK $activeModalDialog fireParticle
 GUI:CHECK $activeModalDialog night
 GUI:CLICK $activeModalDialog ok
 
@@ -124,7 +124,7 @@ REM ###########################################################################
 
 GUI:CLICK $mainMenu option/config
 WAITFOR:MODAL
-GUI:CHECK $activeModalDialog smokeParticle
+GUI:CHECK $activeModalDialog fireParticle
 GUI:CHECK $activeModalDialog day
 GUI:CLICK $activeModalDialog ok
 

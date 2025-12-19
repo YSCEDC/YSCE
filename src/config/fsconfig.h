@@ -22,8 +22,10 @@ public:
 	// ? char err[256];
 
 
-	FSSMOKETYPE smkType;
 	YSBOOL useParticle;
+	YSBOOL useParticleFire;
+	YSBOOL useParticleFlare;
+	FSSMOKETYPE smkType;
 	double smkRemainTime;
 	int smkStep;
 	YSBOOL takeCrash;

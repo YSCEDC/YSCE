@@ -308,8 +308,8 @@ void FsGuiConfigDialog::MakeGraphicDialog(FsWorld *,FsFlightConfig &)
 	label->SetFill(YSFALSE);
 	label->SetDrawFrame(YSFALSE);
 
-	const char *const cloudOptionStr[]={"No Cloud","Solid Cloud","Flat Cloud"};
-	cloudLbx=AddDropList(MkId("cloudType"),FSKEY_NULL,"Cloud",3,cloudOptionStr,3,16,16,YSFALSE);
+	const char *const cloudOptionStr[]={"No Cloud","Flat Cloud","Solid Cloud","Particle cloud"};
+	cloudLbx=AddDropList(MkId("cloudType"),FSKEY_NULL,"Cloud",4,cloudOptionStr,4,16,16,YSFALSE);
 
 
 
@@ -326,8 +326,8 @@ void FsGuiConfigDialog::MakeGraphicDialog(FsWorld *,FsFlightConfig &)
 	label->SetFill(YSFALSE);
 	label->SetDrawFrame(YSFALSE);
 
-	const char *const smkTypeStr[]={"Towel","Solid","NOSMOKE"};
-	smokeTypeLbx=AddDropList(MkId("smokeType"),FSKEY_NULL,"Smoke Type",3,smkTypeStr,4,16,16,YSFALSE);
+	const char *const smkTypeStr[]={"Towel","Solid","Particle","NOSMOKE"};
+	smokeTypeLbx=AddDropList(MkId("smokeType"),FSKEY_NULL,"Smoke Type",4,smkTypeStr,4,16,16,YSFALSE);
 
 	smokeRemainTime=AddTextBox(MkId("smokeTime"),FSKEY_NULL,FSGUI_CFGDLG_SMOKEREMAIN,"",8,YSTRUE);
 	smokeRemainTime->SetTextType(FSGUI_INTEGER);
@@ -335,9 +335,11 @@ void FsGuiConfigDialog::MakeGraphicDialog(FsWorld *,FsFlightConfig &)
 	smokeDrawEveryNStep=AddTextBox(MkId("smokeStep"),FSKEY_NULL,FSGUI_CFGDLG_SMOKESTEP,"",8,YSTRUE);
 	smokeDrawEveryNStep->SetTextType(FSGUI_INTEGER);
 
-	drawBurningSmokeByParticle=AddTextButton(MkId("smokeParticle"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SMKPARTICLE,YSTRUE);
+	drawParticleFire=AddTextButton(MkId("fireParticle"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_FIREPARTICLE,YSTRUE);
 
-	showFpsBtn=AddTextButton(MkId("showFps"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWFPS,YSFALSE);
+	drawParticleFlare = AddTextButton(MkId("flareParticle"), FSKEY_NULL, FSGUI_CHECKBOX, FSGUI_CFGDLG_FLAREPARTICLE, YSFALSE);
+
+	showFpsBtn=AddTextButton(MkId("showFps"),FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_CFGDLG_SHOWFPS,YSTRUE);
 }
 
 void FsGuiConfigDialog::MakeOpenGLDialog(FsWorld *,FsFlightConfig &)
@@ -457,7 +459,8 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 	showFpsBtn->SetCheck(cfg.showFps);
 	showIASBtn->SetCheck(cfg.showIAS);
 
-	drawBurningSmokeByParticle->SetCheck(cfg.useParticle);
+	drawParticleFire->SetCheck(cfg.useParticleFire);
+	drawParticleFlare->SetCheck(cfg.useParticleFlare);
 #ifdef __APPLE__
 	useOpenGlAntiAliasing->SetCheck(cfg.useOpenGlAntiAliasing);
 #endif
@@ -549,10 +552,13 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 			cloudLbx->Select(0);
 			break;
 		case FSCLOUDSOLID:
-			cloudLbx->Select(1);
+			cloudLbx->Select(2);
 			break;
 		case FSCLOUDFLAT:
-			cloudLbx->Select(2);
+			cloudLbx->Select(1);
+			break;
+		case FSCLOUDPARTICLE:
+			cloudLbx->Select(3);
 			break;
 		}
 	}
@@ -567,11 +573,14 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 	case FSSMKSOLID:
 		smokeTypeLbx->Select(1);
 		break;
-	case FSSMKNULL:
+	case FSSMKPARTICLE:
 		smokeTypeLbx->Select(2);
 		break;
+	case FSSMKNULL:
+		smokeTypeLbx->Select(3);
+		break;
 	}
-	smokeTypeLbx->SetEnabled(YsReverseBool(cfg.useParticle));
+	//smokeTypeLbx->SetEnabled(YsReverseBool(cfg.useParticle));
 
 
 	smokeRemainTime->SetInteger((int)cfg.smkRemainTime);
@@ -622,7 +631,9 @@ void FsGuiConfigDialog::RetrieveConfig(FsFlightConfig &cfg)
 	cfg.showIAS=showIASBtn->GetCheck();
 	cfg.radarAltitudeLimit=radarAltLimitTxt->GetRealNumber()*0.3048;
 	cfg.showFps=showFpsBtn->GetCheck();
-	cfg.useParticle=drawBurningSmokeByParticle->GetCheck();
+	//cfg.useParticle=drawParticle->GetCheck();
+	cfg.useParticleFire = drawParticleFire->GetCheck();
+	cfg.useParticleFlare = drawParticleFire->GetCheck();
 #ifdef __APPLE__
 	cfg.useOpenGlAntiAliasing=useOpenGlAntiAliasing->GetCheck();
 #endif
@@ -792,9 +803,9 @@ void FsGuiConfigDialog::OnButtonClick(FsGuiButton *btn)
 		cfg.SetDefault();
 		InitializeDialog(world,cfg);
 	}
-	else if(btn==drawBurningSmokeByParticle)
+	else if(btn==drawParticleFire)
 	{
-		smokeTypeLbx->SetEnabled(YsReverseBool(drawBurningSmokeByParticle->GetCheck()));
+		smokeTypeLbx->SetEnabled(YsReverseBool(drawParticleFire->GetCheck()));
 	}
 }
 

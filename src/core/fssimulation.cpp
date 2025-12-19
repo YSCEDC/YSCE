@@ -2299,23 +2299,20 @@ void FsSimulation::PrepareRunSimulation(void)
 		{
 			cloudCenter=YsOrigin();
 		}
-		if(cfgPtr->cloudType==FSCLOUDFLAT)
+
+		//Generate both flat and solid clouds for free switching in flight
+		if(cloud->IsReady()!=YSTRUE)
 		{
-			if(cloud->IsReady()!=YSTRUE)
-			{
-				cloud->Scatter(16,cloudCenter,20000.0,1000.0,cfgPtr->ceiling);
-			}
-			if(cloud->IsReady()==YSTRUE && cfgPtr->useOpenGlListForCloud==YSTRUE)
-			{
-				cloud->MakeOpenGlList();
-			}
+			cloud->Scatter(16,cloudCenter,20000.0,1000.0,cfgPtr->ceiling);
 		}
-		if(cfgPtr->cloudType==FSCLOUDSOLID)
+		if(cloud->IsReady()==YSTRUE && cfgPtr->useOpenGlListForCloud==YSTRUE)
 		{
-			if(solidCloud->IsReady()!=YSTRUE)
-			{
-				solidCloud->Make(12,cloudCenter,30000.0,6000.0,cfgPtr->ceiling-400.0,cfgPtr->ceiling+400.0);
-			}
+			cloud->MakeOpenGlList();
+		}
+
+		if(solidCloud->IsReady()!=YSTRUE)
+		{
+			solidCloud->Make(12,cloudCenter,30000.0,6000.0,cfgPtr->ceiling-400.0,cfgPtr->ceiling+400.0);
 		}
 	}
 
@@ -3698,7 +3695,7 @@ void FsSimulation::SimMove(const double &dt)
 		   airplane->Prop().IsActive()!=YSTRUE &&
 		   airplane->Prop().GetFlightState()!=FSOVERRUN)
 		{
-			if(cfgPtr->useParticle==YSTRUE)
+			if(cfgPtr->useParticleFire==YSTRUE)
 			{
 				if(airplane->refTime1<currentTime || airplane->refTime2<currentTime)
 				{
@@ -3821,7 +3818,7 @@ void FsSimulation::SimMove(const double &dt)
 			ground->PlayRecord(currentTime+dt,dt);
 			if(YSTRUE==prevAlive && YSTRUE!=ground->IsAlive())
 			{
-				if(YSTRUE==cfgPtr->useParticle && replayMode==FSREPLAY_PLAY)
+				if(YSTRUE==cfgPtr->useParticleFire && replayMode==FSREPLAY_PLAY)
 				{
 					auto partGenPtr=particleStore.CreateGenerator(FSPARTICLEGENERATOR_BURN,ground->GetPosition(),YsYVec(),10.0,ground->GetPosition().y());
 					partGenPtr->SetSize(3.0,20.0,3.0);
@@ -4598,7 +4595,7 @@ void FsSimulation::KillCallBack(FsExistence &obj,const YsVec3 &pos)
 	}
 	else
 	{
-		if(cfgPtr->useParticle==YSTRUE)
+		if(cfgPtr->useParticleFire==YSTRUE)
 		{
 			explosionHolder.Explode(currentTime,pos,1.0,1.0,rad+15.0,YSTRUE,NULL,YSTRUE);
 			auto partGenPtr=particleStore.CreateGenerator(FSPARTICLEGENERATOR_BURN,pos,YsYVec(),10.0,pos.y());
@@ -6447,16 +6444,20 @@ void FsSimulation::SimDrawScreen(
 	YsGLParticleManager partMan;
 	{
 		particleStore.AddToParticleManager(partMan);
-		if (YSTRUE == cfgPtr->useParticle)
+
+		if (cfgPtr->cloudType == FSCLOUDPARTICLE)
 		{
 			solidCloud->AddToParticleManager(partMan, env, *weather, actualViewMode.viewAttitude.GetForwardVector(), actualViewMode.viewMat, prj.nearz, prj.farz, prj.tanFov);
+		}
+		if (cfgPtr->smkType == FSSMKPARTICLE)
+		{
 			bulletHolder.AddToParticleManager(partMan, currentTime);
-
 			for (FsAirplane* seeker = nullptr; nullptr != (seeker = FindNextAirplane(seeker)); )
 			{
 				seeker->AddSmokeToParticleManager(partMan, currentTime, cfgPtr->smkRemainTime);
 			}
 		}
+
 		partMan.Sort(actualViewMode.viewPoint, actualViewMode.viewAttitude.GetForwardVector(), threadPool);
 
 		auto& commonTexture = FsCommonTexture::GetCommonTexture();
@@ -6799,7 +6800,7 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 #endif
 
 	auto smokeTrailType=cfgPtr->smkType;
-	if(YSTRUE==cfgPtr->useParticle)
+	if(cfgPtr->smkType == FSSMKPARTICLE)
 	{
 		smokeTrailType=FSSMKNULL;
 	}
@@ -6845,7 +6846,7 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 
 	weather->DrawCloudLayer(actualViewMode.viewPoint);  // DrawCloudLayer must come before drawing solid clouds, which may be drawn by particles
 
-	if(YSTRUE!=cfgPtr->useParticle)
+	if(cfgPtr->cloudType == FSCLOUDSOLID)
 	{
 		solidCloud->Draw(env,*weather,actualViewMode.viewMat,proj.nearz,proj.farz,proj.tanFov);
 	}
@@ -7400,7 +7401,7 @@ void FsSimulation::SimDrawAirplaneVaporSmoke(void) const
 		{
 			seeker->DrawVapor(currentTime,0.5,4,cfgPtr->drawTransparentVapor, colorScale);
 		}
-		if(YSTRUE!=cfgPtr->useParticle)
+		if(cfgPtr->smkType != FSSMKPARTICLE)
 		{
 			seeker->DrawSmoke(currentTime,cfgPtr->smkRemainTime,cfgPtr->smkType,cfgPtr->smkStep,cfgPtr->drawTransparentSmoke);
 		}
@@ -7411,7 +7412,7 @@ void FsSimulation::SimDrawField(const ActualViewMode &actualViewMode,const class
 {
 	field.DrawVisual(actualViewMode.viewPoint,actualViewMode.viewAttitude,proj.GetMatrix(),YSFALSE, cfgPtr->useOpenGlGroundTexture); // forShadowMap=YSFALSE
 
-	if(cfgPtr->drawCloud==YSTRUE && env!=FSNIGHT)
+	if(cfgPtr->cloudType == FSCLOUDFLAT && env!=FSNIGHT)
 	{
 		cloud->Draw();
 	}

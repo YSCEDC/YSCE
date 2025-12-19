@@ -99,7 +99,7 @@ language/configdlg/airgraphquality.png         #飛行機の描画品質
 language/configdlg/smoketype.png               #スモークの描画タイプ
 language/configdlg/smokeremain.png             #スモークの残存時間(秒)
 language/configdlg/smokestep.png               #スモーク表示の単位ステップ数
-language/configdlg/drawsmokebyparticle.png     #パーティクルでスモークを描画
+language/configdlg/drawparticlefire.png        #パーティクルでスモークを描画
 language/configdlg/showfps.png                 #フレームレート表示
 language/configdlg/opengl.png                  #OpenGL
 language/configdlg/fog.png                     #霧
