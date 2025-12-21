@@ -424,7 +424,7 @@ void FsWeaponSmokeTrail::Add(const double &dt,const double &cTime,const YsVec3 &
 	}
 }
 
-void FsWeaponSmokeTrail::AddToParticleManagerAsFlare(class YsGLParticleManager &partMan,const YsVec3 cPos,const double cTime,YSBOOL includeCurrentPos)
+void FsWeaponSmokeTrail::AddToParticleManagerAsFlare(class YsGLParticleManager &partMan,const YsVec3 cPos,const double cTime,YSBOOL includeCurrentPos, FSENVIRONMENT env)
 {
 	int c=0;
 	YSSIZE_T i0=trailUsed;
@@ -443,67 +443,163 @@ void FsWeaponSmokeTrail::AddToParticleManagerAsFlare(class YsGLParticleManager &
 		const auto p0=(i==trailUsed ? cPos : trailPos[idx0]);
 		const auto p1=trailPos[idx1];
 
-		float sz=0.5f+(float)(t0*4.0);
-		if(16.0f<sz)
+		float sp=0.5f+(float)(t0*4.0);
+		if(16.0f<sp)
 		{
-			sz=16.0f;
+			sp=16.0f;
 		}
 
-		int nDiv=3+(int)((p0-p1).GetLength()/sz);
+		int nDiv=3+(int)((p0 - p1).GetLength() /sp);
 		for(int i=0; i<nDiv; ++i)
 		{
 			const double param=(double)i/(double)nDiv;
 
 			const double t=t0*(1.0-param)+t1*param;
 			const auto pos=p0*(1.0-param)+p1*param;
-
+			double dist = (cPos - pos).GetLength();
 
 			YsColor col;
-			// Color
-			// t=0   -> Red
-			// t=0.1 -> Red
-			// t=0.3 -> White
-			// Alpha
-			// t<5   -> 1.0
-			// t=8   -> 0.0
 			double r,g,b,a;
-			if(t<0.1)
-			{
-				r=1.0;
-				g=t*10.0;
-				b=t*10.0;
-			}
-			else
-			{
-				r=1.0;
-				g=1.0;
-				b=1.0;
-			}
-			// t=0.5   a=1.0
-			// t=1.0   a=0.3
-			// t=5.0   a=0.0
-			if(t<0.1)
-			{
-				a=1.0;
-			}
-			else if(t<0.3)
-			{
-				a=1.0-(t-0.1)*4.5;
-			}
-			else if(t<5.0)
-			{
-				a=0.1*(5.0-t)/4.7;
-			}
-			else
-			{
-				a=0.0;
-			}
-			col.SetDoubleRGBA(r,g,b,a*0.7);
+			
+			YsColor whiteHot, yellowHot, orangeHot, litSmoke, greySmoke, whiteSmoke;
+			float tWhite, tYellow, tOrange, tLit, tGrey, tEnd;
+			float dWhite, dYellow, dOrange, dLit;
 
-			float sz=0.5f+(float)(t*4.0);
-			if(16.0f<sz)
+			if (env == FSNIGHT)
 			{
-				sz=16.0f;
+				whiteHot.SetFloatRGBA(1.0,0.99,0.93,1.0);
+				yellowHot.SetFloatRGBA(0.8,0.74,0.52,0.95);
+				orangeHot.SetFloatRGBA(0.8,0.7,0.5,0.9);
+				litSmoke.SetFloatRGBA(0.5, 0.5, 0.5,0.8);
+				greySmoke.SetFloatRGBA(0.15,0.15,0.15,0.5);
+				whiteSmoke.SetFloatRGBA(0.1,0.1,0.1,0.25);
+				tWhite = 0.05;
+				tYellow = 0.08;
+				tOrange = 0.11;
+				tLit = 0.5;
+				tGrey = 1.0;
+				tEnd = 6.0;
+				dWhite = 2.0;
+				dYellow = 3.0;
+				dOrange = 4.0;
+				dLit = 15.0;
+			}
+			else
+			{
+				whiteHot.SetFloatRGBA(1.0,0.99,0.93,1.0);
+				yellowHot.SetFloatRGBA(1.0,0.92,0.65,0.95);
+				orangeHot.SetFloatRGBA(0.7,0.63,0.5,0.9);
+				litSmoke.SetFloatRGBA(0.65, 0.65, 0.65,0.8);
+				greySmoke.SetFloatRGBA(0.75, 0.75, 0.75,0.5);
+				whiteSmoke.SetFloatRGBA(0.8, 0.8, 0.8,0.25);
+				tWhite = 0.05;
+				tYellow = 0.08;
+				tOrange = 0.11;
+				tLit = 0.5;
+				tGrey = 1.0;
+				tEnd = 6.0;
+				dWhite = 1.0;
+				dYellow = 2.0;
+				dOrange = 3.0;
+				dLit = 5.0;
+			}
+			//x0 – (x0-x1) * (t-t0)/dt
+			if (dist < dWhite)
+			{
+				r = whiteHot.Rf() - (whiteHot.Rf() - yellowHot.Rf()) * dist / dWhite;
+				g = whiteHot.Gf() - (whiteHot.Gf() - yellowHot.Gf()) * dist / dWhite;
+				b = whiteHot.Bf() - (whiteHot.Bf() - yellowHot.Bf()) * dist / dWhite;
+				a = whiteHot.Af() - (whiteHot.Af() - yellowHot.Af()) * dist / dWhite;
+			}
+			else if (dist < dYellow)
+			{
+				r = yellowHot.Rf() - (yellowHot.Rf() - orangeHot.Rf()) * (dist - dWhite) / (dYellow - dWhite);
+				g = yellowHot.Gf() - (yellowHot.Gf() - orangeHot.Gf()) * (dist - dWhite) / (dYellow - dWhite);
+				b = yellowHot.Bf() - (yellowHot.Bf() - orangeHot.Bf()) * (dist - dWhite) / (dYellow - dWhite);
+				a = yellowHot.Af() - (yellowHot.Af() - orangeHot.Af()) * (dist - dWhite) / (dYellow - dWhite);
+			}
+			else if (dist < dOrange)
+			{
+				r = orangeHot.Rf() - (orangeHot.Rf() - litSmoke.Rf()) * (dist - dYellow) / (dOrange - dYellow);
+				g = orangeHot.Gf() - (orangeHot.Gf() - litSmoke.Gf()) * (dist - dYellow) / (dOrange - dYellow);
+				b = orangeHot.Bf() - (orangeHot.Bf() - litSmoke.Bf()) * (dist - dYellow) / (dOrange - dYellow);
+				a = orangeHot.Af() - (orangeHot.Af() - litSmoke.Af()) * (dist - dYellow) / (dOrange - dYellow);
+			}
+			else if (dist < dLit)
+			{
+				r = litSmoke.Rf() - (litSmoke.Rf() - greySmoke.Rf()) * (dist - dOrange) / (dLit - dOrange);
+				g = litSmoke.Gf() - (litSmoke.Gf() - greySmoke.Gf()) * (dist - dOrange) / (dLit - dOrange);
+				b = litSmoke.Bf() - (litSmoke.Bf() - greySmoke.Bf()) * (dist - dOrange) / (dLit - dOrange);
+				a = litSmoke.Af() - (litSmoke.Af() - greySmoke.Af()) * (dist - dOrange) / (dLit - dOrange);
+			}
+			/*if (t < tWhite)
+			{
+				r = whiteHot.Rf() - (whiteHot.Rf() - yellowHot.Rf()) * t / tWhite;
+				g = whiteHot.Gf() - (whiteHot.Gf() - yellowHot.Gf()) * t / tWhite;
+				b = whiteHot.Bf() - (whiteHot.Bf() - yellowHot.Bf()) * t / tWhite;
+				a = whiteHot.Af() - (whiteHot.Af() - yellowHot.Af()) * t / tWhite;
+			}
+			else if (t < tYellow)
+			{
+				r = yellowHot.Rf() - (yellowHot.Rf() - orangeHot.Rf()) * (t - tWhite) / (tYellow - tWhite);
+				g = yellowHot.Gf() - (yellowHot.Gf() - orangeHot.Gf()) * (t - tWhite) / (tYellow - tWhite);
+				b = yellowHot.Bf() - (yellowHot.Bf() - orangeHot.Bf()) * (t - tWhite) / (tYellow - tWhite);
+				a = yellowHot.Af() - (yellowHot.Af() - orangeHot.Af()) * (t - tWhite) / (tYellow - tWhite);
+			}
+			else if (t < tOrange)
+			{
+				r = orangeHot.Rf() - (orangeHot.Rf() - litSmoke.Rf()) * (t - tYellow) / (tOrange - tYellow);
+				g = orangeHot.Gf() - (orangeHot.Gf() - litSmoke.Gf()) * (t - tYellow) / (tOrange - tYellow);
+				b = orangeHot.Bf() - (orangeHot.Bf() - litSmoke.Bf()) * (t - tYellow) / (tOrange - tYellow);
+				a = orangeHot.Af() - (orangeHot.Af() - litSmoke.Af()) * (t - tYellow) / (tOrange - tYellow);
+			}
+			else if (t < tLit)
+			{
+				r = litSmoke.Rf() - (litSmoke.Rf() - greySmoke.Rf()) * (t - tOrange) / (tLit - tOrange);
+				g = litSmoke.Gf() - (litSmoke.Gf() - greySmoke.Gf()) * (t - tOrange) / (tLit - tOrange);
+				b = litSmoke.Bf() - (litSmoke.Bf() - greySmoke.Bf()) * (t - tOrange) / (tLit - tOrange);
+				a = litSmoke.Af() - (litSmoke.Af() - greySmoke.Af()) * (t - tOrange) / (tLit - tOrange);
+			}*/
+			else if (t < tLit)
+			{
+				r = greySmoke.Rf();
+				g = greySmoke.Gf();
+				b = greySmoke.Bf();
+				a = greySmoke.Af();
+			}
+			else if (t < tGrey)
+			{
+				r = greySmoke.Rf() - (greySmoke.Rf() - whiteSmoke.Rf()) * (t - tLit) / (tGrey - tLit);
+				g = greySmoke.Gf() - (greySmoke.Gf() - whiteSmoke.Gf()) * (t - tLit) / (tGrey - tLit);
+				b = greySmoke.Bf() - (greySmoke.Bf() - whiteSmoke.Bf()) * (t - tLit) / (tGrey - tLit);
+				a = greySmoke.Af() - (greySmoke.Af() - whiteSmoke.Af()) * (t - tLit) / (tGrey - tLit);
+			}
+			else if (t < tEnd)
+			{
+				r = whiteSmoke.Rf();
+				g = whiteSmoke.Gf();
+				b = whiteSmoke.Bf();
+				a = whiteSmoke.Af() - whiteSmoke.Af() * (t - tGrey) / (tEnd - tGrey);
+			}
+			else
+			{
+				r = 1.0;
+				g = 0.0;
+				b = 0.0;
+				a = 0.0;
+			}
+			if (t > tEnd)
+			{
+				a /= (t-tEnd+1)* (t - tEnd + 1);
+			}
+
+			col.SetDoubleRGBA(r, g, b, a);
+
+			float sz;// = 0.75f + (float)(t * 4.0);
+			sz = 0.75 + (31 * (t / tEnd));
+			if (32.0f < sz)
+			{
+				sz = 32.0f;
 			}
 
 			float s=(float)((i+idx0)&7)*0.125;
@@ -513,7 +609,7 @@ void FsWeaponSmokeTrail::AddToParticleManagerAsFlare(class YsGLParticleManager &
 	}
 }
 
-void FsWeaponSmokeTrail::AddToParticleManager(class YsGLParticleManager &partMan,const YsVec3 cPos,const double cTime,YSBOOL includeCurrentPos)
+void FsWeaponSmokeTrail::AddToParticleManager(class YsGLParticleManager &partMan,const YsVec3 cPos,const double cTime,YSBOOL includeCurrentPos, FSENVIRONMENT env)
 {
 	int c=0;
 	YSSIZE_T i0=trailUsed;
@@ -539,15 +635,17 @@ void FsWeaponSmokeTrail::AddToParticleManager(class YsGLParticleManager &partMan
 		}
 
 		int nDiv=3+(int)((p0-p1).GetLength()/sz);
-		for(int i=0; i<nDiv; ++i)
+		for (int i = 0; i < nDiv; ++i)
 		{
-			const double param=(double)i/(double)nDiv;
+			const double param = (double)i / (double)nDiv;
 
-			const double t=t0*(1.0-param)+t1*param;
-			const auto pos=p0*(1.0-param)+p1*param;
+			const double t = t0 * (1.0 - param) + t1 * param;
+			const auto pos = p0 * (1.0 - param) + p1 * param;
 
-
+			double dist = (cPos - pos).GetLength();
 			YsColor col;
+			double r, g, b, a;
+
 			// Color
 			// t=0   -> Red
 			// t=0.1 -> Red
@@ -555,19 +653,127 @@ void FsWeaponSmokeTrail::AddToParticleManager(class YsGLParticleManager &partMan
 			// Alpha
 			// t<5   -> 1.0
 			// t=8   -> 0.0
-			double r,g,b,a;
+			/*
 			r=0.7;
 			g=0.7;
 			b=0.7;
 
 			a=1.0f-t/(double)((TIMEPERSEG*MAXNUMTRAIL-500)/1000);
 			a=YsBound(a,0.0,0.7);
+			*/
+			YsColor whiteHot, yellowHot, orangeHot, litSmoke, greySmoke, whiteSmoke;
+			float tWhite, tYellow, tOrange, tLit, tGrey, tEnd;
+			float dClear, dWhite, dYellow, dOrange, dLit;
+
+			if (env == FSNIGHT)
+			{
+				whiteHot.SetFloatRGBA(1.0, 0.99, 0.93, 1.0);
+				yellowHot.SetFloatRGBA(0.8, 0.74, 0.52, 0.95);
+				orangeHot.SetFloatRGBA(0.8, 0.7, 0.5, 0.9);
+				litSmoke.SetFloatRGBA(0.5, 0.5, 0.5, 0.8);
+				greySmoke.SetFloatRGBA(0.15, 0.15, 0.15, 0.5);
+				whiteSmoke.SetFloatRGBA(0.1, 0.1, 0.1, 0.25);
+				tLit = 1.0;
+				tGrey = 2.0;
+				tEnd = 10.0;
+				dClear = 1.5;
+				dWhite = 4.0;
+				dYellow = 8.0;
+				dOrange = 10.0;
+				dLit = 25.0;
+			}
+			else
+			{
+				whiteHot.SetFloatRGBA(1.0, 0.99, 0.93, 1.0);
+				yellowHot.SetFloatRGBA(1.0, 0.92, 0.65, 0.95);
+				orangeHot.SetFloatRGBA(0.7, 0.63, 0.5, 0.9);
+				litSmoke.SetFloatRGBA(0.65, 0.65, 0.65, 0.8);
+				greySmoke.SetFloatRGBA(0.75, 0.75, 0.75, 0.5);
+				whiteSmoke.SetFloatRGBA(0.8, 0.8, 0.8, 0.25);
+				tLit = 1.0;
+				tGrey = 2.0;
+				tEnd = 10.0;
+				dClear = 1.5;
+				dWhite = 2.5;
+				dYellow = 4.0;
+				dOrange = 6.0;
+				dLit = 10.0;
+			}
+			//x0 – (x0-x1) * (t-t0)/dt
+			if (dist < dClear)
+			{
+				r = 0.0;
+				g = 0.0;
+				b = 0.0;
+				a = 0.0;
+			}
+			else if (dist < dWhite)
+			{
+				r = whiteHot.Rf() - (whiteHot.Rf() - yellowHot.Rf()) * dist / dWhite;
+				g = whiteHot.Gf() - (whiteHot.Gf() - yellowHot.Gf()) * dist / dWhite;
+				b = whiteHot.Bf() - (whiteHot.Bf() - yellowHot.Bf()) * dist / dWhite;
+				a = whiteHot.Af() - (whiteHot.Af() - yellowHot.Af()) * dist / dWhite;
+			}
+			else if (dist < dYellow)
+			{
+				r = yellowHot.Rf() - (yellowHot.Rf() - orangeHot.Rf()) * (dist - dWhite) / (dYellow - dWhite);
+				g = yellowHot.Gf() - (yellowHot.Gf() - orangeHot.Gf()) * (dist - dWhite) / (dYellow - dWhite);
+				b = yellowHot.Bf() - (yellowHot.Bf() - orangeHot.Bf()) * (dist - dWhite) / (dYellow - dWhite);
+				a = yellowHot.Af() - (yellowHot.Af() - orangeHot.Af()) * (dist - dWhite) / (dYellow - dWhite);
+			}
+			else if (dist < dOrange)
+			{
+				r = orangeHot.Rf() - (orangeHot.Rf() - litSmoke.Rf()) * (dist - dYellow) / (dOrange - dYellow);
+				g = orangeHot.Gf() - (orangeHot.Gf() - litSmoke.Gf()) * (dist - dYellow) / (dOrange - dYellow);
+				b = orangeHot.Bf() - (orangeHot.Bf() - litSmoke.Bf()) * (dist - dYellow) / (dOrange - dYellow);
+				a = orangeHot.Af() - (orangeHot.Af() - litSmoke.Af()) * (dist - dYellow) / (dOrange - dYellow);
+			}
+			else if (dist < dLit)
+			{
+				r = litSmoke.Rf() - (litSmoke.Rf() - greySmoke.Rf()) * (dist - dOrange) / (dLit - dOrange);
+				g = litSmoke.Gf() - (litSmoke.Gf() - greySmoke.Gf()) * (dist - dOrange) / (dLit - dOrange);
+				b = litSmoke.Bf() - (litSmoke.Bf() - greySmoke.Bf()) * (dist - dOrange) / (dLit - dOrange);
+				a = litSmoke.Af() - (litSmoke.Af() - greySmoke.Af()) * (dist - dOrange) / (dLit - dOrange);
+			}
+			else if (t < tLit)
+			{
+				r = greySmoke.Rf();
+				g = greySmoke.Gf();
+				b = greySmoke.Bf();
+				a = greySmoke.Af();
+			}
+			else if (t < tGrey)
+			{
+				r = greySmoke.Rf() - (greySmoke.Rf() - whiteSmoke.Rf()) * (t - tLit) / (tGrey - tLit);
+				g = greySmoke.Gf() - (greySmoke.Gf() - whiteSmoke.Gf()) * (t - tLit) / (tGrey - tLit);
+				b = greySmoke.Bf() - (greySmoke.Bf() - whiteSmoke.Bf()) * (t - tLit) / (tGrey - tLit);
+				a = greySmoke.Af() - (greySmoke.Af() - whiteSmoke.Af()) * (t - tLit) / (tGrey - tLit);
+			}
+			else if (t < tEnd)
+			{
+				r = whiteSmoke.Rf();
+				g = whiteSmoke.Gf();
+				b = whiteSmoke.Bf();
+				a = whiteSmoke.Af() - whiteSmoke.Af() * (t - tGrey) / (tEnd - tGrey);
+			}
+			else
+			{
+				r = 1.0;
+				g = 0.0;
+				b = 0.0;
+				a = 0.0;
+			}
+			if (t > tEnd)
+			{
+				a /= (t - tEnd + 1) * (t - tEnd + 1);
+			}
+
 			col.SetDoubleRGBA(r,g,b,a);
 
 			float sz=0.5f+(float)(t*20.0);
-			if(40.0f<sz)
+			if(32.0f<sz)
 			{
-				sz=40.0f;
+				sz=32.0f;
 			}
 
 			float s=(float)((i+idx0)&7)*0.125;
@@ -605,6 +811,8 @@ FsVisualDnm FsWeapon::aim9xs=nullptr;
 FsVisualDnm FsWeapon::aim9x_coarse=nullptr;
 
 FsVisualDnm FsWeapon::flarePod=nullptr;
+FsVisualDnm FsWeapon::flare = nullptr;
+FsVisualDnm FsWeapon::flare_coarse = nullptr;
 FsVisualDnm FsWeapon::fuelTank=nullptr;
 
 
@@ -702,6 +910,9 @@ FsWeapon::FsWeapon()
 	case FSWEAPON_FLAREPOD:
 		vis=&flarePod;
 		break;
+	case FSWEAPON_FLARE:
+		vis = (coarse != YSTRUE ? &flare : &flare_coarse);
+		break;
 	case FSWEAPON_FUELTANK:
 		vis=&fuelTank;
 		break;
@@ -748,6 +959,8 @@ FsWeapon::FsWeapon()
 		break;
 	case FSWEAPON_FLAREPOD:
 		vis=&flarePod;
+		break;
+	case FSWEAPON_FLARE: //No shadow for flares for now
 		break;
 	case FSWEAPON_FUELTANK:
 		vis=&fuelTank;
@@ -1676,18 +1889,18 @@ YSRESULT FsWeapon::AddKillCredit(YsList <FsKillCredit> *&killCredit,FsExistence 
 	return YSOK;
 }
 
-void FsWeapon::AddToParticleManager(class YsGLParticleManager &partMan,const double cTime) const
+void FsWeapon::AddToParticleManager(class YsGLParticleManager &partMan,const double cTime, FSENVIRONMENT env) const
 {
 	if(nullptr!=trail)
 	{
 		YSBOOL includeCurrentPos=(0.0<lifeRemain ? YSTRUE : YSFALSE);
 		if(type==FSWEAPON_FLARE)
 		{
-			trail->AddToParticleManagerAsFlare(partMan,pos,cTime,includeCurrentPos);
+			trail->AddToParticleManagerAsFlare(partMan,pos,cTime,includeCurrentPos, env);
 		}
 		else
 		{
-			trail->AddToParticleManager(partMan,pos,cTime,includeCurrentPos);
+			trail->AddToParticleManager(partMan,pos,cTime,includeCurrentPos, env);
 		}
 	}
 }
@@ -1960,6 +2173,26 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 		}
 	}
 
+	if (nullptr == FsWeapon::flare)
+	{
+		FsWeapon::flare.Load(L"misc/flare.srf");
+		if (nullptr == FsWeapon::flare)
+		{
+			fsStderr.Printf("Cannot read Flare pattern.\n");
+			return YSERR;
+		}
+	}
+
+	if (nullptr == FsWeapon::flare_coarse)
+	{
+		FsWeapon::flare_coarse.Load(L"misc/flare_coarse.srf");
+		if (nullptr == FsWeapon::flare)
+		{
+			fsStderr.Printf("Cannot read Flare (coarse) pattern.\n");
+			return YSERR;
+		}
+	}
+
 	if(nullptr==FsWeapon::fuelTank)
 	{
 		FsWeapon::fuelTank.Load(L"misc/fueltank.srf");
@@ -2093,6 +2326,16 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 	if(nullptr!=FsWeapon::flarePod)
 	{
 		FsWeapon::flarePod.CleanUp();
+	}
+
+	if (nullptr != FsWeapon::flare)
+	{
+		FsWeapon::flare.CleanUp();
+	}
+
+	if (nullptr != FsWeapon::flare_coarse)
+	{
+		FsWeapon::flare_coarse.CleanUp();
 	}
 
 	if(nullptr!=FsWeapon::fuelTank)
@@ -3907,8 +4150,10 @@ const char *FsGetWeaponString(FSWEAPONTYPE wpnType)
 
 void FsWeaponHolder::AddToParticleManager(class YsGLParticleManager &partMan,const double cTime) const
 {
+	FSENVIRONMENT env = sim->GetEnvironment();
+
 	for(auto seeker=activeList; seeker!=NULL; seeker=seeker->next)
 	{
-		seeker->AddToParticleManager(partMan,cTime);
+		seeker->AddToParticleManager(partMan,cTime, env);
 	}
 }

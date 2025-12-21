@@ -65,8 +65,8 @@ public:
 	void Draw(const YsVec3 &pos,const YsAtt3 &att,YSBOOL transparency,FSSMOKETYPE smk,const double &cTime) const;
 	void Add(const double &dt,const double &cTime,const YsVec3 &pos,const YsAtt3 &att);
 
-	void AddToParticleManagerAsFlare(class YsGLParticleManager &partMan,const YsVec3 cPos,const double cTime,YSBOOL includeCurrentPos);
-	void AddToParticleManager(class YsGLParticleManager &partMan,const YsVec3 cPos,const double cTime,YSBOOL includeCurrentPos);
+	void AddToParticleManagerAsFlare(class YsGLParticleManager &partMan,const YsVec3 cPos,const double cTime,YSBOOL includeCurrentPos, FSENVIRONMENT env);
+	void AddToParticleManager(class YsGLParticleManager &partMan,const YsVec3 cPos,const double cTime,YSBOOL includeCurrentPos, FSENVIRONMENT env);
 };
 
 
@@ -119,7 +119,7 @@ public:
 	static class FsVisualDnm bomb250,bomb250s,bomb250_coarse;  // 2004/01/22
 	static class FsVisualDnm bomb500hd,bomb500hds,bomb500hd_coarse;  // 2004/01/22
 
-	static class FsVisualDnm flarePod;
+	static class FsVisualDnm flarePod, flare, flare_coarse;
 	static class FsVisualDnm fuelTank;
 
 	static FsAmmunitionIndication::WEAPONTYPE WeaponTypeToWeaponIndicationType(FSWEAPONTYPE wpnType);
@@ -208,7 +208,7 @@ public:
 	    YSBOOL coarse,const YsMatrix4x4 &viewMat,const YsMatrix4x4 &projMat,
 	    YSBOOL transparency,FSSMOKETYPE smk,const double &cTime,unsigned int drawFlag) const;
 
-	void AddToParticleManager(class YsGLParticleManager &partMan,const double cTime) const;
+	void AddToParticleManager(class YsGLParticleManager &partMan,const double cTime, FSENVIRONMENT env) const;
 
 protected:
 	YSRESULT AddKillCredit(YsList <FsKillCredit> *&killCredit,FsExistence *whoIsKilled,const double &when) const;

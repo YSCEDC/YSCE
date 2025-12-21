@@ -247,6 +247,22 @@ void FsWeapon::Draw(
 			}
 			break;
 		case FSWEAPON_FLARE:
+			if (lifeRemain > YsTolerance)
+			{
+				glDisable(GL_CULL_FACE);
+				glEnable(GL_LIGHTING);
+				if (coarse != YSTRUE)
+				{
+					if (flare != nullptr)
+					{
+						flare.Draw(viewMat, projMat, pos, att, drawFlag);
+					}
+				}
+				else if (coarse == YSTRUE && flare_coarse != nullptr)
+				{
+					flare_coarse.Draw(viewMat, projMat, pos, att, drawFlag);
+				}
+			}
 			break;
 
 		case FSWEAPON_DEBRIS:
