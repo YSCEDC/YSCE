@@ -326,8 +326,8 @@ public:
 	virtual void DrawShadow
 	    (const YsMatrix4x4 &viewTfm,const YsMatrix4x4 &projTfm,const YsMatrix4x4 &projPlnTfm) const;
 
-	void AddSmokeToParticleManager(class YsGLParticleManager &partMan,double currentTime,double remainTime) const;
-	void AddSingleSmokeToParticleManager(class YsGLParticleManager &partMan,int smkId,double currentTime,double remainTime) const;
+	void AddSmokeToParticleManager(class YsGLParticleManager &partMan,double currentTime,double remainTime, class FsSimulation *sim) const;
+	void AddSingleSmokeToParticleManager(class YsGLParticleManager &partMan,int smkId,double currentTime,double remainTime, class FsSimulation *sim) const;
 
 	void DrawSmoke(double currentTime,double remainTime,FSSMOKETYPE smk,int d,YSBOOL transparency) const;
 	void DrawSingleSmoke(int smkId,double currentTime,double remainTime,FSSMOKETYPE smk,int d,YSBOOL transparency) const;

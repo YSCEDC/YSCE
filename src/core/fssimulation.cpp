@@ -6454,7 +6454,7 @@ void FsSimulation::SimDrawScreen(
 			bulletHolder.AddToParticleManager(partMan, currentTime);
 			for (FsAirplane* seeker = nullptr; nullptr != (seeker = FindNextAirplane(seeker)); )
 			{
-				seeker->AddSmokeToParticleManager(partMan, currentTime, cfgPtr->smkRemainTime);
+				seeker->AddSmokeToParticleManager(partMan, currentTime, cfgPtr->smkRemainTime, this);
 			}
 		}
 

@@ -1376,15 +1376,15 @@ void FsAirplane::DrawShadow
 	}
 }
 
-void FsAirplane::AddSmokeToParticleManager(class YsGLParticleManager &partMan,double currentTime,double remainTime) const
+void FsAirplane::AddSmokeToParticleManager(class YsGLParticleManager &partMan,double currentTime,double remainTime, class FsSimulation *sim) const
 {
 	for(int i=0; i<Prop().GetNumSmokeGenerator(); i++)
 	{
-		AddSingleSmokeToParticleManager(partMan,i,currentTime,remainTime);
+		AddSingleSmokeToParticleManager(partMan,i,currentTime,remainTime, sim);
 	}
 }
 
-void FsAirplane::AddSingleSmokeToParticleManager(class YsGLParticleManager &partMan,int smkId,double currentTime,double remainTime) const
+void FsAirplane::AddSingleSmokeToParticleManager(class YsGLParticleManager &partMan,int smkId,double currentTime,double remainTime, class FsSimulation *sim) const
 {
 	if(rec!=NULL)
 	{
@@ -1509,6 +1509,13 @@ void FsAirplane::AddSingleSmokeToParticleManager(class YsGLParticleManager &part
 						double passed=currentTime-t;
 						double alpha=YsBound(0.8*YsSqr(1.0-passed/remainTime),0.0,1.0);
 						col.SetAd(alpha*0.5);
+
+						if (sim->GetEnvironment() == FSNIGHT)
+						{
+							col.SetRd(col.Rd() * 0.1);
+							col.SetGd(col.Gd() * 0.1);
+							col.SetBd(col.Bd() * 0.1);
+						}
 
 						float s=(float)((i+idx)&7)*0.125;
 						partMan.Add(smkp,col,r*2.5,s,0);
