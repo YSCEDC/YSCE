@@ -35,6 +35,15 @@ int FsWeatherCloudLayer::CloudLayerTypeFromString(const char str[])
 	return FSCLOUDLAYER_NONE;
 }
 
+FsWeatherCloudLayer FsWeatherCloudLayer::Overcast(double y0,double y1)
+{
+	FsWeatherCloudLayer layer;
+	layer.cloudLayerType=FSCLOUDLAYER_OVERCAST;
+	layer.y0=y0;
+	layer.y1=y1;
+	return layer;
+}
+
 
 
 
@@ -160,6 +169,10 @@ void FsWeather::GetCloudLayer(int &nLayer,const FsWeatherCloudLayer *&layer) con
 {
 	nLayer=(int)cloudLayer.GetN();
 	layer=cloudLayer;
+}
+
+int FsWeather::GetCloudLayerCount(void) const{
+	return (int)cloudLayer.GetN();
 }
 
 YSBOOL FsWeather::IsInCloudLayer(const YsVec3 &pos) const
