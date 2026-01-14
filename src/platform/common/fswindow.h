@@ -120,6 +120,9 @@ public:
 
 	YSBOOL pov;
 	double povAngle;
+	YsString joyName;
+	int numButtons;
+	int numAxes;
 };
 
 YSBOOL FsIsJoystickAxisAvailable(int joyId,int axisId);  // Note: Must return YSTRUE for joyId==FsMouseJoyId && 0<=joyAxs && joyAxs<2

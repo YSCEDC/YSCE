@@ -1237,7 +1237,7 @@ void FsGuiFuncAssignDialog::MakeAxisAssign(int funcType,int defJoyId,int defJoyA
 			joyMin[i]=joyMax[i];
 			prevJoy[i]=joyMax[i];
 
-			for(j=0; j<FsMaxNumJoyAxis; j++)
+			for(j=0; j<joyMax[i].numAxes; j++)
 			{
 				char str[256];
 				sprintf(str,"JOYSTICK %d AXIS %d",i+1,j+1);
@@ -1303,7 +1303,7 @@ void FsGuiFuncAssignDialog::MakeTrigAssign(int funcType,int defJoyId,int defJoyT
 			joyMin[i]=joyMax[i];
 			prevJoy[i]=joyMax[i];
 
-			for(j=0; j<FsMaxNumJoyTrig; j++)
+			for(j=0; j<joyMax[i].numButtons; j++)
 			{
 				char str[256];
 				sprintf(str,"JOYSTICK %d BUTTON %d",i+1,j+1);

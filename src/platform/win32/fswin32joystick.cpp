@@ -172,6 +172,10 @@ YSRESULT FsPollJoystick(FsJoystick &joy,int joyId)
 		JOYINFOEX joyInfo;
 		joyInfo.dwSize=sizeof(JOYINFOEX);
 		joyInfo.dwFlags=JOY_RETURNALL|JOY_RETURNCENTERED;
+		joy.joyName = FsJoyCaps[joyId].szPname; //szPname returns "Microsoft PC-joystick driver" regardless of the device name
+		joy.numAxes = FsJoyCaps[joyId].wNumAxes;
+		joy.numButtons = FsJoyCaps[joyId].wNumButtons;
+
 		if(FsJoyCaps[joyId].wCaps&JOYCAPS_HASPOV)
 		{
 			joyInfo.dwFlags|=JOY_RETURNPOVCTS;
