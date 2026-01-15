@@ -510,91 +510,53 @@ void FsWeaponSmokeTrail::AddToParticleManagerAsFlare(class YsGLParticleManager &
 				r = whiteHot.Rf() - (whiteHot.Rf() - yellowHot.Rf()) * dist / dWhite;
 				g = whiteHot.Gf() - (whiteHot.Gf() - yellowHot.Gf()) * dist / dWhite;
 				b = whiteHot.Bf() - (whiteHot.Bf() - yellowHot.Bf()) * dist / dWhite;
-				a = whiteHot.Af() - (whiteHot.Af() - yellowHot.Af()) * dist / dWhite;
 			}
 			else if (dist < dYellow)
 			{
 				r = yellowHot.Rf() - (yellowHot.Rf() - orangeHot.Rf()) * (dist - dWhite) / (dYellow - dWhite);
 				g = yellowHot.Gf() - (yellowHot.Gf() - orangeHot.Gf()) * (dist - dWhite) / (dYellow - dWhite);
 				b = yellowHot.Bf() - (yellowHot.Bf() - orangeHot.Bf()) * (dist - dWhite) / (dYellow - dWhite);
-				a = yellowHot.Af() - (yellowHot.Af() - orangeHot.Af()) * (dist - dWhite) / (dYellow - dWhite);
 			}
 			else if (dist < dOrange)
 			{
 				r = orangeHot.Rf() - (orangeHot.Rf() - litSmoke.Rf()) * (dist - dYellow) / (dOrange - dYellow);
 				g = orangeHot.Gf() - (orangeHot.Gf() - litSmoke.Gf()) * (dist - dYellow) / (dOrange - dYellow);
 				b = orangeHot.Bf() - (orangeHot.Bf() - litSmoke.Bf()) * (dist - dYellow) / (dOrange - dYellow);
-				a = orangeHot.Af() - (orangeHot.Af() - litSmoke.Af()) * (dist - dYellow) / (dOrange - dYellow);
 			}
 			else if (dist < dLit)
 			{
 				r = litSmoke.Rf() - (litSmoke.Rf() - greySmoke.Rf()) * (dist - dOrange) / (dLit - dOrange);
 				g = litSmoke.Gf() - (litSmoke.Gf() - greySmoke.Gf()) * (dist - dOrange) / (dLit - dOrange);
 				b = litSmoke.Bf() - (litSmoke.Bf() - greySmoke.Bf()) * (dist - dOrange) / (dLit - dOrange);
-				a = litSmoke.Af() - (litSmoke.Af() - greySmoke.Af()) * (dist - dOrange) / (dLit - dOrange);
 			}
-			/*if (t < tWhite)
-			{
-				r = whiteHot.Rf() - (whiteHot.Rf() - yellowHot.Rf()) * t / tWhite;
-				g = whiteHot.Gf() - (whiteHot.Gf() - yellowHot.Gf()) * t / tWhite;
-				b = whiteHot.Bf() - (whiteHot.Bf() - yellowHot.Bf()) * t / tWhite;
-				a = whiteHot.Af() - (whiteHot.Af() - yellowHot.Af()) * t / tWhite;
-			}
-			else if (t < tYellow)
-			{
-				r = yellowHot.Rf() - (yellowHot.Rf() - orangeHot.Rf()) * (t - tWhite) / (tYellow - tWhite);
-				g = yellowHot.Gf() - (yellowHot.Gf() - orangeHot.Gf()) * (t - tWhite) / (tYellow - tWhite);
-				b = yellowHot.Bf() - (yellowHot.Bf() - orangeHot.Bf()) * (t - tWhite) / (tYellow - tWhite);
-				a = yellowHot.Af() - (yellowHot.Af() - orangeHot.Af()) * (t - tWhite) / (tYellow - tWhite);
-			}
-			else if (t < tOrange)
-			{
-				r = orangeHot.Rf() - (orangeHot.Rf() - litSmoke.Rf()) * (t - tYellow) / (tOrange - tYellow);
-				g = orangeHot.Gf() - (orangeHot.Gf() - litSmoke.Gf()) * (t - tYellow) / (tOrange - tYellow);
-				b = orangeHot.Bf() - (orangeHot.Bf() - litSmoke.Bf()) * (t - tYellow) / (tOrange - tYellow);
-				a = orangeHot.Af() - (orangeHot.Af() - litSmoke.Af()) * (t - tYellow) / (tOrange - tYellow);
-			}
-			else if (t < tLit)
-			{
-				r = litSmoke.Rf() - (litSmoke.Rf() - greySmoke.Rf()) * (t - tOrange) / (tLit - tOrange);
-				g = litSmoke.Gf() - (litSmoke.Gf() - greySmoke.Gf()) * (t - tOrange) / (tLit - tOrange);
-				b = litSmoke.Bf() - (litSmoke.Bf() - greySmoke.Bf()) * (t - tOrange) / (tLit - tOrange);
-				a = litSmoke.Af() - (litSmoke.Af() - greySmoke.Af()) * (t - tOrange) / (tLit - tOrange);
-			}*/
 			else if (t < tLit)
 			{
 				r = greySmoke.Rf();
 				g = greySmoke.Gf();
 				b = greySmoke.Bf();
-				a = greySmoke.Af();
 			}
 			else if (t < tGrey)
 			{
 				r = greySmoke.Rf() - (greySmoke.Rf() - whiteSmoke.Rf()) * (t - tLit) / (tGrey - tLit);
 				g = greySmoke.Gf() - (greySmoke.Gf() - whiteSmoke.Gf()) * (t - tLit) / (tGrey - tLit);
 				b = greySmoke.Bf() - (greySmoke.Bf() - whiteSmoke.Bf()) * (t - tLit) / (tGrey - tLit);
-				a = greySmoke.Af() - (greySmoke.Af() - whiteSmoke.Af()) * (t - tLit) / (tGrey - tLit);
 			}
 			else if (t < tEnd)
 			{
 				r = whiteSmoke.Rf();
 				g = whiteSmoke.Gf();
 				b = whiteSmoke.Bf();
-				a = whiteSmoke.Af() - whiteSmoke.Af() * (t - tGrey) / (tEnd - tGrey);
 			}
 			else
 			{
 				r = 1.0;
 				g = 0.0;
 				b = 0.0;
-				a = 0.0;
-			}
-			if (t > tEnd)
-			{
-				a /= (t-tEnd+1)* (t - tEnd + 1);
 			}
 
-			col.SetDoubleRGBA(r, g, b, a);
+			int exp = 3;
+			int offset = 0.005;
+			a = YsBound((1/pow(tEnd,exp-1)*pow(tEnd-t,exp))/tEnd + offset, 0.0, 1.0);
 
 			float sz;// = 0.75f + (float)(t * 4.0);
 			sz = 0.75 + (31 * (t / tEnd));
@@ -602,6 +564,8 @@ void FsWeaponSmokeTrail::AddToParticleManagerAsFlare(class YsGLParticleManager &
 			{
 				sz = 32.0f;
 			}
+
+			col.SetDoubleRGBA(r, g, b, a);
 
 			float s=(float)((i+idx0)&7)*0.125;
 			partMan.Add(pos,col,sz,s,0);
@@ -674,14 +638,16 @@ void FsWeaponSmokeTrail::AddToParticleManager(class YsGLParticleManager &partMan
 				litSmoke.SetFloatRGBA(0.5, 0.5, 0.5, 0.8);
 				greySmoke.SetFloatRGBA(0.15, 0.15, 0.15, 0.5);
 				whiteSmoke.SetFloatRGBA(0.1, 0.1, 0.1, 0.25);
-				tLit = 1.0;
-				tGrey = 2.0;
-				tEnd = 10.0;
-				dClear = 1.5;
-				dWhite = 4.0;
-				dYellow = 8.0;
-				dOrange = 10.0;
-				dLit = 25.0;
+				tWhite = 0.05;
+				tYellow = 0.08;
+				tOrange = 0.11;
+				tLit = 0.5;
+				tGrey = 1.0;
+				tEnd = 6.0;
+				dWhite = 2.0;
+				dYellow = 3.0;
+				dOrange = 4.0;
+				dLit = 15.0;
 			}
 			else
 			{
@@ -691,83 +657,70 @@ void FsWeaponSmokeTrail::AddToParticleManager(class YsGLParticleManager &partMan
 				litSmoke.SetFloatRGBA(0.65, 0.65, 0.65, 0.8);
 				greySmoke.SetFloatRGBA(0.75, 0.75, 0.75, 0.5);
 				whiteSmoke.SetFloatRGBA(0.8, 0.8, 0.8, 0.25);
-				tLit = 1.0;
-				tGrey = 2.0;
-				tEnd = 10.0;
-				dClear = 1.5;
-				dWhite = 2.5;
-				dYellow = 4.0;
-				dOrange = 6.0;
-				dLit = 10.0;
+				tWhite = 0.05;
+				tYellow = 0.08;
+				tOrange = 0.11;
+				tLit = 0.5;
+				tGrey = 1.0;
+				tEnd = 6.0;
+				dWhite = 1.0;
+				dYellow = 2.0;
+				dOrange = 3.0;
+				dLit = 5.0;
 			}
 			//x0 – (x0-x1) * (t-t0)/dt
-			if (dist < dClear)
-			{
-				r = 0.0;
-				g = 0.0;
-				b = 0.0;
-				a = 0.0;
-			}
-			else if (dist < dWhite)
+			if (dist < dWhite)
 			{
 				r = whiteHot.Rf() - (whiteHot.Rf() - yellowHot.Rf()) * dist / dWhite;
 				g = whiteHot.Gf() - (whiteHot.Gf() - yellowHot.Gf()) * dist / dWhite;
 				b = whiteHot.Bf() - (whiteHot.Bf() - yellowHot.Bf()) * dist / dWhite;
-				a = whiteHot.Af() - (whiteHot.Af() - yellowHot.Af()) * dist / dWhite;
 			}
 			else if (dist < dYellow)
 			{
 				r = yellowHot.Rf() - (yellowHot.Rf() - orangeHot.Rf()) * (dist - dWhite) / (dYellow - dWhite);
 				g = yellowHot.Gf() - (yellowHot.Gf() - orangeHot.Gf()) * (dist - dWhite) / (dYellow - dWhite);
 				b = yellowHot.Bf() - (yellowHot.Bf() - orangeHot.Bf()) * (dist - dWhite) / (dYellow - dWhite);
-				a = yellowHot.Af() - (yellowHot.Af() - orangeHot.Af()) * (dist - dWhite) / (dYellow - dWhite);
 			}
 			else if (dist < dOrange)
 			{
 				r = orangeHot.Rf() - (orangeHot.Rf() - litSmoke.Rf()) * (dist - dYellow) / (dOrange - dYellow);
 				g = orangeHot.Gf() - (orangeHot.Gf() - litSmoke.Gf()) * (dist - dYellow) / (dOrange - dYellow);
 				b = orangeHot.Bf() - (orangeHot.Bf() - litSmoke.Bf()) * (dist - dYellow) / (dOrange - dYellow);
-				a = orangeHot.Af() - (orangeHot.Af() - litSmoke.Af()) * (dist - dYellow) / (dOrange - dYellow);
 			}
 			else if (dist < dLit)
 			{
 				r = litSmoke.Rf() - (litSmoke.Rf() - greySmoke.Rf()) * (dist - dOrange) / (dLit - dOrange);
 				g = litSmoke.Gf() - (litSmoke.Gf() - greySmoke.Gf()) * (dist - dOrange) / (dLit - dOrange);
 				b = litSmoke.Bf() - (litSmoke.Bf() - greySmoke.Bf()) * (dist - dOrange) / (dLit - dOrange);
-				a = litSmoke.Af() - (litSmoke.Af() - greySmoke.Af()) * (dist - dOrange) / (dLit - dOrange);
 			}
 			else if (t < tLit)
 			{
 				r = greySmoke.Rf();
 				g = greySmoke.Gf();
 				b = greySmoke.Bf();
-				a = greySmoke.Af();
 			}
 			else if (t < tGrey)
 			{
 				r = greySmoke.Rf() - (greySmoke.Rf() - whiteSmoke.Rf()) * (t - tLit) / (tGrey - tLit);
 				g = greySmoke.Gf() - (greySmoke.Gf() - whiteSmoke.Gf()) * (t - tLit) / (tGrey - tLit);
 				b = greySmoke.Bf() - (greySmoke.Bf() - whiteSmoke.Bf()) * (t - tLit) / (tGrey - tLit);
-				a = greySmoke.Af() - (greySmoke.Af() - whiteSmoke.Af()) * (t - tLit) / (tGrey - tLit);
 			}
 			else if (t < tEnd)
 			{
 				r = whiteSmoke.Rf();
 				g = whiteSmoke.Gf();
 				b = whiteSmoke.Bf();
-				a = whiteSmoke.Af() - whiteSmoke.Af() * (t - tGrey) / (tEnd - tGrey);
 			}
 			else
 			{
 				r = 1.0;
 				g = 0.0;
 				b = 0.0;
-				a = 0.0;
 			}
-			if (t > tEnd)
-			{
-				a /= (t - tEnd + 1) * (t - tEnd + 1);
-			}
+
+			int exp = 3;
+			int offset = 0.005;
+			a = YsBound((1 / pow(tEnd, exp - 1) * pow(tEnd - t, exp)) / tEnd + offset, 0.0, 1.0);
 
 			col.SetDoubleRGBA(r,g,b,a);
 
