@@ -4,7 +4,7 @@
 
 #include <ysclass.h>
 
-#define YSFLIGHT_VERSION 20181124
+#define YSFLIGHT_VERSION 20260129
 #define YSFLIGHT_YFSVERSION 20180930
 #define YSFLIGHT_NETVERSION 20150425
 
@@ -93,6 +93,7 @@ typedef enum
 
 
 const double FsGravityConst=9.807;
+const YsVec3 FsGravityVec (0.0, -9.807, 0.0);
 
 
 const int FsMaxNumJoystick=8;
@@ -181,9 +182,34 @@ FSWEAPON_FLARE_INTERNAL=200
 
 typedef enum
 {
+	FSWEAPONCAT_BULLET,				//It's a bullet
+	FSWEAPONCAT_ANTIAIRMISSILE,		//Guided anti-air missiles
+	FSWEAPONCAT_ANTIGROUNDMISSILE,	//Guided anti-ground missiles
+	FSWEAPONCAT_MULTIROLEMISSILE,	//Guided multi-role missiles (can target AA and AG)
+	FSWEAPONCAT_UNGUIDEDMISSILE,	//Unguided powered weapons (rockets)
+	FSWEAPONCAT_FREEFALL,			//Unguided unpowered weapons (bombs)
+	FSWEAPONCAT_GUIDEDFREEFALL,		//Guided unpowered weapons
+	FSWEAPONCAT_COUNTERMEASURE,		//Flares and other decoys
+	FSWEAPONCAT_SURFACE,			//Placeholder for future torpedos
+	FSWEAPONCAT_UTILITY,			//Fuel tanks, flarepods, etc
+	FSWEAPONCAT_SYSTEM,				//Debris and other scatter
+	FSWEAPONCAT_NULL
+} FSWEAPONCATEGORY;		//20260121 code cleaning update
+
+typedef enum
+{
+	FSENTITYLIST_WEAPON,			//Mark as belonging in weaponList
+	FSENTITYLIST_DECOY,				//Belong in decoyList
+	FSENTITYLIST_BULLET,			//Belong in bulletList
+	FSENTITYLIST_SYSTEM				//Belong in systemList
+} FSENTITYLIST;
+
+typedef enum
+{
 	FSWEAPON_CREDIT_OWNER_NOT_RECORDED=0,
 	FSWEAPON_CREDIT_OWNER_PLAYER=1,
-	FSWEAPON_CREDIT_OWNER_NON_PLAYER=2
+	FSWEAPON_CREDIT_OWNER_NON_PLAYER=2,
+	FSWEAPON_CREDIT_OWNER_SYSTEM=3
 } FSWEAPON_CREDIT_OWNER;
 
 enum

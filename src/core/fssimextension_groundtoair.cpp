@@ -82,7 +82,7 @@ FsSimExtension_GroundToAir::FsSimExtension_GroundToAir() : initRemainTime(15.0*6
 		}
 	}
 	auto gnd=sim->GetPlayerGround();
-	if(nullptr!=gnd && FSWEAPON_NULL==gnd->Prop().GetWeaponOfChoice())
+	if(nullptr!=gnd && FSWEAPON_NULL==gnd->Prop().GetSelectedWeaponType())
 	{
 		gnd->Prop().CycleWeaponOfChoiceByUser();
 	}

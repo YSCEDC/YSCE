@@ -614,7 +614,7 @@ void FsInstrumentPanel::Draw3d(const FsAirplaneProperty &prop,const FsCockpitInd
 	{
 		const int gun=prop.GetNumWeapon(FSWEAPON_GUN)+prop.GetNumPilotControlledTurretBullet();
 		const int maxGun=prop.GetMaxNumWeapon(FSWEAPON_GUN)+prop.GetMaxNumPilotControlledTurretBullet();
-		FSWEAPONTYPE wpnChoice=prop.GetWeaponOfChoice();
+		FSWEAPONTYPE wpnChoice=prop.GetSelectedWeaponType();
 		const int wpnChoiceLeft=prop.GetNumWeapon(wpnChoice);
 
 		DrawAmmo3d(gun,maxGun,wpnChoice,wpnChoiceLeft);

@@ -7778,7 +7778,7 @@ YSBOOL FsSimulation::NetActivity(void)
 		}
 	}
 
-	if(bulletHolder.FindNextActiveWeapon(NULL)!=NULL)
+	if(bulletHolder.FindNextActiveEntity(NULL)!=NULL)
 	{
 		return YSTRUE;
 	}

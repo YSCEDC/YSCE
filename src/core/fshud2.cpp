@@ -1897,14 +1897,13 @@ void FsHud2::DrawRWRHUD(const FsSimulation* sim, const FsAirplane* withRespectTo
 
 	//draw RWR indicators for missiles which are targeting us 
 	const FsWeapon* currWeapon = NULL;
-	while ((currWeapon = sim->FindNextActiveWeapon(currWeapon)) != NULL && numThreatsDrawn < maxNumThreatsToDraw)
+	while ((currWeapon = sim->FindNextActiveEntity(currWeapon)) != NULL && numThreatsDrawn < maxNumThreatsToDraw)
 	{
 		YsColor currCol;
 		if (currWeapon->lifeRemain > YsTolerance
-			&& currWeapon->timeRemain > YsTolerance
 			&& (currWeapon->pos - withRespectTo->GetPosition()).GetSquareLength() <= searchRadius * searchRadius
 			&& currWeapon->target == withRespectTo
-			&& (currWeapon->type == FSWEAPON_AIM9 || currWeapon->type == FSWEAPON_AIM120 || currWeapon->type == FSWEAPON_AIM9X))
+			&& (currWeapon->targetAir == YSTRUE))
 		{
 			//get relative position of current weapon
 			YsVec3 relPosition;

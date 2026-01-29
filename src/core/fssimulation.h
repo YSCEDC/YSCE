@@ -809,7 +809,7 @@ public:
 
 	FsWeaponHolder &GetWeaponStore(void);
 	const FsWeaponHolder &GetWeaponStore(void) const;
-	const FsWeapon *FindNextActiveWeapon(const FsWeapon *wpn) const;
+	const FsWeapon * FindNextActiveEntity(const FsWeapon *wpn) const;
 	YSBOOL IsWeaponGuidedToTarget(int weaponId) const;
 	YSBOOL IsWeaponShotBy(int weaponId,FsAirplane *air) const;
 

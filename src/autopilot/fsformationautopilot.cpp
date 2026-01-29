@@ -568,7 +568,7 @@ YSRESULT FsFormation::ApplyControl(FsAirplane &air,FsSimulation *sim,const doubl
 			air.Prop().SetCycleWeaponButton(YSFALSE);
 			air.Prop().SetSmokeButton(leader->Prop().GetSmokeButton());
 
-			air.Prop().SetWeaponOfChoice(leader->Prop().GetWeaponOfChoice());
+			air.Prop().SetWeaponOfChoice(leader->Prop().GetSelectedWeaponType());
 
 			// // Trigger is set here. But, if player is in command,
 			// // these trigger will be overridden in FsSimulation::SimControlByUser

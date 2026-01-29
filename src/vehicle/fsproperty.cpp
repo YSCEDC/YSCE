@@ -56,7 +56,7 @@ void FsRotatingTurretProperty::Initialize(void)
 	turretProp=0;
 
 	range=3000.0;
-	bulSpeed=340.0*5.0;
+	bulSpeed = 340.0 * 5.0;
 }
 
 FsRotatingTurretState::FsRotatingTurretState()
@@ -75,6 +75,7 @@ void FsRotatingTurretState::Initialize(void)
 	turretState=0;
 	ctlH=0.0;
 	ctlP=0.0;
+	wepPtr = &wep;
 };
 
 void FsRotatingTurretState::MoveGunner(
@@ -325,7 +326,7 @@ void FsRotatingTurretState::FireWeapon(
 	    const double &dt,
 		const YsVec3 &, // iniVel
 	    const YsMatrix4x4 &posiMat,
-	    class FsSimulation *,
+	    class FsSimulation *sim,
 	    class FsWeaponHolder &bul,
 	    class FsExistence *owner)
 {
@@ -349,6 +350,26 @@ void FsRotatingTurretState::FireWeapon(
 			att.SetForwardVector(dir);
 			gun+=dir*chTurret.radius;
 
+			FSWEAPONTYPE wtype = chTurret.wpnType;
+			FsWeapon::FsWeaponPerformance data = wepPtr->GetWeaponPerformanceByType(wtype);
+			data.maxSpeed = chTurret.bulSpeed;
+			data.flightRange = chTurret.range;
+			data.power = chTurret.destructivePower;
+			if (chTurret.turretProp&FSTURRETPROP_ANTIAIR)
+			{
+				data.targetAir = YSTRUE;
+			}
+			if (chTurret.turretProp&FSTURRETPROP_ANTIGND)
+			{
+				data.targetGnd = YSTRUE;
+			}
+			
+			YsVec3 initVel;
+
+			owner->CommonProp().GetVelocity(initVel);			
+
+			bul.LaunchWeapon(data, ctime, gun, att, initVel, owner, airTargetKey, gndTargetKey, YSTRUE, YSTRUE);
+			/*
 			switch(chTurret.wpnType)
 			{
 			default:
@@ -491,7 +512,7 @@ void FsRotatingTurretState::FireWeapon(
 			case FSWEAPON_FLARE:
 				bul.DispenseFlare(ctime,gun,YsOrigin(),120.0,1000.0,owner,YSTRUE,YSTRUE);
 				break;
-			}
+			}*/
 
 			this->numBullet--;
 

@@ -1069,7 +1069,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 		FSWEAPONTYPE woc; //woc = "weapon of choice"
 
 		dontFire=YSFALSE;
-		woc=air.Prop().GetWeaponOfChoice();
+		woc=air.Prop().GetSelectedWeaponType();
 		air.Prop().SetAllVirtualButton(YSFALSE);
 
 		FsWeapon* seeker = sim->GetLockedOn(&air);

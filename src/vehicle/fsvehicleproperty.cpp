@@ -148,6 +148,12 @@ YsAtt3 &FsVehicleProperty::GetAttitude(YsAtt3 &att) const
 	return att;
 }
 
+YsVec3 &FsVehicleProperty::GetVelocity(YsVec3& vec) const
+{
+	vec = staVelocity;
+	return vec;
+}
+
 const YsMatrix4x4 &FsVehicleProperty::GetMatrix(void) const
 {
 	return staMatrix;

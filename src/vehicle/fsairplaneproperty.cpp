@@ -20,7 +20,6 @@
 #include "fsnavaid.h"
 #include "fsrecord.h"
 #include "fsvisual.h"
-#include "fsweapon.h"
 #include "fsproperty.h"
 #include "fsairplaneproperty.h"
 #include "fsgroundproperty.h"
@@ -181,7 +180,10 @@ void FsAirplaneProperty::InitializeState(void)
 	staVectorMarker=YSFALSE;
 
 	// Temporary
-	staWoc=FSWEAPON_GUN;
+	wepPtr = &wep;
+	
+	staSelectedWeaponType=FSWEAPON_GUN;
+	staSelectedWeaponPerformance = wep.gunPerf;
 	staGunBullet=3000;
 	staGunTimer=0.0;
 	staFlare=20;
@@ -381,12 +383,7 @@ void FsAirplaneProperty::Initialize(void)
 	chGroundStaticPitch=0.0;
 
 	chGunPower=1;
-	chBulInitSpeed=340.0*5.0;  // Mach 5.0
-	chBulRange=3000.0;      // 5000m
 	chRadarCrossSection=1.0;
-	chAAMRange=5000.0;
-	chAGMRange=5000.0;
-	chRocketRange=10000.0;
 	chBombInBombBay=YSFALSE;
 	chBombBayRcs=0.0;
 
@@ -1134,7 +1131,7 @@ YSRESULT FsAirplaneProperty::CycleWeaponOfChoice(void)
 {
 	int i;
 	FSWEAPONTYPE woc;
-	woc=GetWeaponOfChoice();
+	woc=GetSelectedWeaponType();
 
 	for(i=0; i<FSWEAPON_NUMWEAPONTYPE; i++)
 	{
@@ -1228,13 +1225,19 @@ YSRESULT FsAirplaneProperty::SetWeaponOfChoice(FSWEAPONTYPE woc)
 		}
 		break;
 	}
-	staWoc=woc;
+	staSelectedWeaponType=woc;
+	staSelectedWeaponPerformance = wep.GetWeaponPerformanceByType(woc);
 	return YSOK;
 }
 
-FSWEAPONTYPE FsAirplaneProperty::GetWeaponOfChoice(void) const
+FSWEAPONTYPE FsAirplaneProperty::GetSelectedWeaponType(void) const
 {
-	return staWoc;
+	return staSelectedWeaponType;
+}
+
+FsWeapon::FsWeaponPerformance FsAirplaneProperty::GetSelectedWeaponPerformance(void) const
+{
+	return staSelectedWeaponPerformance;
 }
 
 void FsAirplaneProperty::BeforeMove(void)
@@ -2613,7 +2616,7 @@ void FsAirplaneProperty::ApplyControl(const FsFlightControl &ctl,unsigned int wh
 
 			int i;
 			YSBOOL fireGunButton;
-			if((staWoc==FSWEAPON_GUN && ctlFireWeaponButton==YSTRUE) || ctlFireGunButton==YSTRUE)
+			if((staSelectedWeaponPerformance.type==FSWEAPON_GUN && ctlFireWeaponButton==YSTRUE) || ctlFireGunButton==YSTRUE)
 			{
 				fireGunButton=YSTRUE;
 			}
@@ -5424,7 +5427,7 @@ YSBOOL FsAirplaneProperty::IsFiringGun(void) const
 {
 	if(GetNumWeapon(FSWEAPON_GUN)>0)
 	{
-		if((staWoc==FSWEAPON_GUN && ctlFireWeaponButton==YSTRUE) || ctlFireGunButton==YSTRUE)
+		if((staSelectedWeaponPerformance.type==FSWEAPON_GUN && ctlFireWeaponButton==YSTRUE) || ctlFireGunButton==YSTRUE)
 		{
 			return YSTRUE;
 		}
@@ -6097,7 +6100,7 @@ YSBOOL FsAirplaneProperty::FireGunIfVirtualTriggerIsPressed(
 	pilotFiring=YSFALSE;
 
 
-	if((staWoc==FSWEAPON_GUN && ctlFireWeaponButton==YSTRUE) || ctlFireGunButton==YSTRUE)
+	if((staSelectedWeaponPerformance.type ==FSWEAPON_GUN && ctlFireWeaponButton==YSTRUE) || ctlFireGunButton==YSTRUE)
 	{
 		fireGunButton=YSTRUE;
 	}
@@ -6128,6 +6131,8 @@ YSBOOL FsAirplaneProperty::FireGunIfVirtualTriggerIsPressed(
 			if(staGunBullet>0)
 			{
 				staGunTimer-=dt;
+				FsWeapon::FsWeaponPerformance data = wep.gunPerf;
+
 				while(staGunTimer<=0.0)
 				{
 					YsVec3 gun,dir;
@@ -6140,7 +6145,9 @@ YSBOOL FsAirplaneProperty::FireGunIfVirtualTriggerIsPressed(
 						att.SetB(0.0);
 
 						gun=staMatrix*chGunPosition[i];
-						bul.Fire(ctime,gun,att,chBulInitSpeed,chBulRange,chGunPower,owner,YSTRUE,YSTRUE);
+						data.power = chGunPower;
+						bul.LaunchWeapon(data, ctime, gun, att, staVelocity, owner, NULL, NULL, YSTRUE, YSTRUE);
+
 						staGunBullet--;
 					}
 
@@ -6239,7 +6246,7 @@ YSBOOL FsAirplaneProperty::RunVirtualButtonQueue(
 					jettisonedWeapon = YSTRUE;
 				}
 			}
-			firedWeapon=staWoc;
+			firedWeapon=staSelectedWeaponType;
 			return FireSelectedWeapon(blockedByBombBay,sim,ctime,bul,owner);
 		case VBT_FIREAAM:
 			if(0<GetNumWeapon(FSWEAPON_AIM9X))
@@ -6300,7 +6307,7 @@ YSBOOL FsAirplaneProperty::FireSelectedWeapon(
     FsSimulation *sim,const double &ct,class FsWeaponHolder &bul,class FsExistence *own)
 {
 	blockedByBombBay=YSFALSE;
-	return FireWeapon(blockedByBombBay,sim,ct,bul,own,staWoc);
+	return FireWeapon(blockedByBombBay,sim,ct,bul,own,staSelectedWeaponType);
 }
 
 YSBOOL FsAirplaneProperty::FireWeapon(
@@ -6425,184 +6432,22 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 		missileAtt.SetB(staAttitude.b());
 	}
 
-	if(0<GetNumWeapon(wpnType))
+	if(0<GetNumWeapon(wpnType) && wpnType != FSWEAPON_GUN)
 	{
-		switch(wpnType)
+		FsWeapon::FsWeaponPerformance data;
+		data = wep.GetWeaponPerformanceByType(wpnType);
+
+		if (data.fueltank == YSTRUE)
 		{
-		default:
-			break;
-		case FSWEAPON_AIM9:
-			{
-				fired=YSTRUE;
-				staRecentlyFiredMissileId=
-				bul.Fire(ctime,
-				         wpnType,
-				         missilePos,
-				         missileAtt, //staAttitude,
-				         staV,
-				         340.0*3.0,
-				         GetAAMRange(wpnType),
-				         YsDegToRad(90.0),
-				         GetAAMRadarAngle(),
-				         12,
-				         owner,
-				         staAirTargetKey, // <- Locked On Target
-				         YSTRUE,YSTRUE);
-			}
-			break;
-		case FSWEAPON_AIM9X:
-			{
-				fired=YSTRUE;
-				staRecentlyFiredMissileId=
-				bul.Fire(ctime,
-				         wpnType,
-				         missilePos,
-				         missileAtt, //staAttitude,
-				         staV,
-				         340.0*3.0,
-				         GetAAMRange(wpnType),
-				         YsDegToRad(80.0),
-				         GetAAMRadarAngle(),
-				         12,
-				         owner,
-				         staAirTargetKey, // <- Locked On Target
-				         YSTRUE,YSTRUE);
-			}
-			break;
-		case FSWEAPON_AIM120:
-			{
-				fired=YSTRUE;
-				staRecentlyFiredMissileId=
-					bul.Fire(ctime,
-					         wpnType,
-					         missilePos,
-					         missileAtt, //staAttitude,
-					         staV,
-					         340.0*4.0,
-					         30000.0,  // 30km
-					         YsDegToRad(55.0),
-					         GetAAMRadarAngle(),
-					         12,
-					         owner,
-					         staAirTargetKey, // <- Locked On Target
-					         YSTRUE,YSTRUE);
-			}
-			break;
-		case FSWEAPON_AGM65:
-			{
-				fired=YSTRUE;
-				staRecentlyFiredMissileId=
-					bul.Fire(ctime,
-					         wpnType,
-					         missilePos,
-					         missileAtt, //staAttitude,
-					         staV,
-					         340.0,
-					         GetAGMRange(),
-					         YsDegToRad(90.0),
-					         GetAGMRadarAngle(),
-					         GetAGMDestructivePower(),
-					         owner,
-					         staGroundTargetKey, // <- Locked On Target
-					         YSTRUE,
-					         YSTRUE);
-			}
-			break;
-		case FSWEAPON_ROCKET:
-			{
-				fired=YSTRUE;
-				bul.Fire(ctime,
-				         wpnType,
-				         missilePos,
-				         missileAtt, //staAttitude,
-				         staV,
-				         GetRocketSpeed(),
-				         GetRocketRange(),
-				         YsDegToRad(90.0),
-				         0.0,
-				         10,
-				         owner,
-				         YSNULLHASHKEY,              // <- Locked On Target
-				         YSTRUE,
-				         YSTRUE);
-			}
-			break;
-		case FSWEAPON_BOMB:
-			{
-				fired=YSTRUE;
-				bul.Bomb(ctime,
-				         wpnType,
-				         missilePos,
-				         staAttitude,
-				         staVelocity,
-				         340.0,
-				         50,
-				         owner,
-				         YSTRUE,
-				         YSTRUE);
-			}
-			break;
-		case FSWEAPON_BOMB250:
-			{
-				fired=YSTRUE;
-				bul.Bomb(ctime,
-				         wpnType,
-				         missilePos,
-				         staAttitude,
-				         staVelocity,
-				         340.0,
-				         35,
-				         owner,
-				         YSTRUE,
-				         YSTRUE);
-			}
-			break;
-		case FSWEAPON_BOMB500HD:
-			{
-				fired=YSTRUE;
-				bul.Bomb(ctime,
-				         wpnType,
-				         missilePos,
-				         staAttitude,
-				         staVelocity,
-				         340.0,
-				         35,
-				         owner,
-				         YSTRUE,
-				         YSTRUE);
-			}
-			break;
-		case FSWEAPON_FUELTANK:
-			{
-				int destructive=1;
-				if(0<=slot)
-				{
-					destructive+=(int)(staWeaponSlot[slot].fuelLoaded/80.0);
-				}
-				fired=YSTRUE;
-				bul.Bomb(ctime,
-				         wpnType,
-				         missilePos,
-				         staAttitude,
-				         staVelocity,
-				         340.0,
-				         destructive,
-				         owner,
-				         YSTRUE,
-				         YSTRUE);
-			}
-			break;
-		case FSWEAPON_FLARE:
-			{
-				staAttitude.Mul(flareVel,flareVel);
-				if(0>slot && 0<staFlare)
-				{
-					staFlare--;
-				}
-				fired=YSTRUE;
-				bul.DispenseFlare(ctime,missilePos,staVelocity+flareVel,120.0,1000.0,owner,YSTRUE,YSTRUE);
-			}
-			break;
+			data.power += (int)(staWeaponSlot[slot].fuelLoaded / 80.0);
+		}
+		int missileId;
+		missileId = bul.LaunchWeapon(data,ctime,missilePos,missileAtt,staVelocity,owner,staAirTargetKey, staGroundTargetKey,YSTRUE,YSTRUE);
+		fired = YSTRUE;
+
+		if (data.category == FSWEAPONCAT_ANTIAIRMISSILE)
+		{
+			staRecentlyFiredMissileId = missileId; //For dogfight AI to keep track of their weapons
 		}
 	}
 
@@ -6610,7 +6455,11 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 	{
 		staWeaponSlot[slot].nLoaded--;
 	}
-
+	else if (slot < 0 && wpnType == FSWEAPON_FLARE && 0 < staFlare)
+	{
+		staFlare--;
+	}
+	
 	return fired;
 }
 
@@ -7267,34 +7116,22 @@ const double FsAirplaneProperty::GetRadarCrossSection(void) const
 
 const double &FsAirplaneProperty::GetBulletSpeed(void) const
 {
-	return chBulInitSpeed;
+	return wep.gunPerf.maxSpeed;
 }
 
 const double &FsAirplaneProperty::GetRocketSpeed(void) const
 {
-	static double chRktSpd=800.0;
-	return chRktSpd;
+	return wep.rocketPerf.maxSpeed;
 }
 
 const double &FsAirplaneProperty::GetAAMRadarAngle(void) const
 {
-	static double x=YsPi/6.0;
-	return x;
+	return wep.aim9Perf.trackAngle;
 }
 
 const double FsAirplaneProperty::GetAAMRange(FSWEAPONTYPE wpnType) const
-{
-	switch(wpnType)
-	{
-	default:
-		break;
-	case FSWEAPON_AIM9:
-	case FSWEAPON_AIM9X:
-		return 5000.0;
-	case FSWEAPON_AIM120:
-		return 30000.0;
-	}
-	return 0.0;
+{	
+	return wepPtr->GetWeaponPerformanceByType(wpnType).flightRange;
 }
 
 YSBOOL FsAirplaneProperty::GetLeadGunSight(void) const
@@ -7331,6 +7168,23 @@ int FsAirplaneProperty::GetNumWeapon(FSWEAPONTYPE wpnType) const
 		return n;
 	}
 	return 0;
+}
+
+int FsAirplaneProperty::GetNumWeaponByCategory(FSWEAPONCATEGORY category) const
+{
+	int i, n = 0;
+	FsWeapon wpn;
+	FSWEAPONTYPE type;
+
+	for (i = 0; i < staWeaponSlot.GetN(); i++)
+	{
+		type = staWeaponSlot[i].wpnType;
+		if (wpn.GetWeaponPerformanceByType(type).category == category)
+		{
+			n += staWeaponSlot[i].nLoaded;
+		}
+	}
+	return n;
 }
 
 int FsAirplaneProperty::GetNumSlotWeapon(FSWEAPONTYPE wpnType) const
@@ -7421,23 +7275,22 @@ unsigned int FsAirplaneProperty::GetAirTargetKey(void) const
 
 const double &FsAirplaneProperty::GetAGMRadarAngle(void) const
 {
-	static double x=YsPi/9.0;
-	return x;
+	return wep.agm65Perf.trackAngle;
 }
 
 const double &FsAirplaneProperty::GetAGMRange(void) const
 {
-	return chAGMRange;
+	return wep.agm65Perf.flightRange;
 }
 
-int FsAirplaneProperty::GetAGMDestructivePower(void) const
+int FsAirplaneProperty::GetAGMDestructivePower(void) const //A/G AI needs this to know how many AGM to shoot
 {
-	return FsWeapon::POWER_AGM65;
+	return wep.agm65Perf.power;
 }
 
 const double &FsAirplaneProperty::GetRocketRange(void) const
 {
-	return chRocketRange;
+	return wep.rocketPerf.flightRange;
 }
 
 YSBOOL FsAirplaneProperty::SetGroundTargetKey(unsigned int gndKey)
@@ -8753,7 +8606,7 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 				res=FsGetWeight(staSmokeOil,av[1]);
 				break;
 			case 77: //"WEAPONCH"
-				res=FsGetWeaponOfChoice(staWoc,av[1]);
+				res=FsGetWeaponOfChoice(staSelectedWeaponType,av[1]);
 				break;
 			case 78: //"INITBOMB"
 				// chMaxNumBomb=YsGreater(chMaxNumBomb,atoi(av[1]));  // Max must be set before SetNum
@@ -10049,32 +9902,16 @@ double FsAirplaneProperty::GetCleanWeight(void) const
 
 double FsAirplaneProperty::GetPayloadWeight(void) const
 {
-	// AIM-9 -> about 250 kg
-	// AGM-65-> about 300 kg;
-	// Mk82  -> 500lb = about 250 kg;
-	double weight=staPayload
-	      +double(GetNumWeapon(FSWEAPON_AIM9))*90.0
-	      +double(GetNumWeapon(FSWEAPON_AIM9X))*90.0
-	      +double(GetNumWeapon(FSWEAPON_AIM120))*150.0
-	      +double(GetNumWeapon(FSWEAPON_AGM65))*300.0
-	      +double(GetNumWeapon(FSWEAPON_BOMB))*250.0
-	      +double(GetNumWeapon(FSWEAPON_BOMB250))*120.0
-	      +double(GetNumWeapon(FSWEAPON_BOMB500HD))*250.0
-	      +double(GetNumWeapon(FSWEAPON_ROCKET))*10.0
-	      +staSmokeOil;
-
-	int i;
-	for(i=0; i<staWeaponSlot.GetN(); i++)
+	FsWeapon::FsWeaponPerformance data;
+	double weight = staPayload + staSmokeOil;
+	for (int i = 0; i < staWeaponSlot.GetN(); i++)
 	{
-		if(staWeaponSlot[i].wpnType==FSWEAPON_FLARE &&
-		   0<staWeaponSlot[i].nContainerLoaded) // Flare Pod
+		FSWEAPONTYPE wtype = staWeaponSlot[i].wpnType;
+		data = wepPtr->GetWeaponPerformanceByType(wtype);
+		weight += data.weight * staWeaponSlot[i].nLoaded;
+		if (data.fueltank == YSTRUE && 0 < staWeaponSlot[i].nLoaded)
 		{
-			weight+=150.0;
-		}
-		else if(staWeaponSlot[i].wpnType==FSWEAPON_FUELTANK &&
-		        0<staWeaponSlot[i].nLoaded)
-		{
-			weight+=150.0+staWeaponSlot[i].fuelLoaded;
+			weight += staWeaponSlot[i].fuelLoaded;
 		}
 	}
 
@@ -10315,7 +10152,7 @@ YSBOOL FsAirplaneProperty::IsTrailingSmoke(int smkIdx) const
 {
 	if(YsTolerance<=staSmokeOil && 0!=(ctlSmokeSelector&(1<<smkIdx)))
 	{
-		if((staWoc==FSWEAPON_SMOKE && ctlFireWeaponButton==YSTRUE) || ctlSmokeButton==YSTRUE)
+		if((staSelectedWeaponPerformance.type==FSWEAPON_SMOKE && ctlFireWeaponButton==YSTRUE) || ctlSmokeButton==YSTRUE)
 		{
 			return YSTRUE;
 		}

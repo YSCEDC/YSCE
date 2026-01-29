@@ -7,6 +7,7 @@
 #include "fsnetutil.h"
 #include "graphics/common/fsopengl.h"
 #include "fsinstreading.h"
+#include "fsweapon.h"
 
 
 ////////////////////////////////////////////////////////////
@@ -839,6 +840,94 @@ FsWeapon::FsWeapon()
 	shouldJettison = YSFALSE;
 }
 
+void FsWeapon::Reset()
+{
+	type = FSWEAPON_NULL;
+	category = FSWEAPONCAT_NULL;
+	inList = FSENTITYLIST_SYSTEM;
+	identify = "";
+	prev = NULL;
+	next = NULL;
+
+	prv = YsOrigin();
+	pos = YsOrigin();
+	lastChecked = YsOrigin();
+	vec = YsOrigin();
+	velVec = YsOrigin();
+	velocity = 0.0;
+	accelVec = YsOrigin();
+	att.Set(0.0,0.0,0.0);
+	lifeRemain = 0.0;
+	lifeTime = 0.0;
+	timeRemain = 0.0;
+	timeUnguided = 0.0;
+
+	launchSpeed = 0.0;
+	maxVelocity = 0.0;
+	accel = 0.0;
+	decel = 0.0;
+	drag = 0.0;
+	weight = 0.0;
+
+	mobility = 0.0;
+	radar = 0.0;
+	destructivePower = 0.0;
+	fuseRadius = 0.0;
+	impactFuse = YSFALSE;
+	target = NULL;
+	canRetarget = YSFALSE;
+	targetAir = YSFALSE;
+	targetGnd = YSFALSE;
+	followDecoy = YSFALSE;
+
+	firedBy = NULL;
+	creditOwner = FSWEAPON_CREDIT_OWNER_NOT_RECORDED;
+	canJettison = YSFALSE;
+	isFuelTank = YSFALSE;
+	isDecoy = YSFALSE;
+	trailSmoke = YSFALSE;
+	applyGravity = YSFALSE;
+	faceForward = YSFALSE;
+	trail = NULL;
+}
+
+FsWeapon::FsWeaponPerformance FsWeapon::GetWeaponPerformanceByType(FSWEAPONTYPE &wep)
+{
+	switch (wep)
+	{
+	default:
+	case FSWEAPON_NULL:
+		return nullWepPerf;
+	case FSWEAPON_GUN:
+		return gunPerf;
+	case FSWEAPON_AIM9:
+		return aim9Perf;
+	case FSWEAPON_AIM9X:
+		return aim9xPerf;
+	case FSWEAPON_AIM120:
+		return aim120Perf;
+	case FSWEAPON_AGM65:
+		return agm65Perf;
+	case FSWEAPON_ROCKET:
+		return rocketPerf;
+	case FSWEAPON_BOMB250:
+		return b250Perf;
+	case FSWEAPON_BOMB:
+		return b500Perf;
+	case FSWEAPON_BOMB500HD:
+		return b500hdPerf;
+	case FSWEAPON_FLARE:
+	case FSWEAPON_FLARE_INTERNAL:
+		return flarePerf;
+	case FSWEAPON_FLAREPOD:
+		return flarepodPerf;
+	case FSWEAPON_FUELTANK:
+		return fueltankPerf;	
+	case FSWEAPON_SMOKE:
+		return smokePerf;
+	}
+}
+
 /*static*/ FsAmmunitionIndication::WEAPONTYPE FsWeapon::WeaponTypeToWeaponIndicationType(FSWEAPONTYPE wpnType)
 {
 	switch(wpnType)
@@ -973,38 +1062,17 @@ FsWeapon::FsWeapon()
 	}
 }
 
-void FsWeapon::Fire(
-    const double &/*ctime*/,YsVec3 &p,YsAtt3 &a,const double &v,const double &l,int destruction,
-    FsExistence *owner,
-    FSWEAPON_CREDIT_OWNER creditOwnerIn)
+void FsWeapon::LaunchWeapon(
+	FsWeaponPerformance &data,
+	const YsVec3 &cpos,
+	const YsAtt3 &catt,
+	const double &vInit,
+	class FsExistence *owner,
+	FSWEAPON_CREDIT_OWNER creditOwnerIn,
+	class FsExistence *targ,
+	FsWeaponSmokeTrail *trl)
 {
-	type=FSWEAPON_GUN;
-	vec.Set(0.0,0.0,v);
-	a.Mul(vec,vec); // vec=a.GetMatrix()*vec;
-	prv=p;
-	pos=p;
-	lastChecked=p;
-	firedBy=owner;
-	creditOwner=creditOwnerIn;
-	velocity=v;
-	lifeRemain=l;
-	timeRemain=0.0;
-	target=NULL;
-	trail=NULL;
-	destructivePower=destruction;
-}
-
-void FsWeapon::Fire(
-    const double &/*ctime*/,
-    FSWEAPONTYPE tp,
-    const YsVec3 &p,const YsAtt3 &a,
-    const double &v,const double &vmax,const double &l,const double &m,const double &r,
-    int destruction,
-    FsExistence *owner,
-    FSWEAPON_CREDIT_OWNER creditOwnerIn,
-    FsExistence *t,FsWeaponSmokeTrail *tr)
-{
-	if (owner->GetType() == FSEX_AIRPLANE)
+	if (owner != NULL && owner->GetType() == FSEX_AIRPLANE)
 	{
 		FsAirplane* ownerAirplane = (FsAirplane*)owner;
 		shouldJettison = ownerAirplane->Prop().GetShouldJettisonWeapon();
@@ -1013,86 +1081,62 @@ void FsWeapon::Fire(
 	{
 		shouldJettison = YSFALSE;
 	}
-	type=tp;
-	prv=p;
-	pos=p;
-	lastChecked=p;
-	att=a;
-	lifeRemain=l;
-	timeRemain=2.0*double(FsWeaponSmokeTrail::TIMEPERSEG*FsWeaponSmokeTrail::MAXNUMTRAIL)/1000.0;
-	        // ^^^ 2.0 : take margine. because the trail buffer may not be updated regulary by TIMEPERSEG
+	
+	type = data.type;
+	category = data.category;
+	inList = data.inList;
+	identify = data.identify;
+	prv = cpos;
+	pos = cpos;
+	lastChecked = cpos;
+	att = catt;
+	lifeRemain = data.flightRange;
+	lifeTime = data.flightTime;
+	timeRemain = 2.0 * double(FsWeaponSmokeTrail::TIMEPERSEG * FsWeaponSmokeTrail::MAXNUMTRAIL) / 1000.0;
+	// ^^^ 2.0 : take margine. because the trail buffer may not be updated regulary by TIMEPERSEG
 
-	switch(tp)
+	timeUnguided = data.trackDelay;
+	
+	launchSpeed = data.launchSpeed;
+	maxVelocity = data.maxSpeed;
+	accel = data.accel;
+	decel = data.decel;
+	drag = data.flyingDrag;
+	weight = data.weight;
+	if (weight == 0)
 	{
-	case FSWEAPON_AIM120:
-		timeUnguided=3.0;
-		break;
-	case FSWEAPON_AIM9X:
-		timeUnguided=0.5;
-		break;
-	case FSWEAPON_AGM65:
-		timeUnguided=1.6;
-		break;
-	default:
-		timeUnguided=0.0;
-		break;
+		weight = 1.0;
 	}
+	
+	mobility = data.turnRate;
+	radar = data.trackAngle;
+	destructivePower = data.power;
+	fuseRadius = data.fuseRadius;
+	impactFuse = data.impactFuse;
+	target = targ;
+	canRetarget = data.canRetarget;
+	targetAir = data.targetAir;
+	targetGnd = data.targetGnd;
+	followDecoy = data.followDecoy;
 
-	vec.Set(0.0,0.0,v);
-	a.Mul(vec,vec); // vec=a.GetMatrix()*vec;
+	firedBy = owner;
+	creditOwner = creditOwnerIn;
+	canJettison = data.canJettison;
+	isFuelTank = data.fueltank;
+	isDecoy = data.isDecoy;
+	trailSmoke = data.trailSmoke;
+	applyGravity = data.gravity;
+	faceForward = data.faceForward;
 
-	velocity=v;
-	maxVelocity=vmax;
-	mobility=m;
-	radar=r;
-	firedBy=owner;
-	creditOwner=creditOwnerIn;
-	target=t;
+	trail = trl;
 
-	destructivePower=destruction;
+	vec.Set(0.0, 0.0, vInit + data.launchSpeed);
+	catt.Mul(vec, vec); // vec=a.GetMatrix()*vec;
+	velocity = vec.GetLength();
 
-	trail=tr;
-	if(tr!=NULL)
+	if (trl != NULL)
 	{
-		tr->Initialize();
-	}
-}
-
-void FsWeapon::DispenseFlare(
-    const double &/*ctime*/,
-    const YsVec3 &p,const YsAtt3 &a,
-    const double &v,const double &vMax,const double &l,
-    class FsExistence *owner,
-    FSWEAPON_CREDIT_OWNER creditOwnerIn,
-    FsWeaponSmokeTrail *tr)
-{
-	type=FSWEAPON_FLARE;
-
-	prv=p;
-	pos=p;
-	lastChecked=p;
-	att=a;
-	lifeRemain=l;
-	timeRemain=2.0*double(FsWeaponSmokeTrail::TIMEPERSEG*FsWeaponSmokeTrail::MAXNUMTRAIL)/1000.0;
-	        // ^^^ 2.0 : take margine. because the trail buffer may not be updated regulary by TIMEPERSEG
-
-	vec.Set(0.0,0.0,v);
-	a.Mul(vec,vec); // vec=a.GetMatrix()*vec;
-
-	velocity=vec.GetLength();
-	maxVelocity=vMax;
-	mobility=0;
-	radar=0;
-	firedBy=owner;
-	creditOwner=creditOwnerIn;
-	target=NULL;
-
-	destructivePower=0;
-
-	trail=tr;
-	if(tr!=NULL)
-	{
-		tr->Initialize();
+		trl->Initialize();
 	}
 }
 
@@ -1116,65 +1160,21 @@ void FsWeapon::ThrowDebris(const double &/*ctime*/,const YsVec3 &p,const YsVec3 
 
 void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weather,const FsWeapon *flareList)
 {
-	if(lifeRemain>0.0)
+	accelVec.Set(0.0,0.0,0.0);
+	if (lifeRemain > 0.0)
 	{
-		switch(type)
+		YSBOOL controlled = YSFALSE;
+		if (canJettison == YSTRUE && shouldJettison == YSTRUE)
 		{
-		case FSWEAPON_GUN:
-			vec.Set(vec.x(),vec.y()-FsGravityConst*dt,vec.z());
+			accelVec += FsGravityVec;
 			att.SetForwardVector(vec);
-			break;
-		case FSWEAPON_BOMB:
-		case FSWEAPON_BOMB250:
-		case FSWEAPON_FUELTANK:
-			vec.Set(vec.x(),vec.y()-FsGravityConst*dt,vec.z());
-			att.SetForwardVector(vec);
-			break;
-		case FSWEAPON_BOMB500HD:
-			vec.Set(vec.x(),vec.y()-FsGravityConst*dt,vec.z());
+		}
+		else
+		{
+			//Pointing
+			if (target != NULL && timeUnguided < YsTolerance)
 			{
-				const double cdS=0.8;
-				const double D=0.5*cdS*vec.GetSquareLength()*FsGetAirDensity(pos.y());
-				const double m=226.8;
-				const double a=D/m;
-				YsVec3 dVec=-vec;
-				if(YSOK==dVec.Normalize())
-				{
-					vec+=a*dt*dVec;
-				}
-			}
-			att.SetForwardVector(vec);
-			break;
-		case FSWEAPON_ROCKET:
-			if (shouldJettison == YSTRUE)
-			{
-				vec.Set(vec.x(), vec.y() - FsGravityConst * dt, vec.z());
-				att.SetForwardVector(vec);
-				break;
-			}
-			if(velocity<maxVelocity)
-			{
-				velocity+=50.0*dt;  // 20.0 m/ss (^_^;)
-			}
-			else if(velocity>maxVelocity)
-			{
-				velocity-=20.0*dt;
-			}
-			vec.Set(0.0,0.0,velocity);
-			att.Mul(vec,vec); // vec=att.GetMatrix()*vec;
-			break;
-		case FSWEAPON_AIM9:
-		case FSWEAPON_AIM9X:
-		case FSWEAPON_AIM120:
-		case FSWEAPON_AGM65:
-			if (shouldJettison == YSTRUE)
-			{
-				vec.Set(vec.x(), vec.y() - FsGravityConst * dt, vec.z());
-				att.SetForwardVector(vec);
-				break;
-			}
-			if(target!=NULL && timeUnguided<YsTolerance)
-			{
+				controlled = YSTRUE;
 				YsVec3 tpos;
 				YsMatrix4x4 mat;
 
@@ -1182,99 +1182,103 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 				mat.Rotate(att);
 				mat.Invert();
 
-				tpos=mat*(target->GetPosition());
-				if(type==FSWEAPON_AIM9 || type==FSWEAPON_AIM9X || type==FSWEAPON_AIM120) // Extension 2001/11/23
+				tpos = mat * (target->GetPosition());
+				if (followDecoy == YSTRUE)
 				{
-					const FsWeapon *flare;
+					const FsWeapon* flare;
 					YsVec3 flarePos;
 					double flareZ;
 					YSBOOL fooled;
-					fooled=YSFALSE;
-					flareZ=lifeRemain;
-					for(flare=flareList; flare!=NULL; flare=flare->nextFlare)
+					fooled = YSFALSE;
+					flareZ = lifeRemain;
+					for (flare = flareList; flare != NULL; flare = flare->nextFlare)
 					{
-						flarePos=mat*flare->pos;
-						if(flarePos.z()>0.0 && flarePos.z()<flareZ &&
-						   atan2(flarePos.x()*flarePos.x()+flarePos.y()*flarePos.y(),flarePos.z())<radar)
+						flarePos = mat * flare->pos;
+						if (flarePos.z() > 0.0 && flarePos.z() < flareZ &&
+							atan2(flarePos.x() * flarePos.x() + flarePos.y() * flarePos.y(), flarePos.z()) < radar)
 						{
-							fooled=YSTRUE;
-							tpos=flarePos;
-							flareZ=flarePos.z();
+							fooled = YSTRUE;
+							tpos = flarePos;
+							flareZ = flarePos.z();
 						}
 					}
 				}
 
 				double r;
-				r=atan2(sqrt(tpos.x()*tpos.x()+tpos.y()*tpos.y()),tpos.z());
-				if(r<radar || ((type==FSWEAPON_AIM9X || type==FSWEAPON_AIM120) && YSTRUE==IsOwnerStillHaveTarget()))
+				r = atan2(sqrt(tpos.x() * tpos.x() + tpos.y() * tpos.y()), tpos.z());
+				if (r < radar || (canRetarget == YSTRUE && YSTRUE == IsOwnerStillHaveTarget()))
 				{
 					double maxMovement;
-					maxMovement=mobility*dt;
+					maxMovement = mobility * dt;
 
-					double yaw,pit;
-					yaw=atan2(-tpos.x(),tpos.z());
-					pit=atan2( tpos.y(),tpos.z());
+					double yaw, pit;
+					yaw = atan2(-tpos.x(), tpos.z());
+					pit = atan2(tpos.y(), tpos.z());
 
-					yaw=YsBound(yaw,-maxMovement,maxMovement);
-					pit=YsBound(pit,-maxMovement,maxMovement);
+					yaw = YsBound(yaw, -maxMovement, maxMovement);
+					pit = YsBound(pit, -maxMovement, maxMovement);
 					att.YawLeft(yaw);
 					att.NoseUp(pit);
 				}
-				else if(tpos.z()<-300.0)
+				else if (tpos.z() < -300.0)
 				{
-					target=NULL;
+					target = NULL;
 				}
 			}
+			
+			//Forces
+			accelVec += FsGravityVec * (int)applyGravity;
+			
+			const double D = 0.5 * drag * velocity * velocity * FsGetAirDensity(pos.y());
+			const double a = D / weight;
+			YsVec3 dVec = -vec;
+			YsVec3 thrust;
+			if (YSOK == dVec.Normalize())
+			{
+				accelVec += a * dVec;
+			}
+			
+			if (velocity < maxVelocity)
+			{
+				thrust.Set(0.0,0.0,accel);
+			}
+			else if (velocity > maxVelocity)
+			{
+				thrust.Set(0.0, 0.0, -decel);
+			}
+			att.Mul(thrust,thrust);
+			accelVec += thrust;
 
-			if(timeUnguided>0.0)
+			if (timeUnguided > 0.0)
 			{
-				timeUnguided-=dt;
+				timeUnguided -= dt;
 			}
-
-			if(velocity<maxVelocity)
-			{
-				velocity+=50.0*dt;  // 20.0 m/ss (^_^;)
-			}
-			else if(velocity>maxVelocity)
-			{
-				velocity-=20.0*dt;
-			}
-			vec.Set(0.0,0.0,velocity);
-			att.Mul(vec,vec); // vec=att.GetMatrix()*vec;
-			break;
-		case FSWEAPON_FLARE:
-			{
-				vec.Set(vec.x(),vec.y()-FsGravityConst*dt,vec.z());
-				att.SetForwardVector(vec);
-				velocity=vec.GetLength();
-				velocity -= velocity * 0.1*dt;
-				vec.Set(0.0,0.0,velocity);
-				att.Mul(vec,vec); // vec=att.GetMatrix()*vec;
-			}
-			break;
-		case FSWEAPON_DEBRIS:
-			vec.SubY(FsGravityConst*dt);
-			velocity=vec.GetLength();
-			att.SetH(att.h()+YsPi*dt);
-			att.SetP(att.p()+YsPi*dt*2.0);
-			att.SetB(att.b()+YsPi*dt*3.0);
-			break;
 		}
-
-		prv=pos;
-		pos=pos+vec*dt;
-
-		pos+=weather.GetWind()*dt;
-
-		if(type!=FSWEAPON_BOMB && type!=FSWEAPON_BOMB250 && type!=FSWEAPON_BOMB500HD && type!=FSWEAPON_FUELTANK)  // Bomb falls until it hits the ground
+		
+		vec = vec + accelVec * dt;
+		velocity = vec.GetLength();
+		if (faceForward == YSTRUE && controlled != YSTRUE) //Make attitude follow vVector
 		{
-			lifeRemain=lifeRemain-velocity*dt;
-			if(lifeRemain<=YsTolerance)
-			{
-				lifeRemain=0.0;
-			}
+			att.SetForwardVector(vec);
 		}
+		else //Make vVector follow attitude
+		{
+			vec.Set(0.0, 0.0, velocity);
+			att.Mul(vec, vec);
+		}
+		prv = pos;
+		pos = pos + vec * dt;
+		pos += weather.GetWind() * dt;
+		
+		lifeRemain = lifeRemain - velocity * dt;
+		lifeTime -= dt;
+		if (lifeRemain <= YsTolerance)
+		{
+			lifeRemain = 0.0;
+		}
+		
 	}
+	
 	else if(timeRemain>0.0)
 	{
 		timeRemain-=dt;
@@ -1283,8 +1287,8 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 			timeRemain=0.0;
 		}
 	}
-
-	if(type==FSWEAPON_AIM9 || type==FSWEAPON_AIM9X || type==FSWEAPON_AGM65 || type==FSWEAPON_AIM120 || type==FSWEAPON_FLARE)
+	
+	if(trailSmoke == YSTRUE)
 	{
 		if (shouldJettison == YSTRUE)
 		{
@@ -1299,6 +1303,11 @@ void FsWeapon::Move(const double &dt,const double &cTime,const FsWeather &weathe
 			trail->Add(dt,cTime,pos,att);
 		}
 	}
+}
+
+YSBOOL FsWeapon::Bounce(YsVec3 &normal, YsVec3 &intersect, YsVec3 &outVel, YsVec3 &posOffset, double maxAngle, double eneryReturn)
+{
+	return YSFALSE;
 }
 
 YSBOOL FsWeapon::IsOwnerStillHaveTarget(void)
@@ -1341,6 +1350,8 @@ void FsWeapon::HitGround(
 		int collType; // 1:Ground  2:Shell
 		YSSCNAREATYPE areaType;
 		YsVec3 shellItsc;
+		YsVec3 cen, nom, crs;
+		YsPlane pln;
 
 		evg=fld.GetFieldElevation(elv,pos.x(),pos.z());
 
@@ -1350,21 +1361,28 @@ void FsWeapon::HitGround(
 		{
 			collType=1;
 			areaType=sim->GetAreaType(pos);
+			
 		}
 		else if(YSTRUE==fld.GetFieldShellCollision(shellItsc,prv,pos))
 		{
 			collType=2;
+			pos = shellItsc;
 		}
 
 		if(collType!=0)
 		{
-			lifeRemain=0.0;
+			if (shouldJettison == YSTRUE)
+			{
+				lifeRemain = 0.0;
+				timeRemain = 0.0;
+				explode = NULL;
+			}
 			if(explode!=NULL)
 			{
 				static int step=0;
-				switch(type)
+				switch(category)
 				{
-				case FSWEAPON_GUN:
+				case FSWEAPONCAT_BULLET:
 					if((step&3)==0)
 					{
 						// Adjust for elevation grid.
@@ -1376,141 +1394,122 @@ void FsWeapon::HitGround(
 						// grounds.
 						if(collType==1)
 						{
-							YsVec3 cen,nom,crs;
-							YsPlane pln;
-							cen=pos;
+							cen = pos;
 							cen.SetY(elv);
 
-							fld.GetFieldElevationAndNormal(elv,nom,pos.x(),pos.z());
-							pln.Set(cen,nom);
-							if(pln.GetIntersection(crs,pos,pos-prv)==YSOK)
+							fld.GetFieldElevationAndNormal(elv, nom, pos.x(), pos.z());
+							pln.Set(cen, nom);
+							if (pln.GetIntersection(crs, pos, pos - prv) == YSOK)
 							{
-								pos=crs;
+								pos = crs;
 							}
 						}
-						else if(collType==2)
-						{
-							pos=shellItsc;
-						}
 
-						if(collType==1 && areaType==YSSCNAREA_WATER)
+						if (collType == 1 && areaType == YSSCNAREA_WATER)
 						{
-							explode->WaterPlume(ctime,pos,3.0,1.0,10.0,NULL,YSFALSE);
+							if (impactFuse == YSTRUE)
+							{
+								ExplodeBombInWater(callback, ctime, pos, destructivePower, explode, sim, killCredit);
+							}
+							else
+							{
+								explode->WaterPlume(ctime, pos, destructivePower, destructivePower / 2, destructivePower * 3, NULL, YSFALSE);
+							}
 						}
 						else
 						{
-							explode->Explode(ctime,pos,1.0,0.0,5.0,YSTRUE,NULL,YSFALSE);
+							if (impactFuse == YSTRUE)
+							{
+								ExplodeBomb(callback, ctime, pos, destructivePower * 5 / 2, explode, sim, killCredit);
+							}
+							else
+							{
+								explode->Explode(ctime, pos, destructivePower, 0.0, destructivePower * 2, YSTRUE, NULL, YSFALSE);
+							}
 						}
+						lifeRemain = 0.0;
+						timeRemain = 0.0;
 					}
 					step=(step+1)&255;
 					break;
-				case FSWEAPON_BOMB:
-				case FSWEAPON_BOMB250:
-				case FSWEAPON_BOMB500HD:
-				case FSWEAPON_FUELTANK:
-					if(collType==1)
+				case FSWEAPONCAT_COUNTERMEASURE:
+					if (collType == 1)
 					{
 						pos.SetY(elv);
 					}
-					else if(collType==2)
+
+					if (areaType == YSSCNAREA_WATER)
 					{
-						pos=shellItsc;
-					}
-					if(collType==1 && areaType==YSSCNAREA_WATER)
-					{
-						if (shouldJettison == YSTRUE)
-						{
-							lifeRemain = 0.0;
-							timeRemain = 0.0;
-						}
-						else
-						{
-							ExplodeBombInWater(callback, ctime, pos, destructivePower * 5 / 10, explode, sim, killCredit);
-						}
+						explode->WaterPlume(ctime, pos, 3.0, 1.0, 10.0, NULL, YSFALSE);
+						lifeRemain = 0.0;
 					}
 					else
 					{
-						if (shouldJettison == YSTRUE)
+
+						YsVec3 nom, offset, bounceVel;
+						double maxBounceAngle, eReturn;
+						eReturn = 0.75;
+						maxBounceAngle = YsPi / 2;
+						
+						cen = pos;
+						cen.SetY(elv);
+
+						fld.GetFieldElevationAndNormal(elv, nom, pos.x(), pos.z());
+						pln.Set(cen, nom);
+						if (pln.GetIntersection(crs, pos, pos - prv) == YSOK)
 						{
-							lifeRemain = 0.0;
-							timeRemain = 0.0;
+							pos = crs;
+						}
+
+						if (Bounce(nom, crs, bounceVel, offset, maxBounceAngle, eReturn) == YSTRUE)
+						{
+							pos += offset;
+							velVec = bounceVel;
+							velocity = velVec.GetLength();
+							if (velocity < 10.0)
+							{
+								lifeRemain = 0.0;
+							}
 						}
 						else
 						{
-							ExplodeBomb(callback, ctime, pos, destructivePower * 5 / 2, explode, sim, killCredit);
+							lifeRemain = 0.0;
 						}
 					}
 					break;
-				case FSWEAPON_ROCKET:
-					if(collType==1)
-					{
-						pos.SetY(elv);
-					}
-					else if(collType==2)
-					{
-						pos=shellItsc;
-					}
-					if(collType==1 && areaType==YSSCNAREA_WATER)
-					{
-						if (shouldJettison == YSTRUE)
-						{
-							lifeRemain = 0.0;
-							timeRemain = 0.0;
-						}
-						else
-						{
-							ExplodeBombInWater(callback, ctime, pos, 10.0, explode, sim, killCredit);
-						}
-					}
-					else
-					{
-						if (shouldJettison == YSTRUE)
-						{
-							lifeRemain = 0.0;
-							timeRemain = 0.0;
-						}
-						else
-						{
-							ExplodeBomb(callback, ctime, pos, 50.0, explode, sim, killCredit);
-						}
-					}
-					break;
-				case FSWEAPON_DEBRIS:
-					// Do nothing
+				case FSWEAPONCAT_SYSTEM:
+					lifeRemain = 0.0;
+					timeRemain = 0.0;
 					break;
 				default:
-					if(pos.y()<=elv+YsTolerance)
+					if (collType == 1)
 					{
 						pos.SetY(elv);
 					}
-					else if(collType==2)
+
+					if(areaType==YSSCNAREA_WATER)
 					{
-						pos=shellItsc;
-					}
-					if(collType==1 && areaType==YSSCNAREA_WATER)
-					{
-						if (shouldJettison == YSTRUE)
+						if (impactFuse == YSTRUE)
 						{
-							lifeRemain = 0.0;
-							timeRemain = 0.0;
+							ExplodeBombInWater(callback, ctime, pos, destructivePower * 5/10, explode, sim, killCredit);
 						}
 						else
 						{
-							explode->WaterPlume(ctime, pos, 3.0, 4.0, 20.0, NULL, YSFALSE);
+							explode->WaterPlume(ctime, pos, destructivePower/3, destructivePower / 5, destructivePower, NULL, YSFALSE);
 						}
 					}
 					else
 					{
-						if (shouldJettison == YSTRUE)
+						if (impactFuse == YSTRUE)
 						{
-							lifeRemain = 0.0;
-							timeRemain = 0.0;
+							ExplodeBomb(callback, ctime, pos, destructivePower * 5/2, explode, sim, killCredit);
 						}
 						else
 						{
-							explode->Explode(ctime, pos, 3.0, 0.0, 20.0, YSTRUE, NULL, YSFALSE);
+							explode->Explode(ctime, pos, destructivePower/3, 0.0, destructivePower, YSTRUE, NULL, YSFALSE);
 						}
 					}
+					lifeRemain = 0.0;
 					break;
 				}
 			}
@@ -1533,50 +1532,28 @@ YSBOOL FsWeapon::HitObject(
 		const YsVec3 *tpos;
 		tpos=&obj.GetPosition();
 
-		double sqDist1,sqDist2,sqDist3,sqLastMovedDist,rad;
+		double sqDist1,sqDist2,sqDist3,sqLastMovedDist,rad, sqfuserad;
 
 		rad=obj.GetApproximatedCollideRadius();
 
 		sqDist1=(pos-(*tpos)).GetSquareLength();
 		sqDist2=(lastChecked-(*tpos)).GetSquareLength();
+		sqfuserad = (fuseRadius + rad) * (fuseRadius + rad);
 
 		// Proximity tube >>
-		if(type==FSWEAPON_AIM9 || type==FSWEAPON_AIM9X || type==FSWEAPON_AIM120)
+		if(fuseRadius > 0.0 && (sqDist1 <= sqfuserad || sqDist2 <= sqfuserad) &&
+			shouldJettison != YSTRUE && target != NULL && timeUnguided < YsTolerance)
 		{
-			double range;
 			YsVec3 np;
 			YsGetNearestPointOnLine3(np,pos,lastChecked,*tpos);
 			sqDist3=(np-(*tpos)).GetSquareLength();
 
-			switch(type)
+			if(YsCheckInBetween3(np,pos,lastChecked)==YSTRUE && sqDist3<fuseRadius*fuseRadius)
 			{
-			default:
-			case FSWEAPON_AIM9:
-				range=18.0;
-				break;
-			case FSWEAPON_AIM9X:
-				range=23.0;
-				break;
-			case FSWEAPON_AIM120:
-				range=25.0;
-				break;
-			}
-
-			if(YsCheckInBetween3(np,pos,lastChecked)==YSTRUE && sqDist3<range*range)
-			{
-				if (shouldJettison == YSTRUE)
-				{
-					lifeRemain = 0.0;
-					timeRemain = 0.0;
-					target = NULL;
-
-					return YSTRUE;
-				}
-
 				double l,dmg;
 				l=sqrt(sqDist3);
 
-				dmg=1.0+(double)destructivePower*(range-l)/range;
+				dmg=1.0+(double)destructivePower*(fuseRadius-l)/fuseRadius;
 
 				YSBOOL killed;
 				callback->GiveDamage(killed,obj,(int)dmg,FSDIEDOF_MISSILE,*this);
@@ -1604,16 +1581,17 @@ YSBOOL FsWeapon::HitObject(
 			YsVec3 np;
 			YsGetNearestPointOnLine3(np,pos,lastChecked,*tpos);
 			sqDist3=(np-(*tpos)).GetSquareLength();
+			YsShellPolygonHandle plHd;
+			YsVec3 intersect;
 
-			if(type==FSWEAPON_GUN)
+			switch (category)
 			{
+			case FSWEAPONCAT_BULLET:
 				if(sqDist1>rad*rad && sqDist2>rad*rad && sqDist3>rad*rad)
 				{
 					return YSFALSE;
 				}
-
-				YsShellPolygonHandle plHd;
-				YsVec3 intersect;
+				
 				plHd=coll.ShootRayH(intersect,lastChecked,pos-lastChecked);
 
 				if(plHd!=NULL && YsCheckInBetween3(intersect,pos,lastChecked)==YSTRUE)
@@ -1633,98 +1611,98 @@ YSBOOL FsWeapon::HitObject(
 						}
 						else
 						{
-							explosion->Explode(ctime,intersect,5.0,3.0,3.0,YSTRUE,NULL,YSTRUE);
+							explosion->Explode(ctime,intersect,destructivePower/3,0.0,destructivePower,YSTRUE,NULL,YSTRUE);
 						}
 					}
 
 					return YSTRUE;
 				}
-			}
-			else if(type==FSWEAPON_BOMB || type==FSWEAPON_BOMB250 || type==FSWEAPON_BOMB500HD || type==FSWEAPON_FUELTANK)
-			{
-				if(sqDist1>rad*rad && sqDist2>rad*rad && sqDist3>rad*rad)
+				break;			
+			case FSWEAPONCAT_COUNTERMEASURE:
+			
+				if (sqDist1>rad*rad && sqDist2>rad*rad && sqDist3>rad*rad)
+				{
+					return YSFALSE;
+				}
+				
+				plHd = coll.ShootRayH(intersect, lastChecked, pos - lastChecked);
+				
+				if (plHd != NULL && YsCheckInBetween3(intersect, pos, lastChecked) == YSTRUE)
+				{
+					YsVec3 nom, offset, bounceVel;
+					double maxBounceAngle, eReturn;
+					eReturn = 0.75;
+					maxBounceAngle = YsPi / 2;
+					coll.GetNormal(nom,plHd);
+
+					if (Bounce(nom, intersect, bounceVel, offset, maxBounceAngle, eReturn) == YSTRUE)
+					{
+						pos += offset;
+						velVec = bounceVel;
+					}
+					else
+					{
+						lifeRemain = 0.0;
+					}
+				}
+				break;
+			case FSWEAPONCAT_SYSTEM:
+				lifeRemain = 0.0;
+				timeRemain = 0.0;
+				break;
+			default:
+				if (sqDist1>rad *rad && sqDist2>rad*rad && sqDist3>rad*rad)
 				{
 					return YSFALSE;
 				}
 
+				plHd = coll.ShootRayH(intersect,lastChecked,pos-lastChecked);
 
-				YsShellPolygonHandle plHd;
-				YsVec3 intersect;
-				plHd=coll.ShootRayH(intersect,lastChecked,pos-lastChecked);
-
-				if(plHd!=NULL && YsCheckInBetween3(intersect,pos,lastChecked)==YSTRUE)
+				if (plHd != NULL && YsCheckInBetween3(intersect,pos,lastChecked) == YSTRUE)
 				{
-					if (shouldJettison)
-					{
-						lifeRemain = 0.0;
-						timeRemain = 0.0;
-
-						return YSTRUE;
-					}
-
 					YSBOOL killed;
-					lifeRemain=0.0;
+					lifeRemain = 0.0;
 
-					if(callback->GiveDamage(killed,obj,destructivePower,FSDIEDOF_GUN,*this)==YSTRUE &&
-					   explosion!=NULL)
+					if (shouldJettison == YSTRUE)
 					{
-						if(killed==YSTRUE)
-						{
-							callback->ThrowMultiDebris(5,ctime,pos,obj.GetAttitude(),60.0);
-							sim->KillCallBack(obj,*tpos);
-							AddKillCredit(killCredit,&obj,ctime);
-						}
-						else
-						{
-							explosion->Explode(ctime,intersect,5.0,3.0,3.0,YSTRUE,NULL,YSTRUE);
-						}
-					}
-
-					ExplodeBomb(callback,ctime,pos,destructivePower*5/2,explosion,sim,killCredit);
-					return YSTRUE;
-				}
-			}
-			else if(type==FSWEAPON_AIM9 || type==FSWEAPON_AIM9X || type==FSWEAPON_AIM120 || type==FSWEAPON_AGM65 || type==FSWEAPON_ROCKET)
-			{
-				YsVec3 is;
-				// Came close to the designated target
-				// Or, direct impact
-				if((&obj==target && YsCheckInBetween3(np,pos,lastChecked)==YSTRUE && sqDist3<rad*rad) ||
-				   (coll.ShootRayH(is,lastChecked,pos-lastChecked)!=NULL &&
-				    YsCheckInBetween3(is,pos,lastChecked)==YSTRUE))
-				{
-					if (shouldJettison)
-					{
-						lifeRemain = 0.0;
+						//Do no damage. How much could 250kg at 300kt hurt anyway?
 						timeRemain = 0.0;
 						target = NULL;
-
 						return YSTRUE;
 					}
 
-					YSBOOL killed;
-					lifeRemain=0.0;
-					target=NULL;
-					if(callback->GiveDamage(killed,obj,destructivePower,FSDIEDOF_MISSILE,*this)==YSTRUE && explosion!=NULL)
+					FSDIEDOF diedof;
+					if (category == FSWEAPONCAT_FREEFALL || category == FSWEAPONCAT_GUIDEDFREEFALL || category == FSWEAPONCAT_UTILITY)
 					{
-						if(killed==YSTRUE)
+						diedof = FSDIEDOF_BOMB;
+					}
+					else
+					{
+						diedof = FSDIEDOF_MISSILE;
+					}
+
+					if (callback->GiveDamage(killed, obj, destructivePower, diedof, *this) == YSTRUE &&
+						explosion != NULL)
+					{
+						if (killed == YSTRUE)
 						{
-							callback->ThrowMultiDebris(5,ctime,pos,obj.GetAttitude(),60.0);
-							sim->KillCallBack(obj,*tpos);
-							AddKillCredit(killCredit,&obj,ctime);
+							callback->ThrowMultiDebris(5, ctime, pos, obj.GetAttitude(), 60.0);
+							sim->KillCallBack(obj, *tpos);
+							AddKillCredit(killCredit, &obj, ctime);
 						}
 						else
 						{
-							explosion->Explode(ctime,pos,20.0,5.0,20.0,YSTRUE,NULL,YSTRUE);
+							explosion->Explode(ctime, intersect, 5.0, 3.0, 3.0, YSTRUE, NULL, YSTRUE);
 						}
 					}
 
-					if(type==FSWEAPON_ROCKET)
+					if (impactFuse == YSTRUE)
 					{
-						ExplodeBomb(callback,ctime,pos,50.0,explosion,sim,killCredit);
+						ExplodeBomb(callback, ctime, pos, destructivePower * 5 / 2, explosion, sim, killCredit);
 					}
 					return YSTRUE;
 				}
+				break;
 			}
 		}
 	}
@@ -1894,7 +1872,7 @@ void FsWeapon::AddToParticleManager(class YsGLParticleManager &partMan,const dou
 	if(nullptr!=trail)
 	{
 		YSBOOL includeCurrentPos=(0.0<lifeRemain ? YSTRUE : YSFALSE);
-		if(type==FSWEAPON_FLARE)
+		if(category == FSWEAPONCAT_COUNTERMEASURE)
 		{
 			trail->AddToParticleManagerAsFlare(partMan,pos,cTime,includeCurrentPos, env);
 		}
@@ -1913,8 +1891,11 @@ FsWeaponHolder::FsWeaponHolder(FsSimulation *simPtr) : sim(simPtr)
 	toPlay=NULL;
 	toSave=new FsRecord <FsWeaponRecord>;
 
-	activeList=NULL;
-	freeList=NULL;
+	freeList = NULL;
+	weaponList=NULL;
+	decoyList = NULL;
+	bulletList = NULL;
+	systemList = NULL;
 
 	killCredit=NULL;
 
@@ -2814,6 +2795,7 @@ void FsWeaponHolder::Clear(void)
 	for(i=0; i<NumBulletBuffer; i++)
 	{
 		buf[i].lifeRemain=0.0;
+		buf[i].bufPos = i;
 		if(i==0)
 		{
 			buf[i].prev=NULL;
@@ -2836,89 +2818,185 @@ void FsWeaponHolder::Clear(void)
 		trl[i].used=YSFALSE;
 	}
 
-	activeList=NULL;
+	weaponList = NULL;
+	decoyList = NULL;
+	bulletList = NULL;
+	systemList = NULL;
 	freeList=&buf[0];
 
 	bulletCalibrator.Clear();
 }
 
-void FsWeaponHolder::MoveToActiveList(FsWeapon *wep)  // Now the order matters.  Don't change this order.
+void FsWeaponHolder::MoveToActiveList(FsWeapon *wep)
 {
-	FsWeapon *next,*prev;
-
-	next=wep->next;
-	prev=wep->prev;
-	if(next!=NULL)
+	if (wep != NULL)
 	{
-		next->prev=prev;
-	}
-	if(prev!=NULL)
-	{
-		prev->next=next;
+		switch (wep->inList)
+		{
+		default:
+		case FSENTITYLIST_WEAPON:
+			MoveToWeaponList(wep);
+			break;
+		case FSENTITYLIST_DECOY:
+			MoveToDecoyList(wep);
+			break;
+		case FSENTITYLIST_BULLET:
+			MoveToBulletList(wep);
+			break;
+		case FSENTITYLIST_SYSTEM:
+			MoveToSystemList(wep);
+			break;
+		}
 	}
 	else
 	{
-		freeList=next;
+		printf("Tried to make NULL weapon active\n");
+	}
+}
+
+void FsWeaponHolder::MoveToWeaponList(FsWeapon *wep)
+{
+	//Convention (for now 20260127 until we change to a better list system)
+	//next is index i+1, prev is i-1. Next is always an older weapon
+	//weaponList, decoyList, bulletList, systemList, freeList always point to the newest in the list
+
+	//Patch hole in the previous list
+	if (wep->next != NULL)
+	{
+		wep->next->prev = wep->prev;
+	}
+	if (wep->prev != NULL)
+	{
+		wep->prev->next = wep->next;
+	}
+	else
+	{
+		freeList = wep->next;
 	}
 
-	if(activeList!=NULL)
+	//Push the new list down one
+	if (weaponList != NULL)
 	{
-		activeList->prev=wep;
+		weaponList->prev = wep;
 	}
-	wep->next=activeList;
-	wep->prev=NULL;
-	activeList=wep;
+	wep->next = weaponList;
+	wep->prev = NULL;
+	weaponList = wep;
+}
+
+void FsWeaponHolder::MoveToDecoyList(FsWeapon *wep)
+{
+	if (wep->next != NULL)
+	{
+		wep->next->prev = wep->prev;
+	}
+	if (wep->prev != NULL)
+	{
+		wep->prev->next = wep->next;
+	}
+	else
+	{
+		freeList = wep->next;
+	}
+
+	if (decoyList != NULL)
+	{
+		decoyList->prev = wep;
+	}
+	wep->next = decoyList;
+	wep->prev = NULL;
+	decoyList = wep;
+}
+
+void FsWeaponHolder::MoveToBulletList(FsWeapon* wep)
+{
+	if (wep->next != NULL)
+	{
+		wep->next->prev = wep->prev;
+	}
+	if (wep->prev != NULL)
+	{
+		wep->prev->next = wep->next;
+	}
+	else
+	{
+		freeList = wep->next;
+	}
+
+	if (bulletList != NULL)
+	{
+		bulletList->prev = wep;
+	}
+	wep->next = bulletList;
+	wep->prev = NULL;
+	bulletList = wep;
+}
+
+void FsWeaponHolder::MoveToSystemList(FsWeapon* wep)
+{
+	if (wep->next != NULL)
+	{
+		wep->next->prev = wep->prev;
+	}
+	if (wep->prev != NULL)
+	{
+		wep->prev->next = wep->next;
+	}
+	else
+	{
+		freeList = wep->next;
+	}
+
+	if (systemList != NULL)
+	{
+		systemList->prev = wep;
+	}
+	wep->next = systemList;
+	wep->prev = NULL;
+	systemList = wep;
 }
 
 void FsWeaponHolder::MoveToFreeList(FsWeapon *wep)
 {
-	FsWeapon *next,*prev;
+	FsWeapon *next, *prev;
+	prev = wep->prev;
+	next = wep->next;
 
-	next=wep->next;
-	prev=wep->prev;
-	if(next!=NULL)
+	if (wep->next != NULL)
 	{
-		next->prev=prev;
+		wep->next->prev = wep->prev;
 	}
-	if(prev!=NULL)
+	if (wep->prev != NULL)
 	{
-		prev->next=next;
-	}
-	else
-	{
-		activeList=next;
+		wep->prev->next = wep->next;
 	}
 
-//	if(wep->type==FSWOC_FLARE)
-//	{
-//		if(wep->nextFlare!=NULL)
-//		{
-//			wep->nextFlare->prevFlare=wep->prevFlare;
-//		}
-//		if(wep->prevFlare!=NULL)
-//		{
-//			wep->prevFlare->nextFlare=wep->nextFlare;
-//		}
-//		else
-//		{
-//			flareList=wep->nextFlare;
-//		}
-//		wep->nextFlare=NULL;
-//		wep->prevFlare=NULL;
-//	}
-
-	if(freeList!=NULL)
+	if (freeList != NULL)
 	{
-		freeList->prev=wep;
+		freeList->prev = wep;
 	}
-	wep->next=freeList;
-	wep->prev=NULL;
-	freeList=wep;
+	wep->next = freeList;
+	wep->prev = NULL;
+	freeList = wep;
 
-	if(wep->trail!=NULL)
+	if (prev == NULL)
 	{
-		wep->trail->used=YSFALSE;
-		wep->trail=NULL;
+		switch (wep->inList)
+		{
+		default:
+		case FSENTITYLIST_WEAPON:
+			weaponList = next;
+			break;
+		case FSENTITYLIST_DECOY:
+			decoyList = next;
+			break;
+		case FSENTITYLIST_BULLET:
+			bulletList = next;
+			break;
+		case FSENTITYLIST_SYSTEM:
+			systemList = next;
+			break;
+		}
 	}
 }
 
@@ -2930,19 +3008,16 @@ void FsWeaponHolder::ClearBulletCalibrator(void)
 void FsWeaponHolder::CalculateBulletCalibrator(const FsExistence *target)
 {
 	ClearBulletCalibrator();
-	for(FsWeapon *seeker=activeList; seeker!=NULL; seeker=seeker->next)
+	for(FsWeapon *seeker = FindNextActiveBullet(NULL); seeker != NULL; seeker = FindNextActiveBullet(seeker))
 	{
-		if(FSWEAPON_GUN==seeker->type)
-		{
-			const YsVec3 &prv=seeker->prv;
-			const YsVec3 &pos=seeker->pos;
+		const YsVec3 &prv=seeker->prv;
+		const YsVec3 &pos=seeker->pos;
 
-			YsVec3 nearPos;
-			if(YSTRUE==YsCheckInBetween3(target->GetPosition(),pos,prv) &&
-			   YSOK==YsGetNearestPointOnLine3(nearPos,prv,pos,target->GetPosition()))
-			{
-				bulletCalibrator.Append(nearPos);
-			}
+		YsVec3 nearPos;
+		if(YSTRUE==YsCheckInBetween3(target->GetPosition(),pos,prv) &&
+			YSOK==YsGetNearestPointOnLine3(nearPos,prv,pos,target->GetPosition()))
+		{
+			bulletCalibrator.Append(nearPos);
 		}
 	}
 }
@@ -3067,6 +3142,100 @@ YSRESULT FsWeaponHolder::RefreshOrdinanceByWeaponRecord(const double &currentTim
 	}
 }
 
+int FsWeaponHolder::LaunchWeapon(
+	FsWeapon::FsWeaponPerformance &data,
+	const double &ctime,
+	YsVec3 &pos,
+	YsAtt3 &att,
+	const YsVec3 &iniVelocity,
+	class FsExistence *owner,
+	unsigned int airTarget,
+	unsigned int gndTarget,
+	YSBOOL recordIt,
+	YSBOOL transmit)
+{
+	FsExistence* target = NULL;
+	if (gndTarget != NULL && gndTarget != YSNULLHASHKEY)
+	{
+		target = sim->FindGround(gndTarget);
+	}
+	if (airTarget != NULL && airTarget != YSNULLHASHKEY) //Air targets get priority for weapons that track both air and gnd
+	{
+		target = sim->FindAirplane(airTarget);
+	}
+	
+	FsWeaponSmokeTrail *trail;
+	trail = NULL;
+	if (freeList != NULL)
+	{
+		if (data.trailSmoke == YSTRUE)
+		{
+			
+			int i;
+			for (i = 0; i < NumSmokeTrailBuffer; i++)
+			{
+				if (trl[i].used != YSTRUE)
+				{
+					trl[i].used = YSTRUE;
+					trail = &trl[i];
+					break;
+				}
+			}
+		}
+
+		FsWeapon *toShoot = freeList;
+		FSWEAPON_CREDIT_OWNER creditOwner = (sim->GetPlayerObject() == owner ? FSWEAPON_CREDIT_OWNER_PLAYER : FSWEAPON_CREDIT_OWNER_NON_PLAYER);
+		if (owner == NULL)
+		{
+			creditOwner = FSWEAPON_CREDIT_OWNER_SYSTEM;
+		}
+
+		toShoot->LaunchWeapon(data, pos, att, iniVelocity.GetLength(), owner, creditOwner, target, trail);
+
+		MoveToActiveList(toShoot);
+
+		if ((recordIt == YSTRUE && toSave != NULL) ||
+			(transmit == YSTRUE && (netServer != NULL || netClient != NULL)) &&
+			toShoot->category != FSWEAPONCAT_SYSTEM)
+		{
+			FsWeaponRecord rec;
+			rec.type = data.type;
+			rec.x = float(pos.x());
+			rec.y = float(pos.y());
+			rec.z = float(pos.z());
+			rec.h = float(att.h());
+			rec.p = float(att.p());
+			rec.b = float(att.b());
+			rec.velocity = float(iniVelocity.GetLength());
+			rec.lifeRemain = float(data.flightRange);
+			rec.power = data.power;
+			rec.firedBy = owner;
+			rec.creditOwner = creditOwner;
+
+			rec.vMax = float(data.maxSpeed);
+			rec.mobility = float(data.turnRate);
+			rec.radar = float(data.trackAngle);
+			rec.target = target;
+
+			if (recordIt == YSTRUE && toSave != NULL)
+			{
+				toSave->AddElement(rec, ctime);
+			}
+			if (transmit == YSTRUE && netServer != NULL)
+			{
+				netServer->BroadcastMissileLaunch(rec);
+			}
+			if (transmit == YSTRUE && netClient != NULL)
+			{
+				netClient->SendMissileLaunch(rec);
+			}
+		}
+		return (int)(toShoot - buf);
+	}
+	return -1;
+}
+
+//Fire(), Bomb(), DispenseFlare() still have to exist or the libraries throw a fit
 int FsWeaponHolder::Fire
     (const double &ctime,
      YsVec3 &pos,
@@ -3075,41 +3244,19 @@ int FsWeaponHolder::Fire
      double l,
      int destructivePower,
      FsExistence *owner,
-     YSBOOL recordIt,YSBOOL /*transmit*/)
+     YSBOOL recordIt,YSBOOL /*transmit*/) 
 {
-	if(freeList!=NULL)
-	{
-		FsWeapon *toShoot=freeList;
-		FSWEAPON_CREDIT_OWNER creditOwner=(sim->GetPlayerObject()==owner ? FSWEAPON_CREDIT_OWNER_PLAYER : FSWEAPON_CREDIT_OWNER_NON_PLAYER);
-
-		toShoot->Fire(ctime,pos,att,v,l,destructivePower,owner,creditOwner);
-		MoveToActiveList(toShoot);
-
-		if(recordIt==YSTRUE && toSave!=NULL)
-		{
-			FsWeaponRecord rec;
-			rec.type=FSWEAPON_GUN;
-			rec.x=float(pos.x());
-			rec.y=float(pos.y());
-			rec.z=float(pos.z());
-			rec.h=float(att.h());
-			rec.p=float(att.p());
-			rec.b=float(att.b());
-			rec.velocity=float(v);
-			rec.lifeRemain=float(l);
-			rec.power=destructivePower;
-			rec.firedBy=owner;
-			rec.creditOwner=creditOwner;
-
-			rec.vMax=float(v);
-			rec.mobility=float(0.0);
-			rec.target=NULL;
-
-			toSave->AddElement(rec,ctime);
-		}
-		return (int)(toShoot-buf);
-	}
-	return -1;
+	int res;
+	FsWeapon temp;
+	FsWeapon::FsWeaponPerformance perf;
+	perf = temp.gunPerf;
+	perf.flightRange = l;
+	perf.power = destructivePower;
+	YsVec3 tempVel;
+	tempVel.Set(0.0, 0.0, v);
+	att.Mul(tempVel, tempVel);
+	res = LaunchWeapon(perf, ctime, pos, att, tempVel, owner, NULL, NULL, recordIt, YSFALSE);
+	return res;
 }
 
 int FsWeaponHolder::Fire
@@ -3121,74 +3268,20 @@ int FsWeaponHolder::Fire
      FsExistence *owner,unsigned int targetKey,
      YSBOOL recordIt,YSBOOL transmit, YSBOOL jettison)
 {
-	FsExistence *target=NULL;
-
-	target=sim->FindAirplane(targetKey);
-	if(NULL==target)
-	{
-		target=sim->FindGround(targetKey);
-	}
-
-	if(freeList!=NULL)
-	{
-		FsWeaponSmokeTrail *trail;
-		int i;
-		trail=NULL;
-		for(i=0; i<NumSmokeTrailBuffer; i++)
-		{
-			if(trl[i].used!=YSTRUE)
-			{
-				trl[i].used=YSTRUE;
-				trail=&trl[i];
-				break;
-			}
-		}
-
-		FsWeapon *toShoot=freeList;
-		FSWEAPON_CREDIT_OWNER creditOwner=(sim->GetPlayerObject()==owner ? FSWEAPON_CREDIT_OWNER_PLAYER : FSWEAPON_CREDIT_OWNER_NON_PLAYER);
-
-		toShoot->Fire(ctime,missileType,pos,att,v,vmax,l,mobility,radar,destructivePower,owner,creditOwner,target,trail);
-		MoveToActiveList(toShoot);
-
-		if((recordIt==YSTRUE && toSave!=NULL) ||
-		   (transmit==YSTRUE && (netServer!=NULL || netClient!=NULL)))
-		{
-			FsWeaponRecord rec;
-			rec.type=missileType;
-			rec.x=float(pos.x());
-			rec.y=float(pos.y());
-			rec.z=float(pos.z());
-			rec.h=float(att.h());
-			rec.p=float(att.p());
-			rec.b=float(att.b());
-			rec.velocity=float(v);
-			rec.lifeRemain=float(l);
-			rec.power=destructivePower;
-			rec.firedBy=owner;
-			rec.creditOwner=creditOwner;
-
-			rec.vMax=float(vmax);
-			rec.mobility=float(mobility);
-			rec.radar=float(radar);
-			rec.target=target;
-
-			if(recordIt==YSTRUE && toSave!=NULL)
-			{
-				toSave->AddElement(rec,ctime);
-			}
-			if(transmit==YSTRUE && netServer!=NULL)
-			{
-				netServer->BroadcastMissileLaunch(rec);
-			}
-			if(transmit==YSTRUE && netClient!=NULL)
-			{
-				netClient->SendMissileLaunch(rec);
-			}
-		}
-		return (int)(toShoot-buf);
-	}
-
-	return -1;
+	int res;
+	FsWeapon temp;
+	FsWeapon::FsWeaponPerformance perf;
+	perf = temp.GetWeaponPerformanceByType(missileType);
+	perf.flightRange = l;
+	perf.power = destructivePower;
+	perf.turnRate = mobility;
+	perf.trackAngle = radar;
+	perf.maxSpeed = vmax;
+	YsVec3 tempVel;
+	tempVel.Set(0.0, 0.0, v);
+	att.Mul(tempVel, tempVel);
+	res = LaunchWeapon(perf, ctime, pos, att, tempVel, owner, targetKey, targetKey, recordIt, YSTRUE);
+	return res;
 }
 
 int FsWeaponHolder::Bomb(
@@ -3200,55 +3293,17 @@ int FsWeaponHolder::Bomb(
     class FsExistence *owner,
     YSBOOL recordIt,YSBOOL transmit)
 {
-	if(freeList!=NULL)
-	{
-		YsAtt3 attByVel;
-		FsWeapon *toShoot=freeList;
-		FSWEAPON_CREDIT_OWNER creditOwner=(sim->GetPlayerObject()==owner ? FSWEAPON_CREDIT_OWNER_PLAYER : FSWEAPON_CREDIT_OWNER_NON_PLAYER);
-
-		attByVel.SetForwardVector(iniVelocity);
-
-		toShoot->Fire(ctime,bombType,pos,attByVel,iniVelocity.GetLength(),vMax,1.0,0.0,0.0,destructivePower,owner,creditOwner,NULL,NULL);
-		MoveToActiveList(toShoot);
-
-		if((recordIt==YSTRUE && toSave!=NULL) || (transmit==YSTRUE && (netServer!=NULL || netClient!=NULL)))
-		{
-			FsWeaponRecord rec;
-			rec.type=bombType;
-			rec.x=float(pos.x());
-			rec.y=float(pos.y());
-			rec.z=float(pos.z());
-			rec.h=float(attByVel.h());
-			rec.p=float(attByVel.p());
-			rec.b=float(attByVel.b());
-			rec.velocity=float(iniVelocity.GetLength());
-			rec.lifeRemain=1.0F;  // Until hit the ground
-			rec.power=destructivePower;
-			rec.firedBy=owner;
-			rec.creditOwner=creditOwner;
-
-			rec.vMax=float(vMax);
-			rec.mobility=0.0F;
-			rec.radar=0.0F;
-			rec.target=NULL;
-
-			if(recordIt==YSTRUE && toSave!=NULL)
-			{
-				toSave->AddElement(rec,ctime);
-			}
-			if(transmit==YSTRUE && netServer!=NULL)
-			{
-				netServer->BroadcastMissileLaunch(rec);
-			}
-			if(transmit==YSTRUE && netClient!=NULL)
-			{
-				netClient->SendMissileLaunch(rec);
-			}
-		}
-		return (int)(toShoot-buf);
-	}
-
-	return -1;
+	int res;
+	FsWeapon temp;
+	FsWeapon::FsWeaponPerformance perf;
+	perf = temp.GetWeaponPerformanceByType(bombType);
+	perf.power = destructivePower;
+	perf.maxSpeed = vMax;
+	YsAtt3 tempAtt;
+	YsVec3 tempPos = pos;
+	tempAtt.SetForwardVector(iniVelocity);
+	res = LaunchWeapon(perf, ctime, tempPos, tempAtt, iniVelocity, owner, NULL, NULL, recordIt, YSTRUE);
+	return res;
 }
 
 int FsWeaponHolder::DispenseFlare(
@@ -3256,77 +3311,16 @@ int FsWeaponHolder::DispenseFlare(
     const YsVec3 &pos,const YsVec3 &vel,const double &vMax,const double &l,
     class FsExistence *owner,YSBOOL recordIt,YSBOOL transmit)
 {
-	if(freeList!=NULL)
-	{
-		YsAtt3 attByVel;
-		FsWeapon *toShoot=freeList;
-		FSWEAPON_CREDIT_OWNER creditOwner=(sim->GetPlayerObject()==owner ? FSWEAPON_CREDIT_OWNER_PLAYER : FSWEAPON_CREDIT_OWNER_NON_PLAYER);
-
-		attByVel.SetForwardVector(vel);
-
-		FsWeaponSmokeTrail *trail;
-		int i;
-		trail=NULL;
-		for(i=0; i<NumSmokeTrailBuffer; i++)
-		{
-			if(trl[i].used!=YSTRUE)
-			{
-				trl[i].used=YSTRUE;
-				trail=&trl[i];
-				break;
-			}
-		}
-
-		toShoot->DispenseFlare(ctime,pos,attByVel,vel.GetLength(),vMax,l,owner,creditOwner,trail);
-		MoveToActiveList(toShoot);
-
-//		toShoot->prevFlare=NULL;
-//		toShoot->nextFlare=flareList;
-//		flareList=toShoot;
-//		if(toShoot->nextFlare!=NULL)
-//		{
-//			toShoot->nextFlare->prevFlare=toShoot;
-//		}
-
-		if((recordIt==YSTRUE && toSave!=NULL) ||
-		   (transmit==YSTRUE && (netServer!=NULL || netClient!=NULL)))
-		{
-			FsWeaponRecord rec;
-			rec.type=FSWEAPON_FLARE;
-			rec.x=float(pos.x());
-			rec.y=float(pos.y());
-			rec.z=float(pos.z());
-			rec.h=float(attByVel.h());
-			rec.p=float(attByVel.p());
-			rec.b=float(attByVel.b());
-			rec.velocity=float(vel.GetLength());
-			rec.lifeRemain=float(l);
-			rec.power=0;
-			rec.firedBy=owner;
-			rec.creditOwner=creditOwner;
-
-			rec.vMax=float(vMax);
-			rec.mobility=0.0F;
-			rec.radar=0.0F;
-			rec.target=NULL;
-
-			if(recordIt==YSTRUE && toSave!=NULL)
-			{
-				toSave->AddElement(rec,ctime);
-			}
-			if(transmit==YSTRUE && netServer!=NULL)
-			{
-				netServer->BroadcastMissileLaunch(rec);
-			}
-			if(transmit==YSTRUE && netClient!=NULL)
-			{
-				netClient->SendMissileLaunch(rec);
-			}
-		}
-		return (int)(toShoot-buf);
-	}
-
-	return -1;
+	int res;
+	FsWeapon temp;
+	FsWeapon::FsWeaponPerformance perf;
+	perf = temp.flarePerf;
+	perf.flightRange = l;
+	YsAtt3 tempAtt;
+	tempAtt.SetForwardVector(vel);
+	YsVec3 tempPos = pos;
+	res = LaunchWeapon(perf, ctime, tempPos, tempAtt, vel, owner, NULL, NULL, recordIt, YSFALSE);
+	return res;
 }
 
 int FsWeaponHolder::ThrowDebris(const double &ctime,const YsVec3 &pos,const YsVec3 &vec,const double &l)
@@ -3334,13 +3328,21 @@ int FsWeaponHolder::ThrowDebris(const double &ctime,const YsVec3 &pos,const YsVe
 	if(freeList!=NULL)
 	{
 		FsWeapon *toShoot;
+		FsWeapon::FsWeaponPerformance perf;
+		YsVec3 tempVel, tempPos;
+		YsAtt3 tempAtt;
+		int res;
 		toShoot=freeList;
 
-		toShoot->ThrowDebris(ctime,pos,vec,l);
-		MoveToActiveList(toShoot);
-		return (int)(toShoot-buf);
+		perf = toShoot->debrisPerf;
+		perf.flightRange = l;
+		tempPos = pos;
+		tempVel = vec;
+		tempAtt.Set(0.0,0.0,0.0);
+		
+		res = LaunchWeapon(perf, ctime, tempPos, tempAtt, tempVel, NULL, NULL, NULL, YSFALSE, YSFALSE);
+		return res;
 	}
-
 	return -1;
 }
 
@@ -3365,7 +3367,7 @@ void FsWeaponHolder::ThrowMultiDebris(int n,const double &ctime,const YsVec3 &po
 YSBOOL FsWeaponHolder::IsLockedOn(const FsExistence *ex) const
 {
 	FsWeapon *seeker;
-	for(seeker=activeList; seeker!=NULL; seeker=seeker->next)
+	for(seeker = FindNextActiveWeapon(NULL); seeker != NULL; seeker = FindNextActiveWeapon(seeker))
 	{
 		if(seeker->lifeRemain>YsTolerance && seeker->target==ex) // Need to check lifeRemain since smoke may remain for a few seconds after the missile runs out of its range.
 		{
@@ -3378,7 +3380,8 @@ YSBOOL FsWeaponHolder::IsLockedOn(const FsExistence *ex) const
 YSBOOL FsWeaponHolder::IsLockedOn(FSWEAPONTYPE &wpnType,YsVec3 &wpnPos,const FsExistence *ex) const
 {
 	FsWeapon *seeker;
-	for(seeker=activeList; seeker!=NULL; seeker=seeker->next)
+
+	for(seeker = FindNextActiveWeapon(NULL); seeker != NULL; seeker = FindNextActiveWeapon(seeker))
 	{
 		if(seeker->lifeRemain>YsTolerance && seeker->target==ex) // 2014/10/30 lifeRemain check was missing and has been added.
 		{
@@ -3394,7 +3397,7 @@ YSBOOL FsWeaponHolder::IsLockedOn(FSWEAPONTYPE &wpnType,YsVec3 &wpnPos,const FsE
 FsWeapon* FsWeaponHolder::GetLockedOn(const FsExistence* ex) const
 {
 	FsWeapon* seeker;
-	for (seeker = activeList; seeker != NULL; seeker = seeker->next)
+	for (seeker = FindNextActiveWeapon(NULL); seeker != NULL; seeker = FindNextActiveWeapon(seeker))
 	{
 		if (seeker->lifeRemain > YsTolerance && seeker->target == ex)
 		{
@@ -3413,14 +3416,12 @@ YSRESULT FsWeaponHolder::FindFirstMissilePositionThatIsReallyGuided(YsVec3 &vec,
 
 	maxLifeRemain=0.0;
 	res=YSERR;
-
-	for(seeker=activeList; seeker!=NULL; seeker=seeker->next)
+	
+	for(seeker = FindNextActiveWeapon(NULL); seeker != NULL; seeker = FindNextActiveWeapon(seeker))
 	{
 		if(seeker->lifeRemain>maxLifeRemain)
 		{
-			if(((seeker->type==FSWEAPON_AIM9 || seeker->type==FSWEAPON_AIM9X || seeker->type==FSWEAPON_AGM65 ||
-			     seeker->type==FSWEAPON_AIM120) && seeker->target!=NULL) ||
-		        (seeker->type==FSWEAPON_BOMB || seeker->type==FSWEAPON_BOMB250 || seeker->type==FSWEAPON_BOMB500HD))
+			if (((seeker->targetAir == YSTRUE || seeker->targetGnd == YSTRUE) && seeker->target != NULL) || seeker->category == FSWEAPONCAT_FREEFALL)
 			{
 				vec=seeker->pos;
 				att=seeker->att;
@@ -3438,13 +3439,11 @@ YSRESULT FsWeaponHolder::FindOldestMissilePosition(YsVec3 &vec,YsAtt3 &att,const
 	FsWeapon *seeker;
 
 	res=YSERR;
-	for(seeker=activeList; seeker!=NULL; seeker=seeker->next)
+	for(seeker = FindNextActiveWeapon(NULL); seeker != NULL; seeker = FindNextActiveWeapon(seeker))
 	{
 		if(seeker->firedBy==fired && seeker->lifeRemain>YsTolerance)
 		{
-			if(((seeker->type==FSWEAPON_AIM9 || seeker->type==FSWEAPON_AIM9X || seeker->type==FSWEAPON_AGM65 ||
-			     seeker->type==FSWEAPON_AIM120) && seeker->target!=NULL) ||
-		        (seeker->type==FSWEAPON_BOMB || seeker->type==FSWEAPON_BOMB250 || seeker->type==FSWEAPON_BOMB500HD))
+			if (((seeker->targetAir == YSTRUE || seeker->targetGnd == YSTRUE) && seeker->target != NULL) || seeker->category == FSWEAPONCAT_FREEFALL)
 			{
 				vec=seeker->pos;
 				att=seeker->att;
@@ -3458,13 +3457,11 @@ YSRESULT FsWeaponHolder::FindOldestMissilePosition(YsVec3 &vec,YsAtt3 &att,const
 YSRESULT FsWeaponHolder::FindNewestMissilePosition(YsVec3 &vec,YsAtt3 &att,const FsExistence *fired) const
 {
 	FsWeapon *seeker;
-	for(seeker=activeList; seeker!=NULL; seeker=seeker->next)  // First one in the active list is the newest one.
+	for(seeker = FindNextActiveWeapon(NULL); seeker != NULL; seeker = FindNextActiveWeapon(seeker))  // First one in the active list is the newest one.
 	{
 		if(seeker->firedBy==fired && seeker->lifeRemain>YsTolerance)
 		{
-			if(((seeker->type==FSWEAPON_AIM9 || seeker->type==FSWEAPON_AIM9X || seeker->type==FSWEAPON_AGM65 ||
-			     seeker->type==FSWEAPON_AIM120) && seeker->target!=NULL) ||
-		        (seeker->type==FSWEAPON_BOMB || seeker->type==FSWEAPON_BOMB250 || seeker->type==FSWEAPON_BOMB500HD))
+			if (((seeker->targetAir == YSTRUE || seeker->targetGnd == YSTRUE) && seeker->target != NULL) || seeker->category == FSWEAPONCAT_FREEFALL)
 			{
 				vec=seeker->pos;
 				att=seeker->att;
@@ -3475,16 +3472,130 @@ YSRESULT FsWeaponHolder::FindNewestMissilePosition(YsVec3 &vec,YsAtt3 &att,const
 	return YSERR;
 }
 
-const FsWeapon *FsWeaponHolder::FindNextActiveWeapon(const FsWeapon *wpn) const
+FsWeapon *FsWeaponHolder::FindNextActiveEntity(const FsWeapon *wpn) const
 {
-	if(wpn==NULL)
+	FsWeapon* result = NULL;
+	const FsWeapon* search = wpn;
+	FSENTITYLIST lst = FSENTITYLIST_WEAPON;
+
+	if (weaponList == NULL && decoyList == NULL && bulletList == NULL && systemList == NULL)
 	{
-		return activeList;
+		result == NULL;
 	}
 	else
 	{
-		return wpn->next;
+		if (wpn != NULL)
+		{
+			lst = wpn->inList;
+		}
+		
+		switch (lst)
+		{
+		default:
+		case FSENTITYLIST_WEAPON:
+			result = FindNextActiveWeapon(search);
+			if (result != NULL)
+			{
+				break;
+			}
+			search = NULL;
+		case FSENTITYLIST_DECOY:
+			result = FindNextActiveDecoy(search);
+			if (result != NULL)
+			{
+				break;
+			}
+			search = NULL;
+		case FSENTITYLIST_BULLET:
+			result = FindNextActiveBullet(search);
+			if (result != NULL)
+			{
+				break;
+			}
+			search = NULL;
+		case FSENTITYLIST_SYSTEM:
+			result = FindNextActiveSystem(search);
+			break;
+		}
 	}
+	
+	return result;
+}
+
+FsWeapon *FsWeaponHolder::FindNextActiveWeapon(const FsWeapon *wpn) const
+{
+	FsWeapon *result = NULL;
+	if (wpn == NULL)
+	{
+		result = weaponList;
+	}
+	else if (wpn->inList != FSENTITYLIST_WEAPON)
+	{
+		result = NULL;
+	}
+	else
+	{
+		result = wpn->next;
+	}
+
+	return result;
+}
+
+FsWeapon *FsWeaponHolder::FindNextActiveDecoy(const FsWeapon *wpn) const
+{
+	FsWeapon *result = NULL;
+	if (wpn == NULL)
+	{
+		result = decoyList;
+	}
+	else if (wpn->inList != FSENTITYLIST_DECOY)
+	{
+		result = NULL;
+	}
+	else
+	{
+		result = wpn->next;
+	}
+
+	return result;
+}
+
+FsWeapon *FsWeaponHolder::FindNextActiveBullet(const FsWeapon *wpn) const
+{
+	FsWeapon *result = NULL;
+	if (wpn == NULL)
+	{
+		result = bulletList;
+	}
+	else if (wpn->inList != FSENTITYLIST_BULLET)
+	{
+		result = NULL;
+	}
+	else
+	{
+		result = wpn->next;
+	}
+
+	return result;
+}
+
+FsWeapon *FsWeaponHolder::FindNextActiveSystem(const FsWeapon *wpn) const
+{
+	FsWeapon *result = NULL;
+	if (wpn == NULL)
+	{
+		result = systemList;
+	}
+	else if (wpn->inList != FSENTITYLIST_SYSTEM)
+	{
+		result = NULL;
+	}
+	else
+	{
+		result = wpn->next;
+	}
+
+	return result;
 }
 
 const FsWeapon *FsWeaponHolder::GetWeapon(int id) const
@@ -3502,7 +3613,8 @@ const FsWeapon *FsWeaponHolder::GetWeapon(int id) const
 void FsWeaponHolder::ObjectIsDeleted(FsExistence *obj) const
 {
 	FsWeapon *wpn;
-	for(wpn=activeList; wpn!=NULL; wpn=wpn->next)
+
+	for(wpn = FindNextActiveEntity(NULL); wpn != NULL; wpn = FindNextActiveEntity(wpn))
 	{
 		if(wpn->firedBy==obj)
 		{
@@ -3517,89 +3629,55 @@ void FsWeaponHolder::ObjectIsDeleted(FsExistence *obj) const
 
 void FsWeaponHolder::Move(const double &dt,const double &cTime,const FsWeather &weather)
 {
-	FsWeapon *seeker,*nxt;
-	FSWEAPONTYPE type;
+	FsWeapon *seeker,*nxt, *prv = NULL;
 
-	FsWeapon *flareList;
-	flareList=NULL;
-	for(seeker=activeList; seeker!=NULL; seeker=seeker->next)
+	for (seeker = FindNextActiveEntity(NULL); seeker != NULL; seeker = FindNextActiveEntity(nxt))
 	{
-		if(seeker->type==FSWEAPON_FLARE)
-		{
-			seeker->prevFlare=NULL;
-			seeker->nextFlare=flareList;
-			if(seeker->nextFlare!=NULL)
-			{
-				seeker->nextFlare->prevFlare=seeker;
-			}
-			flareList=seeker;
-		}
-	}
-
-	for(seeker=activeList; seeker!=NULL; seeker=nxt)
-	{
-		nxt=seeker->next;
-		type=seeker->type;
-		seeker->Move(dt,cTime,weather,flareList);
-		if(seeker->lifeRemain<=YsTolerance && seeker->timeRemain<=YsTolerance)
+		seeker->Move(dt, cTime, weather, decoyList);
+		
+		if (seeker->lifeRemain <= YsTolerance && seeker->timeRemain <= YsTolerance)
 		{
 			MoveToFreeList(seeker);
+			nxt = prv;
+		}
+		else
+		{
+			prv = seeker;
+			nxt = seeker;
 		}
 	}
 }
 
-void FsWeaponHolder::HitGround(
-    const double &ctime,const class FsField &field,
-    FsExplosionHolder *explosion,class FsSimulation *sim)
+void FsWeaponHolder::HitSomething(const double &ctime, const class FsField &field,
+	class FsExplosionHolder *exp, class FsSimulation *sim, const double &tallestGroundObjectHeight) //20260127
 {
-	FsWeapon *seeker,*nxt;
-	for(seeker=activeList; seeker!=NULL; seeker=nxt)
-	{
-		nxt=seeker->next;
-
-		seeker->HitGround(this,ctime,field,explosion,sim,killCredit);
-		if(seeker->lifeRemain<=YsTolerance && seeker->timeRemain<=YsTolerance)
-		{
-			MoveToFreeList(seeker);
-			goto NEXT;
-		}
-
-	NEXT:
-		;
-	}
-}
-
-void FsWeaponHolder::HitObject(
-    const double &ctime,FsExplosionHolder *explo,FsSimulation *sim,const double &/*tallestGroundObjectHeight*/)
-{
-	int nAir,nGnd;
+	int nAir, nGnd;
+	int list = 0;
 	FsAirplane *air;
 	FsGround *gnd;
-	FsWeapon *seeker,*nxt;
+	FsWeapon *seeker;
 
-	nAir=sim->GetNumAirplane();
-	nGnd=sim->GetNumGround();
+	nAir = sim->GetNumAirplane();
+	nGnd = sim->GetNumGround();
 
-	for(seeker=activeList; seeker!=NULL; seeker=nxt)
+	for (seeker = FindNextActiveEntity(NULL); seeker != NULL; seeker = FindNextActiveEntity(seeker))
 	{
-		nxt=seeker->next;
+		YsArray <FsAirplane*, 256> airCandidate;
+		YsArray <FsGround*, 256> gndCandidate;
+		sim->GetLattice().GetAirCollisionCandidate(airCandidate, seeker->pos, seeker->lastChecked);
+		sim->GetLattice().GetGndCollisionCandidate(gndCandidate, seeker->pos, seeker->lastChecked);
 
-		/* Smarter version */
-		YsArray <FsAirplane *,256> airCandidate;
-		YsArray <FsGround *,256> gndCandidate;
-		sim->GetLattice().GetAirCollisionCandidate(airCandidate,seeker->pos,seeker->lastChecked);
-		sim->GetLattice().GetGndCollisionCandidate(gndCandidate,seeker->pos,seeker->lastChecked);
-
-		for(int j=0; j<airCandidate.GetN(); j++)
+		//Hit vehicle
+		for (int j = 0; j < airCandidate.GetN(); j++)
 		{
-			air=airCandidate[j];
-			if(air->Prop().IsAlive()==YSTRUE)
+			air = airCandidate[j];
+			if (air->Prop().IsAlive() == YSTRUE)
 			{
-				if(seeker->HitObject(this,ctime,*air,explo,sim,killCredit)==YSTRUE)
+				if (seeker->HitObject(this, ctime, *air, exp, sim, killCredit) == YSTRUE)
 				{
-					if(air->Prop().IsActive()==YSTRUE)
+					if (air->Prop().IsActive() == YSTRUE)
 					{
-						if(air==sim->GetPlayerAirplane())
+						if (air == sim->GetPlayerAirplane())
 						{
 							FsSoundSetOneTime(FSSND_ONETIME_DAMAGE);
 						}
@@ -3616,83 +3694,39 @@ void FsWeaponHolder::HitObject(
 			}
 		}
 
-		for(int j=0; j<gndCandidate.GetN(); j++)
+		//Hit object
+		if ((seeker->pos.y() < tallestGroundObjectHeight || seeker->prv.y() < tallestGroundObjectHeight)
+			&& seeker->lifeRemain > 0.0)
 		{
-			gnd=gndCandidate[j];
-			if(gnd->Prop().IsAlive()==YSTRUE)
+			for (int j = 0; j < gndCandidate.GetN(); j++)
 			{
-				if(seeker->HitObject(this,ctime,*gnd,explo,sim,killCredit)==YSTRUE)
+				gnd = gndCandidate[j];
+				if (gnd->Prop().IsAlive() == YSTRUE)
 				{
-					if(gnd->Prop().IsAlive()==YSTRUE)
+					if (seeker->HitObject(this, ctime, *gnd, exp, sim, killCredit) == YSTRUE)
 					{
-						FsSoundSetOneTime(FSSND_ONETIME_HIT);
+						if (gnd->Prop().IsAlive() == YSTRUE)
+						{
+							FsSoundSetOneTime(FSSND_ONETIME_HIT);
+						}
+						else
+						{
+							FsSoundSetOneTime(FSSND_ONETIME_BLAST);
+						}
 					}
-					else
-					{
-						FsSoundSetOneTime(FSSND_ONETIME_BLAST);
-					}
-				}
 
+				}
 			}
 		}
 
+		//Hit ground
+		seeker->HitGround(this, ctime, field, exp, sim, killCredit);
 
-		/* Exhaustive Search Version
-		//for(j=0; j<nAir; j++)
+		seeker->lastChecked = seeker->pos;
+		//if (seeker->lifeRemain <= YsTolerance && seeker->timeRemain <= YsTolerance)
 		//{
-		//	air=sim->GetAirplane(j);
-		//	if(air->Prop().IsAlive()==YSTRUE)
-		//	{
-		//		if(seeker->HitObject(ctime,*air,explo,sim)==YSTRUE)
-		//		{
-		//			if(air->Prop().IsActive()==YSTRUE)
-		//			{
-		//				if(air==sim->GetPlayerAirplane())
-		//				{
-		//					fsAirsound->PlayOneShot(FSSND_DAMAGE);
-		//				}
-		//				else
-		//				{
-		//					fsAirsound->PlayOneShot(FSSND_HIT);
-		//				}
-		//			}
-		//			else
-		//			{
-		//				fsAirsound->PlayOneShot(FSSND_BLAST);
-		//			}
-		//		}
-		//	}
+		//	MoveToFreeList(seeker);
 		//}
-        //
-		//if(seeker->pos.y()<tallestGroundObjectHeight || seeker->prv.y()<tallestGroundObjectHeight)
-		//{
-		//	for(j=0; j<nGnd; j++)
-		//	{
-		//		gnd=sim->GetGround(j);
-		//		if(gnd->Prop().IsAlive()==YSTRUE)
-		//		{
-		//			if(seeker->HitObject(ctime,*gnd,explo,sim)==YSTRUE)
-		//			{
-		//				if(gnd->Prop().IsAlive()==YSTRUE)
-		//				{
-		//					fsAirsound->PlayOneShot(FSSND_HIT);
-		//				}
-		//				else
-		//				{
-		//					fsAirsound->PlayOneShot(FSSND_BLAST);
-		//				}
-		//			}
-		//		}
-		//	}
-		//}
-		*/
-
-		seeker->lastChecked=seeker->pos;
-
-		if(seeker->lifeRemain<=YsTolerance && seeker->timeRemain<=YsTolerance)
-		{
-			MoveToFreeList(seeker);
-		}
 	}
 }
 
@@ -3701,9 +3735,13 @@ void FsWeaponHolder::Draw(
     YSBOOL transparency,FSSMOKETYPE smk,const double &cTime,unsigned int drawFlag) const
 {
 	FsWeapon *seeker;
-	for(seeker=activeList; seeker!=NULL; seeker=seeker->next)
+
+	for (seeker = FindNextActiveEntity(NULL); seeker != NULL; seeker = FindNextActiveEntity(seeker))
 	{
-		seeker->Draw(coarse,viewMat,projMat,transparency,smk,cTime,drawFlag);
+		if (seeker->lifeRemain > YsTolerance)
+		{
+			seeker->Draw(coarse, viewMat, projMat, transparency, smk, cTime, drawFlag);
+		}
 	}
 }
 
@@ -4152,8 +4190,12 @@ void FsWeaponHolder::AddToParticleManager(class YsGLParticleManager &partMan,con
 {
 	FSENVIRONMENT env = sim->GetEnvironment();
 
-	for(auto seeker=activeList; seeker!=NULL; seeker=seeker->next)
+	for(auto seeker=weaponList; seeker!=NULL; seeker=seeker->next)
 	{
 		seeker->AddToParticleManager(partMan,cTime, env);
+	}
+	for (auto seeker = decoyList; seeker != NULL; seeker = seeker->next)
+	{
+		seeker->AddToParticleManager(partMan, cTime, env);
 	}
 }

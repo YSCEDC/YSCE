@@ -16,7 +16,6 @@
 #include "fsnavaid.h"
 #include "fsrecord.h"
 #include "fsvisual.h"
-#include "fsweapon.h"
 #include "fsproperty.h"
 #include "fsairplaneproperty.h"
 #include "fsgroundproperty.h"
@@ -797,7 +796,6 @@ void FsGroundProperty::Initialize(void)
 	chIsVisualLandingAid=YSGP_NOTVISUALLANDINGAID;
 	chSkipGroundToGroundCollisionCheck=YSFALSE;
 
-	chGunIniSpeed=340.0*5.0;  // Mach 5.0
 	chAaaRange=0.0;
 	chCannonRange=0.0;
 	chSAMRange=0.0;
@@ -838,6 +836,7 @@ void FsGroundProperty::Initialize(void)
 	aircraftCarrierProperty=NULL;
 
 	belongTo=NULL;
+	wepPtr = &wep;
 }
 
 void FsGroundProperty::InitializeState(void)
@@ -846,7 +845,8 @@ void FsGroundProperty::InitializeState(void)
 
 	staState=FSGNDALIVE;
 
-	staWoc=FSWEAPON_NULL;
+	staSelectedWeaponType=FSWEAPON_NULL;
+	staSelectedWeaponPerformance = wep.nullWepPerf;
 	staGunBullet=3000;
 	staSAM=8;
 	staAirTarget=NULL;
@@ -971,7 +971,7 @@ void FsGroundProperty::ApplyControl(const FsFlightControl &ctl,unsigned int /*wh
 	}
 
 	staBrake=ctl.ctlBrake;
-	switch(staWoc)
+	switch(staSelectedWeaponPerformance.type)
 	{
 	case FSWEAPON_NULL:
 		staSteering=ctl.ctlAileron;
@@ -1005,7 +1005,8 @@ void FsGroundProperty::ApplyControl(const FsFlightControl &ctl,unsigned int /*wh
 
 void FsGroundProperty::PrepareUserWeaponofChoice(void)
 {
-	staWoc=FSWEAPON_NULL;
+	staSelectedWeaponType=FSWEAPON_NULL;
+	staSelectedWeaponPerformance = wep.nullWepPerf;
 	if(0==(chUserControlLevel&USERCTL_DRIVE))
 	{
 		CycleWeaponOfChoiceByUser();
@@ -1018,45 +1019,46 @@ YSRESULT FsGroundProperty::CycleWeaponOfChoiceByUser(void)
 	{
 		return YSERR;
 	}
-
+	
 	const int nCycle=4;
 	for(int i=0; i<nCycle; i++)
 	{
-		switch(staWoc)
+		switch(staSelectedWeaponType)
 		{
 		default:
-			staWoc=FSWEAPON_GUN;
+			staSelectedWeaponType=FSWEAPON_GUN;
 			break;
 		case FSWEAPON_NULL:
-			staWoc=FSWEAPON_GUN;
+			staSelectedWeaponType=FSWEAPON_GUN;
 			break;
 		case FSWEAPON_GUN:
-			staWoc=FSWEAPON_AIM9;
+			staSelectedWeaponType=FSWEAPON_AIM9;
 			break;
 		case FSWEAPON_AIM9:
-			staWoc=FSWEAPON_NULL;
+			staSelectedWeaponType=FSWEAPON_NULL;
 			break;
 		}
+		staSelectedWeaponPerformance = wepPtr->GetWeaponPerformanceByType(staSelectedWeaponType);
 
-		if(0!=(chUserControlLevel&USERCTL_DRIVE) && FSWEAPON_NULL==staWoc)
+		if(0!=(chUserControlLevel&USERCTL_DRIVE) && FSWEAPON_NULL==staSelectedWeaponType)
 		{
 			return YSOK;
 		}
-		if(0!=(chUserControlLevel&USERCTL_GUN) && FSWEAPON_GUN==staWoc)
+		if(0!=(chUserControlLevel&USERCTL_GUN) && FSWEAPON_GUN==staSelectedWeaponType)
 		{
 			return YSOK;
 		}
-		if(0!=(chUserControlLevel&USERCTL_SAM) && FSWEAPON_AIM9==staWoc)
+		if(0!=(chUserControlLevel&USERCTL_SAM) && FSWEAPON_AIM9==staSelectedWeaponType)
 		{
 			return YSOK;
 		}
-		if(0!=(chUserControlLevel&USERCTL_ATM) && FSWEAPON_AGM65==staWoc)
+		if(0!=(chUserControlLevel&USERCTL_ATM) && FSWEAPON_AGM65==staSelectedWeaponType)
 		{
 			return YSOK;
 		}
 	}
 
-	staWoc=FSWEAPON_NULL;
+	staSelectedWeaponType=FSWEAPON_NULL;
 	return YSERR;
 }
 
@@ -1204,7 +1206,7 @@ void FsGroundProperty::Move(
 			staDrift=YSTRUE;
 		}
 
-		switch(staWoc)
+		switch(staSelectedWeaponType)
 		{
 		default:
 		case FSWEAPON_GUN:
@@ -1646,82 +1648,9 @@ YSBOOL FsGroundProperty::FireMissile
 		mis=mis+samMount;
 		mis=mis+staPosition;
 
-
-
-		switch (chSAMType)
-		{
-			default:
-				break;
-			case FSWEAPON_AIM9:
-			case FSWEAPON_AIM9X:
-			{
-				bul.Fire(ct,
-					chSAMType,
-					mis,
-					staSamAim,
-					0.0,
-					1020,
-					chSAMRange,
-					YsPi / 2.0,
-					YsPi / 6.0,
-					12,
-					own,
-					targetKey, // <- Locked On Target
-					YSTRUE, YSTRUE);
-			}
-			break;
-			case FSWEAPON_AGM65:
-			{
-				bul.Fire(ct,
-					chSAMType,
-					mis,
-					staSamAim,
-					0.0,
-					340.0,
-					chSAMRange,
-					YsPi / 2.0,
-					YsPi / 9.0,
-					12,
-					own,
-					targetKey,
-					YSTRUE, YSTRUE);
-			}
-			break;
-			case FSWEAPON_ROCKET:
-			{
-				bul.Fire(ct,
-					chSAMType,
-					mis,
-					staSamAim,
-					0.0,
-					800.0,
-					chSAMRange,
-					YsPi / 2.0,
-					YsPi / 4.0,
-					10,
-					own,
-					targetKey,
-					YSTRUE, YSTRUE);
-			}
-			break;
-			case FSWEAPON_AIM120:
-			{
-				bul.Fire(ct,
-					chSAMType,
-					mis,
-					staSamAim,
-					0.0,
-					1360.0,
-					chSAMRange,
-					YsPi / 3.0,
-					YsPi / 6.0,
-					12,
-					own,
-					targetKey,
-					YSTRUE, YSTRUE);
-			}
-			break;
-		}
+		FsWeapon::FsWeaponPerformance data = wepPtr->GetWeaponPerformanceByType(chSAMType);
+		data.flightRange = chSAMRange;
+		bul.LaunchWeapon(data, ct, mis, staSamAim, staSpeed, own, targetKey, NULL, YSTRUE, YSTRUE);
 
 		staSAM--;
 		if(staSamReloadCount>0)
@@ -1779,12 +1708,12 @@ YSBOOL FsGroundProperty::GetDamage(YSBOOL &killed,int dmg)
 
 double FsGroundProperty::GetBulletSpeed(void) const
 {
-	return chGunIniSpeed;
+	return wep.gunPerf.maxSpeed;
 }
 
 double FsGroundProperty::GetSAMRadarAngle(void) const
 {
-	return YsPi/6.0;
+	return wep.aim9Perf.trackAngle;
 }
 
 double FsGroundProperty::GetSAMRange(void) const
@@ -2427,7 +2356,7 @@ void FsGroundProperty::SetState(FSGNDSTATE state)
 
 const YsVec3 FsGroundProperty::GetUserViewPoint(void) const
 {
-	switch(GetWeaponOfChoice())
+	switch(GetSelectedWeaponType())
 	{
 	default:
 	case FSWEAPON_NULL:
@@ -3779,9 +3708,14 @@ YSBOOL FsGroundProperty::HasWeapon(void) const
 	return YSFALSE;
 }
 
-FSWEAPONTYPE FsGroundProperty::GetWeaponOfChoice(void) const
+FSWEAPONTYPE FsGroundProperty::GetSelectedWeaponType(void) const
 {
-	return staWoc;
+	return staSelectedWeaponType;
+}
+
+FsWeapon::FsWeaponPerformance FsGroundProperty::GetSelectedWeaponPerformance(void) const
+{
+	return staSelectedWeaponPerformance;
 }
 
 int FsGroundProperty::GetNumAaaBullet(void) const

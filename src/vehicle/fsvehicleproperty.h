@@ -14,6 +14,7 @@ protected:
 	// State
 	YsVec3 staPosition;
 	YsAtt3 staAttitude;
+	YsVec3 staVelocity;
 	YsMatrix4x4 staMatrix;
 	YsMatrix4x4 staInverseMatrix;
 
@@ -69,6 +70,7 @@ public:
 
 	YsVec3 &GetPosition(YsVec3 &vec) const;
 	YsAtt3 &GetAttitude(YsAtt3 &att) const;
+	YsVec3 &GetVelocity(YsVec3 &vec) const;
 	const YsVec3 &GetPosition(void) const;
 	const YsAtt3 &GetAttitude(void) const;
 

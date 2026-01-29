@@ -75,37 +75,56 @@ public:
 class FsWeapon
 {
 public:
-	enum
-	{
-		POWER_AGM65=12
-	};
-
-
 	FsWeapon *prev,*next;
 	FsWeapon *prevFlare,*nextFlare;
+	int bufPos; //Weapon index in buf
 
 	FSWEAPONTYPE type;
+	FSWEAPONCATEGORY category;
+	FSENTITYLIST inList;
+	YsString identify;
 
 	double lifeRemain;   // Life remaining by distance
+	double lifeTime;	 // Life remaining by time
 	double timeRemain;   // Time remaining after impact (to draw smoke better)
 	double timeUnguided; // Duration of unguided flying  2005/02/18 Set in FsWeapon::Fire
+
 	double velocity;
+	double drag;
+	double weight;
+	double range;
+	YSBOOL applyGravity;
+	double launchSpeed;
+	double maxVelocity;
+	double accel; //acceleration below maxVelocity
+	double decel; //deceleration above maxVelocity
+
 	YsVec3 prv,pos,vec;
+	YsVec3 velVec, accelVec;
+	YsAtt3 att;
 	YsVec3 lastChecked;
 	class FsExistence *firedBy;
 	FSWEAPON_CREDIT_OWNER creditOwner;
 
+	double mobility,radar; //turn rate, tracking half angle
+	double fuseRadius;
+	YSBOOL impactFuse;
 	int destructivePower;
 
-	// for Missile Only
-	double maxVelocity;
-	double mobility,radar;
-	YsAtt3 att;
 	class FsExistence *target;
+	YSBOOL targetAir;
+	YSBOOL targetGnd;
+	YSBOOL canRetarget;
+	YSBOOL followDecoy;
 
 	FsWeaponSmokeTrail *trail;
+	YSBOOL trailSmoke;
 	YSBOOL shouldJettison;
-
+	YSBOOL canJettison;
+	YSBOOL faceForward; //point this weapon in the direction of travel
+	YSBOOL isFuelTank;
+	YSBOOL isDecoy;
+	
 
 
 	// ***s (eg. aim9s, agm65s) stands for silent.
@@ -133,46 +152,76 @@ public:
 	   const YsMatrix4x4 &viewTfm,const YsMatrix4x4 &projTfm,
 	   const YsVec3 &pos,const YsAtt3 &att,const YsMatrix4x4 &projPlnTfm);
 
-
+	class FsWeaponPerformance { //20260121 code cleaning update
+	public:
+		FSWEAPONTYPE type; //weapon type (GUN AIM9 AIM9X AIM120 AGM RKT B250 B500 B500HD FUEL FLR)
+		FSWEAPONCATEGORY category;
+		FSENTITYLIST inList;
+		YsString identify;
+		double launchSpeed; //launch speed relative to aircraft (to fix guns)
+		double maxSpeed; //max speed (powered)
+		double flightRange; //range
+		double flightTime;
+		int power; //damage power
+		YSBOOL targetAir; //aam
+		YSBOOL targetGnd; //agm
+		YSBOOL canRetarget; //a-aam loopback
+		double trackRange; //how far away does lock symbology show?
+		double trackDelay; //post-launch lock on delay
+		double trackAngle; //seeker cone half-angle
+		double turnRate; //turn rate
+		double fuseRadius; //proximity fuse
+		YSBOOL impactFuse;
+		YSBOOL trailSmoke; //smoke trail
+		double weight; //weight
+		YSBOOL fueltank; //this weaponn contais fuel
+		YSBOOL isDecoy; //flares etc
+		YSBOOL gravity; //affected by gravity
+		YSBOOL faceForward; //points in direction of travel or no
+		double flyingDrag; //deployed cD
+		double accel; //powered acceleration rate
+		double decel; //deceleration above maxSpeed
+		YSBOOL followDecoy; //decoyed by flare
+		YSBOOL canJettison; //can jett
+	};
+						//	    {    type,               category,                     list,                ident,    vint, vmax, range, time, power, air,   gnd,  retarget, lock, delay, angle, rate, proxfuse, impact, smoke,  weight, fuel,    decoy,   grav,   forward,  cd,  accel, decel, trackFlr, canJett
+	FsWeaponPerformance gunPerf{     FSWEAPON_GUN,       FSWEAPONCAT_BULLET,           FSENTITYLIST_BULLET, "GUN",     1700, 1700, 3000,  1.76, 1,  YSFALSE, YSFALSE, YSFALSE, 3000,  0.0, 0.0,   0.0,   0.0,  YSFALSE, YSFALSE, 0.0,   YSFALSE, YSFALSE, YSTRUE,  YSTRUE,  0.0,   0.0,  20.0, YSFALSE, YSFALSE};
+	FsWeaponPerformance aim9Perf{    FSWEAPON_AIM9,      FSWEAPONCAT_ANTIAIRMISSILE,   FSENTITYLIST_WEAPON, "AIM9",    0,    1020, 5000,  4.9,  12, YSTRUE,  YSFALSE, YSFALSE, 5000,  0.0, 0.524, 1.571, 18.0, YSFALSE, YSTRUE,  90.0,  YSFALSE, YSFALSE, YSFALSE, YSTRUE,  0.0,   50.0, 20.0, YSTRUE,  YSTRUE};
+	FsWeaponPerformance aim9xPerf{   FSWEAPON_AIM9X,     FSWEAPONCAT_ANTIAIRMISSILE,   FSENTITYLIST_WEAPON, "AIM9X",   0,    1020, 5000,  4.9,  12, YSTRUE,  YSFALSE, YSTRUE,  5000,  0.5, 0.524, 1.396, 23.0, YSFALSE, YSTRUE,  90.0,  YSFALSE, YSFALSE, YSFALSE, YSTRUE,  0.0,   50.0, 20.0, YSTRUE,  YSTRUE};
+	FsWeaponPerformance aim120Perf{  FSWEAPON_AIM120,    FSWEAPONCAT_ANTIAIRMISSILE,   FSENTITYLIST_WEAPON, "AIM120",  0,    1360, 30000, 22.0, 12, YSTRUE,  YSFALSE, YSTRUE,  30000, 3.0, 0.524, 0.96,  25.0, YSFALSE, YSTRUE,  150.0, YSFALSE, YSFALSE, YSFALSE, YSTRUE,  0.0,   50.0, 20.0, YSTRUE,  YSTRUE};
+	FsWeaponPerformance agm65Perf{   FSWEAPON_AGM65,     FSWEAPONCAT_ANTIGROUNDMISSILE,FSENTITYLIST_WEAPON, "AGM65",   0,    340,  5000,  14.7, 12, YSFALSE, YSTRUE,  YSFALSE, 99000, 1.6, 0.349, 1.571, 0.0,  YSFALSE, YSTRUE,  300.0, YSFALSE, YSFALSE, YSFALSE, YSTRUE,  0.0,   50.0, 20.0, YSFALSE, YSTRUE};
+	FsWeaponPerformance rocketPerf{  FSWEAPON_ROCKET,    FSWEAPONCAT_UNGUIDEDMISSILE,  FSENTITYLIST_WEAPON, "ROCKET",  0,    800,  10000, 12.5, 10, YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0, 0.0,   0.0,   0.0,  YSTRUE,  YSFALSE, 10.0,  YSFALSE, YSFALSE, YSFALSE, YSTRUE,  0.0,   50.0, 20.0, YSFALSE, YSTRUE};
+	FsWeaponPerformance b250Perf{    FSWEAPON_BOMB250,   FSWEAPONCAT_FREEFALL,         FSENTITYLIST_WEAPON, "B250",    0,    340,  99999, 999,  35, YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0, 0.0,   0.0,   0.0,  YSTRUE,  YSFALSE, 120.0, YSFALSE, YSFALSE, YSTRUE,  YSTRUE,  0.0,   0.0,  0.0,  YSFALSE, YSTRUE};
+	FsWeaponPerformance b500Perf{    FSWEAPON_BOMB,      FSWEAPONCAT_FREEFALL,         FSENTITYLIST_WEAPON, "B500",    0,    340,  99999, 999,  50, YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0, 0.0,   0.0,   0.0,  YSTRUE,  YSFALSE, 250.0, YSFALSE, YSFALSE, YSTRUE,  YSTRUE,  0.0,   0.0,  0.0,  YSFALSE, YSTRUE};
+	FsWeaponPerformance b500hdPerf{  FSWEAPON_BOMB500HD, FSWEAPONCAT_FREEFALL,         FSENTITYLIST_WEAPON, "B500HD",  0,    340,  99999, 999,  35, YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0, 0.0,   0.0,   0.0,  YSTRUE,  YSFALSE, 250.0, YSFALSE, YSFALSE, YSTRUE,  YSTRUE,  0.8,   0.0,  0.0,  YSFALSE, YSTRUE};
+	FsWeaponPerformance flarePerf{   FSWEAPON_FLARE,     FSWEAPONCAT_COUNTERMEASURE,   FSENTITYLIST_DECOY,  "FLARE",   0,    120,  1000,  10.0, 0,  YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0, 0.0,   0.0,   0.0,  YSFALSE, YSTRUE,  1.0,   YSFALSE, YSTRUE,  YSTRUE,  YSTRUE,  0.002, 0.0,  0.0,  YSFALSE, YSFALSE};
+	FsWeaponPerformance flarepodPerf{FSWEAPON_FLAREPOD,  FSWEAPONCAT_UTILITY,          FSENTITYLIST_WEAPON, "FLAREPOD",0,    340,  99999, 999,  0,  YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0, 0.0,   0.0,   0.0,  YSFALSE, YSFALSE, 150.0, YSFALSE, YSFALSE, YSTRUE,  YSTRUE,  0.0,   0.0,  0.0,  YSFALSE, YSTRUE};
+	FsWeaponPerformance fueltankPerf{FSWEAPON_FUELTANK,  FSWEAPONCAT_UTILITY,          FSENTITYLIST_WEAPON, "FUELTANK",0,    340,  99999, 999,  1,  YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0, 0.0,   0.0,   0.0,  YSTRUE,  YSFALSE, 150.0, YSTRUE,  YSFALSE, YSTRUE,  YSTRUE,  0.0,   0.0,  0.0,  YSFALSE, YSTRUE};
+	FsWeaponPerformance smokePerf{   FSWEAPON_SMOKE,     FSWEAPONCAT_SYSTEM,           FSENTITYLIST_SYSTEM, "SMOKE",   0,    1,    99999, 999,  0,  YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0, 0.0,   0.0,   0.0,  YSFALSE, YSTRUE,  0.0,   YSFALSE, YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0,  0.0,  YSFALSE, YSFALSE};
+	FsWeaponPerformance debrisPerf{  FSWEAPON_DEBRIS,    FSWEAPONCAT_SYSTEM,           FSENTITYLIST_SYSTEM, "DEBRIS",  0,    1,    60.0,  999,  0,  YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0, 0.0,   0.0,   0.0,  YSFALSE, YSFALSE, 0.0,   YSFALSE, YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0,  0.0,  YSFALSE, YSFALSE };
+	FsWeaponPerformance nullWepPerf{ FSWEAPON_NULL,      FSWEAPONCAT_SYSTEM,           FSENTITYLIST_SYSTEM, "NULL",    0,    1,    99999, 999,  0,  YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0, 0.0,   0.0,   0.0,  YSFALSE, YSFALSE, 0.0,   YSFALSE, YSFALSE, YSFALSE, YSFALSE, 0.0,   0.0,  0.0,  YSFALSE, YSFALSE};
 
 	FsWeapon();
+	
+	FsWeaponPerformance GetWeaponPerformanceByType(FSWEAPONTYPE &wep);
 
-	// Firing Gun
-	void Fire
-	    (const double &ctime,
-	     YsVec3 &pos,
-	     YsAtt3 &att,
-	     const double &v,
-	     const double &l,
-	     int destruction,
-	     class FsExistence *owner,
-	     FSWEAPON_CREDIT_OWNER creditOwnerIn);
-
-	// Firing Missile
-	void Fire
-	    (const double &ctime,
-	     FSWEAPONTYPE missileType,
-	     const YsVec3 &pos,const YsAtt3 &att,
-	     const double &v,const double &vmax,const double &l,const double &mobility,const double &radar,
-	     int destruction,
-	     class FsExistence *owner,
-	     FSWEAPON_CREDIT_OWNER creditOwnerIn,
-	     class FsExistence *target,FsWeaponSmokeTrail *trail);
-
-	// Flare
-	void DispenseFlare
-	    (const double &ctime,
-	     const YsVec3 &pos,const YsAtt3 &att,
-	     const double &v,const double &vMax,const double &l,
-	     class FsExistence *owner,
-	     FSWEAPON_CREDIT_OWNER creditOwnerIn,
-	     FsWeaponSmokeTrail *trail);
+	void Reset(void);
+	void LaunchWeapon(
+		FsWeaponPerformance &data,
+		const YsVec3 &cpos,
+		const YsAtt3 & catt,
+		const double &vInit,
+		class FsExistence *owner,
+		FSWEAPON_CREDIT_OWNER creditOwnerIn,
+		class FsExistence *target,
+		FsWeaponSmokeTrail *trail); //20260121 code cleaning update
 
 	// Debris
 	void ThrowDebris(const double &ctime,const YsVec3 &pos,const YsVec3 &vec,const double &l);
 
 
 	void Move(const double &dt,const double &cTime,const class FsWeather &weather,const FsWeapon *flareList);
+	YSBOOL Bounce(YsVec3 &normal, YsVec3 &intersect, YsVec3 &outVel, YsVec3 &posOffset, double maxAngle, double energyReturn);
 	YSBOOL IsOwnerStillHaveTarget(void);
 	void HitGround
 	    (class FsWeaponHolder *callback,
@@ -241,8 +290,11 @@ public:
 
 	void Clear(void);
 	void MoveToActiveList(FsWeapon *wep);
+	void MoveToWeaponList(FsWeapon *wep);
+	void MoveToBulletList(FsWeapon *wep);
+	void MoveToDecoyList(FsWeapon *wep);
+	void MoveToSystemList(FsWeapon *wep);
 	void MoveToFreeList(FsWeapon *wep);
-
 
 	void ClearBulletCalibrator(void);
 	void CalculateBulletCalibrator(const FsExistence *target);
@@ -255,6 +307,18 @@ public:
 	YSRESULT DeleteRecordForResumeFlight(class FsAirplane *shotBy,const double &startTime);
 
 	YSRESULT RefreshOrdinanceByWeaponRecord(const double &currentTime);
+
+	int LaunchWeapon(
+		FsWeapon::FsWeaponPerformance &data,
+		const double &ctime,
+		YsVec3 &pos,
+		YsAtt3 &att,
+		const YsVec3 &iniVelocity,
+		class FsExistence *owner,
+		unsigned int airTarget,
+		unsigned int gndTarget,
+		YSBOOL recordIt,
+		YSBOOL transmit);
 
 	// Firing Gun
 	int Fire
@@ -306,11 +370,16 @@ public:
 	YSRESULT FindOldestMissilePosition(YsVec3 &vec,YsAtt3 &att,const FsExistence *fired) const;
 	YSRESULT FindNewestMissilePosition(YsVec3 &vec,YsAtt3 &att,const FsExistence *fired) const;
 
-	const FsWeapon *FindNextActiveWeapon(const FsWeapon *wpn) const;
+	FsWeapon *FindNextActiveEntity(const FsWeapon *wpn) const;
+	FsWeapon *FindNextActiveWeapon(const FsWeapon *wpn) const;
+	FsWeapon *FindNextActiveDecoy(const FsWeapon *wpn) const;
+	FsWeapon *FindNextActiveBullet(const FsWeapon *wpn) const;
+	FsWeapon *FindNextActiveSystem(const FsWeapon *wpn) const;
 	const FsWeapon *GetWeapon(int id) const;
 	void ObjectIsDeleted(FsExistence *obj) const;
 
 	void Move(const double &dt,const double &cTime,const class FsWeather &weather);
+	void HitSomething(const double &ctime, const class FsField &field, class FsExplosionHolder *exp, class FsSimulation *sim, const double &tallestGroundObjectHeight);
 	void HitGround(
 	    const double &ctime,const class FsField &field,class FsExplosionHolder *xp,class FsSimulation *sim);
 	void HitObject(
@@ -333,7 +402,7 @@ public:
 	FsWeapon buf[NumBulletBuffer];
 	FsWeaponSmokeTrail trl[NumSmokeTrailBuffer];
 
-	FsWeapon *activeList,*freeList;
+	FsWeapon *weaponList, *bulletList, *decoyList, *systemList, *freeList;
 
 	FsRecord <FsWeaponRecord> *toPlay;
 	FsRecord <FsWeaponRecord> *toSave;
