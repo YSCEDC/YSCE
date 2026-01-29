@@ -224,7 +224,7 @@ public:
 	virtual void ApplyControlAndGetFeedback(class FsFlightControl &userInput,FSUSERCONTROL userControl,YSBOOL autoRudder)=0;
 
 	virtual YSBOOL LockOn(class FsSimulation *sim,const double &radarAltLimit)=0;
-	virtual FSWEAPONTYPE GetWeaponOfChoice(void) const=0;
+	virtual FSWEAPONTYPE GetSelectedWeaponType(void) const=0;
 
 	virtual YSBOOL GetDamage(YSBOOL &killed,int dmg,FSDIEDOF diedOf)=0;
 	virtual void Bounce(const YsVec3 &collPos)=0;
@@ -357,7 +357,8 @@ public:
 	virtual void ApplyControlAndGetFeedback(class FsFlightControl &userInput,FSUSERCONTROL userControl,YSBOOL autoRudder);
 
 	virtual YSBOOL LockOn(class FsSimulation *sim,const double &radarAltLimit);
-	virtual FSWEAPONTYPE GetWeaponOfChoice(void) const;
+	virtual FSWEAPONTYPE GetSelectedWeaponType(void) const;
+	virtual FsWeapon::FsWeaponPerformance GetSelectedWeaponPerformance(void) const;
 
 	virtual YSBOOL GetDamage(YSBOOL &killed,int dmg,FSDIEDOF diedOf);
 	virtual void Bounce(const YsVec3 &collPos);
@@ -502,7 +503,8 @@ public:
 	virtual void ApplyControlAndGetFeedback(class FsFlightControl &userInput,FSUSERCONTROL userControl,YSBOOL autoRudder);
 
 	virtual YSBOOL LockOn(FsSimulation *sim,const double &radarAltLimit);
-	virtual FSWEAPONTYPE GetWeaponOfChoice(void) const;
+	virtual FSWEAPONTYPE GetSelectedWeaponType(void) const;
+	virtual FsWeapon::FsWeaponPerformance GetSelectedWeaponPerformance(void) const;
 
 	virtual YSBOOL GetDamage(YSBOOL &killed,int dmg,FSDIEDOF diedOf);
 	virtual void Bounce(const YsVec3 &collPos);

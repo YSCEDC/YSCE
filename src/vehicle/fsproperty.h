@@ -3,6 +3,7 @@
 /* { */
 
 #include <fsdef.h>
+#include "fsweapon.h"
 
 enum
 {
@@ -62,6 +63,8 @@ enum
 class FsRotatingTurretState
 {
 public:
+	class FsWeapon *wepPtr;
+	FsWeapon wep;
 	unsigned int airTargetKey;
 	unsigned int gndTargetKey;
 	int numBullet;

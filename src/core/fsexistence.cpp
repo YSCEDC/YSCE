@@ -1898,7 +1898,7 @@ YSBOOL FsAirplane::LockOn(FsSimulation *sim,const double &radarAltLimit)
 
 						sqDist=tpos.GetSquareLength();
 						rcs=air->prop.GetRadarCrossSection();
-						if(prop.GetWeaponOfChoice()==FSWEAPON_AIM120)
+						if(prop.GetSelectedWeaponType()==FSWEAPON_AIM120)
 						{
 							aamRange=air->prop.GetAAMRange(FSWEAPON_AIM120);
 						}
@@ -1960,9 +1960,14 @@ YSBOOL FsAirplane::LockOn(FsSimulation *sim,const double &radarAltLimit)
 	return YSTRUE;
 }
 
-FSWEAPONTYPE FsAirplane::GetWeaponOfChoice(void) const
+FSWEAPONTYPE FsAirplane::GetSelectedWeaponType(void) const
 {
-	return Prop().GetWeaponOfChoice();
+	return Prop().GetSelectedWeaponType();
+}
+
+FsWeapon::FsWeaponPerformance FsAirplane::GetSelectedWeaponPerformance(void) const
+{
+	return Prop().GetSelectedWeaponPerformance();
 }
 
 YSBOOL FsAirplane::GetDamage(YSBOOL &killed,int dmg,FSDIEDOF diedOf)
@@ -3306,7 +3311,7 @@ YSBOOL FsGround::LockOn(FsSimulation *sim,const double &radarAltLimit)
 	double radar,aamAngle,agmAngle;
 
 	pos=&GetPosition();
-	switch(Prop().GetWeaponOfChoice())
+	switch(Prop().GetSelectedWeaponType())
 	{
 	default:
 		att=&GetAttitude();
@@ -3412,9 +3417,14 @@ YSBOOL FsGround::LockOn(FsSimulation *sim,const double &radarAltLimit)
 	return YSTRUE;
 }
 
-FSWEAPONTYPE FsGround::GetWeaponOfChoice(void) const
+FSWEAPONTYPE FsGround::GetSelectedWeaponType(void) const
 {
-	return Prop().GetWeaponOfChoice();
+	return Prop().GetSelectedWeaponType();
+}
+
+FsWeapon::FsWeaponPerformance FsGround::GetSelectedWeaponPerformance(void) const
+{
+	return Prop().GetSelectedWeaponPerformance();
 }
 
 YSBOOL FsGround::GetDamage(YSBOOL &killed,int dmg,FSDIEDOF /*diedOf*/)

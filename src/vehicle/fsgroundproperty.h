@@ -6,6 +6,7 @@
 #include "fsnavaid.h"
 #include "fsvehicleproperty.h"
 #include "fsvisual.h"
+#include "fsweapon.h"
 
 // Declaration /////////////////////////////////////////////
 
@@ -115,7 +116,8 @@ protected:
 	// When adding a state, make sure it is copied in CopyState function.
 	FSGNDSTATE staState;
 
-	FSWEAPONTYPE staWoc;
+	FSWEAPONTYPE staSelectedWeaponType;
+	FsWeapon::FsWeaponPerformance staSelectedWeaponPerformance;
 	int staSAM;
 	int staGunBullet;
 	int staCannon;
@@ -263,6 +265,8 @@ public:
 	void AfterUnloadedFromCarrier(void);
 	void AfterLoadedOnCarrier(class FsGround *carrier);
 
+	class FsWeapon *wepPtr;
+	FsWeapon wep;
 
 	YSBOOL FireGun(
 	    const double &ct,const double &dt,class FsSimulation *sim,class FsWeaponHolder &bul,class FsExistence *own);
@@ -390,7 +394,6 @@ public:
 	unsigned int chIsVisualLandingAid;
 	YSBOOL chSkipGroundToGroundCollisionCheck;
 
-	double chGunIniSpeed;
 	double chAaaRange;
 	double chCannonRange;
 
@@ -446,7 +449,8 @@ public:
 	void ToggleLight(void);
 
 	YSBOOL HasWeapon(void) const;
-	FSWEAPONTYPE GetWeaponOfChoice(void) const;
+	FSWEAPONTYPE GetSelectedWeaponType(void) const;
+	FsWeapon::FsWeaponPerformance GetSelectedWeaponPerformance(void) const;
 	int GetNumAaaBullet(void) const;
 	int GetNumCannon(void) const;
 	int GetNumSAM(void) const;

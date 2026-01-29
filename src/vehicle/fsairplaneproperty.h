@@ -4,6 +4,7 @@
 
 #include "fsvehicleproperty.h"
 #include "fsrealprop.h"
+#include "fsweapon.h"
 
 class FsFlightControl;
 class FsSimulation;
@@ -140,7 +141,7 @@ protected:
 	double staPayload;       //Payload(*)
 	double staFuelLoad;      //Fuel Remains(*)
 
-	YsVec3 staVelocity;      //Velocity Vector
+	//YsVec3 staVelocity;      //Velocity Vector
 	double staAOA;           //Angle of attack
 	double staSSA;           //Side slip angle
 	YSBOOL staMovingBackward;
@@ -173,7 +174,8 @@ protected:
 	YSBOOL staVectorMarker;
 
 
-	FSWEAPONTYPE staWoc;
+	FSWEAPONTYPE staSelectedWeaponType;
+	FsWeapon::FsWeaponPerformance staSelectedWeaponPerformance;
 	int staGunBullet;
 	double staGunTimer;
 	// int AAM;
@@ -384,12 +386,7 @@ protected:
 
 
 	int chGunPower; // <- When changing it to double, change the variable name to chGunPowerD for making use of error output
-	double chBulInitSpeed;
-	double chBulRange;
 	double chRadarCrossSection;
-	double chAAMRange;      // <- Not used 2005/01/22
-	double chAGMRange;
-	double chRocketRange;
 	YSBOOL chBombInBombBay;
 	double chBombBayRcs;    // Effect of Bomb Bay on Radar Cross Section
 
@@ -557,7 +554,8 @@ public:
 	YSRESULT CycleWeaponOfChoice(void);
 	void CycleSmokeSelector(void);
 	YSRESULT SetWeaponOfChoice(FSWEAPONTYPE woc);
-	FSWEAPONTYPE GetWeaponOfChoice(void) const;
+	FSWEAPONTYPE GetSelectedWeaponType(void) const;
+	FsWeapon::FsWeaponPerformance GetSelectedWeaponPerformance(void) const;
 	YSRESULT SelectWeapon(void);
 	YSBOOL FireGunIfVirtualTriggerIsPressed
 	    (const double &ct,const double &dt,class FsSimulation *sim,class FsWeaponHolder &bul,class FsExistence *own);
@@ -569,6 +567,9 @@ private:
 	    YSBOOL &blockedByBombBay,FSWEAPONTYPE &firedWeapon,
 	    FsSimulation *sim,const double &ctime,FsWeaponHolder &bul,FsExistence *owner, YSBOOL& jettisonedWeapon);
 public:
+	class FsWeapon *wepPtr;
+	FsWeapon wep;
+	
 	YSBOOL FireSelectedWeapon(
 	    YSBOOL &blockedByBombBay,
 	    FsSimulation *sim,const double &ct,class FsWeaponHolder &bul,class FsExistence *own);
@@ -618,7 +619,7 @@ public:
 	/*! Returns the reference cruising altitude.
 	*/
 	const double GetReferenceCruisingAltitude(void) const;
-
+	
 	const double GetRadarCrossSection(void) const;
 	const double &GetBulletSpeed(void) const;
 	const double &GetRocketSpeed(void) const;
@@ -626,6 +627,7 @@ public:
 	const double GetAAMRange(FSWEAPONTYPE wpnType) const;
 	YSBOOL GetLeadGunSight(void) const;
 	int GetNumWeapon(FSWEAPONTYPE wpnType) const;
+	int GetNumWeaponByCategory(FSWEAPONCATEGORY category) const;
 	int GetNumSlotWeapon(FSWEAPONTYPE wpnType) const;
 	double GetExternalFuelLeft(void) const;
 	void SetNumWeapon(FSWEAPONTYPE wpnType,int n);

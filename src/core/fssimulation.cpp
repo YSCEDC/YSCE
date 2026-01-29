@@ -2277,9 +2277,7 @@ void FsSimulation::PrepareRunSimulation(void)
 		seeker=NULL;
 		while((seeker=FindNextAirplane(seeker))!=NULL)
 		{
-			if(seeker->Prop().GetNumWeapon(FSWEAPON_AIM9)>0 ||
-			   seeker->Prop().GetNumWeapon(FSWEAPON_AIM120)>0 ||
-			   seeker->Prop().GetNumWeapon(FSWEAPON_AIM9X)>0)
+			if(seeker->Prop().GetNumWeaponByCategory(FSWEAPONCAT_ANTIAIRMISSILE)>0)
 			{
 				seeker->SendCommand("ULOADAAM");
 			}
@@ -4208,9 +4206,8 @@ void FsSimulation::SimComputeAirToObjCollision(void)
 
 void FsSimulation::SimProcessCollisionAndTerrain(const double & /*dt*/)
 {
-	// Call HitObject BEFORE HitGround
-	bulletHolder.HitObject(currentTime,&explosionHolder,this,tallestGroundObjectHeight);
-	bulletHolder.HitGround(currentTime,field,&explosionHolder,this);
+	
+	bulletHolder.HitSomething(currentTime, field, &explosionHolder, this, tallestGroundObjectHeight);
 
 	YsArray <FsAirplane *,256> airCandidate;
 	YsArray <FsGround *,256> gndCandidate;
@@ -6124,7 +6121,7 @@ void FsSimulation::SimMakeUpCockpitIndicationSet(class FsCockpitIndicationSet &c
 		}
 
 		maxNumGunBullet=playerPlane->Prop().GetMaxNumWeapon(FSWEAPON_GUN)+playerPlane->Prop().GetMaxNumPilotControlledTurretBullet();
-		woc=playerPlane->Prop().GetWeaponOfChoice();
+		woc=playerPlane->Prop().GetSelectedWeaponType();
 	}
 	else if(NULL!=playerGround)
 	{
@@ -6134,7 +6131,7 @@ void FsSimulation::SimMakeUpCockpitIndicationSet(class FsCockpitIndicationSet &c
 
 		playerGround->Prop().GetWeaponConfig(loading);
 		samInterval=(int)(1000.0*playerGround->Prop().GetTimeBeforeNextMissileCanBeShot(currentTime));
-		woc=playerGround->Prop().GetWeaponOfChoice();
+		woc=playerGround->Prop().GetSelectedWeaponType();
 	}
 
 
@@ -8178,13 +8175,9 @@ void FsSimulation::SimDrawRadar(const ActualViewMode &actualViewMode) const
 			long x2 = wid - 10;
 			long y2 = 10 + radarSize;
 
-			switch(playerPlane->Prop().GetWeaponOfChoice())
+			switch(playerPlane->Prop().GetSelectedWeaponPerformance().category)
 			{
 			default:
-			case FSWEAPON_GUN:
-			case FSWEAPON_AIM9:
-			case FSWEAPON_AIM9X:
-			case FSWEAPON_AIM120:
 				if (cfgPtr->drawCircleRadar == YSTRUE)
 				{
 					radar.DrawCircular(this, (x1 + x2) / 2, (y1 + y2) / 2, radarSize / 2, radarRange, *GetPlayerAirplane(), 0, cfgPtr->radarAltitudeLimit);
@@ -8194,7 +8187,7 @@ void FsSimulation::SimDrawRadar(const ActualViewMode &actualViewMode) const
 					radar.Draw(this,x1,y1,x2,y2,radarRange,*GetPlayerAirplane(),0,cfgPtr->radarAltitudeLimit);
 				}
 				break;
-			case FSWEAPON_AGM65:
+			case FSWEAPONCAT_ANTIGROUNDMISSILE:
 				if (cfgPtr->drawCircleRadar == YSTRUE)
 				{
 					radar.DrawCircular(this, (x1 + x2) / 2, (y1 + y2) / 2, radarSize / 2, radarRange, *GetPlayerAirplane(), 1, cfgPtr->radarAltitudeLimit);
@@ -8204,18 +8197,7 @@ void FsSimulation::SimDrawRadar(const ActualViewMode &actualViewMode) const
 					radar.Draw(this, x1, y1, x2, y2, radarRange, *GetPlayerAirplane(), 1, cfgPtr->radarAltitudeLimit);
 				}
 				break;
-			case FSWEAPON_BOMB:
-			case FSWEAPON_BOMB250:
-				if (cfgPtr->drawCircleRadar == YSTRUE)
-				{
-					radar.DrawCircular(this, (x1 + x2) / 2, (y1 + y2) / 2, radarSize / 2, radarRange, *GetPlayerAirplane(), 2, cfgPtr->radarAltitudeLimit);
-				}
-				else
-				{
-					radar.Draw(this, x1, y1, x2, y2, radarRange, *GetPlayerAirplane(), 2, cfgPtr->radarAltitudeLimit);
-				}
-				break;
-			case FSWEAPON_BOMB500HD:
+			case FSWEAPONCAT_FREEFALL:
 				if (cfgPtr->drawCircleRadar == YSTRUE)
 				{
 					radar.DrawCircular(this, (x1 + x2) / 2, (y1 + y2) / 2, radarSize / 2, radarRange, *GetPlayerAirplane(), 2, cfgPtr->radarAltitudeLimit);
@@ -8813,39 +8795,42 @@ void FsSimulation::SimDrawContainer(const ActualViewMode &actualViewMode) const
 				}
 
 				FSWEAPONTYPE woc=FSWEAPON_NULL;
+				FsWeapon::FsWeaponPerformance wepPerf;
 				YSHASHKEY airTargetKey=YSNULLHASHKEY;
 				double range=0.0;
 				switch(playerObj->GetType())
 				{
 				case FSEX_AIRPLANE:
-					woc=((FsAirplane *)playerObj)->Prop().GetWeaponOfChoice();
+					woc=((FsAirplane *)playerObj)->Prop().GetSelectedWeaponType();
+					wepPerf = ((FsAirplane *)playerObj)->Prop().GetSelectedWeaponPerformance();
 					airTargetKey=((FsAirplane *)playerObj)->Prop().GetAirTargetKey();
-					range=((FsAirplane *)playerObj)->Prop().GetAAMRange(((FsAirplane *)playerObj)->Prop().GetWeaponOfChoice());
 					break;
 				case FSEX_GROUND:
-					woc=((FsGround *)playerObj)->Prop().GetWeaponOfChoice();
+					woc=((FsGround *)playerObj)->Prop().GetSelectedWeaponType();
+					wepPerf = ((FsGround *)playerObj)->Prop().GetSelectedWeaponPerformance();
 					airTargetKey=((FsGround *)playerObj)->Prop().GetAirTargetKey();
-					range=((FsGround *)playerObj)->Prop().GetSAMRange();
 					break;
 				}
 
-				if((woc==FSWEAPON_AIM9 ||
-				    woc==FSWEAPON_AIM9X ||
-				    woc==FSWEAPON_AIM120) &&
+				if(wepPerf.targetAir == YSTRUE &&
 				    air->SearchKey()==airTargetKey)
 				{
 					double distance;
 					distance=(air->GetPosition()-playerObj->GetPosition()).GetLength();
-
-					if(distance<range/2.0)
+					
+					if(distance<wepPerf.flightRange/2.0)
 					{
 						const YsColor *col;
 						col=(int(currentTime*2.0)&1 ? &YsRed() : &hud->hudCol);
 						hud->DrawCircleContainer(mat,viewAttitude,*trg,*trg,*col,"",NULL,YSFALSE,90,90);
 					}
-					else
+					else if (distance < wepPerf.flightRange)
 					{
 						hud->DrawCircleContainer(mat,viewAttitude,*trg,*trg,YsYellow(),"",NULL,YSFALSE,90,90);
+					}
+					else if (distance < wepPerf.trackRange)
+					{
+						hud->DrawCircleContainer(mat, viewAttitude, *trg, *trg, hud->hudCol, "", NULL, YSFALSE, 90, 90);
 					}
 				}
 			}
@@ -8857,18 +8842,18 @@ void FsSimulation::SimDrawContainer(const ActualViewMode &actualViewMode) const
 
 			FsGround *gnd;
 			gnd=FindGround(playerPlane->Prop().GetGroundTargetKey());
-			if(gnd!=NULL && playerPlane->Prop().GetWeaponOfChoice()==FSWEAPON_AGM65)
+			if(gnd!=NULL && playerPlane->Prop().GetSelectedWeaponPerformance().targetGnd==YSTRUE)
 			{
 				double distance;
 				distance=(gnd->GetPosition()-playerPlane->GetPosition()).GetLength();
-				if(distance<playerPlane->Prop().GetAGMRange())
+				if(distance<playerPlane->Prop().GetSelectedWeaponPerformance().flightRange)
 				{
 					const YsColor *col;
 					col=(int(currentTime*2.0)&1 ? &YsRed() : &hud->hudCol);
 					hud->DrawCircleContainer
 					    (mat,viewAttitude,gnd->GetPosition(),gnd->GetPosition(),*col,"SHOOT",NULL,YSFALSE,45,90);
 				}
-				else
+				else if (distance < playerPlane->Prop().GetSelectedWeaponPerformance().trackRange)
 				{
 					hud->DrawCircleContainer
 					    (mat,viewAttitude,gnd->GetPosition(),gnd->GetPosition(),YsYellow(),"",NULL,YSFALSE,45,90);
@@ -8896,7 +8881,7 @@ void FsSimulation::SimDrawGunAim(void) const
 	YSBOOL hasLeadGunSight=(NULL!=GetPlayerAirplane() ? GetPlayerAirplane()->Prop().GetLeadGunSight() : YSTRUE);
 
 	if(playerObj!=NULL &&
-	   playerObj->GetWeaponOfChoice()==FSWEAPON_GUN &&
+	   playerObj->GetSelectedWeaponType()==FSWEAPON_GUN &&
 	   YSTRUE==hasLeadGunSight)
 	{
 		const FsAirplane *target;
@@ -8960,7 +8945,7 @@ YSRESULT FsSimulation::SimCalculateGunAim(const FsAirplane *&target,YsVec3 &aim)
 	const FsAirplane *air;
 
 	playerObj=GetPlayerObject();
-	if(NULL!=playerObj && playerObj->GetWeaponOfChoice()==FSWEAPON_GUN)
+	if(NULL!=playerObj && playerObj->GetSelectedWeaponType()==FSWEAPON_GUN)
 	{
 		if(FSEX_GROUND==playerObj->GetType())
 		{
@@ -9051,8 +9036,7 @@ void FsSimulation::SimDrawBombingAim(const ActualViewMode &actualViewMode) const
 	mat=&playerPlane->Prop().GetInverseMatrix();
 
 	if(playerPlane!=NULL &&
-	   (playerPlane->Prop().GetWeaponOfChoice()==FSWEAPON_BOMB ||
-	    playerPlane->Prop().GetWeaponOfChoice()==FSWEAPON_BOMB250) &&
+	   (playerPlane->Prop().GetSelectedWeaponPerformance().category==FSWEAPONCAT_FREEFALL) &&
 	   ((fabs(userInput.viewHdg)< YsDegToRad( 10.0) && fabs(userInput.viewPch)< YsDegToRad( 10.0)) ||
 	    actualViewMode.actualViewMode==FSBOMBINGVIEW))
 	{
@@ -9984,11 +9968,9 @@ YSBOOL FsSimulation::IsLockedOn(const FsExistence *ex, YSBOOL missileLockOnly) c
 			if(airplane->IsAlive()==YSTRUE &&
 			   airplane->Prop().GetAirTargetKey()==FsExistence::GetSearchKey(ex))
 			{
-				FSWEAPONTYPE selectedWeapon = airplane->Prop().GetWeaponOfChoice();
+				FsWeapon::FsWeaponPerformance selected = airplane->Prop().GetSelectedWeaponPerformance();
 				if (missileLockOnly == YSTRUE 
-					&& selectedWeapon != FSWEAPON_AIM9 
-					&& selectedWeapon != FSWEAPON_AIM9X 
-					&& selectedWeapon != FSWEAPON_AIM120)
+					&& selected.targetAir == YSFALSE)
 				{
 					return YSFALSE;
 				}
@@ -10695,16 +10677,14 @@ void FsSimulation::SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWM
 		if(playerPlane!=NULL)
 		{
 			const FsExistence *trg;
-			if(playerPlane->Prop().GetWeaponOfChoice()==FSWEAPON_AIM9 ||
-			   playerPlane->Prop().GetWeaponOfChoice()==FSWEAPON_AIM9X ||
-			   playerPlane->Prop().GetWeaponOfChoice()==FSWEAPON_AIM120 ||
-			   playerPlane->Prop().GetWeaponOfChoice()==FSWEAPON_AGM65)
+			if(playerPlane->Prop().GetSelectedWeaponPerformance().targetAir == YSTRUE ||
+				playerPlane->Prop().GetSelectedWeaponPerformance().targetGnd == YSTRUE)
 			{
-				if(playerPlane->Prop().GetWeaponOfChoice()==FSWEAPON_AGM65)
+				if(playerPlane->Prop().GetSelectedWeaponPerformance().targetAir != YSTRUE)
 				{
 					trg=FindGround(playerPlane->Prop().GetGroundTargetKey());
 				}
-				else
+				else //Prioritize air targets if weapon can target both
 				{
 					trg=FindAirplane(playerPlane->Prop().GetAirTargetKey());
 				}
@@ -10722,7 +10702,7 @@ void FsSimulation::SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWM
 					return;
 				}
 			}
-			else if(playerPlane->Prop().GetWeaponOfChoice()==FSWEAPON_GUN)
+			else if(playerPlane->Prop().GetSelectedWeaponType()==FSWEAPON_GUN)
 			{
 				if(playerPlane->Prop().GetHasPilotControlledTurret()==YSTRUE)
 				{
@@ -10756,9 +10736,12 @@ void FsSimulation::SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWM
 
 			double viewTargetDist=playerPlane->GetApproximatedCollideRadius();
 
-			YsVec3 ev;
+			YsVec3 ev, vVec;
+			YsAtt3 vAtt;
+			playerPlane->Prop().GetVelocity(vVec);
+			vAtt.SetForwardVector(vVec);
 			actualViewMode.viewPoint=playerPlane->Prop().GetPosition();
-			actualViewMode.viewAttitude=playerPlane->Prop().GetAttitude();
+			actualViewMode.viewAttitude=vAtt;
 			ev=actualViewMode.viewAttitude.GetForwardVector();
 			actualViewMode.viewPoint+=ev*viewTargetDist;
 			actualViewMode.viewMagFix=40.0;
@@ -11046,7 +11029,7 @@ void FsSimulation::SimDecideViewpoint_Gnd(ActualViewMode &actualViewMode,FSVIEWM
 			actualViewMode.viewAttitude.NoseUp(neutAtt.p());
 			actualViewMode.viewAttitude.SetB(actualViewMode.viewAttitude.b()+neutAtt.b());
 
-			switch(playerGround->Prop().GetWeaponOfChoice())
+			switch(playerGround->Prop().GetSelectedWeaponType())
 			{
 			default:
 			case FSWEAPON_NULL:
@@ -11116,14 +11099,12 @@ void FsSimulation::SimDecideViewpoint_Gnd(ActualViewMode &actualViewMode,FSVIEWM
 			actualViewMode.viewAttitude=playerGround->Prop().GetAttitude();
 
 			const FsExistence *trg;
-			if(playerGround->GetWeaponOfChoice()==FSWEAPON_AIM9 ||
-			   playerGround->GetWeaponOfChoice()==FSWEAPON_AIM9X ||
-			   playerGround->GetWeaponOfChoice()==FSWEAPON_AIM120 ||
-			   playerGround->GetWeaponOfChoice()==FSWEAPON_AGM65)
+			if(playerGround->GetSelectedWeaponPerformance().targetAir == YSTRUE ||
+			   playerGround->GetSelectedWeaponPerformance().targetGnd == YSTRUE)
 			{
 				actualViewMode.viewAttitude=playerGround->Prop().GetSamAim();
 
-				if(playerGround->Prop().GetWeaponOfChoice()==FSWEAPON_AGM65)
+				if(playerGround->Prop().GetSelectedWeaponPerformance().targetGnd == YSTRUE)
 				{
 					trg=playerGround->Prop().GetGroundTarget();
 				}
@@ -11143,7 +11124,7 @@ void FsSimulation::SimDecideViewpoint_Gnd(ActualViewMode &actualViewMode,FSVIEWM
 					return;
 				}
 			}
-			else if(playerGround->Prop().GetWeaponOfChoice()==FSWEAPON_GUN)
+			else if(playerGround->Prop().GetSelectedWeaponPerformance().category==FSWEAPONCAT_BULLET)
 			{
 				actualViewMode.viewAttitude=playerGround->Prop().GetAaaAim();
 
@@ -13391,9 +13372,9 @@ const FsWeaponHolder &FsSimulation::GetWeaponStore(void) const
 	return bulletHolder;
 }
 
-const FsWeapon *FsSimulation::FindNextActiveWeapon(const FsWeapon *wpn) const
+const FsWeapon *FsSimulation::FindNextActiveEntity(const FsWeapon *wpn) const
 {
-	return bulletHolder.FindNextActiveWeapon(wpn);
+	return bulletHolder.FindNextActiveEntity(wpn);
 }
 
 YSBOOL FsSimulation::IsWeaponGuidedToTarget(int weaponId) const

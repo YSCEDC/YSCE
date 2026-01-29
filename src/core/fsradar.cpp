@@ -262,17 +262,29 @@ void FsHorizontalRadar::DrawBasic(
 
 	const FsWeapon *wpn;
 	wpn=NULL;
-	while((wpn=sim->FindNextActiveWeapon(wpn))!=NULL)
+	while((wpn=sim->FindNextActiveEntity(wpn))!=NULL)
 	{
 		if(wpn->lifeRemain>YsTolerance && wpn->timeRemain>YsTolerance)
 		{
-			if(wpn->type==FSWEAPON_AIM9 || wpn->type==FSWEAPON_AIM120 || wpn->type == FSWEAPON_AIM9X)
+			if(wpn->targetAir == YSTRUE && wpn->targetGnd != YSTRUE)
 			{
 				col=YsRed();
 			}
-			else if(wpn->type==FSWEAPON_AGM65 || wpn->type==FSWEAPON_ROCKET)
+			else if(wpn->targetAir != YSTRUE && wpn->targetGnd == YSTRUE)
 			{
 				col=YsYellow();
+			}
+			else if (wpn->targetAir == YSTRUE && wpn->targetGnd == YSTRUE)
+			{
+				col = YsMagenta();
+			}
+			else if (wpn->category == FSWEAPONCAT_UNGUIDEDMISSILE)
+			{
+				col = YsDarkYellow();
+			}
+			else if (wpn->category == FSWEAPONCAT_FREEFALL || wpn->category == FSWEAPONCAT_GUIDEDFREEFALL)
+			{
+				col = YsDarkBlue();
 			}
 			else
 			{
@@ -504,18 +516,22 @@ void FsHorizontalRadar::DrawCircular(const FsSimulation* sim, int x, int y, int 
 	//draw active weapons
 	const FsWeapon* wpn;
 	wpn = NULL;
-	while ((wpn = sim->FindNextActiveWeapon(wpn)) != NULL)
+	while ((wpn = sim->FindNextActiveEntity(wpn)) != NULL)
 	{
 		YsColor col;
 		if (wpn->lifeRemain > YsTolerance && wpn->timeRemain > YsTolerance)
 		{
-			if (wpn->type == FSWEAPON_AIM9 || wpn->type == FSWEAPON_AIM120 || wpn->type == FSWEAPON_AIM9X)
+			if (wpn->targetAir == YSTRUE && wpn->targetGnd != YSTRUE)
 			{
 				col = YsRed();
 			}
-			else if (wpn->type == FSWEAPON_AGM65 || wpn->type == FSWEAPON_ROCKET)
+			else if (wpn->targetAir != YSTRUE && wpn->targetGnd == YSTRUE)
 			{
 				col = YsYellow();
+			}
+			else if (wpn->targetAir == YSTRUE && wpn->targetGnd == YSTRUE)
+			{
+				col = YsMagenta();
 			}
 			else
 			{
