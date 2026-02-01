@@ -186,7 +186,10 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	}
 	viewAttitudeTransition=YsZeroAtt();
 	viewMagUser=1.0;
-	ghostViewSpeed=0.0;
+	ghostViewvVec = YsOrigin();
+	ghostViewPos = YsOrigin();
+	ghostViewAtt = YsZeroAtt();
+	ghostViewSpeedMult = 1.0;
 	relViewAtt.Set(0.0,-YsPi/9.0,0.0);
 	relViewDist=2.0;
 	focusAir=NULL;
@@ -5406,81 +5409,114 @@ void FsSimulation::SimProcessGhostView(const double dt)
 {
 	auto &viewPoint=mainWindowActualViewMode.viewPoint;
 	auto &viewAttitude=mainWindowActualViewMode.viewAttitude;
+	ghostViewPos = viewPoint;
+	ghostViewAtt = viewAttitude;
 
-	const double accel=120.0;
-	double vp,vh,vb,vy,desigSpd;
-	vp=userInput.ctlElevator*(YsPi/2.0)*dt;
-	vb=userInput.ctlAileron*(YsPi)*dt;
-	vh=(sin(viewAttitude.b())/5.0*dt)*YsAbs(cos(viewAttitude.p()));
-	//vy=userInput.ctlRudder*dt;
-	double speedMult = userInput.ctlThrottle;
+	//Angle
+	double viewPitch, viewYaw, viewRoll;
+	viewPitch =userInput.ctlElevator*(YsPi/2.0)*dt;
+	viewYaw =userInput.ctlAileron*(YsPi)*dt;
+	//viewRoll=userInput.ctlRudder*dt;
 
-#if 1
+	ghostViewAtt.SetP(YsBound(ghostViewAtt.p() + viewPitch, -YsPi / 2, YsPi / 2));
+	ghostViewAtt.SetH(ghostViewAtt.h() + viewYaw);  // vb~=Aileron.  Let aileron control heading.
+	if (ghostViewAtt.h() < -YsPi)
 	{
-		viewAttitude.SetP(YsBound(viewAttitude.p()+vp,-YsPi/2,YsPi/2));
-		viewAttitude.SetH(viewAttitude.h()+vb);  // vb~=Aileron.  Let aileron control heading.
-		if(viewAttitude.p()<-YsPi/2)
-		{
-			viewAttitude.SetP(-YsPi/2);
-		}
-		else if(viewAttitude.p()>YsPi/2)
-		{
-			viewAttitude.SetP(YsPi/2);
-		}
-		viewAttitude.SetB(viewAttitude.b()/2.0);
-
-		if(userInput.ctlFireWeaponButton==YSTRUE)
-		{
-			desigSpd=350.0*speedMult+5;
-		}
-		else if(userInput.ctlCycleWeaponButton==YSTRUE)
-		{
-			desigSpd=-350.0*speedMult+5;
-		}
-		else
-		{
-			desigSpd=0.0;
-		}
+		ghostViewAtt.SetH(YsPi);
 	}
-#else
+	else if (ghostViewAtt.h() > YsPi)
 	{
-		viewAttitude.NoseUp(vp);
-		viewAttitude.SetH(viewAttitude.h()+vh);
-		viewAttitude.SetB(viewAttitude.b()+vb);
-		viewAttitude.YawLeft(vy);
-
-		// 1200m/s in 10secs -> 120m/ss
-		desigSpd=userInput.ctlThrottle*300.0;
+		ghostViewAtt.SetH(-YsPi);
 	}
-#endif
 
-	if(ghostViewSpeed<desigSpd)
+	ghostViewAtt.SetB(ghostViewAtt.b()/2.0);
+
+	//Speedmult
+	//For some reason FsInkey doesn't work in this function, so can't use switch
+	if (FsGetKeyState(FSKEY_1) == YSTRUE)
 	{
-		ghostViewSpeed+=accel*dt;
-		if(ghostViewSpeed>desigSpd)
-		{
-			ghostViewSpeed=desigSpd;
-		}
+		ghostViewSpeedMult = 0.01; // 7kt
 	}
-	else
+	else if (FsGetKeyState(FSKEY_2) == YSTRUE)
 	{
-		ghostViewSpeed-=accel*dt;
-		if(ghostViewSpeed<desigSpd)
-		{
-			ghostViewSpeed=desigSpd;
-		}
+		ghostViewSpeedMult = 0.07; // 50kt
+	}
+	else if (FsGetKeyState(FSKEY_3) == YSTRUE)
+	{
+		ghostViewSpeedMult = 0.2; // 140kt
+	}
+	else if (FsGetKeyState(FSKEY_4) == YSTRUE)
+	{
+		ghostViewSpeedMult = 0.4; // 280kt
+	}
+	else if (FsGetKeyState(FSKEY_5) == YSTRUE)
+	{
+		ghostViewSpeedMult = 0.7; // 490kt
+	}
+	else if (FsGetKeyState(FSKEY_6) == YSTRUE)
+	{
+		ghostViewSpeedMult = 1.0; // 700kt
+	}
+	else if (FsGetKeyState(FSKEY_7) == YSTRUE)
+	{
+		ghostViewSpeedMult = 1.6; // 1120kt
+	}
+	else if (FsGetKeyState(FSKEY_8) == YSTRUE)
+	{
+		ghostViewSpeedMult = 2.5; // 1750kt
+	}
+	else if (FsGetKeyState(FSKEY_9) == YSTRUE)
+	{
+		ghostViewSpeedMult = 4.0; // 2800kt
+	}
+	else if (FsGetKeyState(FSKEY_0) == YSTRUE)
+	{
+		ghostViewSpeedMult = 7.0; // 4900kt
+	}
+
+	//Movement
+	double accel = 350;
+	double vRef = 350;
+	YsVec3 refVec, accVec, prev;
+
+	prev = ghostViewvVec;
+	refVec = userInput.viewInputVec;
+	ghostViewAtt.Mul(refVec, refVec);
+	refVec *= vRef * ghostViewSpeedMult;
+	accVec = refVec - ghostViewvVec;
+
+	accel *= ghostViewSpeedMult;
+	accel = YsGreater(accel,ghostViewvVec.GetLength());
+	accVec.Normalize();
+	accVec *= accel;
+	ghostViewvVec += accVec * dt;
+
+	//Prevent feedback loop jitter crossing target speed
+	if ((prev.x() - refVec.x()) * (ghostViewvVec.x() - refVec.x()) < 0)
+	{
+		ghostViewvVec.SetX(refVec.x());
+	}
+	if ((prev.y() - refVec.y()) * (ghostViewvVec.y() - refVec.y()) < 0)
+	{
+		ghostViewvVec.SetY(refVec.y());
+	}
+	if ((prev.z() - refVec.z()) * (ghostViewvVec.z() - refVec.z()) < 0)
+	{
+		ghostViewvVec.SetZ(refVec.z());
 	}
 	
-	YsVec3 displacement;
-	displacement=viewAttitude.GetForwardVector()*ghostViewSpeed*dt;
-	viewPoint+=displacement;
+	ghostViewPos += ghostViewvVec * dt;
 
 	double elv;
-	elv=GetFieldElevation(viewPoint.x(),viewPoint.z());
-	if(viewPoint.y()<elv+0.25)
+	elv=GetFieldElevation(ghostViewPos.x(), ghostViewPos.z());
+	if(ghostViewPos.y()<elv+0.25)
 	{
-		viewPoint.SetY(elv+0.25);
+		ghostViewPos.SetY(elv+0.25);
+		ghostViewvVec.SetY(0.0);
 	}
+
+	viewPoint = ghostViewPos;
+	viewAttitude = ghostViewAtt;
 }
 
 void FsSimulation::SimProcessLoadingDialog(YSBOOL lb,YSBOOL mb,YSBOOL rb,int mx,int my)
@@ -8052,7 +8088,7 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 		if(mainWindowViewmode==FSGHOSTVIEW)
 		{
 			YsString str;
-			str.Printf(str,"%.1lf m/s",ghostViewSpeed);
+			str.Printf(str,"%.1lf m/s",ghostViewvVec.GetLength());
 			FsDrawString(sx,sy,str,YsGreen());
 			sy+=fsAsciiRenderer.GetFontHeight();
 		}
@@ -12478,7 +12514,8 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 			if(mainWindowViewmode!=FSGHOSTVIEW)
 			{
 				mainWindowViewmode=FSGHOSTVIEW;
-				ghostViewSpeed=0.0;
+				ghostViewvVec = YsOrigin();
+				ghostViewSpeedMult = 1.0;
 			}
 		}
 		break;

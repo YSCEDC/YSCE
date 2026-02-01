@@ -765,34 +765,45 @@ YSRESULT FsFlightControl::ReadControl
 	vx=0;
 	vy=0;
 	vz=0;
+	viewInputVec.Set(0.0,0.0,0.0);
 
 	if(ctlAssign.IsButtonPressed(FSBTF_LOOKFORWARD,joy)==YSTRUE)
 	{
+		viewInputVec.AddZ(1.0);
 		vz+=1;
 		pov=1;
 	}
 	if(ctlAssign.IsButtonPressed(FSBTF_LOOKBACK,joy)==YSTRUE)
 	{
+		viewInputVec.AddZ(-1.0);
 		vz-=1;
 		pov=5;
 	}
 	if(ctlAssign.IsButtonPressed(FSBTF_LOOKLEFT,joy)==YSTRUE)
 	{
+		viewInputVec.AddX(-1.0);
 		vx-=1;
 		pov=7;
 	}
 	if(ctlAssign.IsButtonPressed(FSBTF_LOOKRIGHT,joy)==YSTRUE)
 	{
+		viewInputVec.AddX(1.0);
 		vx+=1;
 		pov=3;
 	}
 	if(ctlAssign.IsButtonPressed(FSBTF_LOOKUP,joy)==YSTRUE)
 	{
+		viewInputVec.AddY(1.0);
 		vy+=1;
 	}
 	if(ctlAssign.IsButtonPressed(FSBTF_LOOKDOWN,joy)==YSTRUE)
 	{
+		viewInputVec.AddY(-1.0);
 		vy-=1;
+	}
+	if (viewInputVec.GetLength() > YsTolerance)
+	{
+		viewInputVec.Normalize();
 	}
 
 	if(vx!=0 || vy!=0 || vz!=0)

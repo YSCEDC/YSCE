@@ -256,6 +256,7 @@ public:
 	YSBOOL ctlCycleSmokeSelectorButton;
 
 	int pov;
+	YsVec3 viewInputVec;
 	double viewHdg,viewPch;
 
 	YSRESULT ProcessButtonFunction(const double &currentTime,class FsExistence *existence,FSBUTTONFUNCTION fnc);

@@ -346,7 +346,10 @@ protected:
 	// YSBOOL isViewPointInCloud;
 	// double fogVisibility;
 
-	double ghostViewSpeed;
+	YsVec3 ghostViewPos;
+	YsAtt3 ghostViewAtt;
+	YsVec3 ghostViewvVec;
+	double ghostViewSpeedMult;
 	YsVec3 viewRefPoint;
 	YsAtt3 viewAttitudeTransition;
 	double viewMagUser;  // viewMagFix: Depends on view mode  viewMagUser: User control
