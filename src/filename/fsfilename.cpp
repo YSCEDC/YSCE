@@ -226,17 +226,6 @@ const wchar_t *FsGetFirstStartFile(YsWString &fn,int i)
 	return NULL;
 }
 
-const wchar_t *FsGetVoteYsflightFile(void)
-{
-	static YsWString fn;
-	if(fn.Strlen()==0)
-	{
-		fn.Set(FsGetUserYsflightConfigDir());
-		fn.Append(L"/pleaseVote.txt");
-	}
-	return fn;
-}
-
 const wchar_t *FsGetConfigFile(void)
 {
 	static YsWString fn;

@@ -58,7 +58,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_DLG_AUTOPILOT_STRAIGHT_LEVEL                FsGetTextResource("dlg/autopilot/straight_level",L"Straight and Level")
 #define FSGUI_DLG_AUTOPILOT_TAKEOFF                       FsGetTextResource("dlg/autopilot/takeoff",L"Take Off")
 #define FSGUI_DLG_RADIOCOMM_TARGET_ALLWINGMAN             FsGetTextResource("dlg/radiocomm/target/allwingman",L"All Wingmen")
-#define FSGUI_DLG_RADIOCOMM_TARGET_ALL_IN_FORMATION       FsGetTextResource("dlg/radiocomm/target/all_in_formation",L"All Aircrafts in the Formation")
+#define FSGUI_DLG_RADIOCOMM_TARGET_ALL_IN_FORMATION       FsGetTextResource("dlg/radiocomm/target/all_in_formation",L"All Aircraft in the Formation")
 #define FSGUI_DLG_RADIOCOMM_TARGET_ATC                    FsGetTextResource("dlg/radiocomm/target/atc",L"Air Traffic Controller")
 #define FSGUI_DLG_RADIOCOMM_TARGET_DONTCALL               FsGetTextResource("dlg/radiocomm/target/dontcall",L"Do not call anyone.")
 #define FSGUI_DLG_RADIOCOMM_TARGET_FUELTRUCK              FsGetTextResource("dlg/radiocomm/target/fueltruck",L"Fuel Truck")
@@ -86,15 +86,11 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_MENU_LEARNING_SAVE                          FsGetTextResource("menu/learning/save",L"Save Training Data")
 #define FSGUI_MENU_SIM_RACINGMODE                         FsGetTextResource("menu/sim/racingmode",L"Air Racing Mode")
 #define FSGUI_MISC_TESTVERSION                            FsGetTextResource("misc/testver", \
-			L"This program is an untested version of YSFLIGHT for debugging purpose,\n"   \
-			L"i.e., I haven't systematically tested this program.  Naturally, a lot\n"    \
-			L"of bugs must be included in this program.  If you'd like to use a little\n" \
-			L"more stable version, please download current latest official release\n" \
-			L"version.  If you notice a bug in this untested version, please E-Mail\n" \
-			L"me (PEB01130@nifty.com).  I'm trying to reply as many as possible,\n" \
-			L"but sometimes (especially when I'm busy) you may receive my reply\n" \
-			L"after two or three months, or sometimes I just forget.  I apologize\n" \
-			L"if you experience such delay (^_^;)\n")
+			L"This is a test version of YSFlight Community Edition for debugging purposes.\n"   \
+			L"There may be major or minor bugs that affect the gameplay experience.\n"    \
+			L"Please report bugs you encounter to the YSCE team at [weneedawebsite].\n" \
+			L"YSFlight Community Edition is not affiliated with YSFLIGHT's original author" \
+			L"Soji Yamakawa, so please do not report bugs to him.\n")
 #define FSGUI_MISC_FIRSTSTARTRECORDFAILURE                FsGetTextResource("misc/firststartrecordfailure", \
 			L"Failed to record the first launch of the program.\n" \
 			L"Please ask the system administrator to start this\n" \
@@ -102,16 +98,8 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 			L"of the YSFLIGHT install directory.\n")
 #define FSGUI_MISC_INITIALIZED                            FsGetTextResource("misc/initialized",L"The configuration has been initialized.")
 #define FSGUI_NEWFLTDLG_CREATENEWFLIGHT                   FsGetTextResource("newfltdlg/createnewflight",L"=== Create New Flight ===")
-#define FSGUI_VOTEYSFLIGHTDLG_MESSAGE                     FsGetTextResource("misc/voteysflight", \
-			L"The final-round voting of the Vector-Award competition is open through\n" \
-			L"March 15.  It is a popularity voting that decides the most popular\n"  \
-			L"software among all software programs hosted by Vector.\n" \
-			L" \n" \
-			L"Vector is a Japanese company, and there is unfortunately no English \n" \
-			L"version of the voting page.  But, if you can read Japanese, please click\n" \
-			L"on the following link and vote for YSFLIGHT.  Thank you!\n")
 
-#define FSGUI_ABOUTDLG_TITLE                              FsGetTextResource("aboutdlg/title",L"About YS FLIGHT SIMULATOR")
+#define FSGUI_ABOUTDLG_TITLE                              FsGetTextResource("aboutdlg/title",L"About YSFlight CE")
 #define FSGUI_ABOUTDLG_VERSION                            FsGetTextResource("aboutdlg/version",L"VERSION")
 
 #define FSGUI_AIRDLG_AIRCRAFTTAB                          FsGetTextResource("airdlg/aircrafttab",L"Aircraft")
@@ -159,7 +147,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_NEWFLTDLG_OVERCASTLAYER                     FsGetTextResource("newfltdlg/overcast",L"Overcast Layer")
 #define FSGUI_NEWFLTDLG_OVERCASTFLOOR                     FsGetTextResource("newfltdlg/overcastfloor",L"Floor (ft)")
 #define FSGUI_NEWFLTDLG_OVERCASTTHICKNESS                 FsGetTextResource("newfltdlg/overcastthickness",L"Thickness (ft)")
-#define FSGUI_NEWFLTDLG_ADDCOMPUTERAIRCRAFT               FsGetTextResource("newfltdlg/addcomair",L"Add Computer Aircrafts")
+#define FSGUI_NEWFLTDLG_ADDCOMPUTERAIRCRAFT               FsGetTextResource("newfltdlg/addcomair",L"Add Computer Aircraft")
 
 #define FSGUI_NEWFLTDLG_FORMATION                         FsGetTextResource("newfltdlg/formation",L"Formation")
 #define FSGUI_NEWFLTDLG_FLYNOW                            FsGetTextResource("newfltdlg/flynow",L"Fly Now")
@@ -186,7 +174,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_RESULTDLG_FAILURE_AIRSTRIKEFAILURE          FsGetTextResource("resultdlg/failure/airstrike"           ,L"FAILURE: Too few ground targets have been destroyed. (Destroyed=%d, Needed=%d)")
 #define FSGUI_RESULTDLG_FAILURE_FAILEDTODESTROY           FsGetTextResource("resultdlg/failure/failedtodestroy"     ,L"FAILURE: Failed to destroy %s")
 #define FSGUI_RESULTDLG_FAILURE_FAILEDTOKILLAIR           FsGetTextResource("resultdlg/failure/failedtokill"        ,L"FAILURE: Failed to kill %s")
-#define FSGUI_RESULTDLG_FAILURE_FAILEDTOKILLALLAIR        FsGetTextResource("resultdlg/failure/failedtokillall"     ,L"FAILURE: Failed to kill all enemy aircrafts.")
+#define FSGUI_RESULTDLG_FAILURE_FAILEDTOKILLALLAIR        FsGetTextResource("resultdlg/failure/failedtokillall"     ,L"FAILURE: Failed to kill all enemy aircraft.")
 #define FSGUI_RESULTDLG_FAILURE_FAILEDESCORT              FsGetTextResource("resultdlg/failure/failedtoescort"      ,L"FAILURE: %s has not landed.")
 
 #define FSGUI_RESULTDLG_SUCCESS_ARRIVED                   FsGetTextResource("resultdlg/success/arriveddestination"  ,L"SUCCESS: You landed at the destination.")
@@ -195,7 +183,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_RESULTDLG_SUCCESS_AIRSTRIKE                 FsGetTextResource("resultdlg/success/airstrike"           ,L"SUCCESS: %d ground targets have been destroyed.")
 #define FSGUI_RESULTDLG_SUCCESS_DESTROYED                 FsGetTextResource("resultdlg/success/destroyed"           ,L"SUCCESS: %s has been destroyed")
 #define FSGUI_RESULTDLG_SUCCESS_AIRKILL                   FsGetTextResource("resultdlg/success/killed"              ,L"SUCCESS: %s has been killed")
-#define FSGUI_RESULTDLG_SUCCESS_AIRKILLALL                FsGetTextResource("resultdlg/success/killedall"           ,L"SUCCESS: All enemy aircrafts hav been killed.")
+#define FSGUI_RESULTDLG_SUCCESS_AIRKILLALL                FsGetTextResource("resultdlg/success/killedall"           ,L"SUCCESS: All enemy aircraft have been killed.")
 #define FSGUI_RESULTDLG_SUCCESS_ESCORTED                  FsGetTextResource("resultdlg/success/escorted"            ,L"SUCCESS: %s has landed safely.")
 
 #define FSGUI_RESULTDLG_SUMMARY                           FsGetTextResource("resultdlg/summary",L"Summary")
@@ -205,7 +193,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_RESULTDLG_ALIVEDEAD                         FsGetTextResource("resultdlg/alivedead",L"Alive:%d Destroyed:%d")
 #define FSGUI_RESULTDLG_AIRTOAIRSCORE                     FsGetTextResource("resultdlg/airtoairscore",L"Air-to-air Score: %d")
 #define FSGUI_RESULTDLG_AIRTOAIRPENALTY                   FsGetTextResource("resultdlg/airtoairpenalty",L"Air-to-air Penalty: %d")
-#define FSGUI_RESULTDLG_AIRTOAIRKILL                      FsGetTextResource("resultdlg/airtoairkill",L"Killed %d aircrafts")
+#define FSGUI_RESULTDLG_AIRTOAIRKILL                      FsGetTextResource("resultdlg/airtoairkill",L"Killed %d aircraft")
 #define FSGUI_RESULTDLG_NOAIRCOMBAT                       FsGetTextResource("resultdlg/noaircombat",L"No air combat")
 #define FSGUI_RESULTDLG_AIRTOGNDSCORE                     FsGetTextResource("resultdlg/airtogndscore",L"Air-to-ground Score: %d")
 #define FSGUI_RESULTDLG_AIRTOGNDPENALTY                   FsGetTextResource("resultdlg/airtogndpenalty",L"Air-to-ground Penalty: %d")
@@ -324,7 +312,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 
 
 #define FSGUI_OPTDLG_SCRNMODE                             FsGetTextResource("optiondlg/scrnmode",L"Screen Mode")
-#define FSGUI_OPTDLG_REMEMBERWNDPOS                       FsGetTextResource("optiondlg/rememberwndpos",L"Rembmer Window Position and Size")
+#define FSGUI_OPTDLG_REMEMBERWNDPOS                       FsGetTextResource("optiondlg/rememberwndpos",L"Remember Window Position and Size")
 #define FSGUI_OPTDLG_ALWAYSONTOP                          FsGetTextResource("optiondlg/alwaysontop",L"Always On Top")
 #define FSGUI_OPTDLG_FONTSIZE                             FsGetTextResource("optiondlg/fontsize",L"Font Size")
 #define FSGUI_OPTDLG_FONTSIZEWARNING                      FsGetTextResource("optiondlg/fontsizewarning",L"")
@@ -354,37 +342,10 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_DELFLTDLG_DELETE                            FsGetTextResource("deletefltdlg/delete",L"Yes (Y)")
 #define FSGUI_DELFLTDLG_NODELETE                          FsGetTextResource("deletefltdlg/notdelete",L"No (N)")
 
-#define FSGUI_FIRSTDLG_1STLINE                            FsGetTextResource("firstdlg/1stline",L"(This message is shown automatically when the program is launched \nfor the first time after the installation.)")
-#define FSGUI_FIRSTDLG_2NDLINE                            FsGetTextResource("firstdlg/2ndline",L"Thank you very much for downloading YS FLIGHT SIMULATOR. \nPlease also visit my Web site.  The URL is:")
-#define FSGUI_FIRSTDLG_3RDLINE                            FsGetTextResource("firstdlg/3rdline",L"You can also directly go to the download page by:")
-#define FSGUI_FIRSTDLG_4THLINE                            FsGetTextResource("firstdlg/4thline",L"Enjoy YSFLIGHT!  Thank you!")
-#define FSGUI_FIRSTDLG_5THLINE                            FsGetTextResource("firstdlg/5thline",L"Captain YS")
-
 #define FSGUI_STATIONARYDLG_ENDFLIGHT                     FsGetTextResource("stationarydlg/endflight",       L"End Flight")
 #define FSGUI_STATIONARYDLG_CONFIRMENDFLIGHT              FsGetTextResource("stationarydlg/confirmendflight",L"Confirm End Flight")
 #define FSGUI_STATIONARYDLG_SUPPLY                        FsGetTextResource("stationarydlg/supply",          L"Re-supply")
 #define FSGUI_STATIONARYDLG_CHANGEVEHICLE                 FsGetTextResource("stationarydlg/changevehicle",   L"Change Vehicle")
-
-#define FSGUI_SUPPORTYSFLIGHTDLG_1STLINE                  FsGetTextResource("supportdlg/1stline",  \
-			L"(This message is displayed automatically when you launch the program for the \n"  \
-			L"first time after the installation.  After that, you can open this message by \n"  \
-			L"choosing \"Help\" -> \"Please Support YSFLIGHT Project\")")
-#define FSGUI_SUPPORTYSFLIGHTDLG_2NDLINE                  FsGetTextResource("supportdlg/2ndline",  \
-			L"YSFLIGHT is free software, and, you do not have to pay for enjoying this program. \n"  \
-			L"However, it costs me some money to maintain this project.  So I really appreciate \n"  \
-			L"if you could support YSFLIGHT project with one of the following methods.")
-#define FSGUI_SUPPORTYSFLIGHTDLG_3RDLINE                  FsGetTextResource("supportdlg/3rdline",  \
-			L"(1) Purchase a shareware program from:")
-
-#define FSGUI_SUPPORTYSFLIGHTDLG_4THLINE1                 FsGetTextResource("supportdlg/4thline-1",  \
-			L"(2) When you purchase a book, PC software, a CD, or any product from Amazon.com, \n"  \
-			L"    please open Amazon.com web site by clicking a link on")
-#define FSGUI_SUPPORTYSFLIGHTDLG_4THLINE2                 FsGetTextResource("supportdlg/4thline-2",  \
-			L"")
-#define FSGUI_SUPPORTYSFLIGHTDLG_4THLINE3                 FsGetTextResource("supportdlg/4thline-3",  \
-			L"    and place an order.  (Note: Any purchase counts as long as you open Amazon.com \n"  \
-			L"    web site by clickng a link on my web site.)")
-
 
 #ifdef _WIN32
 #define FSGUI_SUPPORTYSFLIGHTDLG_JWORDLINE1               FsGetTextResource("supportdlg/jwordline-1",L"")
@@ -412,15 +373,6 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_INSTALLJWORD_FIRSTSTART                     FsGetTextResource("installjword/firststart",L"")
 
 #endif
-
-
-#define FSGUI_SUPPORTYSFLIGHTDLG_5THLINE1                 FsGetTextResource("supportdlg/5thline-1",  \
-			L"Please also visit sponsor sites linked from:")
-#define FSGUI_SUPPORTYSFLIGHTDLG_5THLINE2                 FsGetTextResource("supportdlg/5thline-2",  \
-			L"")
-#define FSGUI_SUPPORTYSFLIGHTDLG_6THLINE                  FsGetTextResource("supportdlg/6thline",  \
-			L"Thank you very much for supporting YSFLIGHT project.")
-
 
 #define FSGUI_NET_USERNAME                                FsGetTextResource("net/username",L"Username")
 #define FSGUI_NET_FIELD                                   FsGetTextResource("net/field",L"Field")
@@ -623,8 +575,7 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSMENU_HELP_DEFKEYENGLISH                         FsGetTextResource("menu/help-DefKeyEnglish",L"Default Key Strokes and Controls - (N)")
 #define FSMENU_HELP_HELPJAPANESE                          FsGetTextResource("menu/help-HelpJapanese",L"Help - Japanese (J)")
 #define FSMENU_HELP_DEFKEYJAPANESE                        FsGetTextResource("menu/help-DefKeyJapanese",L"Default Key Strokes and Controls - Japanese (P)")
-#define FSMENU_HELP_ABOUT                                 FsGetTextResource("menu/help-About",L"About YSFLIGHT (A)")
-#define FSMENU_HELP_SUPPORTYSFLIGHT                       FsGetTextResource("menu/help-SupportYSFlight",L"Support YSFLIGHT Project")
+#define FSMENU_HELP_ABOUT                                 FsGetTextResource("menu/help-About",L"About YSFlight CE (A)")
 
 #define FSMENU_LEARNING                                   FsGetTextResource("menu/learning",L"Learning")
 #define FSMENU_LEARNING_TRAINAUTOPILOT                    FsGetTextResource("menu/learning/trainAutoPilot",L"Train Auto Pilot")

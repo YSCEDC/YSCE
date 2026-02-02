@@ -413,7 +413,7 @@ YSBOOL FsLazyWindowApplication::StepByStepInitialization(void)
 			auto testVerMessageDlg=FsGuiDialog::CreateSelfDestructiveDialog<FsGuiMessageBoxDialog>();
 			testVerMessageDlg->Initialize();
 			testVerMessageDlg->Make(
-			    L"YSFLIGHT  Untested Version",
+			    L"YSFlight Community Edition test version",
 			    FSGUI_MISC_TESTVERSION,
 			    FSGUI_COMMON_CLOSE,
 			    NULL,
@@ -423,16 +423,12 @@ YSBOOL FsLazyWindowApplication::StepByStepInitialization(void)
 		}
 		else
 		{
-			printf("-- YSFLIGHT Untested Version --\n");
-			printf("This program is an untested version of YSFLIGHT for debugging purpose,\n");
-			printf("i.e., I haven't systematically tested this program.  Naturally, a lot\n");
-			printf("of bugs must be included in this program.  If you'd like to use a little\n");
-			printf("more stable version, please download current latest official release\n");
-			printf("version.  If you notice a bug in this untested version, please E-Mail\n");
-			printf("me (PEB01130@nifty.com).  I'm trying to reply as many as possible,\n");
-			printf("but sometimes (especially when I'm busy) you may receive my reply\n");
-			printf("after two or three months, or sometimes I just forget.  I apologize\n");
-			printf("if you experience such delay (^_^;)\n");
+			printf("-- YSFlight Community Edition test version --\n");
+			printf("This is a test version of YSFlight Community Edition for debugging purposes.\n");
+			printf("There may be major or minor bugs that affect the gameplay experience.\n");
+			printf("Please report bugs you encounter to the YSCE team at [weneedawebsite].\n");
+			printf("YSFlight Community Edition is not affiliated with YSFLIGHT's original author\n");
+			printf("Soji Yamakawa, so please do not report bugs to him.\n");
 			printf("\n");
 		}
 	#endif
@@ -459,10 +455,6 @@ YSBOOL FsLazyWindowApplication::StepByStepInitialization(void)
 			int i;
 			YsWString fn;
 			YsString cStr;
-
-			YsUnicodeToSystemEncoding(cStr,FsGetVoteYsflightFile());
-			YsPrintf("Removing %s\n",cStr.Txt());
-			YsFileIO::Remove(FsGetVoteYsflightFile());
 
 			for(i=0; NULL!=FsGetFirstStartFile(fn,i); i++)
 			{
@@ -580,47 +572,8 @@ YSBOOL FsLazyWindowApplication::StepByStepInitialization(void)
 				failedToRecordFirstLaunchDlg->BindCloseModalCallBack(&FsGuiMainCanvas::PopRunModeWhenLastModalDialogIsClosed,mainCanvasPtr);
 				canvasPtr->AppendModalDialog(failedToRecordFirstLaunchDlg);
 			}
-
-			if(FsGetDate()<=20100315)
-			{
-				FILE *voteFp=YsFileIO::Fopen(FsGetVoteYsflightFile(),"rb");
-				if(NULL==voteFp)
-				{
-					voteFp=YsFileIO::Fopen(FsGetVoteYsflightFile(),"w");
-					if(NULL!=voteFp)
-					{
-						fprintf(voteFp,"Final Round of Vector Award is open through March 15, 2010\n");
-						fprintf(voteFp,"Please vote for YSFLIGHT from the following URL:\n");
-						fprintf(voteFp,"  http://www.vector.co.jp/award/vote.html?no=se121250&vasts=vote\n");
-						fclose(voteFp);
-					}
-
-					auto voteYsflightDlg=FsGuiDialog::CreateSelfDestructiveDialog<FsGuiVoteYsflightDialogClass>();
-					voteYsflightDlg->Initialize();
-					voteYsflightDlg->Make();
-					canvasPtr->AppendModalDialog(voteYsflightDlg);
-				}
-				else
-				{
-					fclose(voteFp);
-				}
-			}
 		}
 
-		if(YSTRUE==firstStart)
-		{
-			auto firstLaunchDialog=FsGuiDialog::CreateSelfDestructiveDialog<FsGuiFirstDialogClass>();
-			firstLaunchDialog->Initialize();
-			firstLaunchDialog->Make(0);
-			firstLaunchDialog->BindCloseModalCallBack(&FsGuiMainCanvas::PopRunModeWhenLastModalDialogIsClosed,mainCanvasPtr);
-			canvasPtr->AppendModalDialog(firstLaunchDialog);
-
-			// auto supportYsflightDlg=FsGuiDialog::CreateSelfDestructiveDialog<FsGuiSupportYsflightDialogClass>();
-			// supportYsflightDlg->Initialize();
-			// supportYsflightDlg->Make(firstStart,0);
-			// supportYsflightDlg->BindCloseModalCallBack(&FsGuiMainCanvas::PopRunModeWhenLastModalDialogIsClosed,mainCanvasPtr);
-			// canvasPtr->AppendModalDialog(supportYsflightDlg);
-		}
 
 		if(fscp.autoExit==YSTRUE &&
 		   (fscp.setDefConfig==YSTRUE || fscp.setDefNetConfig==YSTRUE ||

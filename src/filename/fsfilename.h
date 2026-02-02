@@ -11,7 +11,6 @@ const wchar_t *FsGetUserYsflightDir(void);
 // Linux:    Documents/YSFLIGHT.COM/(ProgramName)
 
 const wchar_t *FsGetFirstStartFile(YsWString &fn,int i);
-const wchar_t *FsGetVoteYsflightFile(void);
 void FsOverrideUserConfigDir(const wchar_t path[]);
 void FsOverrideUserDir(const wchar_t path[]);
 const wchar_t *FsGetConfigFile(void);

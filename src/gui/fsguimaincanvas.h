@@ -76,7 +76,6 @@ public:
 	class FsGuiConfirmDeleteFlightDialog *StartConfirmDeleteFlightDialog(int nextActionCode);  // Replaces FsGuiCheckDeleteCurrentFlight
 
 	void StartAboutDialog(void);
-	void StartSupportYsflightDialog(YSBOOL firstStart,int nextActionCode);
 
 	FsGuiDialog *StartMissionGoalDialog(const FsSimulation *sim);
 	class FsGuiNoJoystickWarningDialogClass *StartNoJoystickWarningDialog(void);

@@ -430,10 +430,6 @@ YSBOOL FsLazyWindowApplication::StepByStepInitialization(void)
 			YsWString fn;
 			YsString cStr;
 
-			YsUnicodeToSystemEncoding(cStr,FsGetVoteYsflightFile());
-			YsPrintf("Removing %s\n",cStr.Txt());
-			YsFileIO::Remove(FsGetVoteYsflightFile());
-
 			for(i=0; NULL!=FsGetFirstStartFile(fn,i); i++)
 			{
 				YsUnicodeToSystemEncoding(cStr,fn);
@@ -550,21 +546,6 @@ YSBOOL FsLazyWindowApplication::StepByStepInitialization(void)
 				failedToRecordFirstLaunchDlg->BindCloseModalCallBack(&FsGuiMainCanvas::PopRunModeWhenLastModalDialogIsClosed,mainCanvasPtr);
 				canvasPtr->AppendModalDialog(failedToRecordFirstLaunchDlg);
 			}
-		}
-
-		if(YSTRUE==firstStart)
-		{
-			auto firstLaunchDialog=FsGuiDialog::CreateSelfDestructiveDialog<FsGuiFirstDialogClass>();
-			firstLaunchDialog->Initialize();
-			firstLaunchDialog->Make(0);
-			firstLaunchDialog->BindCloseModalCallBack(&FsGuiMainCanvas::PopRunModeWhenLastModalDialogIsClosed,mainCanvasPtr);
-			canvasPtr->AppendModalDialog(firstLaunchDialog);
-
-			auto supportYsflightDlg=FsGuiDialog::CreateSelfDestructiveDialog<FsGuiSupportYsflightDialogClass>();
-			supportYsflightDlg->Initialize();
-			supportYsflightDlg->Make(firstStart,0);
-			supportYsflightDlg->BindCloseModalCallBack(&FsGuiMainCanvas::PopRunModeWhenLastModalDialogIsClosed,mainCanvasPtr);
-			canvasPtr->AppendModalDialog(supportYsflightDlg);
 		}
 
 		if(fscp.autoExit==YSTRUE &&

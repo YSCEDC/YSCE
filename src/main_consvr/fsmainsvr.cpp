@@ -263,10 +263,6 @@ int main(int ac,char *av[])
 		YsWString fn;
 		YsString cStr;
 
-		YsUnicodeToSystemEncoding(cStr,FsGetVoteYsflightFile());
-		YsPrintf("Removing %s\n",cStr.Txt());
-		YsFileIO::Remove(FsGetVoteYsflightFile());
-
 		for(i=0; NULL!=FsGetFirstStartFile(fn,i); i++)
 		{
 			YsUnicodeToSystemEncoding(cStr,fn);

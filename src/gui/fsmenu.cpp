@@ -222,7 +222,6 @@ void FsGuiMainMenu::Make(void)
 		helpJ=helpMenu->AddTextItem      (0,FSKEY_J,FSMENU_HELP_HELPJAPANESE);
 		helpDefKeyJ=helpMenu->AddTextItem(0,FSKEY_P,FSMENU_HELP_DEFKEYJAPANESE);
 		helpAbout=helpMenu->AddTextItem  (0,FSKEY_A,FSMENU_HELP_ABOUT);
-		helpSupport=helpMenu->AddTextItem(0,FSKEY_S,FSMENU_HELP_SUPPORTYSFLIGHT);
 	}
 
 
@@ -288,10 +287,6 @@ void FsGuiMainMenu::OnSelectMenuItem(FsGuiPopUpMenuItem *item)
 	{
 		canvas->StartAboutDialog();
 	}
-	else if(item==helpSupport)
-	{
-		canvas->StartSupportYsflightDialog(YSFALSE,0);
-	}
 
 
 
@@ -322,14 +317,6 @@ void FsGuiMainDialog::Make(void)
 	languageBtn=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,FSGUI_COMMON_AUTOLANGUAGE,YSFALSE);
 
 	showConsoleBtn=AddTextButton(0,FSKEY_NULL,FSGUI_CHECKBOX,FSGUI_MAINDLG_SHOWCONSOLE,YSTRUE);
-
-	if(FsGetDate()<=20100315)
-	{
-		AddStaticText(0,FSKEY_NULL,FSGUI_VOTEYSFLIGHTDLG_MESSAGE,YSTRUE);
-
-		votePageBtn=AddTextButton(0,FSKEY_NULL,FSGUI_PUSHBUTTON,
-		    "http://www.vector.co.jp/award/vote.html?no=se121250&vasts=vote",YSTRUE);
-	}
 
 	SetTransparency(YSTRUE);
 	Fit();

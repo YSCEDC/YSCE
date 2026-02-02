@@ -249,14 +249,6 @@ void FsGuiMainCanvas::StartAboutDialog(void)
 	AttachModalDialog(aboutDialog);
 }
 
-void FsGuiMainCanvas::StartSupportYsflightDialog(YSBOOL firstStart,int nextActionCode)
-{
-	auto supportYsflightDlg=FsGuiDialog::CreateSelfDestructiveDialog<FsGuiSupportYsflightDialogClass>();
-	supportYsflightDlg->Initialize();
-	supportYsflightDlg->Make(firstStart,nextActionCode);
-	AttachModalDialog(supportYsflightDlg);
-}
-
 class FsGuiMessageBoxDialog *FsGuiMainCanvas::StartMessageBox(
     const wchar_t title[],const wchar_t msg[],const wchar_t yesBtn[],const wchar_t noBtn[],
     int nextActionYes,int nextActionNo)

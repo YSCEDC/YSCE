@@ -45,20 +45,6 @@ public:
 
 ////////////////////////////////////////////////////////////
 
-class FsGuiFirstDialogClass : public FsGuiDialog
-{
-public:
-	int nextActionCode;
-
-	FsGuiButton *ysflightComBtn;
-	FsGuiButton *downloadPageBtn;
-	FsGuiButton *okBtn1,*okBtn2;
-	FsGuiButton *bannerBtn;
-
-	void Make(int nextActionCode);
-	virtual void OnButtonClick(FsGuiButton *btn);
-};
-
 #ifdef _WIN32
 class FsGuiExplainJWordDialog : public FsGuiDialog
 {
@@ -79,32 +65,6 @@ public:
 };
 
 #endif
-
-class FsGuiSupportYsflightDialogClass : public FsGuiDialog
-{
-public:
-	YSBOOL firstStart;
-	YSBOOL needClose;
-	int nextActionCode;
-
-	FsGuiButton *downloadPageBtn;
-	FsGuiButton *ysflightComBtn1,*ysflightComBtn2;
-	FsGuiButton *okBtn1,*okBtn2;
-
-	void Make(YSBOOL firstStart,int nextActioNCode);
-
-	void OnButtonClick(FsGuiButton *btn);
-	virtual void OnModalDialogClosed(int,class FsGuiDialog *closedModalDialog,int);
-};
-
-class FsGuiVoteYsflightDialogClass : public FsGuiDialog
-{
-public:
-	FsGuiButton *votePageBtn;
-	FsGuiButton *okBtn;
-
-	void Make(void);
-};
 
 ////////////////////////////////////////////////////////////
 
