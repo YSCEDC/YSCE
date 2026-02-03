@@ -501,27 +501,3 @@ const wchar_t *FsGetDebugInfoFile(void)
 	return fn;
 }
 
-const wchar_t *FsGetSharewareRegistFileName(YsWString &fn,int i)
-{
-	const wchar_t *path=NULL;
-	switch(i)
-	{
-	default:
-	case 0:
-		path=FsGetUserYsflightDir();
-		break;
-	case 1:
-		path=FsGetCommonYsflightDir();
-		break;
-	case 2:
-		path=FsGetUserYsflightConfigDir();
-		break;
-	}
-
-	if(NULL!=path)
-	{
-		fn.MakeFullPathName(path,L"regist");
-		return fn.Txt();
-	}
-	return NULL;
-}

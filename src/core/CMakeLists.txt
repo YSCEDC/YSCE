@@ -34,12 +34,12 @@ add_library(${TARGET_NAME}
 	fsworld.cpp
 	fsapplyoption.cpp
 	fsradar.cpp
-	fssimextension.cpp
-	fssimextension_racing.cpp
-	fssimextension_endurance.cpp
-	fssimextension_intercept.cpp
-	fssimextension_closeairsupport.cpp
-	fssimextension_groundtoair.cpp
+	"../gamemode/fssimextension.cpp"
+	"../gamemode/fssimextension_racing.cpp"
+	"../gamemode/fssimextension_endurance.cpp"
+	"../gamemode/fssimextension_intercept.cpp"
+	"../gamemode/fssimextension_closeairsupport.cpp"
+	"../gamemode/fssimextension_groundtoair.cpp"
 	fs.h
 	fsaibasic.h
 	fsatc.h
@@ -78,12 +78,12 @@ add_library(${TARGET_NAME}
 	fsworld.h
 	fsapplyoption.h
 	fsradar.h
-	fssimextension.h
-	fssimextension_racing.h
-	fssimextension_endurance.h
-	fssimextension_intercept.h
-	fssimextension_closeairsupport.h
-	fssimextension_groundtoair.h
+	"../gamemode/fssimextension.h"
+	"../gamemode/fssimextension_racing.h"
+	"../gamemode/fssimextension_endurance.h"
+	"../gamemode/fssimextension_intercept.h"
+	"../gamemode/fssimextension_closeairsupport.h"
+	"../gamemode/fssimextension_groundtoair.h"
 )
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(${TARGET_NAME} 

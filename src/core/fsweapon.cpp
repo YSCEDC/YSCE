@@ -1875,7 +1875,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 {
 	if(FsWeapon::aim9==nullptr)
 	{
-		FsWeapon::aim9.Load(L"misc/aim9.srf");
+		FsWeapon::aim9.Load(L"weapon/aim9.srf");
 		if(FsWeapon::aim9==nullptr)
 		{
 			fsStderr.Printf("Cannot read AIM-9 pattern\n");
@@ -1885,7 +1885,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::aim9s==nullptr)
 	{
-		FsWeapon::aim9s.Load(L"misc/aim9s.srf");
+		FsWeapon::aim9s.Load(L"weapon/aim9s.srf");
 		if(FsWeapon::aim9s==nullptr)
 		{
 			fsStderr.Printf("Cannot read AIM-9(silent) pattern\n");
@@ -1895,7 +1895,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::agm65==nullptr)
 	{
-		FsWeapon::agm65.Load(L"misc/agm65.srf");
+		FsWeapon::agm65.Load(L"weapon/agm65.srf");
 		if(FsWeapon::agm65==nullptr)
 		{
 			fsStderr.Printf("Cannot read AGM-65 pattern.\n");
@@ -1905,7 +1905,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::agm65s==nullptr)
 	{
-		FsWeapon::agm65s.Load(L"misc/agm65s.srf");
+		FsWeapon::agm65s.Load(L"weapon/agm65s.srf");
 		if(FsWeapon::agm65s==nullptr)
 		{
 			fsStderr.Printf("Cannot read AGM-65(silent) pattern.\n");
@@ -1915,7 +1915,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::bomb==nullptr)
 	{
-		FsWeapon::bomb.Load(L"misc/bomb.srf");
+		FsWeapon::bomb.Load(L"weapon/bomb.srf");
 		if(FsWeapon::bomb==nullptr)
 		{
 			fsStderr.Printf("Cannot read BOMB pattern.\n");
@@ -1925,7 +1925,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::rocket==nullptr)
 	{
-		FsWeapon::rocket.Load(L"misc/rocket.srf");
+		FsWeapon::rocket.Load(L"weapon/rocket.srf");
 		if(FsWeapon::rocket==nullptr)
 		{
 			fsStderr.Printf("Cannot read ROCKET pattern.\n");
@@ -1935,7 +1935,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::rockets==nullptr)
 	{
-		FsWeapon::rockets.Load(L"misc/rockets.srf");
+		FsWeapon::rockets.Load(L"weapon/rockets.srf");
 		if(FsWeapon::rockets==nullptr)
 		{
 			fsStderr.Printf("Cannot read ROCKET(silent) pattern.\n");
@@ -1945,7 +1945,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::aim_coarse==nullptr)
 	{
-		FsWeapon::aim_coarse.Load(L"misc/aim_coarse.srf");
+		FsWeapon::aim_coarse.Load(L"weapon/aim_coarse.srf");
 		if(FsWeapon::aim_coarse==nullptr)
 		{
 			fsStderr.Printf("Cannot read AIM(coarse) pattern.\n");
@@ -1955,7 +1955,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::agm_coarse==nullptr)
 	{
-		FsWeapon::agm_coarse.Load(L"misc/agm_coarse.srf");
+		FsWeapon::agm_coarse.Load(L"weapon/agm_coarse.srf");
 		if(FsWeapon::agm_coarse==nullptr)
 		{
 			fsStderr.Printf("Cannot read AGM(coarse) pattern.\n");
@@ -1965,7 +1965,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::bomb_coarse==nullptr)
 	{
-		FsWeapon::bomb_coarse.Load(L"misc/bomb_coarse.srf");
+		FsWeapon::bomb_coarse.Load(L"weapon/bomb_coarse.srf");
 		if(FsWeapon::bomb_coarse==nullptr)
 		{
 			fsStderr.Printf("Cannot read BOMB(coarse) pattern.\n");
@@ -1975,7 +1975,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::rocket_coarse==nullptr)
 	{
-		FsWeapon::rocket_coarse.Load(L"misc/rocket_coarse.srf");
+		FsWeapon::rocket_coarse.Load(L"weapon/rocket_coarse.srf");
 		if(FsWeapon::rocket_coarse==nullptr)
 		{
 			fsStderr.Printf("Cannot read ROCKET(coarse) pattern.\n");
@@ -1988,7 +1988,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::aim120==nullptr)
 	{
-		FsWeapon::aim120.Load(L"misc/aim120.srf");
+		FsWeapon::aim120.Load(L"weapon/aim120.srf");
 		if(FsWeapon::aim120==nullptr)
 		{
 			fsStderr.Printf("Cannot read AIM120 pattern.\n");
@@ -1997,7 +1997,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 	}
 	if(FsWeapon::aim120s==nullptr)
 	{
-		FsWeapon::aim120s.Load(L"misc/aim120s.srf");
+		FsWeapon::aim120s.Load(L"weapon/aim120s.srf");
 		if(FsWeapon::aim120s==nullptr)
 		{
 			fsStderr.Printf("Cannot read AIM120 (silent) pattern.\n");
@@ -2006,7 +2006,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 	}
 	if(FsWeapon::aim120_coarse==nullptr)
 	{
-		FsWeapon::aim120_coarse.Load(L"misc/aim120_coarse.srf");
+		FsWeapon::aim120_coarse.Load(L"weapon/aim120_coarse.srf");
 		if(FsWeapon::aim120_coarse==nullptr)
 		{
 			fsStderr.Printf("Cannot read AIM120 (coarse) pattern.\n");
@@ -2017,7 +2017,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::bomb250==nullptr)
 	{
-		FsWeapon::bomb250.Load(L"misc/bomb250.srf");
+		FsWeapon::bomb250.Load(L"weapon/bomb250.srf");
 		if(FsWeapon::bomb250==nullptr)
 		{
 			fsStderr.Printf("Cannot read BOMB250 pattern.\n");
@@ -2027,7 +2027,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(FsWeapon::bomb250_coarse==nullptr)
 	{
-		FsWeapon::bomb250_coarse.Load(L"misc/bomb250_coarse.srf");
+		FsWeapon::bomb250_coarse.Load(L"weapon/bomb250_coarse.srf");
 		if(FsWeapon::bomb250_coarse==nullptr)
 		{
 			fsStderr.Printf("Cannot read BOMB250(coarse) pattern.\n");
@@ -2038,7 +2038,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(nullptr==FsWeapon::bomb500hd)
 	{
-		FsWeapon::bomb500hd.Load(L"misc/bomb500hd.srf");
+		FsWeapon::bomb500hd.Load(L"weapon/bomb500hd.srf");
 		if(nullptr==FsWeapon::bomb500hd)
 		{
 			fsStderr.Printf("Cannot read BOMB500HD pattern.\n");
@@ -2048,7 +2048,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(nullptr==FsWeapon::bomb500hds)
 	{
-		FsWeapon::bomb500hds.Load(L"misc/bomb500hds.srf");
+		FsWeapon::bomb500hds.Load(L"weapon/bomb500hds.srf");
 		if(nullptr==FsWeapon::bomb500hds)
 		{
 			fsStderr.Printf("Cannot read BOMB500HD (silent) pattern.\n");
@@ -2058,7 +2058,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(nullptr==FsWeapon::bomb500hd_coarse)
 	{
-		FsWeapon::bomb500hd_coarse.Load(L"misc/bomb500hd_coarse.srf");
+		FsWeapon::bomb500hd_coarse.Load(L"weapon/bomb500hd_coarse.srf");
 		if(nullptr==FsWeapon::bomb500hd_coarse)
 		{
 			fsStderr.Printf("Cannot read BOMB500HD (coarse) pattern.\n");
@@ -2069,7 +2069,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(nullptr==FsWeapon::aim9x)
 	{
-		FsWeapon::aim9x.Load(L"misc/aim9x.srf");
+		FsWeapon::aim9x.Load(L"weapon/aim9x.srf");
 		if(nullptr==FsWeapon::aim9x)
 		{
 			fsStderr.Printf("Cannot read AIM9X pattern.\n");
@@ -2079,7 +2079,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(nullptr==FsWeapon::aim9xs)
 	{
-		FsWeapon::aim9xs.Load(L"misc/aim9xs.srf");
+		FsWeapon::aim9xs.Load(L"weapon/aim9xs.srf");
 		if(nullptr==FsWeapon::aim9xs)
 		{
 			fsStderr.Printf("Cannot read AIM9X (silent) pattern.\n");
@@ -2089,7 +2089,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(nullptr==FsWeapon::aim9x_coarse)
 	{
-		FsWeapon::aim9x_coarse.Load(L"misc/aim9x_coarse.srf");
+		FsWeapon::aim9x_coarse.Load(L"weapon/aim9x_coarse.srf");
 		if(nullptr==FsWeapon::aim9x_coarse)
 		{
 			fsStderr.Printf("Cannot read AIM9X (coarse) pattern.\n");
@@ -2099,7 +2099,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(nullptr==FsWeapon::flarePod)
 	{
-		FsWeapon::flarePod.Load(L"misc/flarepod.srf");
+		FsWeapon::flarePod.Load(L"weapon/flarepod.srf");
 		if(nullptr==FsWeapon::flarePod)
 		{
 			fsStderr.Printf("Cannot read Flare Pod pattern.\n");
@@ -2109,7 +2109,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if (nullptr == FsWeapon::flare)
 	{
-		FsWeapon::flare.Load(L"misc/flare.srf");
+		FsWeapon::flare.Load(L"weapon/flare.srf");
 		if (nullptr == FsWeapon::flare)
 		{
 			fsStderr.Printf("Cannot read Flare pattern.\n");
@@ -2119,7 +2119,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if (nullptr == FsWeapon::flare_coarse)
 	{
-		FsWeapon::flare_coarse.Load(L"misc/flare_coarse.srf");
+		FsWeapon::flare_coarse.Load(L"weapon/flare_coarse.srf");
 		if (nullptr == FsWeapon::flare)
 		{
 			fsStderr.Printf("Cannot read Flare (coarse) pattern.\n");
@@ -2129,7 +2129,7 @@ YSRESULT FsWeaponHolder::LoadMissilePattern(void)
 
 	if(nullptr==FsWeapon::fuelTank)
 	{
-		FsWeapon::fuelTank.Load(L"misc/fueltank.srf");
+		FsWeapon::fuelTank.Load(L"weapon/fueltank.srf");
 		if(nullptr==FsWeapon::fuelTank)
 		{
 			fsStderr.Printf("Cannot read fuel tank pattern.\n");

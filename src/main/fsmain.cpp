@@ -130,7 +130,7 @@ FsLazyWindowApplication::FsLazyWindowApplication()
 
 
 
-	if(YsFileExist("misc/aim9.srf")!=YSTRUE)                                    // 2005/03/14 CWD test
+	if(YsFileExist("weapon/aim9.srf")!=YSTRUE)                                    // 2005/03/14 CWD test
 	{                                                                           // 2005/03/14
 		char fil[512],pth[512];                                                 // 2005/03/14
 		YsSeparatePathFile(pth,fil,av[0]);                                      // 2005/03/14
