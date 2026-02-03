@@ -13,8 +13,8 @@ user/CaptainYS/ground/floatingbase1.dat user/CaptainYS/ground/floatingbase1.srf 
 user/CaptainYS/ground/floatingbase2.dat user/CaptainYS/ground/floatingbase2.srf user/CaptainYS/ground/floatingbase2.srf
 user/CaptainYS/ground/fueltruck.dat user/CaptainYS/ground/fueltruck.srf user/CaptainYS/ground/fueltruck_coll.srf user/CaptainYS/ground/fueltruck_cockpit.srf
 user/CaptainYS/ground/fueltruck_white.dat user/CaptainYS/ground/fueltruck_white.srf user/CaptainYS/ground/fueltruck_white_coll.srf user/CaptainYS/ground/fueltruck_cockpit.srf
-user/CaptainYS/ground/user/CaptainYS/groundtarget1.dat user/CaptainYS/ground/user/CaptainYS/groundtarget1.srf user/CaptainYS/ground/user/CaptainYS/groundtarget1.srf
-user/CaptainYS/ground/user/CaptainYS/groundtarget2.dat user/CaptainYS/ground/user/CaptainYS/groundtarget2.srf user/CaptainYS/ground/user/CaptainYS/groundtarget2.srf
+user/CaptainYS/ground/groundtarget1.dat user/CaptainYS/ground/groundtarget1.srf user/CaptainYS/ground/groundtarget1.srf
+user/CaptainYS/ground/groundtarget2.dat user/CaptainYS/ground/groundtarget2.srf user/CaptainYS/ground/groundtarget2.srf
 user/CaptainYS/ground/hangar1.dat user/CaptainYS/ground/hangar1.srf user/CaptainYS/ground/hangar1.srf "" user/CaptainYS/ground/hangar1_coarse.srf
 user/CaptainYS/ground/hangar3.dat user/CaptainYS/ground/hangar3.srf user/CaptainYS/ground/hangar3.srf "" user/CaptainYS/ground/hangar3_coarse.srf
 user/CaptainYS/ground/hanger.dat user/CaptainYS/ground/hanger.srf user/CaptainYS/ground/hanger.srf "" user/CaptainYS/ground/hanger_coarse.srf
