@@ -7,5 +7,5 @@ MAXSPEED 0kt
 MAXROTAT 0deg
 MINAIMPI 0deg
 MAXAIMPI 0deg
-CARRIER ground/island_base.acp
+CARRIER user/CaptainYS/ground/island_base.acp
 MINIDAMG 100000

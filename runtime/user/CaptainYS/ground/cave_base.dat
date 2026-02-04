@@ -7,5 +7,5 @@ MAXSPEED 0kt
 MAXROTAT 0deg
 MINAIMPI 0deg
 MAXAIMPI 0deg
-CARRIER ground/cave_base.acp
+CARRIER user/CaptainYS/ground/cave_base.acp
 MINIDAMG 100000

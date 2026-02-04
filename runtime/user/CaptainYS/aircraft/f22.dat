@@ -103,8 +103,8 @@ HRDPOINT -4.35m  0.00m -3.14m AIM9X
 HRDPOINT  3.91m -0.31m -3.14m FUEL&1000 AIM9X
 HRDPOINT -3.91m -0.31m -3.14m FUEL&1000 AIM9X
 
-WPNSHAPE FUEL STATIC aircraft/f22_fueltank.srf
-WPNSHAPE FUEL FLYING aircraft/f22_fueltank.srf
+WPNSHAPE FUEL STATIC user/CaptainYS/aircraft/f22_fueltank.srf
+WPNSHAPE FUEL FLYING user/CaptainYS/aircraft/f22_fueltank.srf
 
 LMTBYHDP TRUE                 #Limit Max Num Weapon by Hardpoint
 

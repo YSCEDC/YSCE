@@ -9,28 +9,7 @@ WEIGLOAD  300kg               #WEIGHT OF PAYLOAD
 FUELABRN 0.0kg                #FUEL CONSUMPTION WHEN USING AFTERBURNER
 FUELMILI 0.015kg              #FUEL CONSUMPTION AT MILITARY POWER
 
-
-
-NREALPRP 1                            # Number of (realistic) propeller engines
-REALPROP 0 NBLADE         2           # 1 argument.  Number of blades.
-REALPROP 0 AREAPERBLADE   0.25m^2     # 1 argument.  Blade area.
-REALPROP 0 CL 0deg 0.2 15deg 1.2      # 4 argument.  cl1 AOA1 cl2 AOA2   (Approximated by a linear function)
-REALPROP 0 CD -5deg 0.01 20deg 0.4   # 4 argument.  minCd AOAminCd cd1 AOA1 (Approximated by a quadratic function)
-REALPROP 0 PITCHCHGRATE   0deg        # 1 argument.  Maximum angular velocity that the blade can change pitch.  (per sec)
-REALPROP 0 MINPITCH       19deg       # 1 argument.  Minimum propeller pitch.
-REALPROP 0 MAXPITCH       19deg       # 1 argument.  Maximum propeller pitch.
-REALPROP 0 KGOVERNER      0.05        # 1 argument.  Governer const.  Defines the reaction speed of the propeller governer.
-REALPROP 0 GRAVITYCENTER  0.6m        # 1 argument.  Distance from the rotation axis
-REALPROP 0 LIFTCENTER     0.6m        # 1 argument.  Distance from the rotation axis
-REALPROP 0 WEIGHTPERBLADE 10kg        # 1 argument.  The weight of one blade.
-REALPROP 0 CLOCKWISE      0           # 1 argument.  This engine rotates clockwise. Argument is the zero-based blade index.
-REALPROP 0 MAXPOWER       180HP       # 1 argument.  Maximum horse power or J/s
-REALPROP 0 IDLEPOWER      8HP         # 1 argument.  Idling horse power or J/s
-REALPROP 0 SNDRPMRANGE    700 2600    # 2 arguments. RPM Range for sound effect
-
 TIREFRIC 0.09                #TIRE FRICTION COEFFICIENT
-
-
 
 COCKPITP -0.23m  0.475m  1.25m  #COCKPIT POSITION
 EXCAMERA "CO-PILOT" 0.23m  0.475m  1.25m 0deg 0deg 0deg INSIDE
