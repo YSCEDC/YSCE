@@ -1,18 +1,18 @@
-RACING_VALLEY "user/CaptainYS/scenery/race_valley.fld" "user/CaptainYS/scenery/race_valley.stp" "" AIRRACE
-RACING_DESERT "user/CaptainYS/scenery/race_desert.fld" "user/CaptainYS/scenery/race_desert.stp" "" AIRRACE
-ATSUGI_AIRBASE user/CaptainYS/scenery/atsugi.fld user/CaptainYS/scenery/atsugi.stp
-CRESCENT_ISLAND user/CaptainYS/scenery/crescent.fld user/CaptainYS/scenery/crescent.stp
-HAWAII user/CaptainYS/scenery/hawaii.fld user/CaptainYS/scenery/hawaii.stp
-ISLAND_GOURD user/CaptainYS/scenery/gourd.fld user/CaptainYS/scenery/gourd.stp user/CaptainYS/scenery/gourd.yfs
-MATSUSHIMA_AIRBASE user/CaptainYS/scenery/yamoto.fld user/CaptainYS/scenery/yamoto.stp
-NAHA_AIRPORT user/CaptainYS/scenery/naha.fld user/CaptainYS/scenery/naha.stp
-NEWTA_AIRBASE user/CaptainYS/scenery/newta.fld user/CaptainYS/scenery/newta.stp
-PACIFIC_ATOLL user/CaptainYS/scenery/atoll.fld user/CaptainYS/scenery/atoll.stp
-SMALL_MAP user/CaptainYS/scenery/small.fld user/CaptainYS/scenery/small.stp user/CaptainYS/scenery/small.yfs
-TOHOKU user/CaptainYS/scenery/tohoku.fld user/CaptainYS/scenery/tohoku.stp
-AOMORI user/CaptainYS/scenery/aomori.fld user/CaptainYS/scenery/aomori.stp
-NORTH_KYUSYU user/CaptainYS/scenery/n-kyusyu.fld user/CaptainYS/scenery/n-kyusyu.stp
-AIRSTRIKE_CHALLENGE user/CaptainYS/scenery/airstrike.fld user/CaptainYS/scenery/airstrike.stp
-HEATHROW user/CaptainYS/scenery/heathrow.fld user/CaptainYS/scenery/heathrow.stp
-SLAPSTICK user/CaptainYS/scenery/slapstick.fld user/CaptainYS/scenery/slapstick.stp
-OCEAN user/CaptainYS/scenery/ocean.fld user/CaptainYS/scenery/ocean.stp
+[SOJI]RACING_VALLEY "user/CaptainYS/scenery/race_valley.fld" "user/CaptainYS/scenery/race_valley.stp" "" AIRRACE
+[SOJI]RACING_DESERT "user/CaptainYS/scenery/race_desert.fld" "user/CaptainYS/scenery/race_desert.stp" "" AIRRACE
+[SOJI]ATSUGI_AIRBASE user/CaptainYS/scenery/atsugi.fld user/CaptainYS/scenery/atsugi.stp
+[SOJI]CRESCENT_ISLAND user/CaptainYS/scenery/crescent.fld user/CaptainYS/scenery/crescent.stp
+[SOJI]HAWAII user/CaptainYS/scenery/hawaii.fld user/CaptainYS/scenery/hawaii.stp
+[SOJI]ISLAND_GOURD user/CaptainYS/scenery/gourd.fld user/CaptainYS/scenery/gourd.stp user/CaptainYS/scenery/gourd.yfs
+[SOJI]MATSUSHIMA_AIRBASE user/CaptainYS/scenery/yamoto.fld user/CaptainYS/scenery/yamoto.stp
+[SOJI]NAHA_AIRPORT user/CaptainYS/scenery/naha.fld user/CaptainYS/scenery/naha.stp
+[SOJI]NEWTA_AIRBASE user/CaptainYS/scenery/newta.fld user/CaptainYS/scenery/newta.stp
+[SOJI]PACIFIC_ATOLL user/CaptainYS/scenery/atoll.fld user/CaptainYS/scenery/atoll.stp
+[SOJI]SMALL_MAP user/CaptainYS/scenery/small.fld user/CaptainYS/scenery/small.stp user/CaptainYS/scenery/small.yfs
+[SOJI]TOHOKU user/CaptainYS/scenery/tohoku.fld user/CaptainYS/scenery/tohoku.stp
+[SOJI]AOMORI user/CaptainYS/scenery/aomori.fld user/CaptainYS/scenery/aomori.stp
+[SOJI]NORTH_KYUSYU user/CaptainYS/scenery/n-kyusyu.fld user/CaptainYS/scenery/n-kyusyu.stp
+[SOJI]AIRSTRIKE_CHALLENGE user/CaptainYS/scenery/airstrike.fld user/CaptainYS/scenery/airstrike.stp
+[SOJI]HEATHROW user/CaptainYS/scenery/heathrow.fld user/CaptainYS/scenery/heathrow.stp
+[SOJI]SLAPSTICK user/CaptainYS/scenery/slapstick.fld user/CaptainYS/scenery/slapstick.stp
+[SOJI]OCEAN user/CaptainYS/scenery/ocean.fld user/CaptainYS/scenery/ocean.stp

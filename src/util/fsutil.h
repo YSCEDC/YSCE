@@ -74,5 +74,23 @@ YSRESULT FsGetAtt3(YsAtt3 &att,YSSIZE_T ac,const YsString av[]);
 YSRESULT FsGetWeaponOfChoice(FSWEAPONTYPE &woc,const char str[]);
 YSRESULT FsGetJoulePerSecond(double &power,const char in[]);
 
+class OldSojiStockCheck
+{
+private:
+public:
+	OldSojiStockCheck();
+	//YSRESULT Initialize();
+	//static YsKeyWordList keywordList;
+	static const char *const sojiAirList[];
+	static const char *const sojiGndList[];
+	static const char* const sojiSceList[];
+	YSBOOL FsCheckIfOldStock(const char in[]);
+	YSBOOL FsCheckIfOldAir(const char in[]);
+	YSBOOL FsCheckIfOldGnd(const char in[]);
+	YSBOOL FsCheckIfOldSce(const char in[]);
+	YSBOOL OldSojiStockCheck::FsCorrectIfOldAir(const char in[], YsString &out);
+	YSBOOL OldSojiStockCheck::FsCorrectIfOldGnd(const char in[], YsString &out);
+	YSBOOL OldSojiStockCheck::FsCorrectIfOldSce(const char in[], YsString &out);
+};
 /* } */
 #endif

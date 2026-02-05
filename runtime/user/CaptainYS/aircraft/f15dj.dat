@@ -1,5 +1,6 @@
 REM F-15DJ EAGLE
-IDENTIFY "F-15DJ_EAGLE"
+IDENTIFY "[SOJI]F-15DJ_EAGLE"
+SUBSTNAM "F-15DJ_EAGLE"
 CATEGORY FIGHTER
 AFTBURNR TRUE                 #HAVE AFTERBURNER?
 THRAFTBN 22.6t                #THRUST WITH AFTERBURNER
@@ -15,7 +16,7 @@ EXCAMERA "NAVIGATOR" 0.0m 1.4m 3.16m 0deg 0deg 0deg INSIDE NOHUD
 
 CKPITIST FALSE                #Show inst panel in the cockpit (Inst panel can be made available only in EXCAMERAs)
 CKPITHUD TRUE                 #Show HUD in the cockpit (HUD can be made available only in EXCAMERAs)
-INSTPANL aircraft/f15d_rear.ist
+INSTPANL user/CaptainYS/aircraft/f15d_rear.ist
 ISPNLPOS 0.0m 1.0m 4.10m
 ISPNLSCL 0.5
 ISPNLHUD TRUE                 #USE Both HUD and Instrument Panel

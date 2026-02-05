@@ -6637,6 +6637,7 @@ YSRESULT FsSocketClient::ReceiveConfigString(int packetLength,unsigned char dat[
 
 YSRESULT FsSocketClient::ReceiveList(int packetLength,unsigned char dat[])
 {
+	printf("Receive list\n");
 	int nList,listType;
 	int i;
 	char *ptr;
@@ -6661,14 +6662,35 @@ YSRESULT FsSocketClient::ReceiveList(int packetLength,unsigned char dat[])
 			int l;
 			l=(int)strlen(ptr);
 			// printf("%s\n",ptr);
-
+			
 			str.Set(ptr);
+			printf("Air %i/%i \n", i,nList);
+			for (int q=0;str[q]!=NULL;q++)
+			{
+				printf("%c",str[q]);
+			}
+			printf("\n");
 			airNameFilter.Append(str);
 			if(YSTRUE!=airplaneAvailable)
 			{
+				printf("airplaneAvailable != true\n");
 				if(NULL!=sim->world->GetAirplaneTemplate(str))
 				{
+					printf("Load template\n");
 					airplaneAvailable=YSTRUE;
+				}
+				else
+				{
+					printf("Aircraft not installed\n");
+					OldSojiStockCheck *check = new OldSojiStockCheck;
+					YsString correctedName;
+					if (check->FsCorrectIfOldAir(str, correctedName) == YSTRUE &&
+						sim->world->GetAirplaneTemplate(correctedName) != NULL)
+					{
+						printf("Trying updated aircraft name prefix\n");
+						airplaneAvailable = YSTRUE;
+					}
+					delete check;
 				}
 			}
 

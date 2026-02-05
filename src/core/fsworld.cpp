@@ -3165,7 +3165,7 @@ YSRESULT FsWorld::GetFieldStartPositionName(char idName[],const char fld[],int i
 YSRESULT FsWorld::GetFieldStartPositionName(YsString &idName,const char fld[],int id) const
 {
 	YsListItem <FsFieldTemplate> *fldTemplate;
-
+	
 	fldTemplate=FindFieldTemplate(fld);
 	if(fldTemplate!=NULL)
 	{
@@ -3304,7 +3304,7 @@ YSRESULT FsWorld::SettleAirplane(FsAirplane &air,const char sta[])
 	const char *fieldName;
 	YsVec3 fieldPos;
 	YsAtt3 fieldAtt;
-
+	
 	if(GetLoadedField(fieldNameBuf,fieldPos,fieldAtt)==YSOK)
 	{
 		YsListItem <FsFieldTemplate> *fldTemplate;
@@ -3997,8 +3997,17 @@ FsAirplane *FsWorld::AddAirplane(const char idName[],YSBOOL isPlayerPlane,unsign
 	{
 		FsAirplane neo;
 		YsListItem <FsAirplaneTemplate> *ptr;
+		ptr = FindAirplaneTemplate(idName);
 
-		ptr=FindAirplaneTemplate(idName);
+		OldSojiStockCheck *check = new OldSojiStockCheck;
+		YsString correctedName;
+		if (ptr == NULL && check->FsCorrectIfOldAir(idName, correctedName) == YSTRUE)
+		{
+			printf("Trying updated aircraft name prefix\n");
+			ptr = FindAirplaneTemplate(correctedName);
+		}
+		delete check;
+
 		if(ptr!=NULL)
 		{
 			// When adding an airplane, GetCollision must be called before GetProperty,
@@ -4252,6 +4261,16 @@ FsGround *FsWorld::AddGround(const char idName[],YSBOOL isPlayerGround,unsigned 
 		YsListItem <FsGroundTemplate> *ptr;
 
 		ptr=FindGroundTemplate(idName);
+
+		OldSojiStockCheck *check = new OldSojiStockCheck;
+		YsString correctedName;
+		if (ptr == NULL && check->FsCorrectIfOldGnd(idName, correctedName) == YSTRUE)
+		{
+			printf("Trying updated object name prefix\n");
+			ptr = FindGroundTemplate(correctedName);
+		}
+		delete check;
+
 		if(ptr!=NULL)
 		{
 			PrepareGroundVisual(ptr);
@@ -4375,6 +4394,18 @@ FsField *FsWorld::AddField(
 		// int nFldCheck1,nFldCheck2;  Field check is no longer valid because only one field can be loaded.
 
 		ptr=FindFieldTemplate(idName);
+
+		OldSojiStockCheck *check = new OldSojiStockCheck;
+		YsString correctedName;
+		YSBOOL nameUpdated = YSFALSE;
+		if (ptr == NULL && check->FsCorrectIfOldSce(idName, correctedName) == YSTRUE)
+		{
+			printf("Trying updated map name prefix\n");
+			ptr = FindFieldTemplate(correctedName);
+			nameUpdated = YSTRUE;
+		}
+		delete check;
+
 		if(ptr!=NULL)
 		{
 			if(NULL!=addedFieldInfo)
@@ -4607,7 +4638,14 @@ FsField *FsWorld::AddField(
 
 
 			// Don't care neo.coll
-			neo.SetIdName(idName);
+			if (nameUpdated == YSTRUE)
+			{
+				neo.SetIdName(correctedName);
+			}
+			else
+			{
+				neo.SetIdName(idName);
+			}
 
 			FsField *fsFld;
 			fsFld=sim->SetField(neo,pos,att);
