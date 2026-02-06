@@ -74,23 +74,35 @@ YSRESULT FsGetAtt3(YsAtt3 &att,YSSIZE_T ac,const YsString av[]);
 YSRESULT FsGetWeaponOfChoice(FSWEAPONTYPE &woc,const char str[]);
 YSRESULT FsGetJoulePerSecond(double &power,const char in[]);
 
-class OldSojiStockCheck
+class StockCheck
 {
 private:
 public:
-	OldSojiStockCheck();
-	//YSRESULT Initialize();
-	//static YsKeyWordList keywordList;
+	StockCheck();
+	int nSojiAir = 87; //zero indexed
+	int nSojiGnd = 107;
+	int nSojiSce = 17;
+	int nYsceAir = 4;
+	int nYsceGnd = 4;
+	int nYsceSce = 2;
 	static const char *const sojiAirList[];
 	static const char *const sojiGndList[];
-	static const char* const sojiSceList[];
-	YSBOOL FsCheckIfOldStock(const char in[]);
-	YSBOOL FsCheckIfOldAir(const char in[]);
-	YSBOOL FsCheckIfOldGnd(const char in[]);
-	YSBOOL FsCheckIfOldSce(const char in[]);
-	YSBOOL OldSojiStockCheck::FsCorrectIfOldAir(const char in[], YsString &out);
-	YSBOOL OldSojiStockCheck::FsCorrectIfOldGnd(const char in[], YsString &out);
-	YSBOOL OldSojiStockCheck::FsCorrectIfOldSce(const char in[], YsString &out);
+	static const char *const sojiSceList[];
+	static const char *const ysceAirList[];
+	static const char *const ysceGndList[];
+	static const char *const ysceSceList[];
+	YSBOOL FsCheckIfSojiStock(const char in[]);
+	int FsCheckIfSojiAir(const char in[]);
+	int FsCheckIfSojiGnd(const char in[]);
+	int FsCheckIfSojiSce(const char in[]);
+	YSBOOL FsAddTagIfSojiAir(const char in[], YsString &out);
+	YSBOOL FsAddTagIfSojiGnd(const char in[], YsString &out);
+	YSBOOL FsAddTagIfSojiSce(const char in[], YsString &out);
+	YSBOOL FsRemoveTagIfSojiAir(const char in[], YsString &out);
+	YSBOOL FsRemoveTagIfSojiGnd(const char in[], YsString &out);
+	YSBOOL FsRemoveTagIfSojiSce(const char in[], YsString &out);
+	int FsFindNextStockAir(int idx, YsString &out);
+	int FsFindNextStockGnd(int idx, YsString &out);
 };
 /* } */
 #endif

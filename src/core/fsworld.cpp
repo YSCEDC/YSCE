@@ -3999,11 +3999,10 @@ FsAirplane *FsWorld::AddAirplane(const char idName[],YSBOOL isPlayerPlane,unsign
 		YsListItem <FsAirplaneTemplate> *ptr;
 		ptr = FindAirplaneTemplate(idName);
 
-		OldSojiStockCheck *check = new OldSojiStockCheck;
+		StockCheck *check = new StockCheck;
 		YsString correctedName;
-		if (ptr == NULL && check->FsCorrectIfOldAir(idName, correctedName) == YSTRUE)
+		if (ptr == NULL && check->FsAddTagIfSojiAir(idName, correctedName) == YSTRUE)
 		{
-			printf("Trying updated aircraft name prefix\n");
 			ptr = FindAirplaneTemplate(correctedName);
 		}
 		delete check;
@@ -4262,11 +4261,10 @@ FsGround *FsWorld::AddGround(const char idName[],YSBOOL isPlayerGround,unsigned 
 
 		ptr=FindGroundTemplate(idName);
 
-		OldSojiStockCheck *check = new OldSojiStockCheck;
+		StockCheck *check = new StockCheck;
 		YsString correctedName;
-		if (ptr == NULL && check->FsCorrectIfOldGnd(idName, correctedName) == YSTRUE)
+		if (ptr == NULL && check->FsAddTagIfSojiGnd(idName, correctedName) == YSTRUE)
 		{
-			printf("Trying updated object name prefix\n");
 			ptr = FindGroundTemplate(correctedName);
 		}
 		delete check;
@@ -4395,12 +4393,11 @@ FsField *FsWorld::AddField(
 
 		ptr=FindFieldTemplate(idName);
 
-		OldSojiStockCheck *check = new OldSojiStockCheck;
+		StockCheck *check = new StockCheck;
 		YsString correctedName;
 		YSBOOL nameUpdated = YSFALSE;
-		if (ptr == NULL && check->FsCorrectIfOldSce(idName, correctedName) == YSTRUE)
+		if (ptr == NULL && check->FsAddTagIfSojiSce(idName, correctedName) == YSTRUE)
 		{
-			printf("Trying updated map name prefix\n");
 			ptr = FindFieldTemplate(correctedName);
 			nameUpdated = YSTRUE;
 		}

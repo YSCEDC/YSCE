@@ -2580,7 +2580,7 @@ YSRESULT FsSocketServer::ReceiveLogOnUser(int clientId,int version,const char re
 		return YSERR;
 	}
 
-
+	StockCheck *check = new StockCheck;
 	YSRESULT versionCheck;
 	versionCheck=YSERR;
 	if(version==YSFLIGHT_NETVERSION)
@@ -2606,6 +2606,10 @@ YSRESULT FsSocketServer::ReceiveLogOnUser(int clientId,int version,const char re
 		}
 		user[clientId].air=NULL;
 		user[clientId].version=version;
+		if (user[clientId].version < 20230000)
+		{
+			user[clientId].legacyNetcode = YSTRUE;
+		}
 
 		user[clientId].sendCriticalInfoTimer=sim->currentTime+0.5;
 
@@ -2648,6 +2652,11 @@ YSRESULT FsSocketServer::ReceiveLogOnUser(int clientId,int version,const char re
 
 		if(sim->GetLoadedField(fieldNameBuf,vec,att)==YSOK)
 		{
+			if (user[clientId].legacyNetcode == YSTRUE) //Send map name without [SOJI] prefix to legacy clients
+			{
+				check->FsRemoveTagIfSojiSce(fieldNameBuf, fieldNameBuf);
+			}
+
 			fieldName=fieldNameBuf;
 
 			FsNetworkFldToSend fldToSend;
@@ -2670,6 +2679,10 @@ YSRESULT FsSocketServer::ReceiveLogOnUser(int clientId,int version,const char re
 		int id;
 		for(id=0; sim->world->GetAirplaneTemplateName(airName,id)==YSOK; id++)
 		{
+			if (user[clientId].legacyNetcode == YSTRUE) //Send aircraft without [SOJI] prefix to legacy clients
+			{
+				check->FsRemoveTagIfSojiAir(airName, airName);
+			}
 			user[clientId].airTypeToSend.Append(airName);
 		}
 		SendAirplaneList(clientId,32);  // <- Version check is done inside.
@@ -4988,6 +5001,7 @@ FsSocketClient::FsSocketClient(const char username[],const int port,FsSimulation
 	sideWindowAssigned=YSFALSE;
 
 	reportedServerVersion=0;
+	legacyNetcode = YSFALSE;
 
 	svrUseMissile=YSTRUE;
 	svrUseUnguidedWeapon=YSTRUE;
@@ -5286,11 +5300,15 @@ void FsSocketClient::CheckPendingData(
 		if(sendCriticalInfoTimer<currentTime)
 		{
 			printf("Re-Sending Join Request.\n");
-
+			StockCheck *check = new StockCheck;
 			sendCriticalInfoTimer=currentTime+3.0;
-
+			YsString reqAir = chooseAirplane.selAir;
+			if (legacyNetcode == YSTRUE)
+			{
+				check->FsRemoveTagIfSojiAir(reqAir, reqAir);
+			}
 			SendJoinRequest(
-			    iff,chooseAirplane.selAir,
+			    iff,reqAir,
 			    chooseStartPosition.selStp,
 			    chooseAirplane.selFuel,
 			    chooseAirplane.SmokeLoaded());
@@ -5904,6 +5922,7 @@ YSRESULT FsSocketClient::ReceiveLoadField(int packetLength,unsigned char dat[])
 	unsigned flag;
 	YsVec3 pos;
 	YsAtt3 att;
+	YsString serverField;
 
 	flag=FsGetUnsignedInt(dat+36);
 	x=FsGetFloat(dat+40);
@@ -5917,6 +5936,8 @@ YSRESULT FsSocketClient::ReceiveLoadField(int packetLength,unsigned char dat[])
 	pos.Set(x,y,z);
 	att.Set(h,p,b);
 
+	serverField = (char *)dat + 4;
+	
 	// Read Back >>
 	SendPacket(packetLength,dat);
 	// Read Back <<
@@ -5927,7 +5948,7 @@ YSRESULT FsSocketClient::ReceiveLoadField(int packetLength,unsigned char dat[])
 	YsAtt3 loadedFldAtt;
 	if(sim->GetLoadedField(loadedFldName,loadedFldPos,loadedFldAtt)==YSOK)
 	{
-		if(strcmp(loadedFldName,(char *)dat+4)==0 && loadedFldPos==pos && loadedFldAtt==att)
+		if(strcmp(loadedFldName,serverField)==0 && loadedFldPos==pos && loadedFldAtt==att)
 		{
 			return YSOK;
 		}
@@ -5939,12 +5960,20 @@ YSRESULT FsSocketClient::ReceiveLoadField(int packetLength,unsigned char dat[])
 	sprintf(msg,"Loading Field : %s",dat+4);
 	AddMessage(msg);
 
-	fieldName.Set((char *)dat+4);
+	fieldName.Set(serverField);
 
 	SendEnvironmentRequest();
 
-	if(sim->world->AddField(NULL,(char *)dat+4,pos,att,loadYFS,YSFALSE)!=NULL)
+	if (sim->world->AddField(NULL, serverField, pos, att, loadYFS, YSFALSE) != NULL)
 	{
+		return YSOK;
+	}
+
+	StockCheck *check = new StockCheck;
+	if(check->FsAddTagIfSojiSce(serverField,serverField) == YSTRUE &&
+		sim->world->AddField(NULL, serverField,pos,att,loadYFS,YSFALSE)!=NULL)
+	{
+		AddMessage("The server is using a legacy map");
 		return YSOK;
 	}
 	else
@@ -6495,6 +6524,10 @@ YSRESULT FsSocketClient::ReceiveVersionNotify(unsigned char dat[])
 	}
 
 	reportedServerVersion=(unsigned)svrVersion;
+	if (reportedServerVersion <= 20230000)
+	{
+		legacyNetcode = YSTRUE;
+	}
 
 	return YSOK;
 }
@@ -6637,11 +6670,11 @@ YSRESULT FsSocketClient::ReceiveConfigString(int packetLength,unsigned char dat[
 
 YSRESULT FsSocketClient::ReceiveList(int packetLength,unsigned char dat[])
 {
-	printf("Receive list\n");
 	int nList,listType;
 	int i;
 	char *ptr;
 	YsString str;
+	StockCheck *check = new StockCheck;
 
 	listType=dat[4];
 	nList=dat[5];
@@ -6664,41 +6697,24 @@ YSRESULT FsSocketClient::ReceiveList(int packetLength,unsigned char dat[])
 			// printf("%s\n",ptr);
 			
 			str.Set(ptr);
-			printf("Air %i/%i \n", i,nList);
-			for (int q=0;str[q]!=NULL;q++)
+
+			if (legacyNetcode == YSTRUE)
 			{
-				printf("%c",str[q]);
+				check->FsAddTagIfSojiAir(str, str);
 			}
-			printf("\n");
 			airNameFilter.Append(str);
 			if(YSTRUE!=airplaneAvailable)
 			{
-				printf("airplaneAvailable != true\n");
 				if(NULL!=sim->world->GetAirplaneTemplate(str))
 				{
-					printf("Load template\n");
 					airplaneAvailable=YSTRUE;
 				}
-				else
-				{
-					printf("Aircraft not installed\n");
-					OldSojiStockCheck *check = new OldSojiStockCheck;
-					YsString correctedName;
-					if (check->FsCorrectIfOldAir(str, correctedName) == YSTRUE &&
-						sim->world->GetAirplaneTemplate(correctedName) != NULL)
-					{
-						printf("Trying updated aircraft name prefix\n");
-						airplaneAvailable = YSTRUE;
-					}
-					delete check;
-				}
 			}
-
 			ptr+=(l+1);
 		}
 		break;
 	}
-
+	delete check;
 	return YSOK;
 }
 
@@ -9838,7 +9854,7 @@ YSRESULT FsSimulation::ClientState_StandBy(
     FsGuiClientDialog &cliDlg)
 {
 	int i,prevChoosingMode;
-
+	StockCheck *check = new StockCheck;
 	escKeyCount=0;  // Don't confuse with escCount
 
 	for(i=0; i<FsMaxNumSubWindow; i++)
@@ -9958,8 +9974,13 @@ YSRESULT FsSimulation::ClientState_StandBy(
 					cli.waitingForJoiningApproval=YSTRUE;
 					cli.joinReqReadBack=YSFALSE;
 					cli.ReceivedApproval(); // <- This clears the flag.
+					YsString reqAir = chooseAirplane.selAir;
+					if (cli.legacyNetcode == YSTRUE)
+					{
+						check->FsRemoveTagIfSojiAir(reqAir, reqAir);
+					}
 					cli.SendJoinRequest
-					    (cli.iff,chooseAirplane.selAir,
+					    (cli.iff,reqAir,
 					     chooseStartPosition.selStp,
 					     chooseAirplane.selFuel,
 					     chooseAirplane.SmokeLoaded());

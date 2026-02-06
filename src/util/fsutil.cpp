@@ -634,343 +634,421 @@ double FsGetRandomBetween(double min, double max)
 
 ////////////////////////////////////////////////////////////
 
-OldSojiStockCheck::OldSojiStockCheck()
+StockCheck::StockCheck()
 {
-	//keywordList.Initialize();
 }
 
-const char *const OldSojiStockCheck::sojiAirList[] =
+const char *const StockCheck::sojiAirList[] =
 {
-	"A-4_SKYHAWK",
-	"A-6_INTRUDER",
-	"A6M5_ZERO",
-	"A-10A_THUNDERBOLT2",
-	"AIRBUS300",
-	"AIRBUS320",
-	"AH-1_COBRA",
-	"AH-64_APACHE",
-	"ALPHAJET",
-	"AMX",
-	"F-18C_BLUEANGELS",
-	"PIPER_ARCHER(WASHIN-AIR_MARKING)",
-	"AV-8B_HARRIER",
-	"B-2_SPIRIT",
-	"B-29_SUPERFORTRESS",
-	"B-52_STRATOFORTRESS",
-	"B737",
-	"B747",
-	"B767",
-	"B777",
-	"C-130_HERCULES",
-	"CESSNA_172R",
-	"CONCORDE",
-	"DRAKEN",
-	"E-2C_HAWKEYE",
-	"EA-6B_PROWLER",
-	"DIAMOND_ECLIPSE",
-	"EUROFIGHTER_TYPHOON",
-	"F-1",
-	"F-2",
-	"F-4E_PHANTOM",
-	"F-4EJ_PHANTOM",
-	"F-5_TIGER2",
-	"F-14_TOMCAT",
-	"F-15C_EAGLE",
-	"F-15D_EAGLE",
-	"F-15DJ_EAGLE",
-	"F-15DJ_EAGLE_CHAIRO",
-	"F-15DJ_EAGLE_KURO",
-	"F-15DJ_EAGLE_MADARA",
-	"F-15DJ_EAGLE_MIDORI",
-	"F-15DJ_EAGLE_NAKAAO",
-	"F-15DJ_EAGLE_SOTOAO",
-	"F-15DJ_EAGLE_SOTOMIDORI",
-	"F-15J_EAGLE",
-	"F-16C_FIGHTINGFALCON",
-	"F-18C_HORNET",
-	"F-18E_SUPERHORNET",
-	"F-22_RAPTOR",
-	"F-86_BLUEIMPULSE",
-	"F-100D_SUPERSABRE",
-	"F-104_STARFIGHTER",
-	"F-117A_NIGHTHAWK",
-	"FOCKE_WULF_FW190",
-	"G4M_TYPE1BOMBER",
-	"GRIPEN",
-	"HAWK",
-	"HURRICANE",
-	"KFIR",
-	"LANCASTER",
-	"MIG-15_FAGOT",
-	"MIG-21_FISHBED",
-	"MIG-23_FLOGGER",
-	"MIG-29_FULCRUM",
-	"MIRAGE2000",
-	"MU-2S",
-	"P-51_MUSTANG",
-	"RAFALE",
-	"HAWK_REDARROWS",
-	"S-3_VIKING",
-	"SPITFIRE",
-	"SU-22_FITTER",
-	"SU-24_FENCER",
-	"SU-25_FROGFOOT",
-	"SU-27_FLANKER",
-	"T-2_BLUEIMPULSE",
-	"T-4_BLUEIMPULSE",
-	"T-400",
-	"F-16C_THUNDERBIRDS",
-	"TORNADO",
-	"TU-160_BLACKJACK",
-	"U-125",
-	"U-125A",
-	"UH-60_BLACKHAWK",
-	"UH-60J_BLACKHAWK",
-	"V-107",
-	"VIGGEN",
-	"YS-11"
+	"[SOJI]A-4_SKYHAWK",
+	"[SOJI]A-6_INTRUDER",
+	"[SOJI]A6M5_ZERO",
+	"[SOJI]A-10A_THUNDERBOLT2",
+	"[SOJI]AIRBUS300",
+	"[SOJI]AIRBUS320",
+	"[SOJI]AH-1_COBRA",
+	"[SOJI]AH-64_APACHE",
+	"[SOJI]ALPHAJET",
+	"[SOJI]AMX",
+	"[SOJI]AV-8B_HARRIER",
+	"[SOJI]B-2_SPIRIT",
+	"[SOJI]B-29_SUPERFORTRESS",
+	"[SOJI]B-52_STRATOFORTRESS",
+	"[SOJI]B737",
+	"[SOJI]B747",
+	"[SOJI]B767",
+	"[SOJI]B777",
+	"[SOJI]C-130_HERCULES",
+	"[SOJI]CESSNA_172R",
+	"[SOJI]CONCORDE",
+	"[SOJI]DRAKEN",
+	"[SOJI]E-2C_HAWKEYE",
+	"[SOJI]EA-6B_PROWLER",
+	"[SOJI]DIAMOND_ECLIPSE",
+	"[SOJI]EUROFIGHTER_TYPHOON",
+	"[SOJI]F-1",
+	"[SOJI]F-2",
+	"[SOJI]F-4E_PHANTOM",
+	"[SOJI]F-4EJ_PHANTOM",
+	"[SOJI]F-5_TIGER2",
+	"[SOJI]F-14_TOMCAT",
+	"[SOJI]F-15C_EAGLE",
+	"[SOJI]F-15D_EAGLE",
+	"[SOJI]F-15DJ_EAGLE",
+	"[SOJI]F-15DJ_EAGLE_CHAIRO",
+	"[SOJI]F-15DJ_EAGLE_KURO",
+	"[SOJI]F-15DJ_EAGLE_MADARA",
+	"[SOJI]F-15DJ_EAGLE_MIDORI",
+	"[SOJI]F-15DJ_EAGLE_NAKAAO",
+	"[SOJI]F-15DJ_EAGLE_SOTOAO",
+	"[SOJI]F-15DJ_EAGLE_SOTOMIDORI",
+	"[SOJI]F-15J_EAGLE",
+	"[SOJI]F-16C_FIGHTINGFALCON",
+	"[SOJI]F-16C_THUNDERBIRDS",
+	"[SOJI]F-18C_HORNET",
+	"[SOJI]F-18C_BLUEANGELS",
+	"[SOJI]F-18E_SUPERHORNET",
+	"[SOJI]F-22_RAPTOR",
+	"[SOJI]F-86_BLUEIMPULSE",
+	"[SOJI]F-100D_SUPERSABRE",
+	"[SOJI]F-104_STARFIGHTER",
+	"[SOJI]F-117A_NIGHTHAWK",
+	"[SOJI]FOCKE_WULF_FW190",
+	"[SOJI]G4M_TYPE1BOMBER",
+	"[SOJI]GRIPEN",
+	"[SOJI]HAWK",
+	"[SOJI]HAWK_REDARROWS",
+	"[SOJI]HURRICANE",
+	"[SOJI]KFIR",
+	"[SOJI]LANCASTER",
+	"[SOJI]MIG-15_FAGOT",
+	"[SOJI]MIG-21_FISHBED",
+	"[SOJI]MIG-23_FLOGGER",
+	"[SOJI]MIG-29_FULCRUM",
+	"[SOJI]MIRAGE2000",
+	"[SOJI]MU-2S",
+	"[SOJI]P-51_MUSTANG",
+	"[SOJI]RAFALE",
+	"[SOJI]PIPER_ARCHER(WASHIN-AIR_MARKING)",
+	"[SOJI]S-3_VIKING",
+	"[SOJI]SPITFIRE",
+	"[SOJI]SU-22_FITTER",
+	"[SOJI]SU-24_FENCER",
+	"[SOJI]SU-25_FROGFOOT",
+	"[SOJI]SU-27_FLANKER",
+	"[SOJI]T-2_BLUEIMPULSE",
+	"[SOJI]T-4_BLUEIMPULSE",
+	"[SOJI]T-400",
+	"[SOJI]TORNADO",
+	"[SOJI]TU-160_BLACKJACK",
+	"[SOJI]U-125",
+	"[SOJI]U-125A",
+	"[SOJI]UH-60_BLACKHAWK",
+	"[SOJI]UH-60J_BLACKHAWK",
+	"[SOJI]V-107",
+	"[SOJI]VIGGEN",
+	"[SOJI]YS-11",
+	NULL
 };
 
-const char *const OldSojiStockCheck::sojiGndList[] =
+const char *const StockCheck::sojiGndList[] =
 {
-	"AAA",
-	"ALERT",
-	"ASPAM",
-	"ATSUGI_TOWER",
-	"BIGBEN",
-	"BOX1000X1000X1000",
-	"BRIDGE1",
-	"BRIDGE2",
-	"BRIDGE3",
-	"BUILD01",
-	"BUILD10W",
-	"BUILD11",
-	"BUILD15",
-	"BUILD30",
-	"BUILD60",
-	"BUILD90",
-	"BURKE_DESTROYER",
-	"BUS_1",
-	"AIRCRAFTCARRIER",
-	"CASTLE",
-	"CAVE_BASE",
-	"CAVE_BASE_COLL",
-	"CIELING1",
-	"CONTAINERSHIP_L",
-	"ELEPHANT",
-	"ELEVATED_RUNWAY_1000X60",
-	"FIXED_CHECKPOINT_500FT",
-	"FLOATINGBASE1",
-	"FLOATINGBASE2",
-	"FUEL_TRUCK",
-	"FUEL_TRUCK(W)",
-	"GATEGUARD_CONCORDE",
-	"GEPARD",
-	"GROUNDTARGET1",
-	"GROUNDTARGET2",
-	"HANGAR1",
-	"HANGAR2",
-	"HANGAR3",
-	"HANGER",
-	"HANGER1",
-	"HANGER4",
-	"HG01",
-	"HG02",
-	"HG03",
-	"HG04",
-	"HG05",
-	"HG06",
-	"HG07",
-	"ILS",
-	"HMS_INVINCIBLE",
-	"ISLAND_BASE",
-	"JEEP",
-	"TOWER_OF_LONDON",
-	"M1A1ABRAMS",
-	"M60PATTON",
-	"NDB",
-	"PALACE",
-	"PAPI_LEFT",
-	"PAPI_RIGHT",
-	"PIRATE",
-	"PLANT",
-	"POWER_PLANT",
-	"RADAR",
-	"RADARBASE",
-	"NUCLEAR_REACTOR",
-	"SAM",
-	"SFC",
-	"SFC_ALPHA",
-	"SFC_CLUB",
-	"SFC_GAMMA",
-	"SFC_LAMBDA",
-	"SFC_MEDIA",
-	"SFC_O1",
-	"SFC_O2",
-	"SFC_OMEGA",
-	"SFC_SIGMA",
-	"SFC_TAU",
-	"SHOP",
-	"SHOPPING1",
-	"SHOPPING2",
-	"STATION",
-	"T-64",
-	"T-80",
-	"TERMINAL",
-	"TERMINAL_SHORT",
-	"TEST",
-	"TOWER",
-	"TOWER1",
-	"TOWER2",
-	"TOWER3",
-	"TRACKER",
-	"TREE1",
-	"TREE2",
-	"TREES_200M_10M",
-	"TREES_400M_20M",
-	"TRUCK",
-	"TUNNEL1",
-	"TUNNEL2",
-	"TUNNEL3",
-	"TUNNEL4",
-	"TUNNEL5",
-	"UDALOY_DESTROYER",
-	"VASI",
-	"VOR",
-	"VORDME",
-	"WALL1",
-	"WINDMILLBASE",
-	"WINDMILLBLADE"
+	"[SOJI]AAA",
+	"[SOJI]ALERT",
+	"[SOJI]ASPAM",
+	"[SOJI]ATSUGI_TOWER",
+	"[SOJI]BIGBEN",
+	"[SOJI]BOX1000X1000X1000",
+	"[SOJI]BRIDGE1",
+	"[SOJI]BRIDGE2",
+	"[SOJI]BRIDGE3",
+	"[SOJI]BUILD01",
+	"[SOJI]BUILD10W",
+	"[SOJI]BUILD11",
+	"[SOJI]BUILD15",
+	"[SOJI]BUILD30",
+	"[SOJI]BUILD60",
+	"[SOJI]BUILD90",
+	"[SOJI]BURKE_DESTROYER",
+	"[SOJI]BUS_1",
+	"[SOJI]AIRCRAFTCARRIER",
+	"[SOJI]CASTLE",
+	"[SOJI]CAVE_BASE",
+	"[SOJI]CAVE_BASE_COLL",
+	"[SOJI]CIELING1",
+	"[SOJI]CONTAINERSHIP_L",
+	"[SOJI]ELEPHANT",
+	"[SOJI]ELEVATED_RUNWAY_1000X60",
+	"[SOJI]FIXED_CHECKPOINT_500FT",
+	"[SOJI]FLOATINGBASE1",
+	"[SOJI]FLOATINGBASE2",
+	"[SOJI]FUEL_TRUCK",
+	"[SOJI]FUEL_TRUCK(W)",
+	"[SOJI]GATEGUARD_CONCORDE",
+	"[SOJI]GEPARD",
+	"[SOJI]GROUNDTARGET1",
+	"[SOJI]GROUNDTARGET2",
+	"[SOJI]HANGAR1",
+	"[SOJI]HANGAR2",
+	"[SOJI]HANGAR3",
+	"[SOJI]HANGER",
+	"[SOJI]HANGER1",
+	"[SOJI]HANGER4",
+	"[SOJI]HG01",
+	"[SOJI]HG02",
+	"[SOJI]HG03",
+	"[SOJI]HG04",
+	"[SOJI]HG05",
+	"[SOJI]HG06",
+	"[SOJI]HG07",
+	"[SOJI]ILS",
+	"[SOJI]HMS_INVINCIBLE",
+	"[SOJI]ISLAND_BASE",
+	"[SOJI]JEEP",
+	"[SOJI]TOWER_OF_LONDON",
+	"[SOJI]M1A1ABRAMS",
+	"[SOJI]M60PATTON",
+	"[SOJI]NDB",
+	"[SOJI]PALACE",
+	"[SOJI]PAPI_LEFT",
+	"[SOJI]PAPI_RIGHT",
+	"[SOJI]PIRATE",
+	"[SOJI]PLANT",
+	"[SOJI]POWER_PLANT",
+	"[SOJI]RADAR",
+	"[SOJI]RADARBASE",
+	"[SOJI]NUCLEAR_REACTOR",
+	"[SOJI]SAM",
+	"[SOJI]SFC",
+	"[SOJI]SFC_ALPHA",
+	"[SOJI]SFC_CLUB",
+	"[SOJI]SFC_GAMMA",
+	"[SOJI]SFC_LAMBDA",
+	"[SOJI]SFC_MEDIA",
+	"[SOJI]SFC_O1",
+	"[SOJI]SFC_O2",
+	"[SOJI]SFC_OMEGA",
+	"[SOJI]SFC_SIGMA",
+	"[SOJI]SFC_TAU",
+	"[SOJI]SHOP",
+	"[SOJI]SHOPPING1",
+	"[SOJI]SHOPPING2",
+	"[SOJI]STATION",
+	"[SOJI]T-64",
+	"[SOJI]T-80",
+	"[SOJI]TERMINAL",
+	"[SOJI]TERMINAL_SHORT",
+	"[SOJI]TEST",
+	"[SOJI]TOWER",
+	"[SOJI]TOWER1",
+	"[SOJI]TOWER2",
+	"[SOJI]TOWER3",
+	"[SOJI]TRACKER",
+	"[SOJI]TREE1",
+	"[SOJI]TREE2",
+	"[SOJI]TREES_200M_10M",
+	"[SOJI]TREES_400M_20M",
+	"[SOJI]TRUCK",
+	"[SOJI]TUNNEL1",
+	"[SOJI]TUNNEL2",
+	"[SOJI]TUNNEL3",
+	"[SOJI]TUNNEL4",
+	"[SOJI]TUNNEL5",
+	"[SOJI]UDALOY_DESTROYER",
+	"[SOJI]VASI",
+	"[SOJI]VOR",
+	"[SOJI]VORDME",
+	"[SOJI]WALL1",
+	"[SOJI]WINDMILLBASE",
+	"[SOJI]WINDMILLBLADE",
+	NULL
 };
 
-const char* const OldSojiStockCheck::sojiSceList[] =
+const char *const StockCheck::sojiSceList[] =
 {
-	"RACING_VALLEY",
-	"RACING_DESERT",
-	"ATSUGI_AIRBASE",
-	"CRESCENT_ISLAND",
-	"HAWAII",
-	"ISLAND_GOURD",
-	"MATSUSHIMA_AIRBASE",
-	"NAHA_AIRPORT",
-	"NEWTA_AIRBASE",
-	"PACIFIC_ATOLL",
-	"SMALL_MAP",
-	"TOHOKU",
-	"AOMORI",
-	"NORTH_KYUSYU",
-	"AIRSTRIKE_CHALLENGE",
-	"HEATHROW",
-	"SLAPSTICK",
-	"OCEAN"
+	"[SOJI]RACING_VALLEY",
+	"[SOJI]RACING_DESERT",
+	"[SOJI]ATSUGI_AIRBASE",
+	"[SOJI]CRESCENT_ISLAND",
+	"[SOJI]HAWAII",
+	"[SOJI]ISLAND_GOURD",
+	"[SOJI]MATSUSHIMA_AIRBASE",
+	"[SOJI]NAHA_AIRPORT",
+	"[SOJI]NEWTA_AIRBASE",
+	"[SOJI]PACIFIC_ATOLL",
+	"[SOJI]SMALL_MAP",
+	"[SOJI]TOHOKU",
+	"[SOJI]AOMORI",
+	"[SOJI]NORTH_KYUSYU",
+	"[SOJI]AIRSTRIKE_CHALLENGE",
+	"[SOJI]HEATHROW",
+	"[SOJI]SLAPSTICK",
+	"[SOJI]OCEAN",
+	NULL
 };
 
-YSBOOL OldSojiStockCheck::FsCheckIfOldStock(const char in[])
+const char *const StockCheck::ysceAirList[] =
 {
-	if (FsCheckIfOldAir(in) == YSTRUE)
+	"[YSCE]BK-117",
+	"[YSCE]CONCORDE",
+	"[YSCE]F-16A_FIGHTINGFALCON",
+	"[YSCE]CESSNA_172",
+	"[YSCE]B737",
+	NULL
+};
+
+const char *const StockCheck::ysceGndList[] =
+{
+	"[YSCE]TOWER",
+	"[YSCE]HANGAR",
+	"[YSCE]TERMINAL",
+	"[YSCE]ILS",
+	"[YSCE]VOR",
+	NULL
+};
+
+const char *const StockCheck::ysceSceList[] =
+{
+	"[YSCE]HAWAII",
+	"[YSCE]NORTH_KYUSYU",
+	"[YSCE]SLAPSTICK",
+	NULL
+};
+
+YSBOOL StockCheck::FsCheckIfSojiStock(const char in[])
+{
+	if (FsCheckIfSojiAir(in) == YSTRUE)
 	{
 		return YSTRUE;
 	}
-	else if (FsCheckIfOldGnd(in) == YSTRUE)
+	else if (FsCheckIfSojiGnd(in) == YSTRUE)
 	{
 		return YSTRUE;
 	}
-	else if (FsCheckIfOldSce(in) == YSTRUE)
+	else if (FsCheckIfSojiSce(in) == YSTRUE)
 	{
 		return YSTRUE;
 	}
 	return YSFALSE;
 }
 
-YSBOOL OldSojiStockCheck::FsCheckIfOldAir(const char in[])
+int StockCheck::FsCheckIfSojiAir(const char in[])
 {
+	YsString str;
 	for (int i = 0; sojiAirList[i] != NULL; i++)
 	{
-		if (strcmp(sojiAirList[i], in) == 0)
+		str = sojiAirList[i];
+		str=str.Subset(6, 256);
+		if (strcmp(str, in) == 0)
 		{
-			return YSTRUE;
+			return i;
 		}
 	}
-	return YSFALSE;
+	return -1;
 }
 
-YSBOOL OldSojiStockCheck::FsCheckIfOldGnd(const char in[])
+int StockCheck::FsCheckIfSojiGnd(const char in[])
 {
-	for (int i = 0; sojiAirList[i] != NULL; i++)
+	YsString str;
+	for (int i = 0; sojiGndList[i] != NULL; i++)
 	{
-		if (strcmp(sojiAirList[i], in) == 0)
+		str = sojiGndList[i];
+		str = str.Subset(6, 256);
+		if (strcmp(str, in) == 0)
 		{
-			return YSTRUE;
+			return i;
 		}
 	}
-	return YSFALSE;
+	return -1;
 }
 
-YSBOOL OldSojiStockCheck::FsCheckIfOldSce(const char in[])
+int StockCheck::FsCheckIfSojiSce(const char in[])
 {
-	for (int i = 0; sojiAirList[i] != NULL; i++)
+	YsString str;
+	for (int i = 0; sojiSceList[i] != NULL; i++)
 	{
-		if (strcmp(sojiAirList[i], in) == 0)
+		str = sojiSceList[i];
+		str = str.Subset(6, 256);
+		if (strcmp(str, in) == 0)
 		{
-			return YSTRUE;
+			return i;
 		}
 	}
-	return YSFALSE;
+	return -1;
 }
 
-YSBOOL OldSojiStockCheck::FsCorrectIfOldAir(const char in[],YsString &out)
+YSBOOL StockCheck::FsAddTagIfSojiAir(const char in[],YsString &out)
 {
-	if (FsCheckIfOldAir(in) == YSTRUE)
+	int i = FsCheckIfSojiAir(in);
+	if (i >= 0)
 	{
-		int i;
-		char prefix[] = {'[','S','O','J','I',']'};
-		for (i=0;i<6;i++)
-		{
-			out.Append(prefix[i]);
-		}
-		for (i=0; in[i] != NULL; i++)
-		{
-			out.Append(in[i]);
-		}
+		out = sojiAirList[i];
 		return YSTRUE;
 	}
 	return YSFALSE;
 }
 
-YSBOOL OldSojiStockCheck::FsCorrectIfOldGnd(const char in[], YsString &out)
+YSBOOL StockCheck::FsAddTagIfSojiGnd(const char in[], YsString &out)
 {
-	if (FsCheckIfOldGnd(in) == YSTRUE)
+	int i = FsCheckIfSojiGnd(in);
+	if (i >= 0)
 	{
-		int i;
-		char prefix[] = { '[','S','O','J','I',']' };
-		for (i = 0; i < 6; i++)
-		{
-			out.Append(prefix[i]);
-		}
-		for (i = 0; in[i] != NULL; i++)
-		{
-			out.Append(in[i]);
-		}
+		out = sojiGndList[i];
 		return YSTRUE;
 	}
 	return YSFALSE;
 }
 
-YSBOOL OldSojiStockCheck::FsCorrectIfOldSce(const char in[], YsString &out)
+YSBOOL StockCheck::FsAddTagIfSojiSce(const char in[], YsString &out)
 {
-	if (FsCheckIfOldSce(in) == YSTRUE)
+	int i = FsCheckIfSojiSce(in);
+	if (i >= 0)
 	{
-		int i;
-		char prefix[] = { '[','S','O','J','I',']' };
-		for (i = 0; i < 6; i++)
-		{
-			out.Append(prefix[i]);
-		}
-		for (i = 0; in[i] != NULL; i++)
-		{
-			out.Append(in[i]);
-		}
+		out = sojiSceList[i];
 		return YSTRUE;
 	}
 	return YSFALSE;
+}
+
+YSBOOL StockCheck::FsRemoveTagIfSojiAir(const char in[], YsString &out)
+{
+	YsString str = in;
+	str = str.Subset(6, 256);
+	if (FsCheckIfSojiAir(str) >= 0)
+	{
+		out = str;
+		return YSTRUE;
+	}
+	return YSFALSE;
+}
+
+YSBOOL StockCheck::FsRemoveTagIfSojiGnd(const char in[], YsString &out)
+{
+	YsString str = in;
+	str = str.Subset(6, 256);
+	if (FsCheckIfSojiGnd(str) >= 0)
+	{
+		out = str;
+		return YSTRUE;
+	}
+	return YSFALSE;
+}
+
+YSBOOL StockCheck::FsRemoveTagIfSojiSce(const char in[], YsString &out)
+{
+	YsString str = in;
+	str = str.Subset(6, 256);
+	if (FsCheckIfSojiSce(str) >= 0)
+	{
+		out = str;
+		return YSTRUE;
+	}
+	return YSFALSE;
+}
+
+int StockCheck::FsFindNextStockAir(int idx, YsString &out)
+{
+	int res = -1;
+	if (idx >= 0)
+	{
+		res = idx + 1;
+		if (res <= nSojiAir)
+		{
+			out = sojiAirList[res];
+		}
+		else
+		{
+			out = ysceAirList[res - nSojiAir];
+		}
+	}
+	else if (idx > nSojiAir + nYsceAir)
+	{
+		res = -1;
+	}
+	else
+	{
+		out = sojiAirList[0];
+		res = 0;
+	}
+	return res;
 }

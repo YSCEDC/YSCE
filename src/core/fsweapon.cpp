@@ -3123,7 +3123,7 @@ int FsWeaponHolder::LaunchWeapon(
 	{
 		if (data.trailSmoke == YSTRUE)
 		{
-			
+
 			int i;
 			for (i = 0; i < NumSmokeTrailBuffer; i++)
 			{
@@ -3136,7 +3136,7 @@ int FsWeaponHolder::LaunchWeapon(
 			}
 		}
 
-		FsWeapon *toShoot = freeList;
+		FsWeapon* toShoot = freeList;
 		FSWEAPON_CREDIT_OWNER creditOwner = (sim->GetPlayerObject() == owner ? FSWEAPON_CREDIT_OWNER_PLAYER : FSWEAPON_CREDIT_OWNER_NON_PLAYER);
 		if (owner == NULL)
 		{
@@ -3146,6 +3146,11 @@ int FsWeaponHolder::LaunchWeapon(
 		toShoot->LaunchWeapon(data, pos, att, iniVelocity.GetLength(), owner, creditOwner, target, trail);
 
 		MoveToActiveList(toShoot);
+
+		if (toShoot->category == FSWEAPONCAT_BULLET)
+		{
+			transmit = YSFALSE;
+		}
 
 		if ((recordIt == YSTRUE && toSave != NULL) ||
 			(transmit == YSTRUE && (netServer != NULL || netClient != NULL)) &&

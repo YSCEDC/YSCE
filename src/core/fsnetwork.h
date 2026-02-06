@@ -175,6 +175,7 @@ public:
 	unsigned char comBuf[COMBUFSIZE];   // Store commands that are not completed in "Received"
 
 	unsigned version;
+	YSBOOL legacyNetcode;
 
 	YSSIZE_T nSendQueueFilled;
 	unsigned char sendQueue[SENDQUEUESIZE];
@@ -535,6 +536,7 @@ public:
 	YSBOOL connectionClosedByServer; // Will be set YSTRUE if the connection was closed from the server side.
 	int lastErrorFromServer;
 	unsigned int reportedServerVersion;
+	YSBOOL legacyNetcode;
 
 	FsSocketClient(const char username[],const int port,class FsSimulation *associatedSimulation,class FsNetConfig *cfg);
 
