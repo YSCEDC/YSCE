@@ -39,14 +39,6 @@ HWND FsWin32GetSubWindowHandle(int subWndId)
 {
 	return NULL;
 }
-
-void FsWin32InstallJWordPlugin(void)
-{
-}
-
-void FsWin32DeleteJWordPlugin(void)
-{
-}
 #endif
 
 int FsGetGuiBitmapScale(void)

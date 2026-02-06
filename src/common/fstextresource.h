@@ -347,33 +347,6 @@ inline const wchar_t *FsGetTextResource(const char *key,const wchar_t *alternati
 #define FSGUI_STATIONARYDLG_SUPPLY                        FsGetTextResource("stationarydlg/supply",          L"Re-supply")
 #define FSGUI_STATIONARYDLG_CHANGEVEHICLE                 FsGetTextResource("stationarydlg/changevehicle",   L"Change Vehicle")
 
-#ifdef _WIN32
-#define FSGUI_SUPPORTYSFLIGHTDLG_JWORDLINE1               FsGetTextResource("supportdlg/jwordline-1",L"")
-#define FSGUI_SUPPORTYSFLIGHTDLG_JWORDLINE2               FsGetTextResource("supportdlg/jwordline-2",L"")
-#define FSGUI_SUPPORTYSFLIGHTDLG_INSTALLJWORD             FsGetTextResource("supportdlg/installjword",L"")
-#define FSGUI_SUPPORTYSFLIGHTDLG_EXPLAINJWORD             FsGetTextResource("supportdlg/explainjword",L"")
-
-#define FSGUI_EXPLAINJWORD_LINE1                          FsGetTextResource("explainjword/line1",L"")
-#define FSGUI_EXPLAINJWORD_LINE2                          FsGetTextResource("explainjword/line2",L"")
-#define FSGUI_EXPLAINJWORD_LINE3                          FsGetTextResource("explainjword/line3",L"")
-#define FSGUI_EXPLAINJWORD_LINE4                          FsGetTextResource("explainjword/line4",L"")
-#define FSGUI_EXPLAINJWORD_LINE5                          FsGetTextResource("explainjword/line5",L"")
-#define FSGUI_EXPLAINJWORD_URL                            FsGetTextResource("explainjword/url",L"")
-
-#define FSGUI_INSTALLJWORD_LINE1                          FsGetTextResource("installjword/line1",L"Install JWord Plug In?")
-#define FSGUI_INSTALLJWORD_LINE2                          FsGetTextResource("installjword/line2",L"")
-#define FSGUI_INSTALLJWORD_LINE3                          FsGetTextResource("installjword/line3",L"")
-#define FSGUI_INSTALLJWORD_LINE4                          FsGetTextResource("installjword/line4",L"")
-#define FSGUI_INSTALLJWORD_LINE5                          FsGetTextResource("installjword/line5",L"")
-#define FSGUI_INSTALLJWORD_INSTALL                        FsGetTextResource("installjword/install",L"Install")
-#define FSGUI_INSTALLJWORD_EXPLAIN                        FsGetTextResource("installjword/explainjword",L"")
-#define FSGUI_INSTALLJWORD_DELETE                         FsGetTextResource("installjword/yesdelete",L"Delete File")
-#define FSGUI_INSTALLJWORD_DONTINSTALL                    FsGetTextResource("installjword/dontinstall",L"Close")
-#define FSGUI_INSTALLJWORD_COMMENT                        FsGetTextResource("installjword/comment",L"")
-#define FSGUI_INSTALLJWORD_FIRSTSTART                     FsGetTextResource("installjword/firststart",L"")
-
-#endif
-
 #define FSGUI_NET_USERNAME                                FsGetTextResource("net/username",L"Username")
 #define FSGUI_NET_FIELD                                   FsGetTextResource("net/field",L"Field")
 #define FSGUI_NET_HOSTNAME                                FsGetTextResource("net/hostname",L"Server Hostname (IP Address)")

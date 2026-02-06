@@ -332,50 +332,6 @@ $BGCOL 0
 +stationarydlg/supply                              #補給
 +stationarydlg/changevehicle                       #乗り換え
 
-
-+firstdlg/1stline                                  #(このメッセージは、インストール後初回起動時に自動的に表示されます。)
-+firstdlg/2ndline                                  #YSFLIGHTをダウンロードいただき、ありがとうございました。\n是非、YSFLIGHT.COMもご覧ください。\nURLは次の通りです:
-+firstdlg/3rdline                                  #また、次のURLからダウンロードページに直接移動することもできます。:
-+firstdlg/4thline                                  #今後ともYSFLIGHTをよろしくおねがいします!
-+firstdlg/5thline                                  #山川機長
-
-+supportdlg/1stline                                #(このメッセージは、インストール後初回起動時に自動的に表示されます。 \nその後は、Helpメニューから「Support YSFLIGHT Project」を選ぶことで表示できます。)
-
-+supportdlg/2ndline                                #YSFLIGHTはフリーソフトで、無料でご利用いただくことができます。ですが、サイト維持や\n開発のために、若干の予算がかかっています。もしも、よろしければ、次のいずれかの方法\nで、YSFLIGHTの開発をサポートしていただけると、大変ありがたく思います。
-
-+supportdlg/3rdline                                #(1) 次のURLからシェアウェアプログラムを購入する:
-+supportdlg/4thline-1                              #(2) Amazon.co.jpから買い物するとき、次のリンク(YSFLIGHT.COM)上のリンクを使って発注する:
-+supportdlg/4thline-2                              #
-+supportdlg/jwordline-1                            #(3) 
-+supportdlg/jwordline-2                            # 
-+supportdlg/installjword                           #JWordプラグインをインストールする (無料)
-+supportdlg/explainjword                           #JWordプラグインの説明
-+supportdlg/4thline-3                              #
-+supportdlg/5thline-1                              #また、
-+supportdlg/5thline-2                              #からリンクしているスポンサーページもご覧ください。
-+supportdlg/6thline                                #YSFLIGHTプロジェクトへのご協力を感謝いたします。
-
-
-+explainjword/line1                                #J-Word Plug-inは、Internet Explorer等ブラウザ用Plug-inで、アドレスバーから\n直接日本語で検索を可能にします。また、JWordプラグインの利用は無料です。\n\n(以下「JWordプラグラインのご紹介」より抜粋)\n
-+explainjword/line2                                #《JWordサービスとは？》\n
-+explainjword/line3                                #JWordサービスとは、Internet Explorer等ブラウザに専用プラグインソフトをイン\nストールすることによって、アドレスバーや検索バー等から様々なジャンル検索を\n可能にする総合情報検索サービスです。\n
-+explainjword/line4                                #ブラウザのアドレスバーは、元々英数字のURLを入力することで目的のサイトへアク\nセスできましたが、それを日本語で直接サイトにアクセスできるのが大きな特徴です。\n目的のサイトに簡単にアクセスできる環境を整えることが可能になります。\n
-+explainjword/line5                                #◎JWord紹介ページ
-+explainjword/url                                  #
-
-
-+installjword/line1                                #JWordプラグインをインストールしますか？
-+installjword/line2                                #
-+installjword/line3                                #
-+installjword/line4                                #
-+installjword/line5                                #
-+installjword/install                              #JWordプラグインをインストールする(無料)
-+installjword/explainjword                         #JWordプラグインの説明
-+installjword/dontinstall                          #           インストールしない          
-+installjword/comment                              #注:JWordプラグインをインストールしなくてもYSFLIGHTの全機能を\n利用することができます。が、インストールしていただけると作者\nに若干の紹介料が入るので、とても感謝します。\n\n
-+installjword/firststart                           #(このメッセージは初回起動時のみ表示されます。)
-+installjword/yesdelete                            #
-
 +net/username                                      #ユーザ名
 +net/field                                         #フィールド
 +net/hostname                                      #サーバーホスト名(IPアドレス)
@@ -565,7 +521,6 @@ $BGCOL 0
 +menu/help-HelpJapanese                            #日本語ヘルプ
 +menu/help-DefKeyJapanese                          #日本語デフォルトキー/ジョイスティック割り当て表
 +menu/help-About                                   #YSFLIGHTについて
-+menu/help-SupportYSFlight                         #Support YSFLIGHT Project
 
 
 +joycalib_calib                                    #軸の調整

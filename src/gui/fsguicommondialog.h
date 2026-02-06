@@ -45,29 +45,6 @@ public:
 
 ////////////////////////////////////////////////////////////
 
-#ifdef _WIN32
-class FsGuiExplainJWordDialog : public FsGuiDialog
-{
-public:
-	FsGuiButton *okBtn,*urlBtn;
-	void Make(void);
-	void OnButtonClick(FsGuiButton *btn);
-};
-
-class FsGuiAskInstallJWordOnFirstStart : public FsGuiDialog
-{
-public:
-	FsGuiExplainJWordDialog explainJWordDlg;
-	FsGuiCanvas *canvas;
-	FsGuiButton *installBtn,*explainJWordBtn,*deleteBtn,*closeBtn;
-	void Make(void);
-	void OnButtonClick(FsGuiButton *btn);
-};
-
-#endif
-
-////////////////////////////////////////////////////////////
-
 class FsGuiAirCombatDialog : public FsGuiDialogWithFieldAndAircraft
 {
 public:

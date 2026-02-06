@@ -328,49 +328,6 @@ $BGCOL 0
 +stationarydlg/supply                              #Re-supply
 +stationarydlg/changevehicle                       #Change Vehicle
 
-+firstdlg/1stline                                  #(This message is shown automatically when the program is launched \nfor the first time after the installation.)
-+firstdlg/2ndline                                  #Thank you very much for downloading YS FLIGHT SIMULATOR. \nPlease also visit my Web site.  The URL is:
-+firstdlg/3rdline                                  #You can also directly go to the download page by:
-+firstdlg/4thline                                  #Enjoy YSFLIGHT!  Thank you!
-+firstdlg/5thline                                  #Captain YS
-
-+supportdlg/1stline                                #(This message is displayed automatically when you launch the program for the\nfirst time after the installation.\nAfter that, you can open this message by choosing "Help" -> "Please Support YSFLIGHT Project"
-+supportdlg/2ndline                                #YSFLIGHT is free software, and, you do not have to pay for enjoying this program.\nHowever, it costs me some money to maintain this project.  So I really appreciate\nif you could support YSFLIGHT project with one of the following methods.
-+supportdlg/3rdline                                #(1) Purchase a shareware program from:
-+supportdlg/4thline-1                              #(2) When you purchase a book, PC software, a CD, or any product from Amazon.com, \nplease open Amazon.com web site by clicking a link on
-+supportdlg/4thline-2                              # 
-+supportdlg/4thline-3                              #    and place an order.  (Note: Any purchase counts as long as you open Amazon.com web site by clickng a link on my web site.
-
-+supportdlg/jwordline-1                            #
-+supportdlg/jwordline-2                            #
-+supportdlg/installjword                           #
-+supportdlg/explainjword                           #
-
-+supportdlg/5thline-1                              #Please also visit sponsor sites linked from:
-+supportdlg/5thline-2                              # 
-+supportdlg/6thline                                #Thank you very much for supporting YSFLIGHT project.
-
-+explainjword/line1                                #
-+explainjword/line2                                #
-+explainjword/line3                                #
-+explainjword/line4                                #
-+explainjword/line5                                #
-+explainjword/url                                  #
-
-
-+installjword/line1                                #The program detected that this Windows is not a Japanese version.  YSFLIGHT comes with \nan Internet Explorer plug-in called JWord, which works only on Japanese version Windows.\n\n
-+installjword/line2                                #You can delete JWord installer to save disk space.  JWord plug-in may also be falsely\ndetected as a spy-ware by an anti-spy-ware program, although it is not considered a\nspy-ware.  By deleting the installer, you can avoid such a false alarm.\n
-+installjword/line3                                #Deleting JWord installer does not limit any functionality of YSFLIGHT, and you can use\nall the functionalities of YSFLIGHT after deleting it.\n
-+installjword/line4                                #Would you like to delete JWord plug-in installer now?
-+installjword/line5                                #
-+installjword/install                              #
-+installjword/explainjword                         #
-+installjword/dontinstall                          #
-+installjword/yesdelete                            #Yes. Delete it.
-+installjword/comment                              #
-+installjword/firststart                           #
-
-
 +net/username                                      #User Name
 +net/field                                         #Field
 +net/hostname                                      #Server Host Name (IP Address)
@@ -558,7 +515,6 @@ $BGCOL 0
 +menu/help-HelpJapanese                            #Help - Japanese
 +menu/help-DefKeyJapanese                          #Default Key Strokes and Controls - Japanese
 +menu/help-About                                   #About YSFLIGHT
-+menu/help-SupportYSFlight                         #Support YSFLIGHT Project
 
 +menu/learning                                     #Machine Learning
 +menu/learning/trainAutoPilot                      #Generate Training Data for Auto Pilot
