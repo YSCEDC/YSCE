@@ -2,3 +2,4 @@ build
 .vscode
 runtime/ys_timestamp.txt
 /.vs
+/runtime/utility/ys_timestamp.txt

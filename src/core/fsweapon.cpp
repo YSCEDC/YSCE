@@ -2951,6 +2951,12 @@ void FsWeaponHolder::MoveToFreeList(FsWeapon *wep)
 			break;
 		}
 	}
+
+	if (wep->trail != NULL)
+	{
+		wep->trail->used = YSFALSE;
+		wep->trail = NULL;
+	}
 }
 
 void FsWeaponHolder::ClearBulletCalibrator(void)
