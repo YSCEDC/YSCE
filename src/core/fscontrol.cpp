@@ -1085,7 +1085,7 @@ void FsFlightControl::PrepareJoystickPolygonModel(void)
 	if(stickDnm==NULL)
 	{
 		stickDnm=new FsVisualDnm;
-		if(stickDnm->Load(L"misc/stick.dnm")!=YSOK)
+		if(stickDnm->Load(L"utility/system/stick.dnm")!=YSOK)
 		{
 			delete stickDnm;
 			stickDnm=NULL;
@@ -1095,7 +1095,7 @@ void FsFlightControl::PrepareJoystickPolygonModel(void)
 	if(throttleDnm==NULL)
 	{
 		throttleDnm=new FsVisualDnm;
-		if(throttleDnm->Load(L"misc/throttle.dnm")!=YSOK)
+		if(throttleDnm->Load(L"utility/system/throttle.dnm")!=YSOK)
 		{
 			delete throttleDnm;
 			throttleDnm=NULL;
@@ -1105,7 +1105,7 @@ void FsFlightControl::PrepareJoystickPolygonModel(void)
 	if(rudderDnm==NULL)
 	{
 		rudderDnm=new FsVisualDnm;
-		if(rudderDnm->Load(L"misc/rudder.dnm")!=YSOK)
+		if(rudderDnm->Load(L"utility/system/rudder.dnm")!=YSOK)
 		{
 			delete rudderDnm;
 			rudderDnm=NULL;

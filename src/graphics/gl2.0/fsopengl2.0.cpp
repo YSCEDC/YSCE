@@ -237,7 +237,7 @@ void FsInitializeOpenGL(void)
 	for(int i=1; i<=fsMaxNumMaskTexture; ++i)
 	{
 		YsString fn;
-		fn.Printf("misc/explosion%02d.png",i);
+		fn.Printf("utility/system/explosion%02d.png",i);
 		if(bmp.LoadPng(fn)==YSOK)
 		{
 			FsMakeAlphaMask(bmp);
@@ -248,14 +248,14 @@ void FsInitializeOpenGL(void)
 			fsNumCloudParticleTex++;
 		}
 
-		fn.Printf("misc/flash%02d.png",i);
+		fn.Printf("utility/system/flash%02d.png",i);
 		if(bmp.LoadPng(fn)==YSOK)
 		{
 			FsMakeAlphaMask(bmp);
 			FsSetBmpTexture(fsFlashTex[fsNumFlashTex++],bmp,YSFALSE);
 		}
 
-		fn.Printf("misc/cloud%02d.png",i);
+		fn.Printf("utility/system/cloud%02d.png",i);
 		if(bmp.LoadPng(fn)==YSOK)
 		{
 			FsMakeAlphaMask(bmp);
@@ -263,7 +263,7 @@ void FsInitializeOpenGL(void)
 		}
 	}
 
-	if(YSOK==bmp.LoadPng("misc/particle01.png"))
+	if(YSOK==bmp.LoadPng("utility/system/particle01.png"))
 	{
 		FsSetBmpTexture(fsParticleTexture,bmp,YSFALSE);
 	}

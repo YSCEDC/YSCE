@@ -6,9 +6,11 @@ void FsUseLocalFolderSetting(void);
 
 const wchar_t *FsGetCommonYsflightDir(void);
 const wchar_t *FsGetUserYsflightDir(void);
-// Windows:  My Documents/YSFLIGHT.COM/(ProgramName)
-// Mac OSX:  Documents/YSFLIGHT.COM/(ProgramName)
-// Linux:    Documents/YSFLIGHT.COM/(ProgramName)
+const wchar_t *FsGetUserYsflightUtilityDir(void);
+const wchar_t *FsGetUserYsflightConfigDir(void);
+// Windows:  My Documents/YSFlightCE/
+// Mac OSX:  Documents/YSFlightCE/
+// Linux:    Documents/YSFlightCE/
 
 const wchar_t *FsGetFirstStartFile(YsWString &fn,int i);
 void FsOverrideUserConfigDir(const wchar_t path[]);
@@ -33,7 +35,7 @@ const wchar_t *FsGetPrevFlightFile(void);
 const wchar_t *FsGetErrFile(void);
 const wchar_t *FsGetDebugInfoFile(void);
 
-#define FSGUI_ABOUTDLG_BANNER                             "misc/ysfhq_main.png"
+#define FSGUI_ABOUTDLG_BANNER                             "utility/ui/ysfhq_main.png"
 
 
 

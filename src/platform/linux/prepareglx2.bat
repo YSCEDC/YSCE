@@ -51,7 +51,4 @@ xcopy /S /H \src\ysjoystick\src\*.* %YSJOYSTICKDIR%\src
 xcopy /S /H ..\..\runtime\*.* %RUNTIMEDIR%
 del %RUNTIMEDIR%\200*
 del %RUNTIMEDIR%\*.exe
-del %RUNTIMEDIR%\bundle\*.exe
-del %RUNTIMEDIR%\plugin\*.dll
-del %RUNTIMEDIR%\ysinstaller.def
-rd %RUNTIMEDIR%\bundle
+del %RUNTIMEDIR%\utility\plugin\*.dll

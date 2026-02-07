@@ -14,6 +14,7 @@ extern const wchar_t *FsProgramName;  // Different names for screen saver progra
 
 static YsWString FsCommonYsFlightDir;
 static YsWString FsUserYsflightDir;
+static YsWString FsYsflightUtilityDir;
 static YsWString FsYsflightConfigDir;
 
 
@@ -75,11 +76,7 @@ const wchar_t *FsGetCommonYsflightDir(void)
 
 			if(0==i || 2==i)
 			{
-				ful.MakeFullPathName(path,L"YSFLIGHT.COM");
-				YsFileIO::MkDir(path);
-				path=ful;
-
-				ful.MakeFullPathName(path,FsProgramName);
+				ful.MakeFullPathName(path,L"YSFlightCE");
 				YsFileIO::MkDir(path);
 				path=ful;
 			}
@@ -115,20 +112,10 @@ const wchar_t *FsGetUserYsflightDir(void)
 		if(YSOK==YsSpecialPath::GetUserDocDir(path))
 		{
 			YsWString ful;
-			ful.MakeFullPathName(path,L"YSFLIGHT.COM");
+			ful.MakeFullPathName(path,L"YSFlightCE");
 			YsFileIO::MkDir(ful);
-			path=ful;
 
-			ful.MakeFullPathName(path,FsProgramName);
-			YsFileIO::MkDir(ful);
-			path=ful;
-
-
-			YsWString cfg;
-			cfg.MakeFullPathName(path,L"config");
-			YsFileIO::MkDir(cfg);
-
-			if(YSOK==YsFileWriteTest(cfg))
+			if(YSOK==YsFileWriteTest(ful))
 			{
 				FsUserYsflightDir=ful;
 
@@ -150,6 +137,76 @@ const wchar_t *FsGetUserYsflightDir(void)
 	return FsUserYsflightDir;
 }
 
+const wchar_t *FsGetUserYsflightUtilityDir(void)
+{
+	if (FsYsflightUtilityDir.Strlen() == 0)
+	{
+		YsWString ful;
+		ful.MakeFullPathName(FsGetUserYsflightDir(), L"utility");
+		YsFileIO::MkDir(ful);
+
+		if (YSOK == YsFileWriteTest(ful))
+		{
+			FsYsflightUtilityDir = ful;
+
+			YsString cStr;
+			YsUnicodeToSystemEncoding(cStr, FsYsflightUtilityDir);
+			printf("YSFLIGHT Utility Dir=%s\n", cStr.Txt());
+		}
+	}
+	return FsYsflightUtilityDir;
+}
+
+const wchar_t *FsGetUserYsflightConfigDir(void)
+{
+#ifdef __APPLE__
+	// Try User/Library/Application Support/YSFlightCE/utility/config
+	if (FsYsflightConfigDir.Strlen() == 0)
+	{
+		YsWString ful, path;
+		YsSpecialPath::GetUserAppDataDir(path);
+
+		YsFileIO::MkDir(path);
+
+
+		ful.MakeFullPathName(path, L"YSFlightCE");
+		YsFileIO::MkDir(ful);
+		path = ful;
+
+		ful.MakeFullPathName(path, L"utility");
+		YsFileIO::MkDir(ful);
+		path = ful;
+
+		ful.MakeFullPathName(path, L"config");
+		YsFileIO::MkDir(ful);
+		path = ful;
+
+		if (YSOK == YsFileWriteTest(path))
+		{
+			FsYsflightConfigDir = path;
+		}
+	}
+#endif
+
+	if (FsYsflightConfigDir.Strlen() == 0)
+	{
+		YsWString ful;
+		ful.MakeFullPathName(FsGetUserYsflightUtilityDir(), L"config");
+		YsFileIO::MkDir(ful);
+
+		if (YSOK == YsFileWriteTest(ful))
+		{
+			FsYsflightConfigDir = ful;
+
+			YsString cStr;
+			YsUnicodeToSystemEncoding(cStr, FsYsflightConfigDir);
+			printf("YSFLIGHT Config Dir=%s\n", cStr.Txt());
+		}
+	}
+
+	return FsYsflightConfigDir;
+}
+
 void FsOverrideUserConfigDir(const wchar_t path[])
 {
 	FsYsflightConfigDir.Set(path);
@@ -158,45 +215,6 @@ void FsOverrideUserConfigDir(const wchar_t path[])
 void FsOverrideUserDir(const wchar_t path[])
 {
 	FsUserYsflightDir.Set(path);
-}
-
-const wchar_t *FsGetUserYsflightConfigDir(void)
-{
-#ifdef __APPLE__
-	// Try User/Library/Application Support/YSFLIGHT.COM/(FsProgramName)/config
-	if(FsYsflightConfigDir.Strlen()==0)
-	{
-		YsWString ful,path;
-		YsSpecialPath::GetUserAppDataDir(path);
-
-		YsFileIO::MkDir(path);
-
-
-		ful.MakeFullPathName(path,L"YSFLIGHT.COM");
-		YsFileIO::MkDir(ful);
-		path=ful;
-
-		ful.MakeFullPathName(path,L"config");
-		YsFileIO::MkDir(ful);
-		path=ful;
-
-		if(YSOK==YsFileWriteTest(path))
-		{
-			FsYsflightConfigDir=path;
-		}
-	}
-#endif
-
-	if(FsYsflightConfigDir.Strlen()==0)
-	{
-		FsYsflightConfigDir.MakeFullPathName(FsGetUserYsflightDir(),L"config");
-
-		YsString cStr;
-		YsUnicodeToSystemEncoding(cStr,FsYsflightConfigDir);
-		printf("YSFLIGHT Config Dir=%s\n",cStr.Txt());
-	}
-
-	return FsYsflightConfigDir;
 }
 
 const wchar_t *FsGetFirstStartFile(YsWString &fn,int i)
@@ -262,9 +280,9 @@ const wchar_t *FsGetNetConfigFile(void)
 const wchar_t *FsGetPlugInDir(void)
 {
 #ifdef _WIN32
-	return L".\\plugin";
+	return L".\\utility\\plugin";
 #else
-	return L"./plugin";
+	return L"./utility/plugin";
 #endif
 }
 
@@ -441,8 +459,9 @@ const wchar_t *FsGetNetChatLogDir(void)
 	static YsWString fn;
 	if(fn.Strlen()==0)
 	{
-		fn.Set(FsGetUserYsflightDir());
+		fn.Set(FsGetUserYsflightUtilityDir());
 		fn.Append(L"/netchatlog");
+		YsFileIO::MkDir(fn);
 	}
 	return fn;
 }
@@ -452,7 +471,7 @@ const wchar_t *FsGetIpBlockFile(void)
 	static YsWString fn;
 	if(fn.Strlen()==0)
 	{
-		fn.Set(FsGetUserYsflightDir());
+		fn.Set(FsGetUserYsflightConfigDir());
 		fn.Append(L"/ipblock.txt");
 	}
 	return fn;
@@ -463,7 +482,7 @@ const wchar_t *FsGetRecentlyUsedFile(void)
 	static YsWString fn;
 	if(fn.Strlen()==0)
 	{
-		fn.MakeFullPathName(FsGetUserYsflightDir(),L"recent.txt");
+		fn.MakeFullPathName(FsGetUserYsflightUtilityDir(),L"recent.txt");
 	}
 	return fn;
 }
@@ -473,7 +492,7 @@ const wchar_t *FsGetErrFile(void)
 	static YsWString fn;
 	if(fn.Strlen()==0)
 	{
-		fn.Set(FsGetUserYsflightDir());
+		fn.Set(FsGetUserYsflightUtilityDir());
 		fn.Append(L"/fserr.txt");
 	}
 	return fn;
@@ -484,7 +503,7 @@ const wchar_t *FsGetPrevFlightFile(void)
 	static YsWString fn;
 	if(fn.Strlen()==0)
 	{
-		fn.Set(FsGetUserYsflightDir());
+		fn.Set(FsGetUserYsflightUtilityDir());
 		fn.Append(L"/prevflight.dat");
 	}
 	return fn;
@@ -495,7 +514,7 @@ const wchar_t *FsGetDebugInfoFile(void)
 	static YsWString fn;
 	if(fn.Strlen()==0)
 	{
-		fn.Set(FsGetUserYsflightDir());
+		fn.Set(FsGetUserYsflightUtilityDir());
 		fn.Append(L"/fsdebuginfo.txt");
 	}
 	return fn;

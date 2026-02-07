@@ -615,7 +615,7 @@ foreach(ONE_TARGET ${NEED_DLL_TARGETS})
 		add_custom_command(TARGET ${ONE_TARGET} POST_BUILD 
 			COMMAND echo For ${ONE_TARGET}
 			COMMAND echo DLL $<TARGET_FILE:${DLL_TARGET}>
-			COMMAND "${CMAKE_COMMAND}" -E copy \"$<TARGET_FILE:${DLL_TARGET}>\" \"${DATA_DESTINATION}/plugin/.\"
+			COMMAND "${CMAKE_COMMAND}" -E copy \"$<TARGET_FILE:${DLL_TARGET}>\" \"${DATA_DESTINATION}/utility/plugin/.\"
 			)
 	endforeach(DLL_TARGET)
 endforeach(ONE_TARGET)

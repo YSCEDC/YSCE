@@ -225,7 +225,7 @@ void FsGuiStartClientDialog::OnButtonClick(FsGuiButton *btn)
 	}
 	if(btn==serverListBtn)
 	{
-		std::string url = "https://ysflight.org/serverlist/?json=1";
+		std::string url = "https://servers.ysfhq.com/?json=1";
 		auto callback = [this](std::string jsonData){
 			UpdateGUI(jsonData);
 			};

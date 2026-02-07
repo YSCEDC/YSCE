@@ -59,9 +59,9 @@
 // NET 20110207 : 2011 Spring official
 
 
-#define FS_TEXTURE_RWLIGHT "misc/rwlight.png"
-#define FS_TEXTURE_GROUNDTILE "misc/groundtile.png"
-#define FS_TEXTURE_PARTICLESPRITE "misc/particle_tile.png"
+#define FS_TEXTURE_RWLIGHT "utility/system/rwlight.png"
+#define FS_TEXTURE_GROUNDTILE "utility/system/groundtile.png"
+#define FS_TEXTURE_PARTICLESPRITE "utility/system/particle_tile.png"
 
 
 const double FsShortFinalDistance=1600.0;

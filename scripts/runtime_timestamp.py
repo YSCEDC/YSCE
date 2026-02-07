@@ -40,7 +40,7 @@ print("Newest="+str(newest))
 
 
 
-fName=os.path.join(dir,"ys_timestamp.txt")
+fName=os.path.join(dir,"./utility/ys_timestamp.txt")
 fp=open(fName,"w")
 fp.write(str(newest))
 fp.close()

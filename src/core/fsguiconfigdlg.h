@@ -29,7 +29,7 @@ public:
 
 	FsGuiButton *blackOutBtn,*midAirCollisionBtn,*noTailStrikeBtn,*canLandAnywhereBtn;
 	FsGuiButton *autoRudderBtn,*preciseSimulationBtn,*alwaysShowHudBtn,*doNotUseInstPanelBtn;
-	FsGuiButton* centerCameraPerspectiveBtn;
+	FsGuiButton *centerCameraPerspectiveBtn;
 	FsGuiButton *showIASBtn;
 	FsGuiButton *simpleHudBtn,*threeDHudBtn;
 	FsGuiButton *alwaysDrawPlayerNameBtn,*drawVirtualJoystickBtn,*f8CameraDelayBtn;
@@ -50,7 +50,7 @@ public:
 	FsGuiTextBox *smokeDrawEveryNStep;
 	FsGuiButton *showFpsBtn;
 	FsGuiButton *drawParticleFire;
-	FsGuiButton* drawParticleFlare;
+	FsGuiButton *drawParticleFlare;
 
 	FsGuiButton *fogBtn;
 	FsGuiTextBox *fogVisibility;

@@ -596,9 +596,9 @@ YSBOOL FsRunLoop::InitializeOneStep(FsWorld::InitializationOption worldOpt)
 
 		if(0==strcmp(FsOption::GetLanguageString(),FsJapaneseLanguageCode))
 		{
-			newFltMsgBmp.LoadPng("misc/newfltmsg.png");
-			simFlyMsgBmp.LoadPng("misc/simflymsg.png");
-			simRepMsgBmp.LoadPng("misc/simrepmsg.png");
+			newFltMsgBmp.LoadPng("utility/ui/newfltmsg.png");
+			simFlyMsgBmp.LoadPng("utility/ui/simflymsg.png");
+			simRepMsgBmp.LoadPng("utility/ui/simrepmsg.png");
 		}
 		break;
 	case 4:
@@ -606,7 +606,7 @@ YSBOOL FsRunLoop::InitializeOneStep(FsWorld::InitializationOption worldOpt)
 		for(;;)
 		{
 			YsString fn;
-			fn.Printf("misc/title%02d.png",nTitleBmp);
+			fn.Printf("utility/ui/title%02d.png",nTitleBmp);
 			if(YsFileExist(fn)!=YSTRUE)
 			{
 				break;
@@ -2398,7 +2398,7 @@ YSBOOL FsRunLoop::RunMenuOneStep(void)
 						int n;
 						char fn[256];
 						n=rand()%nTitleBmp;
-						sprintf(fn,"misc/title%02d.png",n);
+						sprintf(fn,"utility/ui/title%02d.png",n);
 						if(titleBmp.LoadPng(fn)==YSOK && titleBmp.GetWidth()>0 && titleBmp.GetHeight()>0)
 						{
 							titleBmpPtr=&titleBmp;

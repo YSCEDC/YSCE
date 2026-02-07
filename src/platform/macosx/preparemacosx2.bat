@@ -58,11 +58,8 @@ xcopy /S /H \src\ysjoystick\MacOSX\*.* %YSJOYSTICKDIR%\MacOSX
 xcopy /S ..\..\runtime\*.* %RUNTIMEDIR%
 del %RUNTIMEDIR%\200*
 del %RUNTIMEDIR%\*.exe
-del %RUNTIMEDIR%\plugin\*.dll
-del %RUNTIMEDIR%\plugin\*.exe
-del %RUNTIMEDIR%\bundle\*.exe
-del %RUNTIMEDIR%\ysinstaller.def
-rd %RUNTIMEDIR%\bundle
+del %RUNTIMEDIR%\utility\plugin\*.dll
+del %RUNTIMEDIR%\utility\plugin\*.exe
 
 mkdir %RUNTIMEDIR%\Contents
 copy Info.plist %RUNTIMEDIR%\Contents
