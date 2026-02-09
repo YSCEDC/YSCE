@@ -538,13 +538,94 @@ $$staVGW = 1 - \frac{V - VGWSPED1}{VGWSPED2 - VGWSPED1}$$
 
 <br>
 
-# Radar Crossection
+# Radar Cross Section
 
-$$RCS = RADARCRS + BMBAYRCS \times \left(staBombBayDoor + staGear\right)$$
+The Radar Cross Section (RCS) of an aircraft defines several charactaristics relating to targetting and weapons, primarily the range at which enemey aircraft and ground objects can achieve a weapons lock and thus successfully fire a guided weapon.
 
-The exception to this is if weapons are loaded on hardpoints that are not flagged as "Internal". If any weapon other than fuel or flarepods are loaded on these stations then the RCS of the aircraft is set to 1.0.
+Thanks to Ultraviolet for investigating this functionality in [YSFlight](https://forum.ysfhq.com/viewtopic.php?f=307&t=10851).
 
-The effect of RCS can be found on [YSFHQ here](https://forum.ysfhq.com/viewtopic.php?f=307&t=10851).
+## Calculating Aircraft Radar Cross Section
+
+The radar cross section of an aircraft is controlled by the aircraft's [DAT File](/YSCEDC/YSCE/wiki/Aircraft-DAT-File-Variables) and weapon loadout.
+
+When all loaded weapons are on HRDPOINTs defined as "INTERNAL", then the RCS is calculated as such:
+
+$$RCS = RADARCRS + BMBAYRCS \times (staBombBayDoor + staGear)$$
+
+Where:
+* RADARCRS is the DAT variable value defined in the DAT File
+* BMBAYRCS is the DAT variable value defined in teh DAT File
+* staBomBayDoor is the decimial percentage that the weapon bay doors (if equiped) are open (0=closed / 1=Open)
+* staGear is the decimal percentage that the landing gear are down (0 = Up / 1 = Down)
+
+When there are weapons loaded on HRDPOINTs without the INTERNAL designation:
+
+$$RCS = 1$$
+
+Note that Flare Pods and External Fuel tanks are never counted as weapons for this calculation. Additionally, AIM9 and AGM65 weapons do not count. When there are 38 or fewer rockets loaded, they count as weapons for the RCS calculation, however if more than 38 rockets are loaded, then they no longer count for the RCS calculation.
+
+
+## RCS Impact on YSCE Navigation Radar
+
+In YSCE, each server can set a configuration parameter to specify the Minimum Radar Altitude (MRA) which defines the altitude below which aircraft will not appear on the in-game radar. for aircraft with an RCS value lower than 1.0, the Effective Minimum Radar Altitude (eMRA) increases proportinal to the decrease in RCS value.
+
+$$eMRA = MRA + 1000 * (1 - RADARCRS + BMBAYRCS \times (staBombBayDoor + staGear))$$
+
+Where:
+- eMRA is the Effective Minimum Radar Altitude (meters)
+- MRA is the Server-defined Minimum Radar Altitude (meters)
+- RADARCRS is the DAT variable value defined in the DAT File
+- BMBAYRCS is the DAT variable value defined in teh DAT File
+- staBomBayDoor is the decimial percentage that the weapon bay doors (if equiped) are open (0=closed / 1=Open)
+- staGear is the decimal percentage that the landing gear are down (0 = Up / 1 = Down)
+
+## RCS Impact on YSCE HUD Target Circle
+
+YSCE will overlay a circle around another aircraft flying when the aircraft. Above the eMRA, the range at which this circle will appear is reduced to 1000m regardless of the circle range setting or target aircraft RCS.
+
+
+## Getting Shot At
+
+### Getting Shot At By SAMs
+
+The lateral range of the first shot of a Surface to Air Missile (SAM) is directly proportinal to to the absolute value of the target aircraft's RCS value, up to a maximum RCS value of 1.25, afterwhich a further increase in RCS will not increase the SAM's targeting range. At an RCS value of 0.00, SAMs will not engage at any range.
+
+$$SAM First Shot Range = SAMRANGE \times min \left( 1.25 , abs\left( RCS \right) \right)$$
+
+Where:
+- SAMRANGE is the value defined for SAMRANGE in the SAM's DAT File
+- RCS is the instantaneous RCS value calculated above.
+
+### Getting Shot at By AAA
+
+In YSCE, Anti-Aircraft Artillery (AAA) ground objects have two modes: AAA Mode and Turret Mode. 
+
+When in AAA Mode, the lateral range of the first shot by AAA is unaffected by RCS and will shoot whenever the target aircraft is within the range defined as GUNRANGE in the DAT file.
+
+When in Turret Mode, the lateral range of the first shot by AAA follows the same behavior as SAMs
+
+
+### Air to Air Missiles
+
+In YSCE there are three states of missile lock: Red Lock, Yellow Lock, and Subwindow Lock. All are affected by RCS. The Red and Yellow locks are affected by the theoretical maximum range of a weapon type being used by the targeting aircraft, while the Subwindow has a theoretical infinite range.
+
+The Subwindow Lock range is:
+
+$$LockRange = WPNRANGE \times abs\left( RCS \right)$$
+
+The Yellow Lock range is:
+
+$$LockRange = min \left( WPNRANGE \times 0.8, WPNRANGE \times abs\left( RCS \right) \right)$$
+
+The Red Lock range is:
+
+$$LockRange = min \left( WPNRANGE \times 0.5, WPNRANGE \times abs\left( RCS \right) \right)$$
+
+
+There are some special differences with regards to AIM120 weapons below eMRA. For more information, see the weapons pages for more details.
+
+
+
 
 <br>
 
