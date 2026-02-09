@@ -1,7 +1,7 @@
 set(TARGET_NAME ysflight_core)
 add_library(${TARGET_NAME} 
-	fsaibasic.cpp
-	fsatc.cpp
+	"../AI_control/fsaibasic.cpp"
+	"../AI_control/fsatc.cpp"
 	fsatcfileio.cpp
 	fsautodrive.cpp
 	fschoose.cpp
@@ -32,7 +32,7 @@ add_library(${TARGET_NAME}
 	fsweapon.cpp
 	fsweather.cpp
 	fsworld.cpp
-	fsapplyoption.cpp
+	"../AI_control/fsapplyoption.cpp"
 	fsradar.cpp
 	"../gamemode/fssimextension.cpp"
 	"../gamemode/fssimextension_racing.cpp"
@@ -41,8 +41,8 @@ add_library(${TARGET_NAME}
 	"../gamemode/fssimextension_closeairsupport.cpp"
 	"../gamemode/fssimextension_groundtoair.cpp"
 	fs.h
-	fsaibasic.h
-	fsatc.h
+	"../AI_control/fsaibasic.h"
+	"../AI_control/fsatc.h"
 	fsautodrive.h
 	fschoose.h
 	fscloud.h
@@ -76,7 +76,7 @@ add_library(${TARGET_NAME}
 	fsweapon.h
 	fsweather.h
 	fsworld.h
-	fsapplyoption.h
+	"../AI_control/fsapplyoption.h"
 	fsradar.h
 	"../gamemode/fssimextension.h"
 	"../gamemode/fssimextension_racing.h"
