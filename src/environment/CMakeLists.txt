@@ -1,25 +1,22 @@
-set(TARGET_NAME ysflight_config)
+set(TARGET_NAME "ysflight_environment")
 set(LIB_DEPENDENCY
 ysclass
 ysport
-ysflight_util
 ysflight_common
-)
-set(SRCS
-fsapplyoption.cpp
-fsconfig.cpp
-fsfilename.cpp
-fsoption.cpp
-fsnetconfig.cpp
-)
-set(HEADERS
-fsapplyoption.h
-fsconfig.h
-fsfilename.h
-fsoption.h
-fsnetconfig.h
+ysflight_util
 )
 
+set(SRCS
+fsairproperty.cpp
+fscloud.cpp
+fsweather.cpp
+)
+
+set(HEADERS
+fsairproperty.h
+fscloud.h
+fsweather.h
+)
 add_library(${TARGET_NAME} ${SRCS} ${HEADERS})
 target_link_libraries(${TARGET_NAME} ${LIB_DEPENDENCY})
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

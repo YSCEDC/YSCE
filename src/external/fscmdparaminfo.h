@@ -3,8 +3,8 @@
 /* { */
 
 #include <ysclass.h>
-#include "fsweather.h"
-#include "fsdialog.h" // FsInterceptMissionInfo is defined here.  Shall be moved to an appropriate place.
+#include "environment/fsweather.h"
+#include "gui/fsdialog.h" // FsInterceptMissionInfo is defined here.  Shall be moved to an appropriate place.
 
 class FsCommandParameter
 {

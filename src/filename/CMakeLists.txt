@@ -2,11 +2,11 @@ set(TARGET_NAME ysflight_filename)
 set(LIB_DEPENDENCY ysclass ysport ysflight_common)
 
 set(SRCS
-fsfilename.cpp
+
 )
 
 set(HEADERS
-fsfilename.h
+
 )
 
 add_library(${TARGET_NAME} ${SRCS} ${HEADERS})

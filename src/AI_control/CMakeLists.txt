@@ -1,4 +1,4 @@
-set(TARGET_NAME ysflight_autopilot)
+set(TARGET_NAME ysflight_aicontrol)
 set(LIB_DEPENDENCY 
 	geblkernel 
 	geblgl 
@@ -24,6 +24,10 @@ fsformationautopilot.cpp
 fsgroundattackautopilot.cpp
 fsmissionautopilot.cpp
 fsrefuelandtakeoff.cpp
+fsthreatavoidingpath.cpp
+fsautodrive.cpp
+fsaibasic.cpp
+fsatc.cpp
 )
 set(HEADERS
 fsautopilot.h
@@ -34,6 +38,9 @@ fsformationautopilot.h
 fsgroundattackautopilot.h
 fsmissionautopilot.h
 fsrefuelandtakeoff.h
+fsaibasic.h
+fsatc.h
+fsautodrive.h
 )
 
 add_library(${TARGET_NAME} ${SRCS} ${HEADERS})

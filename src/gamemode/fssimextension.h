@@ -9,8 +9,8 @@
 #include <ysclass.h>
 #include <ysbitmap.h>
 
-#include "fsdef.h"
-#include "fsweapon.h"
+#include "util/fsdef.h"
+#include "weapon/fsweapon.h"
 
 class FsSimulation;
 

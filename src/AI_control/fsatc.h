@@ -6,7 +6,7 @@
 #include "fsdef.h"
 #include "voicedll/fsvoiceenum.h"
 
-#include <ysscenery.h>
+#include "scenery/ysscenery.h"
 
 class FsVoicePhrasePrep
 {

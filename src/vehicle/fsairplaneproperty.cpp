@@ -12,15 +12,15 @@
 #include <fssimplewindow.h>
 #undef FSSIMPLEWINDOW_MACRO_ONLY
 
-#include <fsairproperty.h>
+#include "environment/fsairproperty.h"
 
 #include "fsutil.h"
 #include "fsnetutil.h"
-#include "fsweather.h"
-#include "fsnavaid.h"
+#include "environment/fsweather.h"
+#include "instrument/fsnavaid.h"
 #include "fsrecord.h"
 #include "fsvisual.h"
-#include "fsproperty.h"
+#include "weapon/fsproperty.h"
 #include "fsairplaneproperty.h"
 #include "fsgroundproperty.h"
 #include "fsnetwork.h"
@@ -1003,7 +1003,7 @@ void FsAirplaneProperty::Move(
 #endif
 
 
-	if(0<chRealProp.GetN())
+	/*if(0<chRealProp.GetN())
 	{
 		const YSBOOL engineOut=(YsTolerance<staFuelLoad ? YSFALSE : YSTRUE);
 
@@ -1016,7 +1016,7 @@ void FsAirplaneProperty::Move(
 			realProp.Move(relVelAirframe,staThrottle,dt,engineOut);
 			realProp.ControlPitch(staPropLever[realPropIdx],dt);
 		}
-	}
+	}*/
 
 
 	if(YSTRUE!=staPowerLoss)
@@ -1792,20 +1792,20 @@ void FsAirplaneProperty::CalculateForce(void)
 
 	if(staFuelLoad>YsTolerance && IsActive()==YSTRUE && staArrested!=YSTRUE)
 	{
-		if(0<chRealProp.GetN())
-		{
-			YsVec3 thrustForTest=YsOrigin();
-			double rpm=0.0;
-			for(auto &realProp : chRealProp)
-			{
-				thrustForTest+=realProp.GetForce();
-				rpm=realProp.radianPerSec*60.0/(YsPi*2.0);
-			}
-			thrust=thrustForTest.z();
-			//printf("RealProp %.2lfN   RPM %.0lf\n",thrustForTest.GetLength(),rpm,thrust);
-			//printf("RealProp Vec %s\n",thrustForTest.Txt());
-		}
-		else
+		//if(0<chRealProp.GetN())
+		//{
+		//	YsVec3 thrustForTest=YsOrigin();
+		//	double rpm=0.0;
+		//	for(auto &realProp : chRealProp)
+		//	{
+		//		thrustForTest+=realProp.GetForce();
+		//		rpm=realProp.radianPerSec*60.0/(YsPi*2.0);
+		//	}
+		//	thrust=thrustForTest.z();
+		//	//printf("RealProp %.2lfN   RPM %.0lf\n",thrustForTest.GetLength(),rpm,thrust);
+		//	//printf("RealProp Vec %s\n",thrustForTest.Txt());
+		//}
+		//else
 		{
 			double v;  // v must be velocity component of thrust direction.
 			YsVec3 vThrTfm;
@@ -2508,7 +2508,7 @@ double FsAirplaneProperty::GetThrust(const double &thr,const double &alt,const d
 
 double FsAirplaneProperty::GetConvergentThrust(const double &thr,const double &alt,const double &vel,YSBOOL ab)
 {
-	if(0<chRealProp.GetN())
+	/*if(0<chRealProp.GetN())
 	{
 		const double rho=FsGetAirDensity(alt);
 		double radianPerSec;
@@ -2519,7 +2519,7 @@ double FsAirplaneProperty::GetConvergentThrust(const double &thr,const double &a
 		}
 		return thrust;
 	}
-	else
+	else*/
 	{
 		return GetThrust(thr,alt,vel,ab);
 	}
@@ -3950,65 +3950,65 @@ void FsAirplaneProperty::ControlSpeed(const double &spd,const double &dt)
 	ctlPrevSpdErr=spdErr;
 
 
-	if(0<chRealProp.GetN())
-	{
-		const double thr0=GetConvergentThrust(0.0,staPosition.y(),spd,YSFALSE);
-		const double thrCurrent=GetConvergentThrust(staThrottle,staPosition.y(),spd,YSFALSE);
-		const double thr1=GetConvergentThrust(1.0,staPosition.y(),spd,YSFALSE);
+	//if(0<chRealProp.GetN())
+	//{
+	//	const double thr0=GetConvergentThrust(0.0,staPosition.y(),spd,YSFALSE);
+	//	const double thrCurrent=GetConvergentThrust(staThrottle,staPosition.y(),spd,YSFALSE);
+	//	const double thr1=GetConvergentThrust(1.0,staPosition.y(),spd,YSFALSE);
 
-		double throttleCorrection=0.0;
-		if(YsTolerance<refSpdCruise)
-		{
-			const double spdDiffRelativeToCruisingSpeed=(spd-staV)/refSpdCruise;
-			const double Kp=2.0;
-			const double Ki=0.01;
-			throttleCorrection=Kp*spdDiffRelativeToCruisingSpeed+Ki*ctlIntegralSpdErr;
-		}
+	//	double throttleCorrection=0.0;
+	//	if(YsTolerance<refSpdCruise)
+	//	{
+	//		const double spdDiffRelativeToCruisingSpeed=(spd-staV)/refSpdCruise;
+	//		const double Kp=2.0;
+	//		const double Ki=0.01;
+	//		throttleCorrection=Kp*spdDiffRelativeToCruisingSpeed+Ki*ctlIntegralSpdErr;
+	//	}
 
-		// printf("%s Required %lf Current %lf\n",GetIdentifier(),spd,staV);
-		// printf("   Integral %lf Correction %lf\n",ctlIntegralSpdErr,throttleCorrection);
+	//	// printf("%s Required %lf Current %lf\n",GetIdentifier(),spd,staV);
+	//	// printf("   Integral %lf Correction %lf\n",ctlIntegralSpdErr,throttleCorrection);
 
-		if(requiredThrust<thr0)
-		{
-			// cd=cd*(1.0+chCdSpoiler*staSpoiler);  <- effect of the spoiler
-			double drag0,spl;
+	//	if(requiredThrust<thr0)
+	//	{
+	//		// cd=cd*(1.0+chCdSpoiler*staSpoiler);  <- effect of the spoiler
+	//		double drag0,spl;
 
-			drag0=drag/(1.0+chCdSpoiler*staSpoiler);
-			if(chCdSpoiler>YsTolerance && YsEqual(drag0,0.0)!=YSTRUE)
-			{
-				spl=((-(requiredThrust-thr0)/drag0)-1.0)/chCdSpoiler;
-				spl=YsBound(spl,0.0,1.0);
-			}
-			else
-			{
-				spl=0.0;
-			}
+	//		drag0=drag/(1.0+chCdSpoiler*staSpoiler);
+	//		if(chCdSpoiler>YsTolerance && YsEqual(drag0,0.0)!=YSTRUE)
+	//		{
+	//			spl=((-(requiredThrust-thr0)/drag0)-1.0)/chCdSpoiler;
+	//			spl=YsBound(spl,0.0,1.0);
+	//		}
+	//		else
+	//		{
+	//			spl=0.0;
+	//		}
 
-			SetThrottle(0.0);
-			SetSpoiler(spl);
-		}
-		else if(thr1<requiredThrust)
-		{
-			SetThrottle(1.0);
-			SetSpoiler(0.0);
-		}
-		else
-		{
-			double thr=0.0;
-			if(requiredThrust<thrCurrent)
-			{
-				thr=staThrottle*(requiredThrust-thr0)/(thrCurrent-thr0);
-			}
-			else
-			{
-				const double t=(requiredThrust-thrCurrent)/(thr1-thrCurrent);
-				thr=staThrottle*(1.0-t)+1.0*t;
-			}
-			SetThrottle(thr+throttleCorrection);
-			SetSpoiler(0.0);
-		}
-	}
-	else
+	//		SetThrottle(0.0);
+	//		SetSpoiler(spl);
+	//	}
+	//	else if(thr1<requiredThrust)
+	//	{
+	//		SetThrottle(1.0);
+	//		SetSpoiler(0.0);
+	//	}
+	//	else
+	//	{
+	//		double thr=0.0;
+	//		if(requiredThrust<thrCurrent)
+	//		{
+	//			thr=staThrottle*(requiredThrust-thr0)/(thrCurrent-thr0);
+	//		}
+	//		else
+	//		{
+	//			const double t=(requiredThrust-thrCurrent)/(thr1-thrCurrent);
+	//			thr=staThrottle*(1.0-t)+1.0*t;
+	//		}
+	//		SetThrottle(thr+throttleCorrection);
+	//		SetSpoiler(0.0);
+	//	}
+	//}
+	//else
 	{
 		// Propotional Controller
 		// Say 1.0/Kp seconds to correct speed difference
@@ -5746,20 +5746,20 @@ const double &FsAirplaneProperty::GetThrottle(void) const
 
 const double FsAirplaneProperty::GetRealPropRPM(YSSIZE_T engineIdx) const
 {
-	if(YSTRUE==chRealProp.IsInRange(engineIdx))
+	/*if(YSTRUE==chRealProp.IsInRange(engineIdx))
 	{
 		return chRealProp[engineIdx].radianPerSec*60.0/(YsPi*2.0);
-	}
+	}*/
 	return 0.0;
 }
 
 YSRESULT FsAirplaneProperty::GetRPMRangeForSoundEffect(double &min,double &max,int engineIdx) const
 {
-	if(YSTRUE==chRealProp.IsInRange(engineIdx))
+	/*if(YSTRUE==chRealProp.IsInRange(engineIdx))
 	{
 		chRealProp[engineIdx].GetRPMRangeForSoundEffect(min,max);
 		return YSOK;
-	}
+	}*/
 	min=0.0;
 	max=0.0;
 	return YSERR;
@@ -5767,7 +5767,7 @@ YSRESULT FsAirplaneProperty::GetRPMRangeForSoundEffect(double &min,double &max,i
 
 YSBOOL FsAirplaneProperty::HasFixedSpeedPropeller(void) const
 {
-	for(auto &prop : chRealProp)
+	/*for(auto &prop : chRealProp)
 	{
 		for(auto &blade : prop.bladeArray)
 		{
@@ -5776,7 +5776,7 @@ YSBOOL FsAirplaneProperty::HasFixedSpeedPropeller(void) const
 				return YSTRUE;
 			}
 		}
-	}
+	}*/
 	return YSFALSE;
 }
 
@@ -7898,11 +7898,11 @@ YSRESULT FsAirplaneProperty::EncodeProperty(
 YsArray <YsString> FsAirplaneProperty::EncodeEngineProperty(unsigned int netVersion) const
 {
 	YsArray <YsString> engineProp;
-	if(0==chRealProp.GetN())  // 2015/05/07 If there is zero real-prop, "NREALPRP 0" should be sent.
-	{
-		engineProp.Increment();
-		MakeShortFormat(engineProp.Last(),"NREALPRP 0",netVersion);
-	}
+	//if(0==chRealProp.GetN())  // 2015/05/07 If there is zero real-prop, "NREALPRP 0" should be sent.
+	//{
+	//	engineProp.Increment();
+	//	MakeShortFormat(engineProp.Last(),"NREALPRP 0",netVersion);
+	//}
 	engineProp.Append(chEnginePropCmd);
 	return engineProp;
 }

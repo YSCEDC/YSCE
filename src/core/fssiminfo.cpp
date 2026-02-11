@@ -5,11 +5,11 @@
 
 #include "fs.h"
 #include "fsfilename.h"
-#include "fsinstpanel.h"
+#include "instrument/fsinstpanel.h"
 #include "platform/common/fswindow.h"
 #include "graphics/common/fsopengl.h"
 
-#include "fspluginmgr.h"
+#include "external/fspluginmgr.h"
 
 
 #include "fstextresource.h"

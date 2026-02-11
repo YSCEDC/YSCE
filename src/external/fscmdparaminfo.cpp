@@ -1,8 +1,8 @@
 #include <ysport.h>
 
 #include "fscmdparaminfo.h"
-#include "fsfilename.h"
-#include "fsoption.h"
+#include "config/fsfilename.h"
+#include "config/fsoption.h"
 
 FsCommandParameter::FsCommandParameter()
 {

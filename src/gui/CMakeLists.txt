@@ -5,24 +5,38 @@ set(CURL_DIR "")
 
 
 set(SRCS
+fschoose.cpp
+fsguicommondialog.cpp
+fsguiconfigdlg.cpp
+fsguiinfltdlg.cpp
+fsguimaincanvas.cpp
+fsguinetdialog.cpp
+fsguinewflightdialog.cpp
+fsguiselectiondialogbase.cpp
+fsguisiminfodialog.cpp
 fsmenu.cpp
 fsmenu_file.cpp
 fsmenu_net.cpp
 fsmenu_sim.cpp
 fsmenu_util.cpp
 fsmenu_option.cpp
-fsguicommondialog.cpp
-fsguinetdialog.cpp
-fsguimaincanvas.cpp
-fsguisiminfodialog.cpp
+fssubmenu.cpp
 )
 
 set(HEADERS
-fsmenu.h
+fschoose.h
+fsdialog.h
 fsguicommondialog.h
-fsguinetdialog.h
+fsguiconfigdlg.h
+fsguiinfltdlg.h
 fsguimaincanvas.h
+fsguinetdialog.h
+fsguinewflightdialog.h
+fsguiselectiondialogbase.h
 fsguisiminfodialog.h
+fsmenu.h
+fsmissiongoal.h
+fssubmenu.h
 )
 
 find_package(CURL CONFIG REQUIRED)

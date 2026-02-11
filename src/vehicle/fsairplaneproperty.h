@@ -3,8 +3,7 @@
 /* { */
 
 #include "fsvehicleproperty.h"
-#include "fsrealprop.h"
-#include "fsweapon.h"
+#include "weapon/fsweapon.h"
 
 class FsFlightControl;
 class FsSimulation;
@@ -271,7 +270,7 @@ protected:
 	double chPropV0;         //Minimum speed that T=P/v becomes valid.
 	double chPropK;          //Maximum force produced by propeller for v<v0 is computed as F=Pmax*Kv+C
 
-	YsArray <FsPropellerEngine> chRealProp;
+	//YsArray <FsPropellerEngine> chRealProp;
 	// Memo 2015/05/07  When adding chRealJet, look EncodeEngineProperty.
 	//                  Number of realjet=0 must be sent to the client if no real jet engine.
 	YsArray <YsString> chEnginePropCmd;

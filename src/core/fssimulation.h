@@ -17,22 +17,22 @@
 
 #include "fsdef.h"
 #include "fsparticle.h"
-#include "fsweather.h"
+#include "environment/fsweather.h"
 
 #include "fsfield.h"
 
-#include "fshud2.h"
+#include "instrument/fshud2.h"
 
 #include "fswindow.h" // class FsJoystick
 #include "fscontrol.h"
-#include "fsexplosion.h"
+#include "weapon/fsexplosion.h"
 
 
-#include "fssubmenu.h"
+#include "gui/fssubmenu.h"
 
 #include "fssiminfo.h"
 
-#include "fsatc.h"
+#include "ai_control/fsatc.h"
 
 #include "graphics/common/fsconsole.h"
 #include "graphics/common/fsopengl.h"
@@ -1053,7 +1053,7 @@ public:
 	bool IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const;
 };
 
-#include "fsmissiongoal.h"
+#include "gui/fsmissiongoal.h"
 
 template <const int N>
 inline YSRESULT FsSimulation::GetRunwayRectFromPositionAll(YsArray <const YsSceneryRectRegion *,N> &rgnArray,const YsVec3 &pos) const

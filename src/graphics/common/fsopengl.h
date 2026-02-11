@@ -3,7 +3,7 @@
 /* { */
 
 #include <ysviewcontrol.h>
-#include "fsdef.h"
+#include "util/fsdef.h"
 
 class FsProjection
 {

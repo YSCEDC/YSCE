@@ -1,8 +1,8 @@
 #include <ysclass.h>
 #include <ysport.h>
-#include "fs.h"
-#include "fsfilename.h"
-#include "fsinstpanel.h"
+#include "core/fs.h"
+#include "config/fsfilename.h"
+#include "instrument/fsinstpanel.h"
 #include "platform/common/fswindow.h"
 #include "graphics/common/fsopengl.h"
 
@@ -23,14 +23,14 @@
 
 
 #include "fsgui.h"
-#include "fsguiselectiondialogbase.h"
+#include "gui/fsguiselectiondialogbase.h"
 #include <fsguifiledialog.h>
 
-#include "fschoose.h"
+#include "gui/fschoose.h"
 
 #include "graphics/common/fsfontrenderer.h"
 
-#include "fspersona.h"
+#include "core/fspersona.h"
 
 // Standard precision -> 3,4,2,2,2,2
 

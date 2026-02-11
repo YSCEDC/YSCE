@@ -1,115 +1,63 @@
 set(TARGET_NAME ysflight_core)
-add_library(${TARGET_NAME} 
-	"../AI_control/fsaibasic.cpp"
-	"../AI_control/fsatc.cpp"
-	fsatcfileio.cpp
-	fsautodrive.cpp
-	fschoose.cpp
-	fscloud.cpp
-	fscontrol.cpp
-	fsexistence.cpp
-	fsexplosion.cpp
-	fsfield.cpp
-	fsgenmdl.cpp
-	fsguiconfigdlg.cpp
-	fsguiinfltdlg.cpp
-	fsguinewflightdialog.cpp
-	fsguiselectiondialogbase.cpp
-	fshud.cpp
-	fshud2.cpp
-	fsinstpanel.cpp
-	fslattice.cpp
-	fsnetwork.cpp
-	fsparticle.cpp
-	fspersona.cpp
-	fspluginmgr.cpp
-	fssiminfo.cpp
-	fssimulation.cpp
-	fssimulationdemomode.cpp
-	fssimulationfileio.cpp
-	fsstdout.cpp
-	fssubmenu.cpp
-	fsweapon.cpp
-	fsweather.cpp
-	fsworld.cpp
-	"../AI_control/fsapplyoption.cpp"
-	fsradar.cpp
-	"../gamemode/fssimextension.cpp"
-	"../gamemode/fssimextension_racing.cpp"
-	"../gamemode/fssimextension_endurance.cpp"
-	"../gamemode/fssimextension_intercept.cpp"
-	"../gamemode/fssimextension_closeairsupport.cpp"
-	"../gamemode/fssimextension_groundtoair.cpp"
-	fs.h
-	"../AI_control/fsaibasic.h"
-	"../AI_control/fsatc.h"
-	fsautodrive.h
-	fschoose.h
-	fscloud.h
-	fscontrol.h
-	fsdialog.h
-	fsexistence.h
-	fsexplosion.h
-	fsexternalconsole.h
-	fsfield.h
-	fsgenmdl.h
-	fsgroundsky.h
-	fsguiconfigdlg.h
-	fsguiinfltdlg.h
-	fsguiselectiondialogbase.h
-	fshud.h
-	fshud2.h
-	fsinstpanel.h
-	fslattice.h
-	fsmissiongoal.h
-	fsnetwork.h
-	fsguinewflightdialog.h
-	fsparticle.h
-	fspersona.h
-	fsplugin.h
-	fspluginmgr.h
-	fsprintf.h
-	fssiminfo.h
-	fssimulation.h
-	fsstdout.h
-	fssubmenu.h
-	fsweapon.h
-	fsweather.h
-	fsworld.h
-	"../AI_control/fsapplyoption.h"
-	fsradar.h
-	"../gamemode/fssimextension.h"
-	"../gamemode/fssimextension_racing.h"
-	"../gamemode/fssimextension_endurance.h"
-	"../gamemode/fssimextension_intercept.h"
-	"../gamemode/fssimextension_closeairsupport.h"
-	"../gamemode/fssimextension_groundtoair.h"
+set(LIB_DEPENDENCY
+geblkernel
+geblgl
+ysflight_config
+ysflight_platform_common
+ysflight_gamemode
+ysflight_external 
+ysflight_aicontrol
+ysflight_environment
+ysflight_vehicle 
+ysflight_util
+yssocket
+ysflight_graphics_common
+fsguilib
+fsguifiledialog
+ysbitmap
+ysbitmapfont
+ysfontrenderer
+ysport
+ysscenery_dnm
+ystexturemanager
+ysclass
+ysclass11
+ysglcpp
 )
+
+set(SRCS
+fscontrol.cpp
+fsexistence.cpp
+fsfield.cpp
+fslattice.cpp
+fsnetwork.cpp
+fsparticle.cpp
+fspersona.cpp
+fsrunloop.cpp
+fssiminfo.cpp
+fssimulation.cpp
+fssimulationdemomode.cpp
+fsstdout.cpp
+fsworld.cpp
+)
+
+set(HEADERS
+fs.h
+fscontrol.h
+fsexistence.h
+fsfield.h
+fsgroundsky.h
+fslattice.h
+fsnetwork.h
+fsparticle.h
+fspersona.h
+fsprintf.h
+fsrunloop.h
+fssiminfo.h
+fssimulation.h
+fsstdout.h
+fsworld.h
+)
+add_library(${TARGET_NAME} ${SRCS} ${HEADERS})
+target_link_libraries(${TARGET_NAME} ${LIB_DEPENDENCY})
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(${TARGET_NAME} 
-	geblkernel
-	geblgl
-	ysflight_common
-	ysflight_config
-	ysflight_platform_common
-	ysflight_pathplanning 
-	ysflight_externalconsole 
-	ysflight_autopilot 
-	ysflight_dynamics
-	ysflight_vehicle 
-	ysflight_util
-	yssocket
-	ysflight_graphics_common
-	fsguilib
-	fsguifiledialog
-	ysbitmap
-	ysbitmapfont
-	ysfontrenderer
-	ysport
-	ysscenery_dnm
-	ystexturemanager
-	ysflight_filename
-	ysclass
-	ysclass11
-	ysglcpp
-)

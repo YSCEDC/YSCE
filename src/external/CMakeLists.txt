@@ -1,10 +1,23 @@
-set(TARGET_NAME "ysflight_externalconsole")
-set(LIB_DEPENDENCY ysclass ysflight_common ysflight_util)
+set(TARGET_NAME "ysflight_external")
+set(LIB_DEPENDENCY
+ysclass
+ysflight_util
+)
 
 set(SRCS
+fsatcfileio.cpp
 fsinstreading.cpp
+fspluginmgr.cpp
+fssimulationfileio.cpp
+fsscript.cpp
+fscmdparaminfo.cpp
 )
 set(HEADERS
+fsexternalconsole.h
+fsplugin.h
+fspluginmgr.h
+fsscript.h
+fscmdparaminfo.h
 )
 
 add_library(${TARGET_NAME} ${SRCS} ${HEADERS})

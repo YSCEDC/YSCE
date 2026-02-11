@@ -20,17 +20,15 @@ get_property(ADDITIONAL_INCLUDE_DIR TARGET fssimplewindow PROPERTY INCLUDE_DIREC
 set(SRCS
 fsairplaneproperty.cpp
 fsgroundproperty.cpp
-fsproperty.cpp
 fsvehicleproperty.cpp
-fsnavaid.cpp
+fsengine.cpp
 )
 
 set(HEADERS
 fsairplaneproperty.h
 fsgroundproperty.h
-fsproperty.h
 fsvehicleproperty.h
-fsnavaid.h
+fsengine.h
 )
 
 

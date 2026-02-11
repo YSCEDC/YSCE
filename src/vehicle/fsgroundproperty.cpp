@@ -13,19 +13,19 @@
 #include "platform/common/fswindow.h"
 #include "fsutil.h"
 #include "fsnetutil.h"
-#include "fsnavaid.h"
+#include "instrument/fsnavaid.h"
 #include "fsrecord.h"
 #include "fsvisual.h"
-#include "fsproperty.h"
+#include "weapon/fsproperty.h"
 #include "fsairplaneproperty.h"
 #include "fsgroundproperty.h"
 #include "fsnetwork.h"
 #include "fsexistence.h"
 #include "fsstdout.h"
 
-#include "fsexplosion.h"
+#include "weapon/fsexplosion.h"
 #include "fscontrol.h"
-#include "fsweather.h"
+#include "environment/fsweather.h"
 #include "fssimulation.h"
 
 

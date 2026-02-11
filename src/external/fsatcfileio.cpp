@@ -1,7 +1,7 @@
-#include "fsatc.h"
-#include "fsexistence.h"
-#include "fssimulation.h"
-#include "fsnavaid.h"
+#include "ai_control/fsatc.h"
+#include "core/fsexistence.h"
+#include "core/fssimulation.h"
+#include "instrument/fsnavaid.h"
 #include "ysunitconv.h"
 
 YSRESULT FsApproach::Save(FILE *fp,const FsSimulation *sim) const

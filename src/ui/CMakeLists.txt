@@ -3,7 +3,6 @@ set(LIB_DEPENDENCY
 geblkernel
 geblgl
 ysflight_core
-ysflight_common
 ysflight_config
 ysflight_platform_common
 ysflight_pathplanning 
@@ -29,15 +28,13 @@ ysglcpp
 )
 
 set(SRCS
-fsrunloop.cpp
-fsscript.cpp
-fscmdparaminfo.cpp
+
+
 )
 
 set(HEADERS
-fsrunloop.h
-fsscript.h
-fscmdparaminfo.h
+
+
 )
 
 add_library(${TARGET_NAME} ${SRCS} ${HEADERS})

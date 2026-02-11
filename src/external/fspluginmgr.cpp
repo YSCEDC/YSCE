@@ -8,9 +8,9 @@
 #define FSSIMPLEWINDOW_DONT_INCLUDE_OPENGL_HEADERS
 #include <fssimplewindow.h>
 
-#include "fs.h"
+#include "core/fs.h"
 #include "graphics/common/fsopengl.h"
-#include "fsfilename.h"
+#include "external/fsfilename.h"
 #include "fsplugin.h"
 
 #ifdef WIN32

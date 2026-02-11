@@ -3,7 +3,7 @@
 #include "fsconfig.h"
 #include "fsutil.h"
 
-#include "core/fsweather.h"
+#include "environment/fsweather.h"
 
 // Implementation //////////////////////////////////////////
 FsFlightConfig::FsFlightConfig()

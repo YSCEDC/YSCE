@@ -40,8 +40,8 @@ typedef int SOCKET;
 #include <ysbitmap.h>
 
 #include "fsgui.h"
-#include "fsguiselectiondialogbase.h"
-#include "fschoose.h"
+#include "gui/fsguiselectiondialogbase.h"
+#include "gui/fschoose.h"
 
 
 #include <yssocket.h>

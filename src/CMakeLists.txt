@@ -36,25 +36,19 @@ else()
 	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../ysce_public/src public)
 endif()
 
-add_subdirectory(AI_control)
-add_subdirectory(atmosphere)
+add_subdirectory(ai_control)
+add_subdirectory(environment)
 add_subdirectory(config)
-add_subdirectory(core)
+
 add_subdirectory(external)
 add_subdirectory(gamemode)
-add_subdirectory(gui)
+
 add_subdirectory(instrument)
 add_subdirectory(platform/common)
 add_subdirectory(scenery)
 add_subdirectory(util)
 add_subdirectory(vehicle)
 add_subdirectory(weapon)
-
-	add_subdirectory(common)
-	add_subdirectory(filename)
-	add_subdirectory(dynamics)
-	add_subdirectory(pathplanning)
-	add_subdirectory(ui)
 
 add_subdirectory(ysjoystick/src)
 set(ysflight_filename_INCLUDE_DIR ${ysflight_filename_INCLUDE_DIR} PARENT_SCOPE)
@@ -64,9 +58,7 @@ add_subdirectory(graphics/gl)
 add_subdirectory(graphics/gl2.0)
 add_subdirectory(graphics/null)
 
-add_subdirectory(main)
-add_subdirectory(main_consvr)
-add_subdirectory(main_demoOnly)
+
 
 
 if(ysd3d9_EXIST)
@@ -97,3 +89,7 @@ if(BUILD_YSFLIGHT_CONSOLE_SERVER)
 	add_subdirectory(platform/nownd)
 endif()
 
+add_subdirectory(core)
+add_subdirectory(gui)
+add_subdirectory(main)
+add_subdirectory(main_consvr)

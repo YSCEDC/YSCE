@@ -6,7 +6,7 @@
 #include <memory>
 #include <chrono>
 
-#include "fsrunloop.h"
+#include "core/fsrunloop.h"
 
 class FsScript
 {

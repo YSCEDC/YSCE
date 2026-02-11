@@ -1,23 +1,21 @@
-set(TARGET_NAME ysflight_config)
+set(TARGET_NAME ysflight_weapon)
 set(LIB_DEPENDENCY
 ysclass
 ysport
-ysflight_util
 ysflight_common
+ysflight_util
 )
+
 set(SRCS
-fsapplyoption.cpp
-fsconfig.cpp
-fsfilename.cpp
-fsoption.cpp
-fsnetconfig.cpp
+fsexplosion.cpp
+fsweapon.cpp
+fsproperty.cpp
 )
+
 set(HEADERS
-fsapplyoption.h
-fsconfig.h
-fsfilename.h
-fsoption.h
-fsnetconfig.h
+fsexplosion.h
+fsweapon.h
+fsproperty.h
 )
 
 add_library(${TARGET_NAME} ${SRCS} ${HEADERS})

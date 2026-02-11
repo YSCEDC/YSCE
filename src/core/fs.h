@@ -11,32 +11,32 @@
 
 
 
-#include <ysscenery.h>
+#include "scenery/ysscenery.h"
 
 #include "fsdef.h"
 
 #include "fsbase.h"
 #include "fsutil.h"
-#include "fsweather.h"
-#include "fscloud.h"
+#include "environment/fsweather.h"
+#include "environment/fscloud.h"
 #include "fsrecord.h"
-#include "fsexplosion.h"
+#include "weapon/fsexplosion.h"
 #include "fsgroundsky.h"
-#include "fsproperty.h"
-#include "fsairplaneproperty.h"
-#include "fsweapon.h"
+#include "weapon/fsproperty.h"
+#include "vehicle/fsairplaneproperty.h"
+#include "weapon/fsweapon.h"
 #include "fsgroundproperty.h"
 #include "fsnetwork.h"
 #include "fsexistence.h"
 #include "fsfield.h"
 #include "fsstdout.h"
-#include "fshud.h"
+#include "instrument/fshud.h"
 #include "fscontrol.h"
 #include "fssimulation.h"
 #include "fsworld.h"
 #include "fsairsound.h"
 #include "fsautopilot.h"
-#include "fsdialog.h"
+#include "gui/fsdialog.h"
 
 
 

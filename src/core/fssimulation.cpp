@@ -9,20 +9,20 @@
 #define FSSIMPLEWINDOW_DONT_INCLUDE_OPENGL_HEADERS
 #include <fssimplewindow.h>
 
-#include <fsairproperty.h>
+#include "environment/fsairproperty.h"
 
 #include "fsconfig.h"
 #include "fssimulation.h"
 #include "fs.h"
-#include "fsradar.h"
+#include "instrument/fsradar.h"
 #include "fsfilename.h"
-#include "fsinstpanel.h"
+#include "instrument/fsinstpanel.h"
 #include "platform/common/fswindow.h"
 #include "graphics/common/fsopengl.h"
 
-#include "fspluginmgr.h"
+#include "external/fspluginmgr.h"
 #include "graphics/common/fsfontrenderer.h"
-#include "fsguiinfltdlg.h"
+#include "gui/fsguiinfltdlg.h"
 
 #include "fstextresource.h"
 #include "ysbitmap.h"

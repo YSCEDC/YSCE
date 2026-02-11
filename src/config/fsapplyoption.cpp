@@ -12,7 +12,7 @@
 
 #include "fsapplyoption.h"
 
-#include "fs.h"
+#include "core/fs.h"
 #include "graphics/common/fsopengl.h"
 #include "fsfilename.h"
 #include "platform/common/fswindow.h"

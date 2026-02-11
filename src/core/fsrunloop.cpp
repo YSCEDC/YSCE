@@ -20,7 +20,7 @@
 
 #include "fstextresource.h"
 
-#include "fsdialog.h"
+#include "gui/fsdialog.h"
 
 #include "fsautopilot.h" // Needed for FSACRO_*
 

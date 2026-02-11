@@ -20,15 +20,11 @@ ysclass11
 ysglcpp
 )
 set(SRCS
-fsdef.cpp
-fstextresource.cpp
+
 )
 
 set(HEADERS
-fsdef.h
-fsairsound.h
-fstextresource.h
-fsrecord.h
+
 )
 
 add_library(${TARGET_NAME} ${SRCS} ${HEADERS})
