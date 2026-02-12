@@ -1,3 +1,4 @@
+#include <string>
 #include <ysclass.h>
 #include <ysunitconv.h>
 #include "fs.h"
