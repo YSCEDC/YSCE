@@ -97,7 +97,7 @@ void FsGuiConfigDialog::MakeDefaultsDialog(FsWorld *world,FsFlightConfig &cfg)
 
 
 
-	FsGuiStatic *label;
+	FsGuiStatic *label, *label2;
 	FsGuiGroupBox *grpBox;
 
 
@@ -109,12 +109,25 @@ void FsGuiConfigDialog::MakeDefaultsDialog(FsWorld *world,FsFlightConfig &cfg)
 	dayOrNightBtn[0]=AddTextButton(MkId("day")  ,FSKEY_NULL,FSGUI_RADIOBUTTON,L"DAY",YSTRUE);
 	dayOrNightBtn[1]=AddTextButton(MkId("night"),FSKEY_NULL,FSGUI_RADIOBUTTON,L"NIGHT",YSFALSE);
 	SetRadioButtonGroup(2,dayOrNightBtn);
+
+	const char *const startTimeStr[] = {"Dawn","Noon","Dusk","Midnight"};
+	label2 = AddStaticText(1,FSKEY_NULL,"Start time",16,1,YSTRUE);
+	startTimeList=AddDropList(MkId("startTime"),FSKEY_NULL,"Start Time",4,startTimeStr,4,32,32,YSTRUE);
 	
 
 	grpBox=AddGroupBox();
 	grpBox->AddGuiItem(label);
 	grpBox->AddGuiItem(dayOrNightBtn[0]);
 	grpBox->AddGuiItem(dayOrNightBtn[1]);
+	grpBox->AddGuiItem(label2);
+	grpBox->AddGuiItem(startTimeList);
+
+	daylengthNBox = AddTextBox(1,FSKEY_NULL,FSGUI_CFGDLG_DAYLENGTH,"",8,YSTRUE);
+	daylengthNBox->SetTextType(FSGUI_INTEGER);
+
+	grpBox = AddGroupBox();
+	grpBox->AddGuiItem(daylengthNBox);
+
 	
 	label=AddStaticText(1,FSKEY_NULL,FSGUI_NEWFLTDLG_WEATHER,16,1,YSTRUE);
 	label->SetFill(YSFALSE);
@@ -472,6 +485,35 @@ void FsGuiConfigDialog::InitializeDialog(FsWorld *,FsFlightConfig &cfg)
 		dayOrNightBtn[1]->SetCheck(YSTRUE);
 		break;
 	}
+
+	double dayTime = cfg.dayTime;
+	// Noon is 0, Dusk is pi*.4, Midnight is pi, Dawn is 3pi/2
+
+	if (dayTime >= 0 && dayTime < YsPi*.3)
+	{
+		startTimeList->Select(1);
+	}
+	else if (dayTime >= YsPi*.3 && dayTime < YsPi)
+	{
+		startTimeList->Select(2);
+	}
+	else if (dayTime >= YsPi && dayTime < 3*YsPi/2)
+	{
+		startTimeList->Select(3);
+	}
+	else if (dayTime >= 3*YsPi/2 && dayTime < 2*YsPi)
+	{
+		startTimeList->Select(0);
+	}
+	else
+	{
+		startTimeList->Select(0);
+	}
+
+	printf("dayLength = %d\n", cfg.dayLength);
+
+	daylengthNBox->SetInteger(cfg.dayLength);
+
 	double windDirval = YsRadToDeg(-atan2(cfg.constWind.x(), -cfg.constWind.z()));
 
 	windDir->SetNumber(windDirval);
@@ -636,6 +678,28 @@ void FsGuiConfigDialog::RetrieveConfig(FsFlightConfig &cfg)
 		cfg.env=FSNIGHT;
 	}
 
+	double dayTime = 0.0;
+
+	switch(startTimeList->GetSelection())
+	{
+	case 0:
+		dayTime = 3*YsPi/2;
+		break;
+	case 1:
+		dayTime = 0.0;
+		break;
+	case 2:
+		dayTime = YsPi*0.4;
+		break;
+	case 3:
+		dayTime = YsPi;
+		break;
+	}
+
+	cfg.dayTime = dayTime;
+
+	cfg.dayLength = YsBound(daylengthNBox->GetInteger(),1,1445);
+	
 	double windDirVal = windDir->GetNumber()/(180/YsPi); //In rads
 	double windSpdVal = YsUnitConv::KTtoMPS(windSpd->GetNumber());
 	YsVec3 windVec;

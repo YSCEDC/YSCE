@@ -115,7 +115,7 @@ void FsHorizontalRadar::DrawBasic(
 
 	//draw radar bounding box
 	FsDrawRect(x1,y1,x2,y2,YsGreen(),YSFALSE);
-
+	printf("x1,y1,x2,y2: %d,%d,%d,%d\n", x1, y1, x2, y2);
 	//draw radar range string
 	char str[256];
 	sprintf(str,"%d NM",int(rangeInX));

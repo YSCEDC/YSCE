@@ -17,6 +17,9 @@ public:
 	FsGuiButton *okBtn,*cancelBtn,*resetBtn;
 
 	FsGuiButton *dayOrNightBtn[2];
+	FsGuiDropList *startTimeList;
+	FsGuiTextBox *daylengthNBox;
+	FsGuiStatic *daylengthText;
 	FsGuiButton *lightSrcBtn[5];
 	FsGuiNumberBox *windDir;
 	FsGuiNumberBox *windSpd;

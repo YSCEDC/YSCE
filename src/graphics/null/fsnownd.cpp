@@ -93,6 +93,9 @@ void FsSetDirectionalLight(const YsVec3 &cameraPosition,const YsVec3 &lightDirec
 {
 }
 
+void FsSetDirectionalLight(const YsVec3 &/*cameraPosition*/, const YsVec3 &lightDirection, FSENVIRONMENT env, const YsColor &lightColor, const double &lightLevel){
+}
+
 void FsFogOn(const YsColor &fogColor,const double &visibility)
 {
 }

@@ -3,6 +3,9 @@
 #include <string.h>
 #include <stddef.h>
 #include <math.h>
+#include <random>
+#include <algorithm>
+#include <vector>
 
 #include <ysclass.h>
 
@@ -10,6 +13,9 @@
 #include "fsdef.h"
 #include "graphics/common/fsopengl.h"
 #include "fscloud.h"
+#include "fsvisual.h"
+#include <ysshellext.h>
+#include <ysshell.h>
 
 
 
@@ -672,9 +678,8 @@ static double sphere_e2_nom[]=
         0.176784,0.942245,-0.284469
 };
 
-FsSolidCloud::FsSolidCloud() : ltc(1)
+FsSolidCloud::FsSolidCloud()
 {
-	ltc.DisablePolygonToCellHashTable();
 	CreateGraphicCache();
 
 }
@@ -692,6 +697,11 @@ void FsSolidCloud::Initialize(void)
 
 const YsShell &FsSolidCloud::GetShell(void) const
 {
+	return shl.Conv();
+}
+
+FsVisualSrf &FsSolidCloud::GetSrf(void)
+{
 	return shl;
 }
 
@@ -703,6 +713,7 @@ const YsVec3 &FsSolidCloud::GetCenter(void) const
 void FsSolidCloud::Make(const YsVec3 &mov,const double &sizeX,const double &sizeZ,const double &y0,const double &y1)
 {
 	YsArray <YsShellVertexHandle> vtHdList;
+	YsShellExt shell;
 	YsShellPolygonHandle plHd;
 	YsShellVertexHandle vtHd;
 	YsVec3 diagon;
@@ -714,7 +725,8 @@ void FsSolidCloud::Make(const YsVec3 &mov,const double &sizeX,const double &size
 	{
 		YsVec3 pos;
 		pos.Set(sphere_e2_vtx[i*3],sphere_e2_vtx[i*3+1],sphere_e2_vtx[i*3+2]);
-		vtHd=shl.AddVertexH(pos);
+		vtHd=shell.AddVertex(pos);
+		shell.SetVertexRoundFlag(vtHd,YSTRUE);
 		vtHdList.Append(vtHd);
 	}
 
@@ -727,17 +739,20 @@ void FsSolidCloud::Make(const YsVec3 &mov,const double &sizeX,const double &size
 		plVtHd[0]=vtHdList[sphere_e2_idx[i*3]];
 		plVtHd[1]=vtHdList[sphere_e2_idx[i*3+1]];
 		plVtHd[2]=vtHdList[sphere_e2_idx[i*3+2]];
-		plHd=shl.AddPolygonH(3,plVtHd);
-		shl.SetNormalOfPolygon(plHd,plNom);
+		plHd=shell.AddPolygon(3,plVtHd);
+		shell.SetPolygonNormal(plHd,plNom);
+		YsColor col;
+		col.SetIntRGBA(255,255,255,125);
+		shell.SetPolygonColor(plHd,col);
 	}
 
 
-	shl.GetBoundingBox(bbx[0],bbx[1]);
+	shell.GetBoundingBox(bbx[0],bbx[1]);
 	diagon=bbx[1]-bbx[0];
 	bump=diagon.GetLength()/20.0;
 
 	plHd=NULL;
-	while((plHd=shl.FindNextPolygon(plHd))!=NULL)
+	while((plHd=shell.FindNextPolygon(plHd))!=NULL)
 	{
 		if(rand()%100<50)
 		{
@@ -745,23 +760,23 @@ void FsSolidCloud::Make(const YsVec3 &mov,const double &sizeX,const double &size
 			const YsShellVertexHandle *plVtHd;
 			double t;
 			YsVec3 nom,pos;
-			shl.GetNormalOfPolygon(nom,plHd);
-			shl.GetVertexListOfPolygon(nPlVt,plVtHd,plHd);
+			shell.GetNormalOfPolygon(nom,plHd);
+			shell.GetVertexListOfPolygon(nPlVt,plVtHd,plHd);
 			t=(double)(rand()%100-50)/50.0;
 			for(i=0; i<nPlVt; i++)
 			{
-				shl.GetVertexPosition(pos,plVtHd[i]);
+				shell.GetVertexPosition(pos,plVtHd[i]);
 				pos+=t*nom;
-				shl.ModifyVertexPosition(plVtHd[i],pos);
+				shell.SetVertexPosition(plVtHd[i],pos);
 			}
 		}
 	}
-	shl.AutoComputeNormalAll(YSTRUE,YSTRUE);
+	
 
 
 
 	double scaleX,scaleY,scaleZ,offsetY;
-	shl.GetBoundingBox(bbx[0],bbx[1]);
+	shell.GetBoundingBox(bbx[0],bbx[1]);
 	diagon=bbx[1]-bbx[0];
 	scaleX=sizeX/diagon.x();
 	scaleY=(y1-y0)/diagon.y();
@@ -769,34 +784,45 @@ void FsSolidCloud::Make(const YsVec3 &mov,const double &sizeX,const double &size
 	offsetY=-bbx[0].y();
 
 	vtHd=NULL;
-	while((vtHd=shl.FindNextVertex(vtHd))!=NULL)
+	while((vtHd=shell.FindNextVertex(vtHd))!=NULL)
 	{
 		YsVec3 pos;
-		shl.GetVertexPosition(pos,vtHd);
+		shell.GetVertexPosition(pos,vtHd);
 		pos.AddY(offsetY);
 		pos.MulX(scaleX);
 		pos.MulY(scaleY);
 		pos.MulZ(scaleZ);
 
-		pos.AddX(mov.x());
-		pos.AddY(y0);
-		pos.AddZ(mov.z());
-
-		shl.ModifyVertexPosition(vtHd,pos);
+		shell.SetVertexPosition(vtHd,pos);
 	}
 
 
-
-	shl.AutoComputeNormalAll(YSTRUE,YSTRUE);
-	shl.AutoComputeVertexNormalAll(YSTRUE);
-	ltc.SetDomain(shl,1024);
-
-
-
-	shl.GetBoundingBox(bbx[0],bbx[1]);
 	cen=(bbx[0]+bbx[1])/2.0;
+	shl.CopyFrom(shell);
+	shl.GetBoundingBox(bbx[0],bbx[1]);
 
 	ScatterParticle(400);
+	YsVec3 movePos;
+	movePos.SetY(y0);
+	movePos += mov;
+	Move(movePos);
+}
+
+void FsSolidCloud::Move(const YsVec3 &wind){ //Moves each cloud by wind * delta time. 
+	cen += wind;
+	bbx[0] += wind;
+	bbx[1] += wind;
+	YsShellPolygonHandle plHd;
+	YsShellVertexHandle vtHd;
+	YsMatrix4x4 mat;
+	mat.Translate(wind);
+	shl.SetMatrix(mat);
+	// for(auto &p : particle){
+	// 	p.pos += wind;
+	// 	if (p.pos.y() < 0){
+	// 		p.pos.SetY(cen.y());
+	// 	}
+	// }
 }
 
 void FsSolidClouds::MakeOpenGlList(void)
@@ -855,7 +881,7 @@ YSBOOL FsSolidCloud::IsInCloud(const YsVec3 &pos) const
 {
 	if(YsCheckInsideBoundingBox3(pos,bbx[0],bbx[1])==YSTRUE)
 	{
-		if(ltc.CheckInsideSolid(pos)==YSINSIDE)
+		if(shl.CheckInsideSolid(pos)==YSINSIDE)
 		{
 			return YSTRUE;
 		}
@@ -887,7 +913,7 @@ void FsSolidCloud::ScatterParticle(int nParticle)
 			z*=d.z();
 
 			YsVec3 tst=bbx[0]+YsVec3(x,y,z);
-			if(YSINSIDE==ltc.CheckInsideSolid(tst))
+			if(YSINSIDE==shl.CheckInsideSolid(tst))
 			{
 				if(tst.y()-particleRad<bbx[0].y()-100.0)
 				{
@@ -1016,56 +1042,7 @@ YSRESULT FsSolidClouds::Load(FILE *fp)
 		return YSERR;
 	}
 
-	switch(ver)
-	{
-	case 0:
-		{
-			int i;
-			cloudContainer.CleanUp();
-			for(i=0; i<nCloud; i++)
-			{
-				int state;
-				state=0; // 0:Outside  1:Inside
-
-				YsListItem <FsSolidCloud> *itm;
-				itm=cloudContainer.Create();
-				itm->dat.Initialize();
-				itm->dat.shl.BeginReadSrf();
-				while(str.Fgets(fp)!=NULL)
-				{
-					if(state==0)
-					{
-						if(str[0]=='F' || str[0]=='f')
-						{
-							state=1;
-						}
-						else if(str[0]=='E' || str[0]=='e')
-						{
-							break;
-						}
-					}
-					else
-					{
-						if(str[0]=='E' || str[0]=='e')
-						{
-							state=0;
-						}
-					}
-					itm->dat.shl.ReadSrfOneLine(str);
-				}
-				itm->dat.shl.EndReadSrf();
-
-				itm->dat.shl.GetBoundingBox(itm->dat.bbx[0],itm->dat.bbx[1]);
-				itm->dat.cen=(itm->dat.bbx[0]+itm->dat.bbx[1])/2.0;
-
-				itm->dat.shl.AutoComputeVertexNormalAll(YSTRUE);
-				itm->dat.ltc.SetDomain(itm->dat.shl,1024);
-
-				itm->dat.ScatterParticle(400);
-			}
-		}
-		break;
-	}
+	
 
 	return YSOK;
 }
@@ -1095,12 +1072,22 @@ void FsSolidClouds::Make(
 	}
 }
 
+void FsSolidClouds::Move(const double dv, const YsVec3 &wind)
+{
+	YsVec3 winddv = wind * dv;
+	YsListItem <FsSolidCloud> *itm=NULL;
+	while((itm=cloudContainer.FindNext(itm))!=NULL)
+	{
+		itm->dat.Move(winddv);
+	}
+}
+
 void FsSolidClouds::AddToParticleManager(
 	class YsGLParticleManager &partMan,
-	FSENVIRONMENT env,const class FsWeather &weather,
-	const YsVec3 &viewDir,const YsMatrix4x4 &viewMdlTfm,const double &nearZ,const double &farZ,const double &tanFov)
+	double lightIntensity,const class FsWeather &weather,
+	const YsVec3 &viewDir,const YsMatrix4x4 &viewMdlTfm,const double &nearZ,const double &farZ,const double &tanFov,const YsVec3 &viewPoint)
 {
-	const double baseBrightness=(FSDAYLIGHT==env ? 0.7 : 0.15);
+	const double baseBrightness=lightIntensity*.75;
 
 	YsListItem <FsSolidCloud> *itm=NULL;
 	while((itm=cloudContainer.FindNext(itm))!=NULL)
@@ -1115,7 +1102,7 @@ void FsSolidClouds::AddToParticleManager(
 				col.SetDoubleRGBA(brightness,brightness,brightness,0.5);
 
 				float s=(float)particle.particleType*0.125f;
-				partMan.Add(particle.pos,col,particle.rad*2.0,s,0);
+				partMan.Add(particle.pos+itm->dat.cen,col,particle.rad*2.0,s,0);
 			}
 		}
 	}
@@ -1123,12 +1110,20 @@ void FsSolidClouds::AddToParticleManager(
 
 void FsSolidClouds::Draw(
     FSENVIRONMENT env,const FsWeather &weather,
-    const YsMatrix4x4 &viewMdlTfm,const double &nearZ,const double &farZ,const double &tanFov)
+    const YsMatrix4x4 &viewMdlTfm,const double &nearZ,const double &farZ,const double &tanFov,const YsMatrix4x4 &projTfm)
 {
 	YsArray <double,32> dist;
 	YsArray <FsSolidCloud *,32> toDraw;
 
 	BeginDrawCloud();
+
+	YsVec3 cameraPos,pos;
+	pos.Set(0.0,0.0,0.0);
+	cameraPos = viewMdlTfm * pos;
+	
+
+	printf("CameraPos: %lf %lf %lf\n",cameraPos.x(),cameraPos.y(),cameraPos.z());
+
 
 	YsListItem <FsSolidCloud> *itm;
 	itm=NULL;
@@ -1146,9 +1141,52 @@ void FsSolidClouds::Draw(
 
 	for(int i=0; i<toDraw.GetN(); ++i)
 	{
-		toDraw[i]->Draw(env,weather);
+		FsVisualSrf srf;
+		YsAtt3 atti = YsAtt3(0.0,0,0);
+		srf = toDraw[i]->GetSrf();
+		srf.Draw(*&viewMdlTfm,*&projTfm,toDraw[i]->cen, *&atti, FSVISUAL_DRAWTRANSPARENT);
 	}
 
 	EndDrawCloud();
 }
+
+	double FsSolidCloud::perlinNoise(double x, double y, int seed){
+	std::default_random_engine generator(seed);
+
+	std::vector<int> p(256);
+
+	for (int i= 0; i < 256; ++i) {
+		p[i] = i;
+	}
+
+	std::shuffle(p.begin(), p.end(), generator);
+
+	double noise = 0.0;
+	double fade = 1.0;
+
+	for (int i = 0; i < 4; ++i) {
+		int X = (int)floor(x) & 255;
+		int Y = (int)floor(y) & 255;
+
+		double u = x - floor(x);
+		double v = y - floor(y);
+
+		int A = p[X] + Y;
+		int AA = p[A];
+		int AB = p[A + 1];
+		int B = p[X + 1] + Y;
+		int BA = p[B];
+		int BB = p[B + 1];
+
+		noise += fade * ((1 - u) * (1 - v) * AA + (1 - u) * v * AB + u * (1 - v) * BA + u * v * BB);
+
+		x *= 2.0;
+		y *= 2.0;
+		fade *= 0.5;
+	}
+
+	return noise;
+
+}
+
 

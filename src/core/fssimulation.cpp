@@ -173,6 +173,9 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	currentTime=0.0;
 	aircraftTroubleTimer=0.0;
 	lastTime=0;
+	dayTime = 0;
+	dayLength = 0;
+	lightPositionVector = YsVec3(-1.0, 1, 0.0);
 	mainWindowViewmode=FSCOCKPITVIEW;
 	mainWindowAdditionalAirplaneViewId=0;
 	mainWindowActualViewMode.viewPoint=YsOrigin();
@@ -234,6 +237,7 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	subMenu.CleanUp();
 
 	env=FSDAYLIGHT;
+	lastEnv = FSDAYLIGHT;
 
 	airplaneSearch=new YsHashTable <FsAirplane *> (128);
 	groundSearch=new YsHashTable <FsGround *> (128);
@@ -1485,20 +1489,41 @@ void FsSimulation::EnforceEnvironment(void)
 	{
 	case FSDAYLIGHT:
 		field.ApplyColorScale(1.0,1.0,0.7);
-		fogColor.SetDoubleRGB(0.6,0.6,0.6);
 		YsScenery::lightPointSizePix=1;
 		break;
 	case FSNIGHT:
 		field.ApplyColorScale(0.1,0.1,1.0);
-		fogColor.SetDoubleRGB(0.1,0.1,0.1);
 		YsScenery::lightPointSizePix=4;
 		break;
 	}
 }
 
+void FsSimulation::SendServerEnvironment(FSENVIRONMENT env){
+	if (netServer != NULL){
+		netServer->BroadcastEnvironmentUpdate();
+	}
+
+}
 FSENVIRONMENT FsSimulation::GetEnvironment(void) const
 {
 	return env;
+}
+
+//Implement the following functions:
+int FsSimulation::GetDayLength(void) const{
+	return dayLength / 60; //Convert to minutes
+}
+
+double FsSimulation::GetDayTime(void) const{
+	return dayTime;
+}
+
+void FsSimulation::SetDayLength(int dayLength){
+	this->dayLength = dayLength*60; //Convert to seconds
+}
+
+void FsSimulation::SetDayTime(double dayTime){
+	this->dayTime = dayTime;
 }
 
 YSRESULT FsSimulation::SendConfigString(const char str[])
@@ -2314,7 +2339,7 @@ void FsSimulation::PrepareRunSimulation(void)
 		{
 			if(solidCloud->IsReady()!=YSTRUE)
 			{
-				solidCloud->Make(12,cloudCenter,30000.0,6000.0,cfgPtr->ceiling-400.0,cfgPtr->ceiling+400.0);
+				solidCloud->Make(20,cloudCenter,30000.0,6000.0,cfgPtr->ceiling-400.0,cfgPtr->ceiling+400.0);
 			}
 		}
 	}
@@ -3883,7 +3908,22 @@ void FsSimulation::SimMove(const double &dt)
 	particleStore.Move(dt,weather->GetWind());
 
 	weather->WeatherTransition(dt);
+	//Cloud movement if we bring that in, goes here!
+	solidCloud->Move(dt,weather->GetWind());
 
+	env = weather->GetDayTime(dayTime,dt,dayLength);
+	// If the environment has changed, ensure it is forwarded to the server.
+	if (env != lastEnv){
+		SetEnvironment(env);
+		lastEnv = env;
+		SendServerEnvironment(env);
+	}
+	weather->GetDayTimeHours(dayTime);
+
+	lightColour = weather->GetLightColour(dayTime);
+	lightIntensity = weather->GetLightIntensity(dayTime);
+	weather->SetSunPosition(lightPositionVector,dayTime);
+	fogColor.SetDoubleRGB(0.6*lightIntensity*lightColour.Rd(),0.6*lightIntensity * lightColour.Gd(), 0.6*lightIntensity * lightColour.Bd());
 	airplane=NULL;
 	while((airplane=FindNextAirplane(airplane))!=NULL)
 	{
@@ -4639,7 +4679,7 @@ void FsSimulation::SimControlByUser(const double &dt,FSUSERCONTROL userControl)
 	{
 		// Skip all mouse-move events.
 	}
-
+	
 	auto inFltDlg=GetCurrentInFlightDialog();
 
 	if(NULL!=inFltDlg)
@@ -6420,7 +6460,7 @@ void FsSimulation::SimDrawScreen(
 		particleStore.AddToParticleManager(partMan);
 		if(YSTRUE==cfgPtr->useParticle)
 		{
-			solidCloud->AddToParticleManager(partMan,env,*weather,actualViewMode.viewAttitude.GetForwardVector(),actualViewMode.viewMat,prj.nearz,prj.farz,prj.tanFov);
+			solidCloud->AddToParticleManager(partMan,lightIntensity,*weather,actualViewMode.viewAttitude.GetForwardVector(),actualViewMode.viewMat,prj.nearz,prj.farz,prj.tanFov,actualViewMode.viewPoint);
 			bulletHolder.AddToParticleManager(partMan,currentTime);
 
 			for(FsAirplane *seeker=nullptr; nullptr!=(seeker=FindNextAirplane(seeker)); )
@@ -6740,15 +6780,7 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 #endif
 
 	YsColor fogColor;
-	switch(env)
-	{
-	case FSDAYLIGHT:
-		fogColor.SetDoubleRGB(0.6,0.6,0.6);
-		break;
-	case FSNIGHT:
-		fogColor.SetDoubleRGB(0.1,0.1,0.1);
-		break;
-	}
+	fogColor.SetDoubleRGB(0.6*lightIntensity*lightColour.Rd(),0.6*lightIntensity * lightColour.Gd(), 0.6*lightIntensity * lightColour.Bd());
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
 	printf("SimDrawScreenZBufferSensitive %d\n",__LINE__);
@@ -6820,7 +6852,7 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 
 	if(YSTRUE!=cfgPtr->useParticle)
 	{
-		solidCloud->Draw(env,*weather,actualViewMode.viewMat,proj.nearz,proj.farz,proj.tanFov);
+		solidCloud->Draw(env,*weather,actualViewMode.viewMat,proj.nearz,proj.farz,proj.tanFov,proj.GetMatrix());
 	}
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
@@ -6918,7 +6950,8 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode)
 	printf("SIMDRAW-2.6\n");
 #endif
 
-	FsSetDirectionalLight(actualViewMode.viewPoint,cfgPtr->lightSourceDirection,env);
+
+	FsSetDirectionalLight(actualViewMode.viewPoint,lightPositionVector,FSDAYLIGHT,lightColour,lightIntensity);
 
 	sizx=hei*4/3;
 	sizy=hei;
@@ -7007,25 +7040,21 @@ void FsSimulation::SimDrawBackground(const ActualViewMode &actualViewMode,const 
 {
 	auto gnd=gndColor;
 	auto sky=skyColor;
+	sky = weather->GetLightColour(sky, dayTime);
 
 	YSBOOL gndSpecular=this->gndSpecular;
 	YsColor horizonColor;
-	switch(env)
-	{
-	case FSNIGHT:
-		gnd.SetDoubleRGB(gnd.Rd()*0.1,gnd.Gd()*0.1,gnd.Bd()*0.1);
-		sky.SetDoubleRGB(sky.Rd()*0.1,sky.Gd()*0.1,sky.Bd()*0.1);
-		horizonColor=YsGrayScale(0.1);
-		gndSpecular=YSFALSE;
-		break;
-	case FSDAYLIGHT:
-		horizonColor.SetDoubleRGB(0.7,0.7,0.7);
-		break;
+	gnd.SetDoubleRGB(gnd.Rd()*lightIntensity,gnd.Gd()*lightIntensity,gnd.Bd()*lightIntensity);
+	sky.SetDoubleRGB(sky.Rd()*lightIntensity,sky.Gd()*lightIntensity,sky.Bd()*lightIntensity);
+	horizonColor=YsGrayScale(lightIntensity);
+	if (env == FSNIGHT){
+		gndSpecular = YSFALSE;
 	}
+	
 
 	if(weather->GetFog()==YSTRUE)
 	{
-		groundSky->DrawByFog(actualViewMode.viewPoint,actualViewMode.viewAttitude,gnd,sky,horizonColor,farZ,gndSpecular);
+		groundSky->DrawByFog(actualViewMode.viewPoint,actualViewMode.viewAttitude,gnd,sky,horizonColor,farZ,gndSpecular, lightPositionVector, lightColour);
 	}
 	else if(cfgPtr->horizonGradation==YSTRUE)
 	{
@@ -7069,17 +7098,17 @@ void FsSimulation::SimDrawBackground(const ActualViewMode &actualViewMode,const 
 void FsSimulation::SimDrawMap(const ActualViewMode &actualViewMode,const FsProjection &proj,const double &elvMin,const double &elvMax) const
 {
 	// >>>> Map and shadow
-	YSBOOL drawPset=YSFALSE;
-	if(FSDAYLIGHT!=GetEnvironment())
-	{
-		drawPset=YSTRUE;
-	}
-	else if(FSDAYLIGHT==GetEnvironment() && 
-	        cfgPtr->drawLightsInDaylight==YSTRUE &&
-	        weather->GetFogVisibility()<cfgPtr->drawLightsInDaylightVisibilityThr)
-	{
-		drawPset=YSTRUE;
-	}
+	YSBOOL drawPset=YSTRUE;
+	// if(FSDAYLIGHT!=GetEnvironment())
+	// {
+	// 	drawPset=YSTRUE;
+	// }
+	// else if(FSDAYLIGHT==GetEnvironment() && 
+	//         cfgPtr->drawLightsInDaylight==YSTRUE &&
+	//         weather->GetFogVisibility()<cfgPtr->drawLightsInDaylightVisibilityThr)
+	// {
+	// 	drawPset=YSTRUE;
+	// }
 
 	YsScenery::numSceneryDrawn=0;
 	field.CacheMapDrawingOrder();
@@ -7347,10 +7376,8 @@ void FsSimulation::SimDrawField(const ActualViewMode &actualViewMode,const class
 {
 	field.DrawVisual(actualViewMode.viewPoint,actualViewMode.viewAttitude,proj.GetMatrix(),YSFALSE, cfgPtr->useOpenGlGroundTexture); // forShadowMap=YSFALSE
 
-	if(cfgPtr->drawCloud==YSTRUE && env!=FSNIGHT)
-	{
-		cloud->Draw();
-	}
+	cloud->Draw();
+	
 }
 
 void FsSimulation::SimDrawShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj)  // For OpenGL/Direct3D, not for BlueImpulseSDK
@@ -8100,19 +8127,24 @@ void FsSimulation::SimDrawRadar(const ActualViewMode &actualViewMode) const
 		double radarRange;
 
 		radarRange=playerPlane->Prop().GetCurrentRadarRange();
+		int wid,hei;
+		FsGetWindowSize(wid,hei);
+
+		long radarSize = wid / 5;
+
+		long x1 = wid - radarSize - 10;
+		long y1 = 10;
+		long x2 = wid - 10;
+		long y2 = 10 + radarSize;
+		YsString timeString;
+		YsArray <int> timeArray;
+		timeArray = weather->GetDayTimeHours(dayTime);
+		timeString.Printf("Clock: %02d:%02d", timeArray[0], timeArray[1]);
 
 		if(YsEqual(radarRange,0.0)!=YSTRUE)
 		{
-			int wid,hei;
-			FsGetWindowSize(wid,hei);
-
-			long radarSize = wid / 5;
-
-			long x1 = wid - radarSize - 10;
-			long y1 = 10;
-			long x2 = wid - 10;
-			long y2 = 10 + radarSize;
-
+			
+			FsDrawString(x1,y2+16,timeString, hud2->GetColor());
 			switch(playerPlane->Prop().GetWeaponOfChoice())
 			{
 			default:
@@ -8161,6 +8193,10 @@ void FsSimulation::SimDrawRadar(const ActualViewMode &actualViewMode) const
 				}
 				break;
 			}
+		}
+		else{
+			//Radar is off. Draw the clock at the top:
+			FsDrawString(wid*.9,y1+16, timeString, hud2->GetColor());
 		}
 	}
 
@@ -8407,10 +8443,10 @@ void FsSimulation::SimDrawHud3d(const YsVec3 &fakeViewPos,const YsAtt3 &instView
 			double radarRange = playerPlane->Prop().GetCurrentRadarRange();
 
 			if (YsEqual(radarRange, 0.0) != YSTRUE && cfgPtr->drawRWR == YSTRUE)
-			{
-				hud2->DrawRWRHUD(this, GetPlayerAirplane(), cfgPtr->radarAltitudeLimit, radarRange * 1852, 0.0, 0.0, 0.4);
+				{
+					hud2->DrawRWRHUD(this, GetPlayerAirplane(), cfgPtr->radarAltitudeLimit, radarRange * 1852, 0.0, 0.0, 0.4);
+				}
 			}
-		}
 
 		//draw HUD warnings
 		if (playerPlane != NULL && playerPlane->Prop().IsActive())
@@ -10156,7 +10192,7 @@ void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualVie
 		const auto cameraEv=actualViewMode.viewAttitude.GetForwardVector();
 		const auto cameraUv=actualViewMode.viewAttitude.GetUpVector();
 		
-		const YsVec3 lightEv=-YsUnitVector(cfgPtr->lightSourceDirection);
+		const YsVec3 lightEv=-YsUnitVector(lightPositionVector);
 		const double cameraEvSimilarity=fabs(lightEv*cameraEv);
 		const double cameraUvSimilarity=fabs(lightEv*cameraUv);
 		const YsVec3 lightUv=(cameraEvSimilarity<cameraUvSimilarity ? cameraEv : cameraUv);
@@ -10250,7 +10286,7 @@ void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualVie
 		// where theata is the angle between the lightVec and cameraVec
 		{
 			const auto cameraEv=actualViewMode.viewAttitude.GetForwardVector();
-			const YsVec3 lightEv=-YsUnitVector(cfgPtr->lightSourceDirection);
+			const YsVec3 lightEv=-YsUnitVector(lightPositionVector);
 			const double cosTheata=cameraEv*lightEv;
 			const double sinTheata=sqrt(1.0-YsSmaller(1.0,cosTheata*cosTheata));
 
@@ -12612,7 +12648,7 @@ YSRESULT FsSimulation::LoadConfigFile(const wchar_t fn[],YSBOOL changeEnvironmen
 
 	if(changeEnvironment==YSTRUE)
 	{
-		env=cfgPtr->env;
+		//env=cfgPtr->env;
 		weather->SetFog(cfgPtr->drawFog);
 		weather->SetFogVisibility(cfgPtr->fogVisibility);
 		for(int i=0; i<cfgPtr->cloudLayer.GetN(); i++)
@@ -12620,6 +12656,9 @@ YSRESULT FsSimulation::LoadConfigFile(const wchar_t fn[],YSBOOL changeEnvironmen
 			weather->AddCloudLayer(cfgPtr->cloudLayer[i]);
 		}
 		weather->SetWind(cfgPtr->constWind);
+
+		SetDayTime(cfgPtr->dayTime);
+		SetDayLength(cfgPtr->dayLength);
 
 	}
 

@@ -98,7 +98,10 @@ public:
 	double radarAltitudeLimit;
 	YSBOOL noExtAirView;
 
+	int dayLength;
+	double dayTime;
 	YsVec3 lightSourceDirection;
+
 
 	YSBOOL accurateTime;
 

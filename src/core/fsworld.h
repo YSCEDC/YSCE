@@ -364,6 +364,8 @@ public:
 	YSRESULT DisableGroundFire(void);
 	YSRESULT SetEnvironment(FSENVIRONMENT env);
 	FSENVIRONMENT GetEnvironment(void);
+	YSRESULT SetDayTime(double time);
+	YSRESULT SetDayLength(int dayLength);
 	FsAirplane *AddAirplane(const char idName[],YSBOOL isPlayerPlane,unsigned netSearchKey=0);
 	FsAirplane *ResetAirplane(FsAirplane *air);
 	FsAirplane *AddMatchingAirplane(
