@@ -8,8 +8,8 @@
 #include <fssimplewindow.h>
 #include <ysclass.h>
 
-#include "graphics/common/fsopengl.h"
-#include "platform/common/fswindow.h"
+#include "fsopengl.h"
+#include "fswindow.h"
 
 #include "fsnavaid.h"
 

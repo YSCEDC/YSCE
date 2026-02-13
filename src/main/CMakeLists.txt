@@ -32,33 +32,29 @@ endif()
 
 set(VERBOSE_MODE 0)
 set(IS_LIBRARY_PROJECT 0)
-set(LIB_DEPENDENCY 
+set(LIB_DEPENDENCY
 geblkernel
 geblgl
-ysflight_ui
-ysflight_gui
-ysflight_common
-ysflight_core
-ysflight_pathplanning 
-ysflight_externalconsole 
-ysflight_autopilot 
-ysflight_dynamics
-ysflight_vehicle 
-ysflight_util
-yssocket
-ysflight_graphics_common
 fsguilib
 fsguifiledialog
 ysbitmap
 ysbitmapfont
-ysfontrenderer
-ysport
-ysscenery_dnm
 ystexturemanager
-ysflight_filename
 ysclass
 ysclass11
+ysport
 ysglcpp
+yssocket
+
+ysflight_aicontrol
+ysflight_config
+ysflight_core
+ysflight_external
+ysflight_gui
+ysflight_util
+ysscenery_dnm
+ysflight_graphics_common
+ysflight_platform_common
 )
 set(INCLUDE_DEPENDENCY)
 set(OWN_HEADER_PATH .)

@@ -9,20 +9,21 @@
 #define FSSIMPLEWINDOW_DONT_INCLUDE_OPENGL_HEADERS
 #include <fssimplewindow.h>
 
-#include "environment/fsairproperty.h"
+#include "fsairproperty.h"
 
 #include "fsconfig.h"
 #include "fssimulation.h"
+#include "fsrunloop.h"
 #include "fs.h"
-#include "instrument/fsradar.h"
+#include "fsradar.h"
 #include "fsfilename.h"
-#include "instrument/fsinstpanel.h"
-#include "platform/common/fswindow.h"
-#include "graphics/common/fsopengl.h"
+#include "fsinstpanel.h"
+#include "fswindow.h"
+#include "fsopengl.h"
 
-#include "external/fspluginmgr.h"
-#include "graphics/common/fsfontrenderer.h"
-#include "gui/fsguiinfltdlg.h"
+#include "fspluginmgr.h"
+#include "fsfontrenderer.h"
+#include "fsguiinfltdlg.h"
 
 #include "fstextresource.h"
 #include "ysbitmap.h"
@@ -63,9 +64,6 @@
 // #define CRASHINVESTIGATION_SIMDRAWSCREEN
 // #define CRASHINVESTIGATION_SIMCONTROLBYUSER
 // #define CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
-
-
-#include "ui/fsrunloop.h"
 
 
 YsListAllocator <FsAirplane> FsAirplaneAllocator;

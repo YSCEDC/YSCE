@@ -1,6 +1,17 @@
 set(TARGET_NAME "ysflight_platform_nownd")
 set(IS_LIBRARY_PROJECT 1)
-set(LIB_DEPENDENCY geblkernel geblgl ysglcpp_nownd ysclass ysscenery_dnm ysflight_common ysflight_core fssimplenowindow)
+set(LIB_DEPENDENCY
+geblkernel
+geblgl
+ysglcpp_nownd
+ysclass
+ysscenery_dnm
+ysflight_core
+ysflight_sound
+ysflight_util
+ysflight_graphics_common
+ysflight_platform_common
+fssimplenowindow)
 set(INCLUDE_DEPENDENCY)
 set(OWN_HEADER_PATH .)
 set(ADDITIONAL_HEADER_PATH)

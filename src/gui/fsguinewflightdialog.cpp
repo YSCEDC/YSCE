@@ -13,10 +13,9 @@
 
 #include "fs.h"
 #include "fsfilename.h"
-#include "platform/common/fswindow.h"
-#include "graphics/common/fsopengl.h"
+#include "fswindow.h"
+#include "fsopengl.h"
 
-#include "graphics/common/fsopengl.h"
 #include "fswirefont.h"
 
 #include "ysunitconv.h"

@@ -1,5 +1,15 @@
 set(TARGET_NAME ysflight_gui)
-set(LIB_DEPENDENCY ysflight_ui ysjoystick)
+set(LIB_DEPENDENCY
+ysclass
+ysflight_aicontrol
+ysflight_config
+ysflight_core
+ysflight_environment
+ysflight_util
+ysflight_platform_common
+ysflight_graphics_common
+ysjoystick
+)
 
 set(CURL_DIR "")
 

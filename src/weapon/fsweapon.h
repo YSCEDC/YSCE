@@ -4,9 +4,9 @@
 
 ////////////////////////////////////////////////////////////
 
-#include "util/fsdef.h"
-#include "util/fsrecord.h"
-#include "external/fsinstreading.h"
+#include "fsdef.h"
+#include "fsrecord.h"
+#include "fsinstreading.h"
 
 class FsWeaponRecord
 {

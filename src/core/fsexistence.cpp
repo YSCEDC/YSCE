@@ -1,13 +1,13 @@
 #include <ysclass.h>
 #include "fs.h"
 
-#include "instrument/fsinstpanel.h"
+#include "fsinstpanel.h"
 
 #include "fsrecord.h"
 
-#include "ai_control/fsatc.h"
+#include "fsatc.h"
 
-#include "ai_control/fsautodrive.h"
+#include "fsautodrive.h"
 
 ////////////////////////////////////////////////////////////
 

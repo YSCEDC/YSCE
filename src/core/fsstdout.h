@@ -1,5 +1,5 @@
 // $Id: fsstdout.h,v 1.4 2007/09/13 02:43:52 soji Exp $
-
+#include <ysclass.h>
 #ifndef FSSTDOUT_IS_INCLUDED
 #define FSSTDOUT_IS_INCLUDED
 /* { */

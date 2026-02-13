@@ -6,7 +6,25 @@ endif()
 
 set(TARGET_NAME "ysflight_platform_macosx")
 set(IS_LIBRARY_PROJECT 1)
-set(LIB_DEPENDENCY geblkernel geblgl ysflight_common ysflight_config ysflight_core ysflight_filename ysclass ysport ysjoystick fssimplewindow ysscenery_dnm fsguilib ysbitmapfont)
+set(LIB_DEPENDENCY
+geblkernel
+geblgl
+ysclass
+ysport
+fsguilib
+ysbitmapfont
+ysjoystick
+fssimplewindow
+
+ysflight_config
+ysflight_core
+ysflight_gui
+ysflight_sound
+ysscenery_dnm
+ysflight_util
+ysflight_graphics_common
+ysflight_platform_common
+)
 set(INCLUDE_DEPENDENCY)
 set(OWN_HEADER_PATH .)
 set(ADDITIONAL_HEADER_PATH ../..)

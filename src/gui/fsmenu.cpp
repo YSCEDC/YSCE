@@ -14,11 +14,10 @@
 
 #include "fs.h"
 #include "fsfilename.h"
-#include "platform/common/fswindow.h"
-#include "graphics/common/fsopengl.h"
+#include "fswindow.h"
+#include "fsopengl.h"
 #include "fsmenu.h"
 
-#include "graphics/common/fsopengl.h"
 #include "fswirefont.h"
 
 
@@ -38,9 +37,8 @@
 
 #include "fschoose.h"
 
-#include "graphics/common/fsfontrenderer.h"
+#include "fsfontrenderer.h"
 
-#include "fsmenu.h"
 #include "fstextresource.h"
 
 #include "fsguinewflightdialog.h"

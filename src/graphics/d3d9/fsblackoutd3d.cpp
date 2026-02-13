@@ -5,7 +5,7 @@
 #include "fsconfig.h"
 
 #include "fs.h"
-#include "graphics/common/fsopengl.h"
+#include "fsopengl.h"
 
 
 #include <windows.h>

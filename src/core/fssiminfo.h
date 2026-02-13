@@ -3,8 +3,8 @@
 /* { */
 
 
-#include "util/fsdef.h"
-#include "environment/fsweather.h"
+#include "fsdef.h"
+#include "fsweather.h"
 
 
 

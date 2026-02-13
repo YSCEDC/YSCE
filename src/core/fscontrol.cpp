@@ -6,8 +6,8 @@
 
 #include "fs.h"
 #include "fsfilename.h"
-#include "graphics/common/fsopengl.h"
-#include "platform/common/fswindow.h"
+#include "fsopengl.h"
+#include "fswindow.h"
 
 #include <time.h>
 

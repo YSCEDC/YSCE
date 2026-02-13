@@ -6,7 +6,23 @@ endif()
 
 set(TARGET_NAME ysflight_platform_linux)
 set(IS_LIBRARY_PROJECT 1)
-set(LIB_DEPENDENCY geblkernel ysclass ysport ysjoystick fssimplewindow fsguilib ysflight_common ysflight_core ysflight_filename dl)
+set(LIB_DEPENDENCY
+geblkernel
+ysclass
+ysport
+ysjoystick
+fssimplewindow
+fsguilib
+ysflight_config
+ysflight_core
+ysflight_gui
+ysflight_sound
+ysscenery_dnm
+ysflight_util
+ysflight_graphics_common
+ysflight_platform_common
+dl
+)
 set(INCLUDE_DEPENDENCY)
 set(OWN_HEADER_PATH .)
 set(ADDITIONAL_HEADER_PATH)

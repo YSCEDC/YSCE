@@ -1,7 +1,7 @@
 #include <ysclass.h>
 #include "fs.h"
 
-#include "instrument/fsinstpanel.h"
+#include "fsinstpanel.h"
 
 #include <fstexturemanager.h>
 

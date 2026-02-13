@@ -1,5 +1,5 @@
 #include <ysport.h>
-#include "util/fsdef.h"
+#include "fsdef.h"
 #include "fstexturemanager.h"
 
 YsTextureManager::TexHandle fsGroundTileTexHd=nullptr;

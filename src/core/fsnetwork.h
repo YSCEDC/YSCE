@@ -7,7 +7,7 @@
 #include "fsdef.h"
 #include "yssocket.h"
 #include "fsutil.h"
-#include "weapon/fsweapon.h"
+#include "fsweapon.h"
 
 enum
 {

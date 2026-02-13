@@ -3,7 +3,7 @@
 #include "ysunitconv.h"
 
 #include "fs.h"
-#include "graphics/common/fsopengl.h"
+#include "fsopengl.h"
 
 #include "fsinstpanel.h"
 #include "fswirefont.h"

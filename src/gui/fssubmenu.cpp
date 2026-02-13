@@ -7,8 +7,8 @@
 #include "fs.h"
 #include "fsfilename.h"
 #include "fsinstpanel.h"
-#include "platform/common/fswindow.h"
-#include "graphics/common/fsopengl.h"
+#include "fswindow.h"
+#include "fsopengl.h"
 
 #include "fspluginmgr.h"
 
@@ -32,7 +32,7 @@
 
 #include "fschoose.h"
 
-#include "graphics/common/fsfontrenderer.h"
+#include "fsfontrenderer.h"
 
 #include "fspersona.h"
 #include "fsautodrive.h"

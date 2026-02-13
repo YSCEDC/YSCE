@@ -2,14 +2,14 @@
 #define FSEXISTENCE_IS_INCLUDED
 /* { */
 
-#include "scenery/ysscenery.h"
+#include "ysscenery.h"
 #include "fsdef.h"
 #include "fsvisual.h"
 #include "fsrecord.h"
 #include "fsnetwork.h"
-#include "vehicle/fsairplaneproperty.h"
+#include "fsairplaneproperty.h"
 #include "fsgroundproperty.h"
-#include "ai_control/fsatc.h"
+#include "fsatc.h"
 #include "fssiminfo.h" // Need FsSimInfo::AirBase  
 
 

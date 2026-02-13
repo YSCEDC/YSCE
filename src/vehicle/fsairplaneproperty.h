@@ -3,7 +3,7 @@
 /* { */
 
 #include "fsvehicleproperty.h"
-#include "weapon/fsweapon.h"
+#include "fsweapon.h"
 
 class FsFlightControl;
 class FsSimulation;

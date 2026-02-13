@@ -3,10 +3,10 @@
 /* { */
 
 #include <fsdef.h>
-#include "instrument/fsnavaid.h"
+#include "fsnavaid.h"
 #include "fsvehicleproperty.h"
-#include "graphics/common/fsvisual.h"
-#include "weapon/fsweapon.h"
+#include "fsvisual.h"
+#include "fsweapon.h"
 
 // Declaration /////////////////////////////////////////////
 

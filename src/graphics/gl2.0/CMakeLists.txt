@@ -1,5 +1,26 @@
 set(TARGET_NAME ysflight_graphics_gl2)
-set(LIB_DEPENDENCY ysglcpp ysglcpp_gl2 geblkernel geblgl geblgl_gl2 ysflight_common ysflight_graphics_common ysflight_core ysclass fssimplewindow ysbitmap fsguilib ysbitmapfont ysfontrenderer yssystemfont ystexturemanager_gl ystexturemanager ysscenery_dnm ysjoystick ysjoycalibdlg_gl2)
+set(LIB_DEPENDENCY
+ysglcpp
+ysglcpp_gl2
+geblkernel
+geblgl
+geblgl_gl2
+ysflight_util
+ysflight_graphics_common
+ysflight_core
+ysclass
+fssimplewindow
+ysbitmap
+fsguilib
+ysbitmapfont
+ysfontrenderer
+yssystemfont
+ystexturemanager_gl
+ystexturemanager
+ysscenery_dnm
+ysjoystick
+ysjoycalibdlg_gl2
+)
 
 set(SRCS
 fsblackoutgl2.0.cpp

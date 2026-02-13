@@ -2,8 +2,11 @@ set(TARGET_NAME ysflight_weapon)
 set(LIB_DEPENDENCY
 ysclass
 ysport
-ysflight_common
+ysflight_core
+ysflight_environment
+ysflight_external
 ysflight_util
+ysflight_graphics_common
 )
 
 set(SRCS

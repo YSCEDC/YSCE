@@ -23,7 +23,6 @@ fsutil.cpp
 )
 
 set(HEADERS
-fsairsound.h
 fsbase.h
 fsdef.h
 fsgenmdl.h

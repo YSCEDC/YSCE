@@ -1,8 +1,8 @@
 #include <ysviewcontrol.h>
 #include <ysbitmap.h>
 #include <yssystemfont.h>
-#include "graphics/common/fsopengl.h"
-#include "graphics/common/fsfontrenderer.h"
+#include "fsopengl.h"
+#include "fsfontrenderer.h"
 
 FsProjection::FsProjection()
 {

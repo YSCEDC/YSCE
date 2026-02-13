@@ -1,20 +1,29 @@
 set(TARGET_NAME ysflight_instrument)
-set(LIB_DEPENDENCY ysclass ysport ysflight_common ysflight_util)
+set(LIB_DEPENDENCY
+ysclass
+ysport
+ysglcpp
+ysflight_core
+ysflight_external
+ysflight_util
+ysflight_graphics_common
+ysflight_platform_common
+)
 
 set(SRCS
-fsradar.cpp
 fshud.cpp
 fshud2.cpp
 fsinstpanel.cpp
 fsnavaid.cpp
+fsradar.cpp
 )
 
 set(HEADERS
-fsradar.h
 fshud.h
 fshud2.h
 fsinstpanel.h
 fsnavaid.h
+fsradar.h
 )
 add_library(${TARGET_NAME} ${SRCS} ${HEADERS})
 target_link_libraries(${TARGET_NAME} ${LIB_DEPENDENCY})

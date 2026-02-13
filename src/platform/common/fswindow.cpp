@@ -6,12 +6,11 @@
 
 #include "fsconfig.h"
 #include "fsoption.h"
-#include "platform/common/fswindow.h"
+#include "fswindow.h"
 
 #include "wtypes.h"
 #include <iostream>
 
-#include <ysport.h>
 
 
 

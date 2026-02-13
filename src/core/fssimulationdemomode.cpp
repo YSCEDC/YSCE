@@ -5,13 +5,13 @@
 #include "fsconfig.h"
 
 #include "fs.h"
-#include "instrument/fsradar.h"
+#include "fsradar.h"
 #include "fsfilename.h"
-#include "instrument/fsinstpanel.h"
-#include "platform/common/fswindow.h"
-#include "graphics/common/fsopengl.h"
+#include "fsinstpanel.h"
+#include "fswindow.h"
+#include "fsopengl.h"
 
-#include "external/fspluginmgr.h"
+#include "fspluginmgr.h"
 
 
 #include "fstextresource.h"
@@ -33,7 +33,7 @@
 
 #include "fschoose.h"
 
-#include "graphics/common/fsfontrenderer.h"
+#include "fsfontrenderer.h"
 
 #include "fspersona.h"
 

@@ -3,7 +3,7 @@
 /* { */
 
 #include "fswindow.h"
-#include "graphics/common/fsopengl.h"
+#include "fsopengl.h"
 
 
 class FsChoose   // Now only used from RunServerModeOneStep

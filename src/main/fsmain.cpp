@@ -21,17 +21,17 @@
 #include "fsapplyoption.h"
 #include "fsnetconfig.h"
 
-#include "graphics/common/fsconsole.h"
+#include "fsconsole.h"
 
 #include "fs.h"
-#include "platform/common/fswindow.h"
-#include "graphics/common/fsopengl.h"
+#include "fswindow.h"
+#include "fsopengl.h"
 #include "fsmenu.h"
 #include "fsfilename.h"
 
 #include "fspluginmgr.h"
 
-#include "graphics/common/fsfontrenderer.h"
+#include "fsfontrenderer.h"
 
 #include "fstextresource.h"
 
@@ -41,7 +41,7 @@
 #include "fsguicommondialog.h"
 #include "fsguimaincanvas.h"
 
-#include "graphics/common/fstexturemanager.h"
+#include "fstexturemanager.h"
 
 #ifdef _WIN32
 #include <float.h>

@@ -23,8 +23,8 @@
 
 #include "fsdef.h"
 #include "fschoose.h"
-#include "graphics/common/fsopengl.h"
-#include "platform/common/fswindow.h"
+#include "fsopengl.h"
+#include "fswindow.h"
 
 #include "fstextresource.h"
 

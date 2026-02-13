@@ -10,22 +10,22 @@
 #include <fssimplewindow.h>
 #undef FSSIMPLEWINDOW_MACRO_ONLY
 
-#include "platform/common/fswindow.h"
+#include "fswindow.h"
 #include "fsutil.h"
 #include "fsnetutil.h"
-#include "instrument/fsnavaid.h"
+#include "fsnavaid.h"
 #include "fsrecord.h"
 #include "fsvisual.h"
-#include "weapon/fsproperty.h"
+#include "fsproperty.h"
 #include "fsairplaneproperty.h"
 #include "fsgroundproperty.h"
 #include "fsnetwork.h"
 #include "fsexistence.h"
 #include "fsstdout.h"
 
-#include "weapon/fsexplosion.h"
+#include "fsexplosion.h"
 #include "fscontrol.h"
-#include "environment/fsweather.h"
+#include "fsweather.h"
 #include "fssimulation.h"
 
 

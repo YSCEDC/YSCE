@@ -20,7 +20,7 @@
 #include <ysshellext_orientationutil.h>
 
 
-#include "gamemode/fssimextension.h"
+#include "fssimextension.h"
 
 #include <fsairproperty.h>
 
@@ -31,12 +31,12 @@
 #include "fschoose.h"
 
 #include "fsfilename.h"
-#include "platform/common/fswindow.h"
+#include "fswindow.h"
 
-#include "graphics/common/fsopengl.h"
+#include "fsopengl.h"
 
 #include "fsgenmdl.h"
-#include "ui/fsrunloop.h"
+#include "fsrunloop.h"
 
 YsString failedLoadThisVisual; //This should probably go somewhere else at some point
 

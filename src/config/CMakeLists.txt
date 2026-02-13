@@ -2,8 +2,12 @@ set(TARGET_NAME ysflight_config)
 set(LIB_DEPENDENCY
 ysclass
 ysport
+ysflight_core
+ysflight_environment
+ysflight_graphics_common
+ysflight_gui
+ysflight_platform_common
 ysflight_util
-ysflight_common
 )
 set(SRCS
 fsapplyoption.cpp

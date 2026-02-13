@@ -1,6 +1,15 @@
 set(TARGET_NAME "ysflight_platform_android")
 set(IS_LIBRARY_PROJECT 1)
-set(LIB_DEPENDENCY geblkernel geblgl ysclass ysscenery_dnm ysflight_common ysflight_core fssimplewindow)
+set(LIB_DEPENDENCY
+geblkernel
+geblgl
+ysclass
+ysscenery_dnm
+ysflight_core
+ysflight_sound
+ysflight_graphics_common
+ysflight_platform_common
+fssimplewindow)
 set(INCLUDE_DEPENDENCY)
 set(OWN_HEADER_PATH .)
 set(ADDITIONAL_HEADER_PATH)

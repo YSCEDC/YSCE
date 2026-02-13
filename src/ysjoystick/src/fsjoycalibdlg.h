@@ -3,10 +3,8 @@
 /* { */
 
 #include "ysjoyreader.h"
-
-#ifdef YSFLIGHT
 #include <fstextresource.h>
-#else
+
 extern YsTextResource fsTextResource;
 
 inline const wchar_t *FsJoyCalibGUIMessage(const char msgkey[],const wchar_t altTxt[])

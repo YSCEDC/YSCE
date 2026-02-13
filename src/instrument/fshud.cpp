@@ -2,7 +2,7 @@
 #include <ysunitconv.h>
 
 #include "fshud.h"
-#include "graphics/common/fsopengl.h"
+#include "fsopengl.h"
 #include "fswirefont.h"
 #include "fsinstreading.h"
 

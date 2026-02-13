@@ -7,7 +7,7 @@
 #include <ysport.h>
 
 #include "fsdef.h"
-#include "environment/fsweather.h"
+#include "fsweather.h"
 
 
 // Declaration /////////////////////////////////////////////

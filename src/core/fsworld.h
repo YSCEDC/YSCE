@@ -4,7 +4,7 @@
 
 #include <memory>
 
-#include "vehicle/fsgroundproperty.h"
+#include "fsgroundproperty.h"
 #include "fssimulation.h"
 
 // Declaration /////////////////////////////////////////////

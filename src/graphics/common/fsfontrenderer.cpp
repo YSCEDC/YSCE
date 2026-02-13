@@ -1,4 +1,4 @@
-#include "graphics/common/fsfontrenderer.h"
+#include "fsfontrenderer.h"
 #include <yssystemfont.h>
 
 

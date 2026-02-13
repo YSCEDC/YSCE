@@ -1,6 +1,20 @@
 set(TARGET_NAME ysflight_platform_win32 ysflight_platform_win32_gl)
 set(IS_LIBRARY_PROJECT 1)
-set(LIB_DEPENDENCY geblkernel ysclass ysport fssimplewindow ysscenery_dnm fsguilib ysbitmapfont ysflight_core ysflight_common ysflight_filename)
+set(LIB_DEPENDENCY
+geblkernel
+ysclass
+ysport
+fssimplewindow
+ysscenery_dnm
+fsguilib
+ysbitmapfont
+ysflight_config
+ysflight_core
+ysflight_sound
+ysflight_util
+ysflight_graphics_common
+ysflight_platform_common
+)
 set(INCLUDE_DEPENDENCY)
 set(OWN_HEADER_PATH .)
 set(ADDITIONAL_HEADER_PATH)

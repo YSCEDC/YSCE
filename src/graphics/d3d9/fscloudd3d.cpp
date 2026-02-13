@@ -15,7 +15,7 @@
 #include <ysglbuffermanager_d3d9.h>
 
 #include <fsdef.h>
-#include "graphics/common/fsopengl.h"
+#include "fsopengl.h"
 #include "fscloud.h"
 
 

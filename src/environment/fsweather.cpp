@@ -8,7 +8,7 @@
 
 #include <ysclass.h>
 
-#include "core/fs.h"
+#include "fs.h"
 
 
 

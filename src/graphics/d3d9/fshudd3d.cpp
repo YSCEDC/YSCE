@@ -1,6 +1,6 @@
 #include <ysclass.h>
 #include "fs.h"
-#include "graphics/common/fsopengl.h"
+#include "fsopengl.h"
 
 #include <windows.h>
 #include <mmsystem.h>

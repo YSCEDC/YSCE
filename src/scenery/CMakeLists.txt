@@ -1,5 +1,12 @@
 set(TARGET_NAME ysscenery_dnm ysscenery_dnm_gl1 ysscenery_dnm_gl2 ysscenery_dnm_nownd)
-set(LIB_DEPENDENCY ysclass ystexturemanager ysflight_util ysflight_common geblgl ysgl)
+set(LIB_DEPENDENCY
+ysclass
+ysport
+ystexturemanager
+ysflight_util
+geblgl
+ysgl
+)
 
 set(SRCS
 ysscenery.cpp

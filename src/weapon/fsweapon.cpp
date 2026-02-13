@@ -5,7 +5,7 @@
 
 #include "fs.h"
 #include "fsnetutil.h"
-#include "graphics/common/fsopengl.h"
+#include "fsopengl.h"
 #include "fsinstreading.h"
 #include "fsweapon.h"
 

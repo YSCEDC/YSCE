@@ -8,7 +8,7 @@
 
 
 #include "fsdef.h"
-#include "graphics/common/fsopengl.h"
+#include "fsopengl.h"
 #include "fscloud.h"
 
 

@@ -3,8 +3,8 @@
 #include <fssimplewindow.h>
 
 #include "fs.h"
-#include "graphics/common/fsopengl.h"
-#include "platform/common/fswindow.h"
+#include "fsopengl.h"
+#include "fswindow.h"
 
 #include <fsgui.h>
 
@@ -18,7 +18,7 @@
 
 #include <time.h>
 
-#include "graphics/common/fsfontrenderer.h"
+#include "fsfontrenderer.h"
 
 
 extern const char *FsProgramTitle;  // Defined in fsmain.cpp

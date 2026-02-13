@@ -3,7 +3,7 @@
 /* { */
 
 #include <ysclass.h>
-#include "weapon/fsproperty.h"
+#include "fsproperty.h"
 
 class FsVehicleProperty : public FsProperty
 {

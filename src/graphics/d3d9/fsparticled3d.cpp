@@ -1,7 +1,7 @@
 #include <ysclass.h>
 #include "fs.h"
-#include "graphics/common/fsopengl.h"
-#include "platform/common/fswindow.h"
+#include "fsopengl.h"
+#include "fswindow.h"
 
 
 #include <windows.h>

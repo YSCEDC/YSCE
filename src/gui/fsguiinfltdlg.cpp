@@ -8,13 +8,13 @@
 
 #include <fsgui.h>
 #include <fssimplewindow.h>
-#include "platform/common/fswindow.h"
+#include "fswindow.h"
 #include "fsguiinfltdlg.h"
 
 #include "fstextresource.h"
 
 #include "fsfilename.h"
-#include "graphics/common/fsopengl.h"
+#include "fsopengl.h"
 
 #include "fsconfig.h"
 

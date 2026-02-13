@@ -17,27 +17,27 @@
 
 #include "fsdef.h"
 #include "fsparticle.h"
-#include "environment/fsweather.h"
+#include "fsweather.h"
 
 #include "fsfield.h"
 
-#include "instrument/fshud2.h"
+#include "fshud2.h"
 
 #include "fswindow.h" // class FsJoystick
 #include "fscontrol.h"
-#include "weapon/fsexplosion.h"
+#include "fsexplosion.h"
 
 
-#include "gui/fssubmenu.h"
+#include "fssubmenu.h"
 
 #include "fssiminfo.h"
 
-#include "ai_control/fsatc.h"
+#include "fsatc.h"
 
-#include "graphics/common/fsconsole.h"
-#include "graphics/common/fsopengl.h"
+#include "fsconsole.h"
+#include "fsopengl.h"
 
-#include "gamemode/fssimextension.h"
+#include "fssimextension.h"
 
 class FsWorld;
 

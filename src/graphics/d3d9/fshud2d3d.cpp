@@ -1,7 +1,7 @@
 #include <ysclass.h>
 #include "ysunitconv.h"
 
-#include "graphics/common/fsopengl.h"
+#include "fsopengl.h"
 #include "fshud2.h"
 #include "fsinstreading.h"
 

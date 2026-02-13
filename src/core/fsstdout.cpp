@@ -2,7 +2,7 @@
 #include <ysport.h>
 #include "fs.h"
 #include "fsfilename.h"
-#include "platform/common/fswindow.h"
+#include "fswindow.h"
 
 FsStdout fsStdout;
 FsStderr fsStderr;

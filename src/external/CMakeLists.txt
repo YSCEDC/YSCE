@@ -1,7 +1,14 @@
 set(TARGET_NAME "ysflight_external")
 set(LIB_DEPENDENCY
 ysclass
-ysflight_util
+ysflight_aicontrol
+ysflight_config
+ysflight_core
+ysflight_environment
+ysflight_gui
+ysflight_instrument
+ysflight_graphics_common
+ysflight_platform_common
 )
 
 set(SRCS

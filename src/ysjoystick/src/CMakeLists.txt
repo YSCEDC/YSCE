@@ -1,5 +1,12 @@
 set(TARGET_NAME ysjoystick)
-set(LIB_DEPENDENCY ysport ysfontrenderer fsguilib ysbitmap ysbitmapfont)
+set(LIB_DEPENDENCY
+ysport
+ysfontrenderer
+fsguilib
+ysbitmap
+ysbitmapfont
+ysflight_util
+)
 
 # Don't link fssimplewindow.  It can be fssimplenowindow.  Just add include directory
 get_property(ADDITIONAL_INCLUDE_DIR1 TARGET fssimplewindow PROPERTY INCLUDE_DIRECTORIES)

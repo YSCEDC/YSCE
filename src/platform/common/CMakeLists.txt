@@ -6,7 +6,13 @@ endif()
 
 set(TARGET_NAME ysflight_platform_common)
 set(IS_LIBRARY_PROJECT 1)
-set(LIB_DEPENDENCY ysflight_common ysflight_config ysclass ysport)
+set(LIB_DEPENDENCY
+ysclass
+ysport
+ysflight_config
+ysflight_graphics_common
+ysflight_util
+)
 set(INCLUDE_DEPENDENCY fssimplewindow)  # Don't link fssimplewindow.  It can be fssimplenowindow.  Just add include directory.
 set(OWN_HEADER_PATH .)
 set(ADDITIONAL_HEADER_PATH)

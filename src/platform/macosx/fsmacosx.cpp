@@ -13,8 +13,8 @@
 #include "fsoption.h"
 
 #include "fs.h"
-#include "platform/common/fswindow.h"
-#include "graphics/common/fsopengl.h"
+#include "fswindow.h"
+#include "fsopengl.h"
 
 
 #include "ysglfontdata.h"

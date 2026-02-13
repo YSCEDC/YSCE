@@ -4,7 +4,28 @@ endif()
 
 
 set(TARGET_NAME ysflight_graphics_gl1)
-set(LIB_DEPENDENCY ysglcpp ysglcpp_gl1 geblkernel geblgl geblgl_gl1 ysflight_common ysflight_core ysflight_graphics_common ysclass fssimplewindow ysbitmap fsguilib ysbitmapfont ysfontrenderer yssystemfont ystexturemanager_gl ystexturemanager ysscenery_dnm ysjoystick ysjoycalibdlg_gl1)
+set(LIB_DEPENDENCY
+ysglcpp
+ysglcpp_gl1
+geblkernel
+geblgl
+geblgl_gl1
+ysflight_util
+ysflight_core
+ysflight_graphics_common
+ysclass
+fssimplewindow
+ysbitmap
+fsguilib
+ysbitmapfont
+ysfontrenderer
+yssystemfont
+ystexturemanager_gl
+ystexturemanager
+ysscenery_dnm
+ysjoystick
+ysjoycalibdlg_gl1
+)
 
 set(SRCS
 fsblackoutgl.cpp

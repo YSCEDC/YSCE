@@ -12,15 +12,15 @@
 #include <fssimplewindow.h>
 #undef FSSIMPLEWINDOW_MACRO_ONLY
 
-#include "environment/fsairproperty.h"
+#include "fsairproperty.h"
 
 #include "fsutil.h"
 #include "fsnetutil.h"
-#include "environment/fsweather.h"
-#include "instrument/fsnavaid.h"
+#include "fsweather.h"
+#include "fsnavaid.h"
 #include "fsrecord.h"
 #include "fsvisual.h"
-#include "weapon/fsproperty.h"
+#include "fsproperty.h"
 #include "fsairplaneproperty.h"
 #include "fsgroundproperty.h"
 #include "fsnetwork.h"

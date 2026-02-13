@@ -3,10 +3,8 @@ set(LIB_DEPENDENCY
 geblkernel
 geblgl
 ysflight_core
-ysflight_config
-ysflight_aicontrol
-ysflight_vehicle 
 ysflight_util
+ysflight_weapon
 ysport
 ysclass
 ysclass11

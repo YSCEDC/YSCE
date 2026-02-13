@@ -1,18 +1,20 @@
 set(TARGET_NAME ysflight_aicontrol)
 set(LIB_DEPENDENCY 
 	geblkernel 
-	geblgl 
-	ysclass 
+	geblgl
+	fssimplewindow
+	ysclass
+	ysport
+	yssocket
 	ysflight_core
-	ysflight_common 
-	yssocket 
+	ysflight_environment
+	ysflight_instrument
+	ysflight_sound
+	ysflight_util
+	ysflight_vehicle
 	ysflight_platform_common 
 	ysflight_graphics_common 
 	ysscenery_dnm 
-	ysport 
-	ysflight_dynamics 
-	ysflight_filename
-	fssimplewindow
 )
 set(SRCS
 fsairshowacro.cpp

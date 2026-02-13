@@ -1,5 +1,13 @@
 set(TARGET_NAME ysflight_graphics_common)
-set(LIB_DEPENDENCY ysflight_common ysflight_filename fsguilib geblkernel geblgl ystexturemanager)
+set(LIB_DEPENDENCY
+ysflight_util
+ysclass
+ysport
+fsguilib
+geblkernel
+geblgl
+ystexturemanager
+)
 
 # Don't link fssimplewindow.  It can be fssimplenowindow.  Just add include directory
 get_property(ADDITIONAL_INCLUDE_DIR TARGET fssimplewindow PROPERTY INCLUDE_DIRECTORIES)

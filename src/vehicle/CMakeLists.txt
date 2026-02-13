@@ -2,11 +2,12 @@ set(TARGET_NAME "ysflight_vehicle")
 set(LIB_DEPENDENCY 
 ysscenery_dnm 
 ysflight_core
-ysflight_common 
+ysflight_environment
+ysflight_instrument
+ysflight_util
+ysflight_weapon
 ysflight_platform_common 
-ysflight_graphics_common 
-ysflight_dynamics 
-ysflight_util 
+ysflight_graphics_common  
 yssocket
 geblkernel 
 geblgl 

@@ -1,9 +1,10 @@
-set(TARGET_NAME "ysflight_environment")
+set(TARGET_NAME ysflight_environment)
 set(LIB_DEPENDENCY
 ysclass
 ysport
-ysflight_common
+ysflight_core
 ysflight_util
+ysflight_graphics_common
 )
 
 set(SRCS

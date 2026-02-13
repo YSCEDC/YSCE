@@ -2,9 +2,9 @@
 #define FSDIALOG_IS_INCLUDED
 /* { */
 
-#include "util/fsdef.h"
-#include "core/fssiminfo.h"
-#include "environment/fsweather.h"
+#include "fsdef.h"
+#include "fssiminfo.h"
+#include "fsweather.h"
 
 class FsNewFlightEnvironmentInfo
 {

@@ -19,8 +19,8 @@
 #include "fsfilename.h"
 #include "fspluginmgr.h"
 
-#include "graphics/common/fsopengl.h"
-#include "platform/common/fswindow.h"
+#include "fsopengl.h"
+#include "fswindow.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -40,8 +40,8 @@ typedef int SOCKET;
 #include <ysbitmap.h>
 
 #include "fsgui.h"
-#include "gui/fsguiselectiondialogbase.h"
-#include "gui/fschoose.h"
+#include "fsguiselectiondialogbase.h"
+#include "fschoose.h"
 
 
 #include <yssocket.h>

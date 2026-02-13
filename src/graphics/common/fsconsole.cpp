@@ -5,9 +5,9 @@
 #include <fsguidialog.h>
 
 
-#include "graphics/common/fsconsole.h"
-#include "graphics/common/fsfontrenderer.h"
-#include "graphics/common/fsopengl.h"
+#include "fsconsole.h"
+#include "fsfontrenderer.h"
+#include "fsopengl.h"
 
 
 FsScreenMessage fsConsole;

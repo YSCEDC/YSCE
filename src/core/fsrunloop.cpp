@@ -6,7 +6,7 @@
 #include <fsgui.h>
 #include <fsguifiledialog.h>
 
-#include "graphics/common/fsopengl.h"
+#include "fsopengl.h"
 
 #include "fsconfig.h"
 #include "fsoption.h"
@@ -16,11 +16,11 @@
 #include "fsworld.h"
 #include "fspluginmgr.h"
 #include "fsfilename.h"
-#include "graphics/common/fsfontrenderer.h"
+#include "fsfontrenderer.h"
 
 #include "fstextresource.h"
 
-#include "gui/fsdialog.h"
+#include "fsdialog.h"
 
 #include "fsautopilot.h" // Needed for FSACRO_*
 
@@ -29,10 +29,10 @@
 
 #include "fsrunloop.h"
 
-#include "gamemode/fssimextension_endurance.h"
-#include "gamemode/fssimextension_intercept.h"
-#include "gamemode/fssimextension_closeairsupport.h"
-#include "gamemode/fssimextension_groundtoair.h"
+#include "fssimextension_endurance.h"
+#include "fssimextension_intercept.h"
+#include "fssimextension_closeairsupport.h"
+#include "fssimextension_groundtoair.h"
 #include <fsstdout.h>
 
 

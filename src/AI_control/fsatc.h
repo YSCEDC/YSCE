@@ -4,9 +4,9 @@
 
 #include <ysclass.h>
 #include "fsdef.h"
-#include "voicedll/fsvoiceenum.h"
+#include "fsvoiceenum.h"
 
-#include "scenery/ysscenery.h"
+#include "ysscenery.h"
 
 class FsVoicePhrasePrep
 {

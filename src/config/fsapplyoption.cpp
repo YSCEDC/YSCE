@@ -12,11 +12,11 @@
 
 #include "fsapplyoption.h"
 
-#include "core/fs.h"
-#include "graphics/common/fsopengl.h"
+#include "fs.h"
+#include "fsopengl.h"
 #include "fsfilename.h"
-#include "platform/common/fswindow.h"
-#include "graphics/common/fsfontrenderer.h"
+#include "fswindow.h"
+#include "fsfontrenderer.h"
 
 #include "fstextresource.h"
 
