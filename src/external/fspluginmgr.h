@@ -1,5 +1,6 @@
 #ifndef FSPLUGINMGR_IS_INCLUDED
 #define FSPLUGINMGR_IS_INCLUDED
+#include <ysclass.h>
 /* { */
 
 void FsLoadPlugIn(void);

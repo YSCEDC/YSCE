@@ -1,5 +1,6 @@
 #ifndef FSPRINTF_IS_INCLUDED
 #define FSPRINTF_IS_INCLUDED
+#include "ysclass.h"
 /* { */
 
 template <class StrClass>

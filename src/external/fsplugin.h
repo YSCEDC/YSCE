@@ -1,7 +1,7 @@
 #ifndef FSPLUGIN_IS_INCLUDED
 #define FSPLUGIN_IS_INCLUDED
 /* { */
-
+#include <ysclass.h>
 
 class FsTerrainRegionId20080220
 {

@@ -1,6 +1,7 @@
 #ifndef FSHUD_IS_INCLUDED
 #define FSHUD_IS_INCLUDED
 /* { */
+#include <ysclass.h>
 
 class FsHeadUpDisplay
 {
