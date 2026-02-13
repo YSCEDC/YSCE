@@ -4,7 +4,7 @@
 
 #include <ysclass.h>
 #include "fsdef.h"
-#include "fsvoiceenum.h"
+#include "../sound/voicedll/fsvoiceenum.h"
 
 #include "ysscenery.h"
 

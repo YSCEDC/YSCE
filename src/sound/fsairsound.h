@@ -2,8 +2,8 @@
 #define FSAIRSOUND_IS_INCLUDED
 /* { */
 
-#include "../sounddll/fsairsoundenum.h"
-#include "../voicedll/fsvoiceenum.h"
+#include "sounddll/fsairsoundenum.h"
+#include "voicedll/fsvoiceenum.h"
 
 void FsSoundInitialize(void);
 void FsSoundTerminate(void);

@@ -3,7 +3,11 @@
 /* { */
 
 #include "ysjoyreader.h"
+#include "fsguidialog.h"
+
+#ifdef YSFLIGHT
 #include <fstextresource.h>
+#else
 
 extern YsTextResource fsTextResource;
 

@@ -1,2 +1,0 @@
-#include "resource.h"
-MAINICON        ICON    DISCARDABLE     "pass2_light.ico"

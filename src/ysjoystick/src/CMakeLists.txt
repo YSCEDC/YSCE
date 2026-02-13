@@ -6,6 +6,7 @@ fsguilib
 ysbitmap
 ysbitmapfont
 ysflight_util
+ysflight_gui
 )
 
 # Don't link fssimplewindow.  It can be fssimplenowindow.  Just add include directory

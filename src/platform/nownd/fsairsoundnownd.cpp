@@ -7,7 +7,7 @@
 #include <ysclass.h>
 #include <fs.h>
 
-#include "../../voicedll/fsvoiceenum.h"
+#include "../../sound/voicedll/fsvoiceenum.h"
 
 ////////////////////////////////////////////////////////////
 
