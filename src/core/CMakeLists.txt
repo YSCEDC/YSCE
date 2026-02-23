@@ -25,6 +25,7 @@ ysbitmap
 )
 
 set(SRCS
+fscamera.cpp
 fscontrol.cpp
 fsexistence.cpp
 fsfield.cpp
@@ -32,6 +33,7 @@ fslattice.cpp
 fsnetwork.cpp
 fsparticle.cpp
 fspersona.cpp
+fsphysics.cpp
 fsrunloop.cpp
 fssiminfo.cpp
 fssimulation.cpp
@@ -42,6 +44,7 @@ fsworld.cpp
 
 set(HEADERS
 fs.h
+fscamera.h
 fscontrol.h
 fsexistence.h
 fsfield.h
@@ -50,6 +53,7 @@ fslattice.h
 fsnetwork.h
 fsparticle.h
 fspersona.h
+fsphysics.h
 fsprintf.h
 fsrunloop.h
 fssiminfo.h

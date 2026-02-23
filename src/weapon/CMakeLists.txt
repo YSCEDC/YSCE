@@ -12,13 +12,13 @@ ysflight_graphics_common
 set(SRCS
 fsexplosion.cpp
 fsweapon.cpp
-"fsturret.cpp"
+fsturret.cpp
 )
 
 set(HEADERS
 fsexplosion.h
 fsweapon.h
-"fsturret.h"
+fsturret.h
 )
 
 add_library(${TARGET_NAME} ${SRCS} ${HEADERS})

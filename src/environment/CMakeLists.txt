@@ -8,14 +8,16 @@ ysflight_graphics_common
 )
 
 set(SRCS
-"fsatmosphere.cpp"
+fsatmosphere.cpp
 fscloud.cpp
+fsenvironment.cpp
 fsweather.cpp
 )
 
 set(HEADERS
-"fsatmosphere.h"
+fsatmosphere.h
 fscloud.h
+fsenvironment.h
 fsweather.h
 )
 add_library(${TARGET_NAME} ${SRCS} ${HEADERS})

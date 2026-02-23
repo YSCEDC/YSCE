@@ -12,21 +12,27 @@ ysglcpp
 )
 
 set(SRCS
-"fsgamemode.cpp"
+fsgamemode.cpp
 fsgamemode_racing.cpp
-"fsgamemode_endurance.cpp"
+fsgamemode_endurance.cpp
 fsgamemode_intercept.cpp
-"fsgamemode_closeairsupport.cpp"
+fsgamemode_closeairsupport.cpp
 fsgamemode_groundtoair.cpp
+fsgamemode_demo.cpp
+fsgamemode_landingpractice.cpp
+fsgamemode_mission.cpp
 )
 
 set(HEADERS
-"fsgamemode.h"
+fsgamemode.h
 fsgamemode_racing.h
-"fsgamemode_endurance.h"
+fsgamemode_endurance.h
 fsgamemode_intercept.h
-"fsgamemode_closeairsupport.h"
+fsgamemode_closeairsupport.h
 fsgamemode_groundtoair.h
+fsgamemode_landingpractice.h
+fsgamemode_mission.h
+fsgamemode_demo.h
 )
 
 add_library(${TARGET_NAME} ${SRCS} ${HEADERS})

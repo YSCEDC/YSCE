@@ -19,6 +19,7 @@ fsbase.cpp
 fsdef.cpp
 fsgenmdl.cpp
 fstextresource.cpp
+fstime.cpp
 fsutil.cpp
 )
 
@@ -29,6 +30,7 @@ fsgenmdl.h
 fsnetutil.h
 fsrecord.h
 fstextresource.h
+fstime.h
 fsutil.h
 )
 
