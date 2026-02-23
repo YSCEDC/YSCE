@@ -2,7 +2,7 @@
 #define FSFORMATIONAUTOPILOT_IS_INCLUDED
 /* { */
 
-#include "fsautopilot.h"
+#include "fsai_air.h"
 
 enum
 {

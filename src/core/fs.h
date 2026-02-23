@@ -35,7 +35,7 @@
 #include "fssimulation.h"
 #include "fsworld.h"
 #include "fsairsound.h"
-#include "fsautopilot.h"
+#include "fsai_air.h"
 #include "fsdialog.h"
 
 

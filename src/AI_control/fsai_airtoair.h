@@ -2,7 +2,7 @@
 #define FSDOGFIGHTAUTOPILOT_IS_INCLUDED
 /* { */
 
-#include "fsautopilot.h"
+#include "fsai_air.h"
 
 class FsDogfight : public FsAutopilot
 {

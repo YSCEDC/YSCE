@@ -3,9 +3,9 @@
 #include <fsairproperty.h>
 
 #include "fs.h"
-#include "fsautodrive.h"
-#include "fsdefenderautopilot.h"
-#include "fsrefuelandtakeoff.h"
+#include "fsai_ground.h"
+#include "fsai_defender.h"
+#include "fsai_refuelandtakeoff.h"
 #include <ysunitconv.h>
 
 // Climbing Attitude is hard coded. It should be written in

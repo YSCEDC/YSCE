@@ -30,7 +30,7 @@
 
 #include "fsinstreading.h"
 
-#include "fsrefuelandtakeoff.h"
+#include "fsai_refuelandtakeoff.h"
 
 #ifndef _WIN32  // Assuming UNIX
 

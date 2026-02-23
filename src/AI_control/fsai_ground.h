@@ -3,7 +3,7 @@
 /* { */
 
 #include <ysclass.h>
-#include "fsaibasic.h"
+#include "fsai_common.h"
 
 
 class FsAutoDrive : public FsAIObject

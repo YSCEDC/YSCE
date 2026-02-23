@@ -1,8 +1,8 @@
 #include <ysclass.h>
 #include <ysunitconv.h>
 #include "fs.h"
-#include "fsautodrive.h"
-#include "fsmissionautopilot.h"
+#include "fsai_ground.h"
+#include "fsai_mission.h"
 
 
 // Can be anti-ground, anti-air, or both

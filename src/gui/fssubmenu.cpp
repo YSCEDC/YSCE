@@ -35,7 +35,7 @@
 #include "fsfontrenderer.h"
 
 #include "fspersona.h"
-#include "fsautodrive.h"
+#include "fsai_ground.h"
 
 
 FsSubMenuItem::FsSubMenuItem()

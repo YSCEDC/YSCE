@@ -1,8 +1,8 @@
 #include <ysclass.h>
 #include <ysunitconv.h>
 #include "fs.h"
-#include "fsautodrive.h"
-#include "fsdefenderautopilot.h"
+#include "fsai_ground.h"
+#include "fsai_defender.h"
 
 
 

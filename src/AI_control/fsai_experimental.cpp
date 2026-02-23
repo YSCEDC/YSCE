@@ -4,9 +4,9 @@
 #include <fsairproperty.h>
 
 #include "fs.h"
-#include "fsautodrive.h"
+#include "fsai_ground.h"
 
-#include "fsautopilotexperimental.h"
+#include "fsai_experimental.h"
 
 /* static */ FsSpeedOnlyAutopilot *FsSpeedOnlyAutopilot::Create(void)
 {

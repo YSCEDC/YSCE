@@ -2,8 +2,8 @@
 #define FSDEFENDERAUTOPIILOT_IS_INCLUDED
 /* { */
 
-#include "fsautopilot.h"
-#include "fsmissionautopilot.h"
+#include "fsai_air.h"
+#include "fsai_mission.h"
 
 ////////////////////////////////////////////////////////////
 

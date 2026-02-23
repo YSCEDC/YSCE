@@ -1,7 +1,7 @@
 #include <ysclass.h>
 #include <ysunitconv.h>
 #include "fs.h"
-#include "fsautopilot.h"
+#include "fsai_air.h"
 
 
 /* static */ const char *FsGroundAttack::StateToStr(FsGroundAttack::STATE state)

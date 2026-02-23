@@ -2,7 +2,7 @@
 #define FSMISSIONAUTOPILOT_IS_INCLUDED
 /* { */
 
-#include "fsautopilot.h"
+#include "fsai_air.h"
 
 class FsMissionAutopilot : public FsAutopilot
 {

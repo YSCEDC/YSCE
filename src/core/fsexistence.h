@@ -401,7 +401,7 @@ public:
 	YSRESULT AtcRequestIlsApproach(class FsSimulation *sim,class FsAirTrafficController *atc,class FsGround *ils);
 };
 
-#include "fsautopilot.h"
+#include "fsai_air.h"
 
 template <const int N>
 inline YSBOOL FsAirplane::IsApproachingRunway(FSTRAFFICPATTERNLEG &leg,YsArray <const class YsSceneryRectRegion *,N> &runwayRect,YsVec3 &tdPos) const

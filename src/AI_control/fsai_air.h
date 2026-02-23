@@ -317,9 +317,9 @@ public:
 
 ////////////////////////////////////////////////////////////
 
-#include "fsdogfightautopilot.h"
-#include "fsgroundattackautopilot.h"
-#include "fsformationautopilot.h"
+#include "fsai_airtoair.h"
+#include "fsai_airtoground.h"
+#include "fsai_formation.h"
 
 ////////////////////////////////////////////////////////////
 

@@ -22,7 +22,7 @@
 
 #include "fsdialog.h"
 
-#include "fsautopilot.h" // Needed for FSACRO_*
+#include "fsai_air.h" // Needed for FSACRO_*
 
 #include "fsexistence.h"
 #include "fscontrol.h"

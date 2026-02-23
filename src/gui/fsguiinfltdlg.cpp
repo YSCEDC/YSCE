@@ -21,8 +21,8 @@
 #include "fsexistence.h"
 #include "fssimulation.h"
 #include "fsworld.h"
-#include "fsautopilot.h"
-#include "fsautodrive.h"
+#include "fsai_air.h"
+#include "fsai_ground.h"
 
 /* virtual */ YSBOOL FsGuiInFlightDialog::ProcessRawKeyInput(int)
 {
