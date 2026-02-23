@@ -12,7 +12,7 @@
 #include <fssimplewindow.h>
 #undef FSSIMPLEWINDOW_MACRO_ONLY
 
-#include "fsairproperty.h"
+#include "fsatmosphere.h"
 
 #include "fsutil.h"
 #include "fsnetutil.h"

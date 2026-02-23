@@ -1,5 +1,5 @@
 #include "fssimulation.h"
-#include "fssimextension.h"
+#include "fsgamemode.h"
 
 
 
@@ -37,11 +37,11 @@ const char *FsSimExtensionBase::FirstCommand(void) const
 ////////////////////////////////////////////////////////////
 
 
-#include "fssimextension_racing.h"
-#include "fssimextension_endurance.h"
-#include "fssimextension_intercept.h"
-#include "fssimextension_closeairsupport.h"
-#include "fssimextension_groundtoair.h"
+#include "fsgamemode_racing.h"
+#include "fsgamemode_endurance.h"
+#include "fsgamemode_intercept.h"
+#include "fsgamemode_closeairsupport.h"
+#include "fsgamemode_groundtoair.h"
 
 
 

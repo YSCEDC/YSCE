@@ -1,24 +1,23 @@
-#ifndef FSSIMEXTENSION_CLOSEAIRSUPPORT_IS_INCLUDED
-#define FSSIMEXTENSION_CLOSEAIRSUPPORT_IS_INCLUDED
+#ifndef FSSIMEXTENSION_INTERCEPT_IS_INCLUDED
+#define FSSIMEXTENSION_INTERCEPT_IS_INCLUDED
 /* { */
 
-#include "fssimextension.h"
+#include "fsgamemode.h"
 #include "fssiminfo.h"
 
-class FsSimExtension_CloseAirSupport : public FsSimExtensionBase
+class FsSimExtension_InterceptMission : public FsSimExtensionBase
 {
 public:
-	typedef FsSimExtension_CloseAirSupport THISCLASS;
+	typedef FsSimExtension_InterceptMission THISCLASS;
 
 	const double initRemainTime;
-	const int maxNumTank;
 
-    int nEnemy;
-    double remainTime;
-    double gLimit;
-    FsCloseAirSupportMissionInfo info;
+	int nEnemy;
+	double remainTime;
+	double gLimit;
+	FsInterceptMissionInfo info;
 
-	FsSimExtension_CloseAirSupport();
+	FsSimExtension_InterceptMission();
 
 	static const char *Ident(void);
 	static std::shared_ptr <FsSimExtensionBase> Generate(void);

@@ -9,7 +9,7 @@
 #define FSSIMPLEWINDOW_DONT_INCLUDE_OPENGL_HEADERS
 #include <fssimplewindow.h>
 
-#include "fsairproperty.h"
+#include "fsatmosphere.h"
 
 #include "fsconfig.h"
 #include "fssimulation.h"

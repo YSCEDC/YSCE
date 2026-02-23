@@ -1,7 +1,7 @@
 #include <ysclass.h>
 #include <ysglparticlemanager.h>
 
-#include <fsairproperty.h>
+#include <fsatmosphere.h>
 
 #include "fs.h"
 #include "fsnetutil.h"

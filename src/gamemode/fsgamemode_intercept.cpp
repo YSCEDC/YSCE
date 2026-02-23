@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <ysglfontdata.h>
 
-#include "fssimextension_intercept.h"
+#include "fsgamemode_intercept.h"
 #include "fssimulation.h"
 #include "fssiminfo.h"
 #include "fsexistence.h"

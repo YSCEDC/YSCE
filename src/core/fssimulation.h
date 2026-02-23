@@ -37,7 +37,7 @@
 #include "fsconsole.h"
 #include "fsopengl.h"
 
-#include "fssimextension.h"
+#include "fsgamemode.h"
 
 class FsWorld;
 

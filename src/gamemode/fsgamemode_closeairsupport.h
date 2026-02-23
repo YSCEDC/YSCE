@@ -1,22 +1,24 @@
-#ifndef FSSIMEXTENSION_ENDURANCE_IS_INCLUDED
-#define FSSIMEXTENSION_ENDURANCE_IS_INCLUDED
+#ifndef FSSIMEXTENSION_CLOSEAIRSUPPORT_IS_INCLUDED
+#define FSSIMEXTENSION_CLOSEAIRSUPPORT_IS_INCLUDED
 /* { */
 
-#include "fssimextension.h"
+#include "fsgamemode.h"
+#include "fssiminfo.h"
 
-class FsSimExtension_EnduranceMode : public FsSimExtensionBase
+class FsSimExtension_CloseAirSupport : public FsSimExtensionBase
 {
 public:
-	typedef FsSimExtension_EnduranceMode THISCLASS;
+	typedef FsSimExtension_CloseAirSupport THISCLASS;
 
-    int nEnemyMax;
+	const double initRemainTime;
+	const int maxNumTank;
+
+    int nEnemy;
     double remainTime;
     double gLimit;
-    YSBOOL jet;
-    YSBOOL ww2;
-	YSBOOL allowAAM;
+    FsCloseAirSupportMissionInfo info;
 
-	FsSimExtension_EnduranceMode();
+	FsSimExtension_CloseAirSupport();
 
 	static const char *Ident(void);
 	static std::shared_ptr <FsSimExtensionBase> Generate(void);

@@ -1,7 +1,7 @@
 #include <ysclass.h>
 #include <ysunitconv.h>
 
-#include <fsairproperty.h>
+#include <fsatmosphere.h>
 
 #include "fs.h"
 #include "fsai_ground.h"

@@ -1,23 +1,22 @@
-#ifndef FSSIMEXTENSION_INTERCEPT_IS_INCLUDED
-#define FSSIMEXTENSION_INTERCEPT_IS_INCLUDED
+#ifndef FSSIMEXTENSION_ENDURANCE_IS_INCLUDED
+#define FSSIMEXTENSION_ENDURANCE_IS_INCLUDED
 /* { */
 
-#include "fssimextension.h"
-#include "fssiminfo.h"
+#include "fsgamemode.h"
 
-class FsSimExtension_InterceptMission : public FsSimExtensionBase
+class FsSimExtension_EnduranceMode : public FsSimExtensionBase
 {
 public:
-	typedef FsSimExtension_InterceptMission THISCLASS;
+	typedef FsSimExtension_EnduranceMode THISCLASS;
 
-	const double initRemainTime;
+    int nEnemyMax;
+    double remainTime;
+    double gLimit;
+    YSBOOL jet;
+    YSBOOL ww2;
+	YSBOOL allowAAM;
 
-	int nEnemy;
-	double remainTime;
-	double gLimit;
-	FsInterceptMissionInfo info;
-
-	FsSimExtension_InterceptMission();
+	FsSimExtension_EnduranceMode();
 
 	static const char *Ident(void);
 	static std::shared_ptr <FsSimExtensionBase> Generate(void);

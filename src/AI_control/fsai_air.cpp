@@ -1,6 +1,6 @@
 #include <ysclass.h>
 
-#include <fsairproperty.h>
+#include <fsatmosphere.h>
 
 #include "fs.h"
 #include "fsai_ground.h"

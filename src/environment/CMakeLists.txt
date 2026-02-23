@@ -8,13 +8,13 @@ ysflight_graphics_common
 )
 
 set(SRCS
-fsairproperty.cpp
+"fsatmosphere.cpp"
 fscloud.cpp
 fsweather.cpp
 )
 
 set(HEADERS
-fsairproperty.h
+"fsatmosphere.h"
 fscloud.h
 fsweather.h
 )

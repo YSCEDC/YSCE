@@ -1,23 +1,28 @@
-#ifndef FSSIMEXTENSION_GROUNDTOAIR_IS_INCLUDED
-#define FSSIMEXTENSION_GROUNDTOAIR_IS_INCLUDED
+#ifndef FSSIMEXTENSION_RACING_IS_INCLUDED
+#define FSSIMEXTENSION_RACING_IS_INCLUDED
 /* { */
 
-#include "fssimextension.h"
-#include "fssiminfo.h"
+#include "fsgamemode.h"
 
-class FsSimExtension_GroundToAir : public FsSimExtensionBase
+class FsSimExtension_RacingMode : public FsSimExtensionBase
 {
 public:
-	typedef FsSimExtension_GroundToAir THISCLASS;
+	class CheckPointTime
+	{
+	public:
+		int nCheckPointLeft;
+		double ctime;
+	};
 
-	const double initRemainTime;
 
-    int nEnemy;
-    double remainTime;
-    double gLimit;
-    FsGroundToAirDefenseMissionInfo info;
+	typedef FsSimExtension_RacingMode THISCLASS;
 
-	FsSimExtension_GroundToAir();
+	int nCheckPoint;
+	int prevNumCheckPoint;
+	YsArray <CheckPointTime> currentRun;
+	double goalTime;
+
+	FsSimExtension_RacingMode();
 
 	static const char *Ident(void);
 	static std::shared_ptr <FsSimExtensionBase> Generate(void);
@@ -27,12 +32,19 @@ public:
 	virtual YsArray <YsString> Serialize(const FsSimulation *sim);
 	virtual YSRESULT ProcessCommand(FsSimulation *sim,const YsConstArrayMask <YsString> &argv);
 
+	virtual YSBOOL CanContinue(FsSimulation *sim) const;
+	virtual YSBOOL CanResume(FsSimulation *sim) const;
+
 	virtual void StartSimulation(FsSimulation *sim);
 	virtual void EndSimulation(FsSimulation *sim);
+
+	virtual void StartReplay(FsSimulation *sim);
+	virtual void EndReplay(FsSimulation *sim);
 
 	virtual void OnInterval(FsSimulation *sim,double dt);
 	virtual YsArray <LowerLeftAndBitmap,0> Draw2D(const FsSimulation *sim,int windowId,int winWid,int winHei) const;
 };
+
 
 /* } */
 #endif

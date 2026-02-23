@@ -1,6 +1,6 @@
 #include <ysglfontdata.h>
 
-#include "fssimextension_groundtoair.h"
+#include "fsgamemode_groundtoair.h"
 #include "fsworld.h"
 #include "fssimulation.h"
 #include "fsexistence.h"

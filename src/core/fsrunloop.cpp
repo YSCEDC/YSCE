@@ -29,10 +29,10 @@
 
 #include "fsrunloop.h"
 
-#include "fssimextension_endurance.h"
-#include "fssimextension_intercept.h"
-#include "fssimextension_closeairsupport.h"
-#include "fssimextension_groundtoair.h"
+#include "fsgamemode_endurance.h"
+#include "fsgamemode_intercept.h"
+#include "fsgamemode_closeairsupport.h"
+#include "fsgamemode_groundtoair.h"
 #include <fsstdout.h>
 
 

@@ -23,7 +23,7 @@
 #include "fsdialog.h"
 #include "fsguinewflightdialog.h"
 
-#include "fssimextension_racing.h"
+#include "fsgamemode_racing.h"
 
 #ifdef WIN32
 #include <float.h>

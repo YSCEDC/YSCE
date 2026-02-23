@@ -20,9 +20,9 @@
 #include <ysshellext_orientationutil.h>
 
 
-#include "fssimextension.h"
+#include "fsgamemode.h"
 
-#include <fsairproperty.h>
+#include <fsatmosphere.h>
 
 #include "fs.h"
 

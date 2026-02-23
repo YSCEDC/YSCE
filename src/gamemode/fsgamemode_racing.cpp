@@ -1,6 +1,6 @@
 #include <ysglfontdata.h>
 
-#include "fssimextension_racing.h"
+#include "fsgamemode_racing.h"
 #include "fssimulation.h"
 #include "fsexistence.h"
 
