@@ -21,14 +21,14 @@ get_property(ADDITIONAL_INCLUDE_DIR TARGET fssimplewindow PROPERTY INCLUDE_DIREC
 set(SRCS
 fsairplaneproperty.cpp
 fsgroundproperty.cpp
-fsvehicleproperty.cpp
+"fscommonproperty.cpp"
 fsengine.cpp
 )
 
 set(HEADERS
 fsairplaneproperty.h
 fsgroundproperty.h
-fsvehicleproperty.h
+"fscommonproperty.h"
 fsengine.h
 )
 

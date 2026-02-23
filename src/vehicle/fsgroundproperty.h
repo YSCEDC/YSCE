@@ -4,7 +4,7 @@
 
 #include <fsdef.h>
 #include "fsnavaid.h"
-#include "fsvehicleproperty.h"
+#include "fscommonproperty.h"
 #include "fsvisual.h"
 #include "fsweapon.h"
 

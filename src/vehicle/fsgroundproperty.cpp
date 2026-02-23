@@ -16,7 +16,7 @@
 #include "fsnavaid.h"
 #include "fsrecord.h"
 #include "fsvisual.h"
-#include "fsproperty.h"
+#include "fsturret.h"
 #include "fsairplaneproperty.h"
 #include "fsgroundproperty.h"
 #include "fsnetwork.h"

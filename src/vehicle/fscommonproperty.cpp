@@ -1,4 +1,4 @@
-#include "fsvehicleproperty.h"
+#include "fscommonproperty.h"
 
 #include "fsutil.h"
 #include "fsnetutil.h"
@@ -7,7 +7,7 @@
 #include "fsrecord.h"
 #include "fsvisual.h"
 #include "fsweapon.h"
-#include "fsproperty.h"
+#include "fsturret.h"
 #include "fsairplaneproperty.h"
 #include "fsgroundproperty.h"
 #include "fsnetwork.h"

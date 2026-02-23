@@ -10,7 +10,7 @@
 #include <dsound.h>
 
 
-#include "../../fsairsound.h"
+#include "../../fssound.h"
 
 
 class FsSoundStatus

@@ -6,7 +6,7 @@ set(SRCS
 fssound.cpp
 )
 set(HEADERS
-fsairsound.h
+"fssound.h"
 )
 
 add_library(${TARGET_NAME} ${SRCS} ${HEADERS})

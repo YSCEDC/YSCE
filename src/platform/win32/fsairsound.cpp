@@ -10,7 +10,7 @@
 
 
 #include <ysclass.h>
-#include <fsairsound.h>
+#include <fssound.h>
 #include <fsfilename.h>
 
 

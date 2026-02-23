@@ -2,7 +2,7 @@
 #define FSAIRPLANEPROPERTY_IS_INCLUDED
 /* { */
 
-#include "fsvehicleproperty.h"
+#include "fscommonproperty.h"
 #include "fsweapon.h"
 
 class FsFlightControl;

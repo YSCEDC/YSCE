@@ -22,7 +22,7 @@
 #include "fsrecord.h"
 #include "fsexplosion.h"
 #include "fsgroundsky.h"
-#include "fsproperty.h"
+#include "fsturret.h"
 #include "fsairplaneproperty.h"
 #include "fsweapon.h"
 #include "fsgroundproperty.h"
@@ -34,7 +34,7 @@
 #include "fscontrol.h"
 #include "fssimulation.h"
 #include "fsworld.h"
-#include "fsairsound.h"
+#include "fssound.h"
 #include "fsai_air.h"
 #include "fsdialog.h"
 

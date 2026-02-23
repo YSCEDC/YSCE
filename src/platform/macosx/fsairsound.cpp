@@ -9,7 +9,7 @@
 
 #include <ysclass.h>
 #include <ysport.h>
-#include <fsairsound.h>
+#include <fssound.h>
 #include <fsfilename.h>
 
 

@@ -9,7 +9,7 @@
 #include <mmsystem.h>
 
 
-#include "../fsairsound.h"
+#include "../fssound.h"
 
 
 class FsSoundStatus
