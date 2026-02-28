@@ -97,11 +97,7 @@ private:
 	YsArray <std::shared_ptr <FsSimExtensionBase> > addOnList;
 
 	FsProjection *lastProjection;
-	FsProjection lastProjMainWindow;
-	FsProjection lastProjSubWindow1;
-	FsProjection lastProjSubWindow2;
 	double lastViewMagUser;
-	double lastViewMagFix;
 
 public:
 	enum FSSIMULATIONSTATE
@@ -114,54 +110,6 @@ public:
 		FSSIMSTATE_OVER
 	};
 
-	//enum FSVIEWMODE
-	//{
-	//	FSCOCKPITVIEW,
-	//	FSOUTSIDEPLAYERPLANE,
-	//	FSFIXEDPOINTPLAYERPLANE,
-	//	FSVARIABLEPOINTPLAYERPLANE,
-	//	FSFROMTOPOFPLAYERPLANE,
-	//	FSANOTHERAIRPLANE,
-	//	FSMISSILEVIEW,
-	//	FSAIRTOAIRVIEW,
-	//	FSAIRFROMAIRVIEW,
-	//	FSPLAYERPLANEFROMSIDE,
-	//	FSCARRIERVIEW,
-	//	FSTESTVIEW1,
-	//	FSTESTVIEW2,
-	//	FSOUTSIDEPLAYER2,
-	//	FSOUTSIDEPLAYER3,
-	//	FSBOMBINGVIEW,
-	//	FSTOWERVIEW,
-	//	FSPLAYERTOGNDVIEW,
-	//	FSGNDTOPLAYERVIEW,
-	//	FSSPOTPLANEVIEW,
-
-	//	FSMYWEAPONVIEW_OLD,  // For sub window
-	//	FSMYWEAPONVIEW_NEW,
-	//	FSBACKMIRRORVIEW,
-	//	FS45DEGREERIGHTVIEW,
-	//	FS45DEGREELEFTVIEW,
-	//	FS90DEGREERIGHTVIEW,
-	//	FS90DEGREELEFTVIEW,
-	//	FSTELESCOPEVIEW,
-	//	FSLOCKEDTARGETVIEW,
-	//	FSGHOSTVIEW,
-
-	//	FSAIRTOTOWERVIEW,
-	//	FSAIRTOTOWERVIEWSOLO,
-	//	FSTOWERVIEW_NOMAGNIFY,
-
-	//	FSVERTICALORBITINGVIEW,         // 2005/06/07
-	//	FSHORIZONTALORBITINGVIEW,       // 2005/06/07
-	//	FSTURNVIEW,                     // 2005/06/07
-
-	//	FSADDITIONALAIRPLANEVIEW,       // 2006/07/19 For additional view in cockpit
-	//	FSADDITIONALAIRPLANEVIEW_CABIN,  // 2011/02/01 For additional view in cabin
-
-	//	FSVIEWUP,
-	//	FSVIEWDOWN 					//Added 01/10/2023 - for subwindow view up and down
-	//};
 	enum FSREPLAYMODE
 	{
 		FSREPLAY_PLAY,
@@ -190,31 +138,6 @@ public:
 		FSISS_3DHUD=4,
 		FSISS_3DINSTPANEL=8
 	};
-
-	/*class ViewModeAndIndex
-	{
-	public:
-		FSVIEWMODE viewmode;
-		int refIndex;
-
-		void Set(FSVIEWMODE m,int r)
-		{
-			viewmode=m;
-			refIndex=r;
-		}
-	};
-	class ViewModeAndIndexAndPosition : public ViewModeAndIndex
-	{
-	public:
-		YsVec3 pos;
-
-		void Set(FSVIEWMODE m,int r,const YsVec3 &p)
-		{
-			viewmode=m;
-			refIndex=r;
-			pos=p;
-		}
-	};*/
 
 	class ReplayInfo
 	{
@@ -304,49 +227,12 @@ protected:
 	YsColor skyColor,gndColor;
 	YSBOOL gndSpecular;
 
-	/*class ActualViewMode
-	{
-	public:
-		FSVIEWMODE actualViewMode;
-		double actualViewHdg,actualViewPch;
-		YsVec3 viewPoint;
-		YsAtt3 viewAttitude;
-		YsMatrix4x4 viewMat;
-		double viewMagFix;
-		YSBOOL isViewPointInCloud;
-		double fogVisibility;
-		YSBOOL centerThisCamera;
-
-		double viewTargetDist;
-
-		enum
-		{
-			NUM_SHADOW_MAP=3
-		};
-		YsMatrix4x4 shadowProjMat[NUM_SHADOW_MAP];
-		YsMatrix4x4 shadowViewMat[NUM_SHADOW_MAP];
-
-		ActualViewMode();
-	};*/
-
 	FSREPLAYMODE replayMode;
-	FSVIEWMODE mainWindowViewmode;
-	int mainWindowAdditionalAirplaneViewId;
 	const FsAirplane *focusAir,*focusAir2;
 	const FsGround *focusGnd;
 	int towerViewId;
 	YsVec3 towerViewPos;
 	
-
-	ActualViewMode mainWindowActualViewMode;
-	ActualViewMode subWindowActualViewMode[FsMaxNumSubWindow];
-	// mutable FSVIEWMODE actualViewmode;
-	// mutable double actualViewHdg,actualViewPch;
-	// mutable double viewMagFix;
-	// YSBOOL isViewPointInCloud;
-	// double fogVisibility;
-
-	double ghostViewSpeed;
 	YsVec3 viewRefPoint;
 	YsAtt3 viewAttitudeTransition;
 	double viewMagUser;  // viewMagFix: Depends on view mode  viewMagUser: User control
@@ -355,8 +241,6 @@ protected:
 	double relViewDist;
 	YsArray <YsVec3> towerPosition;  // Must be set in AddField, Tower->focusAirId,
 	                                 // FsField must store tower positions
-
-	FSVIEWMODE subWindowViewmode[FsMaxNumSubWindow];
 
 	YSBOOL terminate;
 
@@ -443,7 +327,6 @@ public:
 	unsigned int GetAllowedWeaponType(void) const;
 	double CurrentTime(void) const;
 	FsFlightControl GetUserInput(void);
-	ActualViewMode* GetActualViewMode(void);
 	FsFlightConfig* GetConfig(void);
 	const FsAirplane* GetFocusAir(void);
 	YSRESULT SetFocusAir(FsAirplane* air);
@@ -454,7 +337,7 @@ public:
 	YSRESULT FindNewestMissileOfOwner(YsVec3& vec, YsAtt3& att, const FsAirplane* owner);
 	void GetRelView(double& dist, YsAtt3& att);
 	YsVec3 GetTowerPos(void);
-	void GetSubwindowViewModes(ActualViewMode *sw[2]);
+	FsCamera* GetCamera(void);
 	void RegisterExtension(std::shared_ptr <FsSimExtensionBase> addOnPtr);
 	std::shared_ptr <class FsSimExtensionBase> FindExtension(const YsString &str) const;
 
@@ -915,7 +798,6 @@ public:
 	double GetFogVis(void);
 	YSRESULT PassGunAim(const FsAirplane*& target, YsVec3& aim);
 	void SimCalculateShadowMap(ActualViewMode& callBackVM, FSVIEWMODE viewmode, YsVec2i drawingAreaSize);
-	void AutoViewChangeCallback(FSVIEWMODE mainWindowViewMode, const double dt);
 protected:
 	void SimControlByComputer(const double &dt);
 	void SimMakeUpCockpitIndicationSet(class FsCockpitIndicationSet &cockpitIndicationSet) const;
@@ -929,12 +811,7 @@ protected:
 		const ActualViewMode &actualViewMode,
 		class FsProjection &proj);
 
-	void SimAutoViewChange(FSVIEWMODE mainWindowViewMode,const double dt);
 	void SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,YsVec2i drawingAreaSize);
-	//void SimDecideViewpoint(ActualViewMode &actualViewMode,FSVIEWMODE viewmode) const;
-	//void SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,const FsAirplane *playerPlane) const;
-	//void SimDecideViewpoint_Gnd(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,const FsGround *playerGround) const;
-	//void SimDecideViewpoint_Common(ActualViewMode &actualViewMode,FSVIEWMODE viewmode) const;
 	class FsProjection SimDrawPrepare(const ActualViewMode &);
 	class FsProjection SimDrawPrepareBackground(const ActualViewMode &actualViewMode);
 	class FsProjection SimDrawPrepareRange(const ActualViewMode &actualViewMode,const double &nearZ,const double &farZ);
@@ -1041,8 +918,6 @@ protected:
 	YSBOOL CheckMidAir(YsVec3 &collisionPos,FsExistence &ex1,FsExistence &ex2);
 	YSBOOL CheckMidAir(YsVec3 &collisionPos,const YsShell &shl,FsExistence &ex2);
 	YSBOOL Explode(FsExistence &ex,YSBOOL sound);
-
-	void UpdateViewpointAccordingToPlayerAirplane(const double &distance,YSBOOL reset);
 
 	void AirplaneCrash(FsAirplane *crashedPlane,FSDIEDOF diedOf,int collType);  // collType  1:Ground  2:Shell
 	YSRESULT DestroyAutoGeneratedAirAndGnd(void);

@@ -3,9 +3,10 @@
 
 ActualViewMode::ActualViewMode()
 {
-	actualViewMode = FSCOCKPITVIEW;
-	actualViewHdg = 0.0;
-	actualViewPch = 0.0;
+	viewMode = FSCOCKPITVIEW;
+	nextViewMode = FSCOCKPITVIEW;
+	viewHdg = 0.0;
+	viewPch = 0.0;
 
 	viewPoint = YsVec3::Origin();
 	viewAttitude = YsZeroAtt();
@@ -15,6 +16,7 @@ ActualViewMode::ActualViewMode()
 	fogVisibility = 0.0;
 	centerThisCamera = YSTRUE;
 	viewTargetDist = 0.0;
+	cockpitViewId = 0;
 }
 
 FsCamera::FsCamera()
@@ -22,10 +24,11 @@ FsCamera::FsCamera()
 	ghostViewSpeed = 0.0;
 	timeStep = 0.0;
 	viewRefPoint = YsOrigin();
-	currentExCamera = 0;
 	mainViewMode = new ActualViewMode;
 	subViewModeL = new ActualViewMode;
 	subViewModeR = new ActualViewMode;
+	sim = NULL;
+	cfg = NULL;
 }
 
 const char* FsCamera::ViewmodeToStr(FSVIEWMODE viewmode)
@@ -278,25 +281,23 @@ const char* FsCamera::ViewmodeToStr(FSVIEWMODE viewmode)
 	return FSCOCKPITVIEW;
 }
 
-void FsCamera::DecideAllViewPoint(FsSimulation *currentSim, const double dt, FSVIEWMODE nextViewMode)
+void FsCamera::DecideAllViewPoint(FsSimulation *currentSim, const double dt)
 {
 	sim = currentSim;
 	timeStep = dt;
 	userInput = sim->GetUserInput();
 	cfg = sim->GetConfig();
-	ActualViewMode* vm = sim->GetActualViewMode();
-	ActualViewMode* sw[2];
-	sim->GetSubwindowViewModes(sw);
 	
-	DecideViewpointAndCheckIsInCloud(vm,nextViewMode,FsGetMainWindowDrawingAreaSize());
-	//AutoViewChange(vm->actualViewMode,dt);
-	sim->AutoViewChangeCallback(nextViewMode,dt);
-	for(int i=0; i<FsMaxNumSubWindow; i++)
+	DecideViewpointAndCheckIsInCloud(mainViewMode,mainViewMode->nextViewMode,FsGetMainWindowDrawingAreaSize());
+	AutoViewChange(nextViewMode);
+
+	if(FsIsSubWindowOpen(0)==YSTRUE)
 	{
-		if(FsIsSubWindowOpen(i)==YSTRUE)
-		{
-			DecideViewpointAndCheckIsInCloud(sw[i], nextViewMode, FsGetSubWindowDrawingAreaSize());
-		}
+		DecideViewpointAndCheckIsInCloud(subViewModeL, subViewModeL->nextViewMode, FsGetSubWindowDrawingAreaSize());
+	}
+	if (FsIsSubWindowOpen(1) == YSTRUE)
+	{
+		DecideViewpointAndCheckIsInCloud(subViewModeR, subViewModeR->nextViewMode, FsGetSubWindowDrawingAreaSize());
 	}
 }
 
@@ -328,12 +329,12 @@ void FsCamera::DecideViewpointAndCheckIsInCloud(ActualViewMode* actualViewMode,F
 
 void FsCamera::DecideViewpoint(ActualViewMode &actualViewMode,FSVIEWMODE mode) const
 {
-	const FsAirplane *playerPlane = sim->GetPlayerAirplane();
+	FsAirplane *playerPlane = sim->GetPlayerAirplane();
 
-	actualViewMode.actualViewMode=mode;  // by Default
+	actualViewMode.viewMode=mode;  // by Default
 	actualViewMode.viewMagFix=1.0;       // by Default
-	actualViewMode.actualViewHdg=userInput.viewHdg;  // by Default
-	actualViewMode.actualViewPch=userInput.viewPch;  // by Default
+	actualViewMode.viewHdg=userInput.viewHdg;  // by Default
+	actualViewMode.viewPch=userInput.viewPch;  // by Default
 	actualViewMode.centerThisCamera = YSTRUE; //default to centered, overwrite where required
 
 	if(mode==FSGHOSTVIEW)
@@ -368,7 +369,7 @@ void FsCamera::DecideViewpoint(ActualViewMode &actualViewMode,FSVIEWMODE mode) c
 	}
 }
 
-void FsCamera::DecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE mode,const FsAirplane *playerPlane) const
+void FsCamera::DecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE mode, FsAirplane *playerPlane) const
 {
 	const FsAirplane* focus1 = sim->GetFocusAir();
 	const FsAirplane* focus2 = sim->GetFocusAir2();
@@ -592,8 +593,11 @@ void FsCamera::DecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE mod
 		if(playerPlane!=NULL)
 		{
 			const FsExistence *trg;
-			if(playerPlane->Prop().GetSelectedWeaponPerformance().targetAir == YSTRUE ||
-				playerPlane->Prop().GetSelectedWeaponPerformance().targetGnd == YSTRUE)
+			YsVec3 ccip;
+			if((playerPlane->Prop().GetSelectedWeaponPerformance().targetAir == YSTRUE &&
+				sim->FindAirplane(playerPlane->Prop().GetAirTargetKey()) != NULL) ||
+				(playerPlane->Prop().GetSelectedWeaponPerformance().targetGnd == YSTRUE &&
+				sim->FindGround(playerPlane->Prop().GetGroundTargetKey()) != NULL))
 			{
 				if(playerPlane->Prop().GetSelectedWeaponPerformance().targetAir != YSTRUE)
 				{
@@ -616,6 +620,29 @@ void FsCamera::DecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE mod
 					actualViewMode.viewAttitude.SetTwoVector(ev,uv);
 					return;
 				}
+			}
+			else if (playerPlane->Prop().GetSelectedWeaponPerformance().category == FSWEAPONCAT_FREEFALL &&
+				playerPlane->Prop().ComputeEstimatedBombLandingPosition(ccip, sim->GetWeather()) == YSOK)
+			{
+				double viewTargetDist = playerPlane->GetApproximatedCollideRadius();
+				YsVec3 viewPos, viewDirec, cameraOffset, bombPos;
+				YsAtt3 viewAtt;
+
+				playerPlane->Prop().FindNextWeaponSlot(playerPlane->Prop().GetSelectedWeaponType(),bombPos);
+				bombPos = playerPlane->Prop().GetMatrix() * bombPos;
+				
+				viewDirec = ccip - bombPos;
+				viewAtt.SetForwardVector(viewDirec);
+				viewAtt.SetUpVector(playerPlane->Prop().GetAttitude().GetUpVector());
+
+				cameraOffset.Set(0.0, 0.0, viewTargetDist);
+				viewAtt.Mul(cameraOffset, cameraOffset);
+				
+				actualViewMode.viewPoint = bombPos + cameraOffset;
+				actualViewMode.viewAttitude = viewAtt;
+				actualViewMode.viewMagFix = 40.0;
+				actualViewMode.viewTargetDist = viewTargetDist;
+				return;
 			}
 			else if(playerPlane->Prop().GetSelectedWeaponType()==FSWEAPON_GUN)
 			{
@@ -644,6 +671,25 @@ void FsCamera::DecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE mod
 						actualViewMode.viewAttitude.SetTwoVector(ev,playerPlane->GetAttitude().GetUpVector());
 						actualViewMode.viewMagFix=40.0;
 						actualViewMode.viewTargetDist=viewTargetDist;
+						return;
+					}
+					else
+					{
+						YsVec3 gunPos, gunAim, cameraOffset;
+						YsAtt3 gunDir;
+						double viewTargetDist = playerPlane->GetApproximatedCollideRadius();
+						cameraOffset.Set(0.0, 0.0, viewTargetDist);
+
+						playerPlane->Prop().GetGunPosition(gunPos, gunAim);
+						gunPos = playerPlane->Prop().GetMatrix() * gunPos;
+						gunAim.Normalize();
+						playerPlane->Prop().GetAttitude().Mul(gunAim,gunAim);
+						gunDir.SetTwoVector(gunAim,playerPlane->Prop().GetAttitude().GetUpVector());
+
+						actualViewMode.viewAttitude = gunDir;
+						actualViewMode.viewPoint = gunPos + gunAim*viewTargetDist;
+						actualViewMode.viewMagFix = 40.0;
+						actualViewMode.viewTargetDist = viewTargetDist;
 						return;
 					}
 				}
@@ -971,20 +1017,20 @@ void FsCamera::DecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE mod
 		{
 			actualViewMode.centerThisCamera = cfg->centerCameraPerspective;
 			const FsAdditionalViewpoint* vp;
-			vp = playerPlane->GetAdditionalView(currentExCamera);
+			vp = playerPlane->GetAdditionalView(actualViewMode.cockpitViewId);
 			if (vp != NULL)
 			{
 				switch (vp->vpType)
 				{
 				default:
 				case FS_ADVW_INSIDE:
-					actualViewMode.actualViewMode = FSADDITIONALAIRPLANEVIEW;
+					actualViewMode.viewMode = FSADDITIONALAIRPLANEVIEW;
 					break;
 				case FS_ADVW_OUTSIDE:
-					actualViewMode.actualViewMode = FSOUTSIDEPLAYER2;
+					actualViewMode.viewMode = FSOUTSIDEPLAYER2;
 					break;
 				case FS_ADVW_CABIN:
-					actualViewMode.actualViewMode = FSADDITIONALAIRPLANEVIEW_CABIN;
+					actualViewMode.viewMode = FSADDITIONALAIRPLANEVIEW_CABIN;
 					break;
 				}
 
@@ -1013,32 +1059,32 @@ void FsCamera::DecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE mod
 		switch (mode)
 		{
 		case FSBACKMIRRORVIEW:
-			actualViewMode.actualViewHdg = YsPi;
-			actualViewMode.actualViewPch = 0.0;
+			actualViewMode.viewHdg = YsPi;
+			actualViewMode.viewPch = 0.0;
 			break;
 		case FS45DEGREERIGHTVIEW:
-			actualViewMode.actualViewHdg = -YsPi / 4.0;
-			actualViewMode.actualViewPch = 0.0;
+			actualViewMode.viewHdg = -YsPi / 4.0;
+			actualViewMode.viewPch = 0.0;
 			break;
 		case FS45DEGREELEFTVIEW:
-			actualViewMode.actualViewHdg = YsPi / 4.0;
-			actualViewMode.actualViewPch = 0.0;
+			actualViewMode.viewHdg = YsPi / 4.0;
+			actualViewMode.viewPch = 0.0;
 			break;
 		case FS90DEGREERIGHTVIEW:
-			actualViewMode.actualViewHdg = -YsPi / 2.0;
-			actualViewMode.actualViewPch = 0.0;
+			actualViewMode.viewHdg = -YsPi / 2.0;
+			actualViewMode.viewPch = 0.0;
 			break;
 		case FS90DEGREELEFTVIEW:
-			actualViewMode.actualViewHdg = YsPi / 2.0;
-			actualViewMode.actualViewPch = 0.0;
+			actualViewMode.viewHdg = YsPi / 2.0;
+			actualViewMode.viewPch = 0.0;
 			break;
 		case FSVIEWUP:
-			actualViewMode.actualViewPch = YsPi / 2.0;
-			actualViewMode.actualViewHdg = 0.0;
+			actualViewMode.viewHdg = 0.0;
+			actualViewMode.viewPch = YsPi / 2.0;
 			break;
 		case FSVIEWDOWN:
-			actualViewMode.actualViewPch = -YsPi / 2.0;
-			actualViewMode.actualViewHdg = 0.0;
+			actualViewMode.viewHdg = 0.0;
+			actualViewMode.viewPch = -YsPi / 2.0;
 			break;
 		}
 
@@ -1053,10 +1099,10 @@ void FsCamera::DecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE mod
 			actualViewMode.viewPoint = mat * cock;
 
 			actualViewMode.viewAttitude = playerPlane->GetAttitude();
-			actualViewMode.viewAttitude.YawLeft(actualViewMode.actualViewHdg);
-			actualViewMode.viewAttitude.NoseUp(actualViewMode.actualViewPch);
+			actualViewMode.viewAttitude.YawLeft(actualViewMode.viewHdg);
+			actualViewMode.viewAttitude.NoseUp(actualViewMode.viewPch);
 
-			actualViewMode.actualViewMode = FSCOCKPITVIEW;
+			actualViewMode.viewMode = FSCOCKPITVIEW;
 		}
 		else
 		{
@@ -1065,343 +1111,14 @@ void FsCamera::DecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE mod
 		break;
 	}
 }
-/*
-void FsSimulation::SimDecideViewpoint_Gnd(ActualViewMode &actualViewMode,FSVIEWMODE mode,const FsGround *playerGround) const
+
+void FsCamera::AutoViewChange(FSVIEWMODE viewMode)
 {
-	switch(mode)
-	{
-	default:
-		actualViewMode.actualViewMode=FSCOCKPITVIEW;
-		// Fall down to FSCOCKPITVIEW
-	case FSCOCKPITVIEW:
-		if(playerGround->Prop().IsActive()==YSTRUE || playerGround->Prop().IsAlive()==YSFALSE)
-		{
-			const YsVec3 cock=playerGround->Prop().GetUserViewPoint();
-
-			actualViewMode.viewPoint=playerGround->GetMatrix()*cock;
-			actualViewMode.viewAttitude=playerGround->GetAttitude();
-			actualViewMode.centerThisCamera = cfgPtr->centerCameraPerspective;
-
-			const YsAtt3 &neutAtt=YsZeroAtt(); // Will be added.
-
-			actualViewMode.viewAttitude.YawLeft(neutAtt.h());
-			actualViewMode.viewAttitude.NoseUp(neutAtt.p());
-			actualViewMode.viewAttitude.SetB(actualViewMode.viewAttitude.b()+neutAtt.b());
-
-			switch(playerGround->Prop().GetSelectedWeaponType())
-			{
-			default:
-			case FSWEAPON_NULL:
-				break;
-			case FSWEAPON_GUN:
-				//Was it correct? att.YawLeft(playerGround->Prop().GetAaaAim().h());
-				//att.NoseUp(playerGround->Prop().GetAaaAim().p());
-				actualViewMode.viewAttitude = playerGround->Prop().GetAaaAim();
-				break;
-			case FSWEAPON_AIM9:
-			case FSWEAPON_AGM65:
-				//Was it correct? att.YawLeft(playerGround->Prop().GetSamAim().h());
-				//att.NoseUp(playerGround->Prop().GetSamAim().p());
-				actualViewMode.viewAttitude = playerGround->Prop().GetSamAim();
-				break;
-			}
-
-			actualViewMode.viewAttitude.YawLeft(userInput.viewHdg);
-			actualViewMode.viewAttitude.NoseUp(userInput.viewPch);
-		}
-		else
-		{
-			// Outside view to let the user that the user is killed.
-		}
-		break;
-	case FSTOWERVIEW:
-	case FSTOWERVIEW_NOMAGNIFY:
-		if (playerGround != NULL)
-		{
-			YsVec3 dir = playerGround->GetPosition() - towerViewPos;
-			dir.Normalize();
-			actualViewMode.viewAttitude.SetForwardVector(dir);
-
-			YsVec3 ofst = playerGround->GetLookAtOffset();
-			playerGround->GetAttitude().Mul(ofst, ofst);
-
-			actualViewMode.viewPoint = towerViewPos;
-
-			if (mode == FSTOWERVIEW)
-			{
-				actualViewMode.viewMagFix = 8.0;
-			}
-		}
-		else
-		{
-			SimDecideViewpoint(actualViewMode, FSCOCKPITVIEW);
-		}
-		break;
-	case FSBACKMIRRORVIEW:
-	case FS45DEGREERIGHTVIEW:
-	case FS45DEGREELEFTVIEW:
-	case FS90DEGREERIGHTVIEW:
-	case FS90DEGREELEFTVIEW:
-	case FSVIEWUP:
-	case FSVIEWDOWN:
-	case FSADDITIONALAIRPLANEVIEW:
-	case FSOUTSIDEPLAYER2:
-	case FSOUTSIDEPLAYER3:
-		SimDecideViewpoint_Common(actualViewMode, mode);
-		break;
-	case FSLOCKEDTARGETVIEW:
-		if (playerGround != NULL)
-		{
-			const YsVec3 cock = playerGround->Prop().GetUserViewPoint();
-
-			actualViewMode.viewPoint = playerGround->GetMatrix() * cock;
-			actualViewMode.viewAttitude = playerGround->Prop().GetAttitude();
-
-			const FsExistence* trg;
-			if (playerGround->GetSelectedWeaponPerformance().targetAir == YSTRUE ||
-				playerGround->GetSelectedWeaponPerformance().targetGnd == YSTRUE)
-			{
-				actualViewMode.viewAttitude = playerGround->Prop().GetSamAim();
-
-				if (playerGround->Prop().GetSelectedWeaponPerformance().targetGnd == YSTRUE)
-				{
-					trg = playerGround->Prop().GetGroundTarget();
-				}
-				else
-				{
-					trg = playerGround->Prop().GetAirTarget();
-				}
-
-				if (trg != NULL)
-				{
-					YsVec3 ev, uv;
-					ev = trg->GetPosition() - playerGround->GetPosition();
-					ev.Normalize();
-					uv = playerGround->GetAttitude().GetUpVector();
-					actualViewMode.viewPoint = trg->GetPosition() - ev * trg->GetApproximatedCollideRadius() * 1.5;
-					actualViewMode.viewAttitude.SetTwoVector(ev, uv);
-					return;
-				}
-			}
-			else if (playerGround->Prop().GetSelectedWeaponPerformance().category == FSWEAPONCAT_BULLET)
-			{
-				actualViewMode.viewAttitude = playerGround->Prop().GetAaaAim();
-
-				if (playerGround->Prop().GetHasPilotControlledTurret() == YSTRUE)
-				{
-					YsVec3 dir;
-					playerGround->Prop().GetFirstPilotControlledTurretPosition(actualViewMode.viewPoint);
-					playerGround->Prop().GetFirstPilotControlledTurretDirection(dir);
-
-					actualViewMode.viewAttitude.SetTwoVector(dir, playerGround->GetAttitude().GetUpVector());
-					actualViewMode.viewMagFix = 40.0;
-					return;
-				}
-				else
-				{
-					//FsAirplane *target;
-					//YsVec3 aim;
-					//if(SimCalculateGunAim(target,aim)==YSOK)
-					//{
-					//	YsVec3 ev;
-					//	ev=aim-playerGround->Prop().GetPosition();
-					//	ev.Normalize();
-					//	pos=playerGround->Prop().GetPosition()+ev*playerGround->GetApproximatedCollideRadius();
-					//	att.SetTwoVector(ev,playerGround->GetAttitude().GetUpVector());
-					//	viewMagFix=40.0;
-					//	return;
-					//}
-					actualViewMode.viewAttitude = playerGround->Prop().GetAaaAim();
-					actualViewMode.viewMagFix = 40.0;
-					return;
-				}
-			}
-
-			YsVec3 ev;
-			ev = actualViewMode.viewAttitude.GetForwardVector();
-			actualViewMode.viewPoint += ev * playerGround->GetApproximatedCollideRadius();
-			actualViewMode.viewMagFix = 40.0;
-		}
-		break;
-	}
-}
-
-void FsSimulation::SimDecideViewpoint_Common(ActualViewMode& actualViewMode, FSVIEWMODE mode) const
-{
-	const FsExistence* playerObj = GetPlayerObject();
-	switch (mode)
-	{
-	case FSOUTSIDEPLAYER2:
-	{
-		const FsExistence* toLookAt = NULL;
-		if (NULL != playerObj && FSEX_GROUND == playerObj->GetType())
-		{
-			toLookAt = playerObj;
-		}
-		else
-		{
-			toLookAt = focusAir;
-		}
-		if (NULL != toLookAt)
-		{
-			YsVec3 dir, fomCen;
-			double dist;
-			dist = relViewDist * toLookAt->GetApproximatedCollideRadius();
-			dir.Set(0, 0, dist);
-
-			relViewAtt.Mul(dir, dir);
-
-			YsVec3 ofst = toLookAt->GetLookAtOffset();
-			toLookAt->GetAttitude().Mul(ofst, ofst);
-
-			actualViewMode.viewPoint = toLookAt->GetPosition() + ofst - dir;
-			actualViewMode.viewAttitude = relViewAtt;
-			actualViewMode.viewTargetDist = dist;
-		}
-	}
-	break;
-	case FSOUTSIDEPLAYER3:
-	{
-		const FsExistence* toLookAt = NULL;
-		if (NULL != playerObj && FSEX_GROUND == playerObj->GetType())
-		{
-			toLookAt = playerObj;
-		}
-		else
-		{
-			toLookAt = focusAir;
-		}
-		if (NULL != toLookAt)
-		{
-			YsVec3 ev[2], uv[2], newEv, newUv;
-			YsVec3 dir, fomCen;
-			double dist;
-			dist = relViewDist * toLookAt->GetApproximatedCollideRadius();
-			dir.Set(0, 0, dist);
-
-			YsAtt3 airAtt;
-			if (cfgPtr->externalCameraDelay != YSTRUE || toLookAt->GetAttitudeFromRecord(airAtt, currentTime - 0.8) != YSOK)
-			{
-				airAtt = toLookAt->GetAttitude();
-			}
-			airAtt.Mul(newEv, relViewAtt.GetForwardVector());
-			airAtt.Mul(newUv, relViewAtt.GetUpVector());
-			actualViewMode.viewAttitude.SetTwoVector(newEv, newUv);
-			actualViewMode.viewAttitude.Mul(dir, dir);
-			actualViewMode.viewTargetDist = dist;
-
-			YsVec3 ofst = toLookAt->GetLookAtOffset();
-			toLookAt->GetAttitude().Mul(ofst, ofst);
-
-			actualViewMode.viewPoint = toLookAt->GetPosition() + ofst - dir;
-		}
-	}
-	break;
-	case FSADDITIONALAIRPLANEVIEW:
-		if (playerObj != NULL)
-		{
-			actualViewMode.centerThisCamera = cfgPtr->centerCameraPerspective;
-			const FsAdditionalViewpoint* vp;
-			vp = playerObj->GetAdditionalView(mainWindowAdditionalAirplaneViewId);
-			if (vp != NULL)
-			{
-				switch (vp->vpType)
-				{
-				default:
-				case FS_ADVW_INSIDE:
-					actualViewMode.actualViewMode = FSADDITIONALAIRPLANEVIEW;
-					break;
-				case FS_ADVW_OUTSIDE:
-					actualViewMode.actualViewMode = FSOUTSIDEPLAYER2;
-					break;
-				case FS_ADVW_CABIN:
-					actualViewMode.actualViewMode = FSADDITIONALAIRPLANEVIEW_CABIN;
-					break;
-				}
-
-				YsVec3 ev, uv;
-				playerObj->GetMatrix().Mul(actualViewMode.viewPoint, vp->pos, 1.0);
-				playerObj->GetMatrix().Mul(ev, vp->att.GetForwardVector(), 0.0);
-				playerObj->GetMatrix().Mul(uv, vp->att.GetUpVector(), 0.0);
-				actualViewMode.viewAttitude.SetTwoVector(ev, uv);
-
-				actualViewMode.viewAttitude.YawLeft(userInput.viewHdg);
-				actualViewMode.viewAttitude.NoseUp(userInput.viewPch);
-			}
-			else
-			{
-				SimDecideViewpoint(actualViewMode, FSCOCKPITVIEW);
-			}
-		}
-		break;
-	case FSBACKMIRRORVIEW:
-	case FS45DEGREERIGHTVIEW:
-	case FS45DEGREELEFTVIEW:
-	case FS90DEGREERIGHTVIEW:
-	case FS90DEGREELEFTVIEW:
-	case FSVIEWUP:
-	case FSVIEWDOWN:
-		switch (mode)
-		{
-		case FSBACKMIRRORVIEW:
-			actualViewMode.actualViewHdg = YsPi;
-			actualViewMode.actualViewPch = 0.0;
-			break;
-		case FS45DEGREERIGHTVIEW:
-			actualViewMode.actualViewHdg = -YsPi / 4.0;
-			actualViewMode.actualViewPch = 0.0;
-			break;
-		case FS45DEGREELEFTVIEW:
-			actualViewMode.actualViewHdg = YsPi / 4.0;
-			actualViewMode.actualViewPch = 0.0;
-			break;
-		case FS90DEGREERIGHTVIEW:
-			actualViewMode.actualViewHdg = -YsPi / 2.0;
-			actualViewMode.actualViewPch = 0.0;
-			break;
-		case FS90DEGREELEFTVIEW:
-			actualViewMode.actualViewHdg = YsPi / 2.0;
-			actualViewMode.actualViewPch = 0.0;
-			break;
-		case FSVIEWUP:
-			actualViewMode.actualViewPch = YsPi / 2.0;
-			actualViewMode.actualViewHdg = 0.0;
-			break;
-		case FSVIEWDOWN:
-			actualViewMode.actualViewPch = -YsPi / 2.0;
-			actualViewMode.actualViewHdg = 0.0;
-			break;
-		}
-
-		if (playerObj->IsActive() == YSTRUE || playerObj->IsAlive() == YSFALSE)
-		{
-			YsVec3 cock = playerObj->GetCockpitPosition();
-
-			YsMatrix4x4 mat;
-			mat.Translate(playerObj->GetPosition());
-			mat.Rotate(playerObj->GetAttitude());
-
-			actualViewMode.viewPoint = mat * cock;
-
-			actualViewMode.viewAttitude = playerObj->GetAttitude();
-			actualViewMode.viewAttitude.YawLeft(actualViewMode.actualViewHdg);
-			actualViewMode.viewAttitude.NoseUp(actualViewMode.actualViewPch);
-
-			actualViewMode.actualViewMode = FSCOCKPITVIEW;
-		}
-		else
-		{
-			SimDecideViewpoint(actualViewMode, FSCOCKPITVIEW);
-		}
-		break;
-	}
-}
-*/
-
-/*
-void FsSimulation::SimAutoViewChange(FSVIEWMODE mainWindowViewMode,const double dt)
-{
-	switch(mainWindowViewMode)
+	const FsAirplane* focusAir = sim->GetFocusAir();
+	double relDist;
+	YsAtt3 relAtt;
+	sim->GetRelView(relDist, relAtt);
+	switch(viewMode)
 	{
 	default:
 		break;
@@ -1413,7 +1130,7 @@ void FsSimulation::SimAutoViewChange(FSVIEWMODE mainWindowViewMode,const double 
 		break;
 	case FSVARIABLEPOINTPLAYERPLANE:
 		{
-			auto playerPlane=GetPlayerAirplane();
+			auto playerPlane=sim->GetPlayerAirplane();
 			if(nullptr!=playerPlane)
 			{
 				YsVec3 tmp=playerPlane->Prop().GetPosition();
@@ -1430,17 +1147,17 @@ void FsSimulation::SimAutoViewChange(FSVIEWMODE mainWindowViewMode,const double 
 		}
 		break;
 	case FSANOTHERAIRPLANE:
-		if(CheckNoExtAirView()!=YSTRUE)  // 2006/06/11
+		if(sim->CheckNoExtAirView()!=YSTRUE)  // 2006/06/11
 		{
-			for(int i=0; i<GetNumAirplane(); i++)
+			for(int i=0; i< sim->GetNumAirplane(); i++)
 			{
 				const FsAirplane *air=focusAir;
-				if(air==NULL || air==GetPlayerAirplane() || air->IsAlive()!=YSTRUE)
+				if(air==NULL || air==sim->GetPlayerAirplane() || air->IsAlive()!=YSTRUE)
 				{
-					focusAir=FindNextAirplane(focusAir);
+					focusAir=sim->FindNextAirplane(focusAir);
 					if(focusAir==NULL)
 					{
-						focusAir=FindNextAirplane(focusAir);
+						focusAir=sim->FindNextAirplane(focusAir);
 					}
 				}
 				else
@@ -1456,7 +1173,7 @@ void FsSimulation::SimAutoViewChange(FSVIEWMODE mainWindowViewMode,const double 
 	case FSAIRTOTOWERVIEWSOLO:
 		if(focusAir==NULL)
 		{
-			focusAir=FindNextAirplane(NULL);
+			focusAir=sim->FindNextAirplane(NULL);
 		}
 		break;
 	case FSSPOTPLANEVIEW:
@@ -1464,37 +1181,36 @@ void FsSimulation::SimAutoViewChange(FSVIEWMODE mainWindowViewMode,const double 
 		{
 			YsVec3 dir;
 			double dist;
-			dist=relViewDist*focusAir->GetApproximatedCollideRadius();
+			dist= relDist *focusAir->GetApproximatedCollideRadius();
 			dir.Set(0,0,dist);
 
 			YsVec3 ev1,ev2;
 			ev1=focusAir->GetAttitude().GetForwardVector();
-			ev2=relViewAtt.GetForwardVector();
+			ev2=relAtt.GetForwardVector();
 
-			relViewAtt.Mul(dir,dir); // dir=relViewAtt.GetMatrix()*dir;
-			relViewAtt.SetB((ev1*ev2)*focusAir->GetAttitude().b()/2.0);
+			relAtt.Mul(dir,dir); // dir=relViewAtt.GetMatrix()*dir;
+			relAtt.SetB((ev1*ev2)*focusAir->GetAttitude().b()/2.0);
 		}
 		break;
 	case FSVERTICALORBITINGVIEW:
-		relViewAtt.NoseUp(-dt*YsPi/12.0);
+		relAtt.NoseUp(-timeStep*YsPi/12.0);
 		break;
 	case FSHORIZONTALORBITINGVIEW:
-		relViewAtt.YawLeft(dt*YsPi/12.0);
+		relAtt.YawLeft(timeStep*YsPi/12.0);
 		break;
 	case FSTURNVIEW:
-		relViewAtt.SetH(relViewAtt.h()+dt*YsPi/12.0);
+		relAtt.SetH(relAtt.h()+timeStep*YsPi/12.0);
 		break;
 	}
-}*/
+}
 
-/*
-void FsSimulation::UpdateViewpointAccordingToPlayerAirplane(const double &distance,YSBOOL reset)
+void FsCamera::UpdateViewpointAccordingToPlayerAirplane(const double &distance,YSBOOL reset)
 {
 	const YsAtt3 *att;
 	const YsVec3 *pos;
 	FsAirplane *playerPlane;
 
-	playerPlane=GetPlayerAirplane();
+	playerPlane=sim->GetPlayerAirplane();
 	if(playerPlane!=NULL)
 	{
 		pos=&playerPlane->GetPosition();
@@ -1513,13 +1229,10 @@ void FsSimulation::UpdateViewpointAccordingToPlayerAirplane(const double &distan
 		}
 	}
 }
-*/
 
-
-void FsCamera::ProcessGhostView(FsSimulation* sim, const double dt, ActualViewMode* viewMode)
+void FsCamera::ProcessGhostView(FsSimulation* sim, const double dt)
 {
 	FsFlightControl *userInput = &sim->GetUserInput();
-	mainViewMode = viewMode;
 	auto &viewPoint= mainViewMode->viewPoint;
 	auto &viewAttitude= mainViewMode->viewAttitude;
 
@@ -1586,7 +1299,7 @@ void FsCamera::ProcessGhostView(FsSimulation* sim, const double dt, ActualViewMo
 }
 
 /*
-void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualViewMode)
+void FsSimulation::CalculateProjection(FsProjection &prj,const ActualViewMode &actualViewMode)
 {
 	int wid, hei;
 	const FsAirplane *playerPlane;

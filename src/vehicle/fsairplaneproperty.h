@@ -569,6 +569,7 @@ public:
 	class FsWeapon *wepPtr;
 	FsWeapon wep;
 	
+	int FindNextWeaponSlot(FSWEAPONTYPE wpnType, YsVec3& pos);
 	YSBOOL FireSelectedWeapon(
 	    YSBOOL &blockedByBombBay,
 	    FsSimulation *sim,const double &ct,class FsWeaponHolder &bul,class FsExistence *own);

@@ -7919,9 +7919,9 @@ void FsSimulation::NetFreeMemoryWhenPossible
 			bulletHolder.killCredit->DeleteList();
 			bulletHolder.killCredit=NULL;
 		}
-
-
-		mainWindowViewmode=FSCOCKPITVIEW;  // 2004/09/04
+		
+		
+		camera->mainViewMode->nextViewMode=FSCOCKPITVIEW;  // 2004/09/04
 		focusAir=NULL;  // 2004/09/04
 		focusAir2=NULL; // 2004/09/04
 
@@ -8796,7 +8796,7 @@ YSRESULT FsSimulation::ServerState_StandBy(
 				escKeyCount=0;
 				terminate=YSFALSE;
 				SetPlayerAirplane(NULL);
-				mainWindowViewmode=FSGHOSTVIEW;
+				camera->mainViewMode->nextViewMode=FSGHOSTVIEW;
 
 				std::queue <FSNET_CONSOLE_COMMAND> emptyQueue;
 				svr.commandQueue.swap(emptyQueue);
@@ -9996,7 +9996,7 @@ YSRESULT FsSimulation::ClientState_StandBy(
 					escKeyCount=0;
 					terminate=YSFALSE;
 					SetPlayerAirplane(NULL);
-					mainWindowViewmode=FSGHOSTVIEW;
+					camera->mainViewMode->nextViewMode=FSGHOSTVIEW;
 
 					std::queue <FSNET_CONSOLE_COMMAND> emptyQueue;
 					cli.commandQueue.swap(emptyQueue);
@@ -10242,7 +10242,7 @@ YSRESULT FsSimulation::ClientState_SideWindow(const double &,class FsSocketClien
 
 	cli.GetSideWindowAssignment(air,hdg,pch);
 
-	mainWindowViewmode=FSCOCKPITVIEW;
+	camera->mainViewMode->nextViewMode=FSCOCKPITVIEW;
 	userInput.viewHdg=hdg;
 	userInput.viewPch=pch;
 	if(air!=NULL && air->IsAlive()==YSTRUE)
@@ -10599,7 +10599,7 @@ printf("%s %d\n",__FUNCTION__,__LINE__);
 					   air->netNextState.tRemote>air->netPrevState.tRemote)
 					{
 						air->Prop().NetworkDecode(air->netPrevState,air->netNextState);
-						if (air == GetPlayerAirplane() && (mainWindowActualViewMode.actualViewMode == FSCOCKPITVIEW || mainWindowActualViewMode.actualViewMode == FSADDITIONALAIRPLANEVIEW))
+						if (air == GetPlayerAirplane() && (camera->mainViewMode->viewMode == FSCOCKPITVIEW || camera->mainViewMode->viewMode == FSADDITIONALAIRPLANEVIEW))
 						{
 							//To prevent jitter in observer mode cockpit view
 							//Currently camera is decided before packets are processed for some reason

@@ -6310,6 +6310,82 @@ YSBOOL FsAirplaneProperty::FireSelectedWeapon(
 	return FireWeapon(blockedByBombBay,sim,ct,bul,own,staSelectedWeaponType);
 }
 
+int FsAirplaneProperty::FindNextWeaponSlot(FSWEAPONTYPE wpnType, YsVec3& pos)
+{
+	pos = YsOrigin();
+	int slot = -1;
+	if (wpnType != FSWEAPON_FLARE && wpnType != FSWEAPON_GUN)
+	{
+		int i;
+		for (i = (int)staWeaponSlot.GetN() - 1; i >= 0; i--)
+		{
+			if (YSTRUE == chWeaponSlot[i].isExternal && staWeaponSlot[i].nLoaded > 0 && staWeaponSlot[i].wpnType == wpnType)
+			{
+				if (slot < 0 || staWeaponSlot[slot].nLoaded <= staWeaponSlot[i].nLoaded)
+				{
+					slot = i;
+				}
+			}
+		}
+		if (0 > slot)
+		{
+			for (i = (int)staWeaponSlot.GetN() - 1; i >= 0; i--)
+			{
+				if (staWeaponSlot[i].nLoaded > 0 && staWeaponSlot[i].wpnType == wpnType)
+				{
+					if (slot < 0 || staWeaponSlot[slot].nLoaded <= staWeaponSlot[i].nLoaded)
+					{
+						slot = i;
+					}
+				}
+			}
+		}
+
+
+		if (slot >= 0)
+		{
+			pos = chWeaponSlot[slot].pos;
+		}
+		else
+		{
+			pos = YsOrigin();
+		}
+	}
+	else if (wpnType == FSWEAPON_FLARE)
+	{
+
+		for (int i = (int)staWeaponSlot.GetN() - 1; i >= 0; i--)
+		{
+			if (staWeaponSlot[i].nLoaded > 0 && staWeaponSlot[i].wpnType == wpnType)
+			{
+				if (slot < 0 || staWeaponSlot[slot].nLoaded <= staWeaponSlot[i].nLoaded)
+				{
+					slot = i;
+				}
+			}
+		}
+
+		if (slot >= 0)
+		{
+			pos = chWeaponSlot[slot].pos;
+		}
+		else if (0 < chNumFlareDispenser)
+		{
+			pos = chFlareDispenser[staFlare % chNumFlareDispenser];
+		}
+		else
+		{
+			pos = chFlareDispenser[0];
+		}
+	}
+	else
+	{
+		const int nTotalLoad = GetNumWeapon(FSWEAPON_AIM9) + GetNumWeapon(FSWEAPON_AGM65) + GetNumWeapon(FSWEAPON_BOMB) + GetNumWeapon(FSWEAPON_ROCKET);
+		pos.Set(4.0 * ((nTotalLoad % 2) != 0 ? 1.0 : -1.0), -1.0, 0.0);
+	}
+	return slot;
+}
+
 YSBOOL FsAirplaneProperty::FireWeapon(
     YSBOOL &blockedByBombBay,FsSimulation *sim,const double &ctime,class FsWeaponHolder &bul,FsExistence *owner,FSWEAPONTYPE wpnType)
 {
@@ -6321,7 +6397,7 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 	int slot;
 	YsVec3 missilePos,flareVel=YsOrigin();
 	YsAtt3 missileAtt;
-	slot=-1;
+	slot=FindNextWeaponSlot(wpnType, missilePos);
 
 
 	// Bomb bay door check
@@ -6331,7 +6407,7 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 		return YSFALSE;
 	}
 
-
+	/*
 	if(wpnType==FSWEAPON_AIM9 || wpnType==FSWEAPON_AIM9X || wpnType==FSWEAPON_AGM65 ||
 	   wpnType==FSWEAPON_BOMB || wpnType==FSWEAPON_ROCKET ||
 	   wpnType==FSWEAPON_AIM120 || wpnType==FSWEAPON_BOMB250 || wpnType==FSWEAPON_BOMB500HD || wpnType==FSWEAPON_FUELTANK)
@@ -6407,6 +6483,14 @@ YSBOOL FsAirplaneProperty::FireWeapon(
 	{
 		const int nTotalLoad=GetNumWeapon(FSWEAPON_AIM9)+GetNumWeapon(FSWEAPON_AGM65)+GetNumWeapon(FSWEAPON_BOMB)+GetNumWeapon(FSWEAPON_ROCKET);
 		missilePos.Set(4.0*((nTotalLoad%2)!=0 ? 1.0 : -1.0),-1.0,0.0);
+	}*/
+
+	if (slot < 0 && wpnType == FSWEAPON_FLARE)
+	{
+		if (0 < chNumFlareDispenser)
+		{
+			flareVel = chFlareDispensingVel[staFlare % chNumFlareDispenser];
+		}
 	}
 
 	missilePos=staMatrix*missilePos;

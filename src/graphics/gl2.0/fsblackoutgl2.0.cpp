@@ -23,7 +23,7 @@ void FsSimulation::SimDrawBlackout(const ActualViewMode &actualViewMode) const
 	const GLfloat minusGLimit=-5.0f;
 
 	if(cfgPtr->blackOut==YSTRUE &&
-	   actualViewMode.actualViewMode==FSCOCKPITVIEW &&
+	   actualViewMode.viewMode==FSCOCKPITVIEW &&
 	   playerPlane!=NULL &&
 	   playerPlane->IsAlive()==YSTRUE &&
 	   (playerPlane->Prop().GetG()>plusGLimit ||

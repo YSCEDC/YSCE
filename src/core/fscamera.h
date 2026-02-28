@@ -84,17 +84,21 @@ public:
 		}
 	};
 
-	FSVIEWMODE actualViewMode;
-	double actualViewHdg, actualViewPch;
+	FSVIEWMODE viewMode;
+	FSVIEWMODE nextViewMode;
+	double viewHdg, viewPch;
 	YsVec3 viewPoint;
 	YsAtt3 viewAttitude;
 	YsMatrix4x4 viewMat;
 	double viewMagFix;
+	double prevViewMagFix;
 	YSBOOL isViewPointInCloud;
 	double fogVisibility;
 	YSBOOL centerThisCamera;
 	FsProjection projection;
+	FsProjection prevProjection;
 	double viewTargetDist;
+	int cockpitViewId;
 
 	enum
 	{
@@ -119,7 +123,6 @@ public:
 	double ghostViewSpeed;
 	double timeStep;
 	YsVec3 viewRefPoint;
-	int currentExCamera;
 	ActualViewMode *mainViewMode;
 	ActualViewMode *subViewModeL;
 	ActualViewMode *subViewModeR;
@@ -131,13 +134,14 @@ public:
 	static const char* ViewmodeToStr(FSVIEWMODE viewmode);
 	static FSVIEWMODE StrToViewmode(const char* str);
 
-	void ProcessGhostView(FsSimulation *sim, const double dt, ActualViewMode *viewMode);
+	void ProcessGhostView(FsSimulation *sim, const double dt);
 
-	void DecideAllViewPoint(FsSimulation *sim, double dt, FSVIEWMODE nextViewMode);
+	void DecideAllViewPoint(FsSimulation *sim, double dt);
 	void DecideViewpointAndCheckIsInCloud(ActualViewMode* actualViewMode, FSVIEWMODE nextViewMode, YsVec2i drawingAreaSize);
 	void DecideViewpoint(ActualViewMode& actualViewMode, FSVIEWMODE viewmode) const;
-	void DecideViewpoint_Air(ActualViewMode& actualViewMode, FSVIEWMODE viewmode, const FsAirplane* playerPlane) const;
-	//void AutoViewChange(FSVIEWMODE mainWindowViewMode, const double dt);
+	void DecideViewpoint_Air(ActualViewMode& actualViewMode, FSVIEWMODE viewmode,  FsAirplane* playerPlane) const;
+	void AutoViewChange(FSVIEWMODE viewMode);
+	void UpdateViewpointAccordingToPlayerAirplane(const double& distance, YSBOOL reset);
 
 	/*void ViewingControl(FSBUTTONFUNCTION fnc, FSUSERCONTROL userControl);
 	YsArray <ViewModeAndIndexAndPosition> MakeAvailableILSView(void) const;
