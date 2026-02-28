@@ -26,7 +26,7 @@
 #include "fswindow.h" // class FsJoystick
 #include "fscontrol.h"
 #include "fsexplosion.h"
-
+#include "fscamera.h"
 
 #include "fssubmenu.h"
 
@@ -40,8 +40,7 @@
 #include "fsgamemode.h"
 
 class FsWorld;
-
-
+class FsCamera;
 
 ////////////////////////////////////////////////////////////
 
@@ -81,9 +80,10 @@ public:
 	class FsGuiInFlightDialog *GetCurrentInFlightDialog(void) const;
 };
 
-class FsSimulation : public FsHasInFlightDialog
+class FsSimulation : public FsHasInFlightDialog, public ActualViewMode
 {
 private:
+	FsCamera* camera;
 	YsString simTitle;
 
 	FsSimulation(const FsSimulation &);
@@ -114,54 +114,54 @@ public:
 		FSSIMSTATE_OVER
 	};
 
-	enum FSVIEWMODE
-	{
-		FSCOCKPITVIEW,
-		FSOUTSIDEPLAYERPLANE,
-		FSFIXEDPOINTPLAYERPLANE,
-		FSVARIABLEPOINTPLAYERPLANE,
-		FSFROMTOPOFPLAYERPLANE,
-		FSANOTHERAIRPLANE,
-		FSMISSILEVIEW,
-		FSAIRTOAIRVIEW,
-		FSAIRFROMAIRVIEW,
-		FSPLAYERPLANEFROMSIDE,
-		FSCARRIERVIEW,
-		FSTESTVIEW1,
-		FSTESTVIEW2,
-		FSOUTSIDEPLAYER2,
-		FSOUTSIDEPLAYER3,
-		FSBOMBINGVIEW,
-		FSTOWERVIEW,
-		FSPLAYERTOGNDVIEW,
-		FSGNDTOPLAYERVIEW,
-		FSSPOTPLANEVIEW,
+	//enum FSVIEWMODE
+	//{
+	//	FSCOCKPITVIEW,
+	//	FSOUTSIDEPLAYERPLANE,
+	//	FSFIXEDPOINTPLAYERPLANE,
+	//	FSVARIABLEPOINTPLAYERPLANE,
+	//	FSFROMTOPOFPLAYERPLANE,
+	//	FSANOTHERAIRPLANE,
+	//	FSMISSILEVIEW,
+	//	FSAIRTOAIRVIEW,
+	//	FSAIRFROMAIRVIEW,
+	//	FSPLAYERPLANEFROMSIDE,
+	//	FSCARRIERVIEW,
+	//	FSTESTVIEW1,
+	//	FSTESTVIEW2,
+	//	FSOUTSIDEPLAYER2,
+	//	FSOUTSIDEPLAYER3,
+	//	FSBOMBINGVIEW,
+	//	FSTOWERVIEW,
+	//	FSPLAYERTOGNDVIEW,
+	//	FSGNDTOPLAYERVIEW,
+	//	FSSPOTPLANEVIEW,
 
-		FSMYWEAPONVIEW_OLD,  // For sub window
-		FSMYWEAPONVIEW_NEW,
-		FSBACKMIRRORVIEW,
-		FS45DEGREERIGHTVIEW,
-		FS45DEGREELEFTVIEW,
-		FS90DEGREERIGHTVIEW,
-		FS90DEGREELEFTVIEW,
-		FSTELESCOPEVIEW,
-		FSLOCKEDTARGETVIEW,
-		FSGHOSTVIEW,
+	//	FSMYWEAPONVIEW_OLD,  // For sub window
+	//	FSMYWEAPONVIEW_NEW,
+	//	FSBACKMIRRORVIEW,
+	//	FS45DEGREERIGHTVIEW,
+	//	FS45DEGREELEFTVIEW,
+	//	FS90DEGREERIGHTVIEW,
+	//	FS90DEGREELEFTVIEW,
+	//	FSTELESCOPEVIEW,
+	//	FSLOCKEDTARGETVIEW,
+	//	FSGHOSTVIEW,
 
-		FSAIRTOTOWERVIEW,
-		FSAIRTOTOWERVIEWSOLO,
-		FSTOWERVIEW_NOMAGNIFY,
+	//	FSAIRTOTOWERVIEW,
+	//	FSAIRTOTOWERVIEWSOLO,
+	//	FSTOWERVIEW_NOMAGNIFY,
 
-		FSVERTICALORBITINGVIEW,         // 2005/06/07
-		FSHORIZONTALORBITINGVIEW,       // 2005/06/07
-		FSTURNVIEW,                     // 2005/06/07
+	//	FSVERTICALORBITINGVIEW,         // 2005/06/07
+	//	FSHORIZONTALORBITINGVIEW,       // 2005/06/07
+	//	FSTURNVIEW,                     // 2005/06/07
 
-		FSADDITIONALAIRPLANEVIEW,       // 2006/07/19 For additional view in cockpit
-		FSADDITIONALAIRPLANEVIEW_CABIN,  // 2011/02/01 For additional view in cabin
+	//	FSADDITIONALAIRPLANEVIEW,       // 2006/07/19 For additional view in cockpit
+	//	FSADDITIONALAIRPLANEVIEW_CABIN,  // 2011/02/01 For additional view in cabin
 
-		FSVIEWUP,
-		FSVIEWDOWN 					//Added 01/10/2023 - for subwindow view up and down
-	};
+	//	FSVIEWUP,
+	//	FSVIEWDOWN 					//Added 01/10/2023 - for subwindow view up and down
+	//};
 	enum FSREPLAYMODE
 	{
 		FSREPLAY_PLAY,
@@ -191,7 +191,7 @@ public:
 		FSISS_3DINSTPANEL=8
 	};
 
-	class ViewModeAndIndex
+	/*class ViewModeAndIndex
 	{
 	public:
 		FSVIEWMODE viewmode;
@@ -214,7 +214,7 @@ public:
 			refIndex=r;
 			pos=p;
 		}
-	};
+	};*/
 
 	class ReplayInfo
 	{
@@ -304,7 +304,7 @@ protected:
 	YsColor skyColor,gndColor;
 	YSBOOL gndSpecular;
 
-	class ActualViewMode
+	/*class ActualViewMode
 	{
 	public:
 		FSVIEWMODE actualViewMode;
@@ -327,7 +327,7 @@ protected:
 		YsMatrix4x4 shadowViewMat[NUM_SHADOW_MAP];
 
 		ActualViewMode();
-	};
+	};*/
 
 	FSREPLAYMODE replayMode;
 	FSVIEWMODE mainWindowViewmode;
@@ -442,6 +442,19 @@ public:
 	FsWorld *GetWorldPtr(void);
 	unsigned int GetAllowedWeaponType(void) const;
 	double CurrentTime(void) const;
+	FsFlightControl GetUserInput(void);
+	ActualViewMode* GetActualViewMode(void);
+	FsFlightConfig* GetConfig(void);
+	const FsAirplane* GetFocusAir(void);
+	YSRESULT SetFocusAir(FsAirplane* air);
+	const FsAirplane* GetFocusAir2(void);
+	const FsGround* GetFocusGnd(void);
+	YSRESULT FindFirstGuidedMissile(YsVec3& vec, YsAtt3& att);
+	YSRESULT FindOldestMissileOfOwner(YsVec3& vec, YsAtt3& att, const FsAirplane* owner);
+	YSRESULT FindNewestMissileOfOwner(YsVec3& vec, YsAtt3& att, const FsAirplane* owner);
+	void GetRelView(double& dist, YsAtt3& att);
+	YsVec3 GetTowerPos(void);
+	void GetSubwindowViewModes(ActualViewMode *sw[2]);
 	void RegisterExtension(std::shared_ptr <FsSimExtensionBase> addOnPtr);
 	std::shared_ptr <class FsSimExtensionBase> FindExtension(const YsString &str) const;
 
@@ -896,6 +909,13 @@ protected:
 	void SimProcessSubMenu(int rawKey);
 public:
 	void SimProcessButtonFunction(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl);
+
+	YSBOOL CheckNoExtAirView(void) const;
+	YSBOOL CheckIsInCloud(YsVec3 pos);
+	double GetFogVis(void);
+	YSRESULT PassGunAim(const FsAirplane*& target, YsVec3& aim);
+	void SimCalculateShadowMap(ActualViewMode& callBackVM, FSVIEWMODE viewmode, YsVec2i drawingAreaSize);
+	void AutoViewChangeCallback(FSVIEWMODE mainWindowViewMode, const double dt);
 protected:
 	void SimControlByComputer(const double &dt);
 	void SimMakeUpCockpitIndicationSet(class FsCockpitIndicationSet &cockpitIndicationSet) const;
@@ -911,11 +931,10 @@ protected:
 
 	void SimAutoViewChange(FSVIEWMODE mainWindowViewMode,const double dt);
 	void SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,YsVec2i drawingAreaSize);
-	void SimDecideViewpoint(ActualViewMode &actualViewMode,FSVIEWMODE viewmode) const;
-	void SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,const FsAirplane *playerPlane) const;
-	void SimDecideViewpoint_Gnd(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,const FsGround *playerGround) const;
-	void SimDecideViewpoint_Common(ActualViewMode &actualViewMode,FSVIEWMODE viewmode) const;
-	YSBOOL CheckNoExtAirView(void) const;
+	//void SimDecideViewpoint(ActualViewMode &actualViewMode,FSVIEWMODE viewmode) const;
+	//void SimDecideViewpoint_Air(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,const FsAirplane *playerPlane) const;
+	//void SimDecideViewpoint_Gnd(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,const FsGround *playerGround) const;
+	//void SimDecideViewpoint_Common(ActualViewMode &actualViewMode,FSVIEWMODE viewmode) const;
 	class FsProjection SimDrawPrepare(const ActualViewMode &);
 	class FsProjection SimDrawPrepareBackground(const ActualViewMode &actualViewMode);
 	class FsProjection SimDrawPrepareRange(const ActualViewMode &actualViewMode,const double &nearZ,const double &farZ);

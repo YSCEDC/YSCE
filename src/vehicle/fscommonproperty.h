@@ -5,6 +5,30 @@
 #include <ysclass.h>
 #include "fsturret.h"
 
+enum FSADDITIONALVIEWPOINTTYPE
+{
+	FS_ADVW_INSIDE,
+	FS_ADVW_OUTSIDE,
+	FS_ADVW_CABIN
+};
+
+class FsAdditionalViewpoint : public FsProperty
+{
+public:
+	YsString name;
+	YsVec3 pos;
+	YsAtt3 att;
+	FSADDITIONALVIEWPOINTTYPE vpType;
+
+	// The following two properties control if the HUD or InstPanel must be drawn in the EXCAMERA.
+	// It will allow HUD or InstPanel visible only in some EXCAMERA.
+	// The switches are tested in FsSimulation::GetInstrumentDrawSwitch.
+	YSBOOL showHudIfAvailable;
+	YSBOOL showInstPanelIfAvailable;
+};
+
+////////////////////////////////////////////////////////////////
+
 class FsVehicleProperty : public FsProperty
 {
 protected:

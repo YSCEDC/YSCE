@@ -2624,7 +2624,7 @@ YSRESULT FsSocketServer::ReceiveLogOnUser(int clientId,int version,const char re
 		YsString strBuf;
 		if(netcfg->serverControlRadarAlt==YSTRUE)
 		{
-			sprintf(str,"RADARALTI %.2lfm",sim->GetConfig().radarAltitudeLimit);
+			sprintf(str,"RADARALTI %.2lfm",sim->GetConfig()->radarAltitudeLimit);
 			strBuf.Set(str);
 			user[clientId].configStringToSend.Append(strBuf);
 			SendConfigString(clientId,str);
@@ -4344,7 +4344,7 @@ YSRESULT FsSocketServer::SendEnvironment(int clientId)
 			sim->SetBlackOut(YSFALSE);
 		}
 
-		if(sim->GetConfig().blackOut==YSTRUE)
+		if(sim->GetConfig()->blackOut==YSTRUE)
 		{
 			flags|=4;
 		}
@@ -4363,7 +4363,7 @@ YSRESULT FsSocketServer::SendEnvironment(int clientId)
 			sim->SetMidAirCollision(YSFALSE);
 		}
 
-		if(sim->GetConfig().midAirCollision==YSTRUE)
+		if(sim->GetConfig()->midAirCollision==YSTRUE)
 		{
 			flags|=16;
 		}
@@ -4382,7 +4382,7 @@ YSRESULT FsSocketServer::SendEnvironment(int clientId)
 			sim->SetCanLandAnywhere(YSFALSE);
 		}
 
-		if(sim->GetConfig().canLandAnywhere==YSTRUE)
+		if(sim->GetConfig()->canLandAnywhere==YSTRUE)
 		{
 			flags|=64;
 		}
