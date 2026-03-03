@@ -10604,7 +10604,7 @@ printf("%s %d\n",__FUNCTION__,__LINE__);
 							//To prevent jitter in observer mode cockpit view
 							//Currently camera is decided before packets are processed for some reason
 							//Reupdate camera position after aircraft position changes
-							camera->UpdateCameras(this, 0.0);
+							camera->UpdateCameras(this);
 						}
 					}
 				}

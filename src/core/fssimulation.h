@@ -328,6 +328,7 @@ public:
 	double CurrentTime(void) const;
 	FsFlightControl GetUserInput(void);
 	FsFlightConfig* GetConfig(void);
+	double GetTimeStep(void);
 	const FsAirplane* GetFocusAir(void);
 	YSRESULT SetFocusAir(FsAirplane* air);
 	const FsAirplane* GetFocusAir2(void);

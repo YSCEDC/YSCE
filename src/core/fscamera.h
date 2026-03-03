@@ -123,6 +123,7 @@ class FsCamera : public FsViewPort
 {
 public:
 	FsCamera();
+	~FsCamera();
 
 	double ghostViewSpeed;
 	double timeStep;
@@ -141,17 +142,18 @@ public:
 	static const char* ViewmodeToStr(FSVIEWMODE viewmode);
 	static FSVIEWMODE StrToViewmode(const char* str);
 
-	void ProcessGhostView(FsSimulation *sim, const double dt);
-
-	void UpdateCameras(FsSimulation *sim, double dt);
-	void ApplyViewportEnvironment(FsViewPort* viewPort, YsVec2i drawingAreaSize);
-	void UpdateViewport(FsViewPort& viewPort, FSVIEWMODE next);
+	void UpdateCameras(FsSimulation *sim);
+	void PrepareViewPort(int port);
+	void UpdateViewPort(FsViewPort& viewPort, FSVIEWMODE next);
+	void ApplyViewPortEnvironment(FsViewPort* viewPort, YsVec2i drawingAreaSize);
 	void DecideViewMode(FsViewPort& viewPort, FSVIEWMODE viewmode,  FsAirplane* playerPlane);
 	void AutoViewChange(FSVIEWMODE viewMode);
 	void UpdateViewpointAccordingToPlayerAirplane(const double& distance, YSBOOL reset);
 
+	void ProcessGhostView(FsSimulation* sim, const double dt);
+	//void ViewingControl()
+	
 	void UpdateProjections(void);
-	void SelectViewPort(int port);
 	void CalculateProjection(FsViewPort& viewPort);
 	void GetStandardProjection(class FsProjection& prj);
 

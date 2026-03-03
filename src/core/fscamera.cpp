@@ -41,8 +41,15 @@ FsCamera::FsCamera()
 	activeViewPort = mainViewPort;
 	zoomUser = 1.0;
 	prevZoomUser = 1.0;
-	sim = NULL;
-	cfg = NULL;
+	sim = nullptr;
+	cfg = nullptr;
+}
+
+FsCamera::~FsCamera()
+{
+	delete mainViewPort;
+	delete leftViewPort;
+	delete rightViewPort;
 }
 
 const char* FsCamera::ViewmodeToStr(FSVIEWMODE viewmode)
@@ -295,48 +302,38 @@ const char* FsCamera::ViewmodeToStr(FSVIEWMODE viewmode)
 	return FSCOCKPITVIEW;
 }
 
-void FsCamera::UpdateCameras(FsSimulation *currentSim, const double dt)
+void FsCamera::UpdateCameras(FsSimulation *currentSim)
 {
 	sim = currentSim;
-	timeStep = dt;
+	timeStep = sim->GetTimeStep();
 	userInput = sim->GetUserInput();
 	cfg = sim->GetConfig();
 
 	//ViewingControl()
-	
-	UpdateViewport(*mainViewPort, VIEW_UNSPECIFIED);
-	AutoViewChange(mainViewPort->viewMode);
 
-	if(FsIsSubWindowOpen(0)==YSTRUE)
-	{
-		UpdateViewport(*leftViewPort, VIEW_UNSPECIFIED);
-	}
-	if (FsIsSubWindowOpen(1) == YSTRUE)
-	{
-		UpdateViewport(*rightViewPort, VIEW_UNSPECIFIED);
-	}
 }
 
-void FsCamera::ApplyViewportEnvironment(FsViewPort* viewPort,YsVec2i drawingAreaSize)
+void FsCamera::PrepareViewPort(int port)
 {
-	FsViewPort& vp = *viewPort;
-
-	viewPort->isViewPointInCloud=sim->CheckIsInCloud(viewPort->viewPoint);
-
-	if(viewPort->isViewPointInCloud!=YSTRUE)
+	switch (port)
 	{
-		viewPort->fogVisibility= sim->GetFogVis();
+	default:
+	case 0:
+		activeViewPort = mainViewPort;
+		break;
+	case 1:
+		activeViewPort = leftViewPort;
+		break;
+	case 2:
+		activeViewPort = rightViewPort;
+		break;
 	}
-	else
-	{
-		viewPort->fogVisibility=100.0;
-	}
-
-	//Temporary call back to original function to draw texture shadowmap
-	sim->SimCalculateShadowMap(vp, drawingAreaSize);
+	CalculateProjection(*activeViewPort);
+	UpdateViewPort(*activeViewPort, VIEW_UNSPECIFIED);
+	AutoViewChange(activeViewPort->viewMode);
 }
 
-void FsCamera::UpdateViewport(FsViewPort &viewPort, FSVIEWMODE next)
+void FsCamera::UpdateViewPort(FsViewPort &viewPort, FSVIEWMODE next)
 {
 	if (next != VIEW_UNSPECIFIED)
 	{
@@ -381,7 +378,26 @@ void FsCamera::UpdateViewport(FsViewPort &viewPort, FSVIEWMODE next)
 	viewPort.viewMat.RotateXZ(-viewPort.viewAttitude.h());
 	viewPort.viewMat.Translate(-viewPort.viewPoint);
 
-	ApplyViewportEnvironment(&viewPort, FsGetMainWindowDrawingAreaSize());
+	ApplyViewPortEnvironment(&viewPort, FsGetMainWindowDrawingAreaSize());
+}
+
+void FsCamera::ApplyViewPortEnvironment(FsViewPort* viewPort, YsVec2i drawingAreaSize)
+{
+	FsViewPort& vp = *viewPort;
+
+	viewPort->isViewPointInCloud = sim->CheckIsInCloud(viewPort->viewPoint);
+
+	if (viewPort->isViewPointInCloud != YSTRUE)
+	{
+		viewPort->fogVisibility = sim->GetFogVis();
+	}
+	else
+	{
+		viewPort->fogVisibility = 100.0;
+	}
+
+	//Temporary call back to original function to draw texture shadowmap
+	sim->SimCalculateShadowMap(vp, drawingAreaSize);
 }
 
 void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *playerPlane)
@@ -417,7 +433,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 		}
 		else
 		{
-			UpdateViewport(viewPort,FSFIXEDPOINTPLAYERPLANE);
+			UpdateViewPort(viewPort,FSFIXEDPOINTPLAYERPLANE);
 		}
 		break;
 	case FSBOMBINGVIEW:
@@ -437,7 +453,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 		}
 		else
 		{
-			UpdateViewport(viewPort,FSFIXEDPOINTPLAYERPLANE);
+			UpdateViewPort(viewPort,FSFIXEDPOINTPLAYERPLANE);
 		}
 		break;
 	case FSOUTSIDEPLAYERPLANE:
@@ -534,7 +550,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 			}
 		}
 		// If no other airplane is found,
-		UpdateViewport(viewPort,FSCOCKPITVIEW);  // Actual viewmode will be automatically set
+		UpdateViewPort(viewPort,FSCOCKPITVIEW);  // Actual viewmode will be automatically set
 		break;
 	case FSMISSILEVIEW:
 		{
@@ -550,7 +566,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 			}
 			else
 			{
-				UpdateViewport(viewPort,FSCOCKPITVIEW);
+				UpdateViewPort(viewPort,FSCOCKPITVIEW);
 			}
 		}
 		break;
@@ -578,11 +594,11 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 			}
 			else if(sim->CheckNoExtAirView()==YSTRUE)
 			{
-				UpdateViewport(viewPort,FSCOCKPITVIEW);
+				UpdateViewPort(viewPort,FSCOCKPITVIEW);
 			}
 			else
 			{
-				UpdateViewport(viewPort,FSLOCKEDTARGETVIEW);
+				UpdateViewPort(viewPort,FSLOCKEDTARGETVIEW);
 			}
 		}
 		break;
@@ -596,7 +612,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 			if((playerPlane->Prop().GetSelectedWeaponPerformance().targetAir == YSTRUE &&
 				sim->FindAirplane(playerPlane->Prop().GetAirTargetKey()) != NULL) ||
 				(playerPlane->Prop().GetSelectedWeaponPerformance().targetGnd == YSTRUE &&
-				sim->FindGround(playerPlane->Prop().GetGroundTargetKey()) != NULL))
+					sim->FindGround(playerPlane->Prop().GetGroundTargetKey()) != NULL))
 			{
 				if(playerPlane->Prop().GetSelectedWeaponPerformance().targetAir != YSTRUE)
 				{
@@ -756,7 +772,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 		}
 		else
 		{
-			UpdateViewport(viewPort,FSCOCKPITVIEW);
+			UpdateViewPort(viewPort,FSCOCKPITVIEW);
 		}
 		break;
 	case FSCARRIERVIEW:
@@ -791,7 +807,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 			}
 			else
 			{
-				UpdateViewport(viewPort,FSCOCKPITVIEW);
+				UpdateViewPort(viewPort,FSCOCKPITVIEW);
 			}
 		}
 		break;
@@ -814,7 +830,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 			}
 			else
 			{
-				UpdateViewport(viewPort,FSCOCKPITVIEW);
+				UpdateViewPort(viewPort,FSCOCKPITVIEW);
 			}
 		}
 		break;
@@ -856,7 +872,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 		}
 		else
 		{
-			UpdateViewport(viewPort,FSCOCKPITVIEW);
+			UpdateViewPort(viewPort,FSCOCKPITVIEW);
 		}
 		break;
 	case FSPLAYERTOGNDVIEW:
@@ -886,7 +902,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 		}
 		else
 		{
-			UpdateViewport(viewPort,FSCOCKPITVIEW);
+			UpdateViewPort(viewPort,FSCOCKPITVIEW);
 		}
 		break;
 	case FSGNDTOPLAYERVIEW:
@@ -916,7 +932,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 		}
 		else
 		{
-			UpdateViewport(viewPort,FSCOCKPITVIEW);
+			UpdateViewPort(viewPort,FSCOCKPITVIEW);
 		}
 		break;
 	case FSSPOTPLANEVIEW:
@@ -937,18 +953,18 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 		}
 		else
 		{
-			UpdateViewport(viewPort,FSCOCKPITVIEW);
+			UpdateViewPort(viewPort,FSCOCKPITVIEW);
 		}
 		break;
 	case FSVERTICALORBITINGVIEW:
-		UpdateViewport(viewPort,FSOUTSIDEPLAYER2);
+		UpdateViewPort(viewPort,FSOUTSIDEPLAYER2);
 		viewPort.viewAttitude.SetB(0.0);
 		break;
 	case FSHORIZONTALORBITINGVIEW:
-		UpdateViewport(viewPort,FSOUTSIDEPLAYER2);
+		UpdateViewPort(viewPort,FSOUTSIDEPLAYER2);
 		break;
 	case FSTURNVIEW:
-		UpdateViewport(viewPort,FSOUTSIDEPLAYER2);
+		UpdateViewPort(viewPort,FSOUTSIDEPLAYER2);
 		break;
 	case FSOUTSIDEPLAYER2:
 	{
@@ -1038,7 +1054,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 			}
 			else
 			{
-				UpdateViewport(viewPort, FSCOCKPITVIEW);
+				UpdateViewPort(viewPort, FSCOCKPITVIEW);
 			}
 		}
 		break;
@@ -1099,7 +1115,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 		}
 		else
 		{
-			UpdateViewport(viewPort, FSCOCKPITVIEW);
+			UpdateViewPort(viewPort, FSCOCKPITVIEW);
 		}
 		break;
 	}
@@ -1622,23 +1638,6 @@ void FsCamera::UpdateProjections(void)
 	else if (FsIsSubWindowOpen(1) == YSTRUE)
 	{
 		CalculateProjection(*rightViewPort);
-	}
-}
-
-void FsCamera::SelectViewPort(int port)
-{
-	switch (port)
-	{
-	default:
-	case 0:
-		activeViewPort = mainViewPort;
-		break;
-	case 1:
-		activeViewPort = leftViewPort;
-		break;
-	case 2:
-		activeViewPort = rightViewPort;
-		break;
 	}
 }
 

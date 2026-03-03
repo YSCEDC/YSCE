@@ -145,9 +145,6 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	currentTime=0.0;
 	aircraftTroubleTimer=0.0;
 	lastTime=0;
-	camera->mainViewPort = new FsViewPort;
-	camera->leftViewPort = new FsViewPort;
-	camera->rightViewPort = new FsViewPort;
 	viewAttitudeTransition=YsZeroAtt();
 	relViewAtt.Set(0.0,-YsPi/9.0,0.0);
 	relViewDist=2.0;
@@ -304,6 +301,7 @@ FsSimulation::~FsSimulation()
 	delete cloud;
 	delete goal;
 	delete simEvent;
+	delete camera;
 
 	delete localUser;
 
@@ -432,6 +430,11 @@ FsFlightControl FsSimulation::GetUserInput(void)
 FsFlightConfig* FsSimulation::GetConfig(void)
 {
 	return cfgPtr;
+}
+
+double FsSimulation::GetTimeStep(void)
+{
+	return realTimeStep;
 }
 
 const FsAirplane* FsSimulation::GetFocusAir(void)
@@ -1447,7 +1450,7 @@ void FsSimulation::RunSimulationOneStep(FsSimulation::FSSIMULATIONSTATE &simStat
 	case FSSIMSTATE_INITIALIZE:
 		ClearKeyBuffer();
 		PrepareRunSimulation();
-		camera->UpdateCameras(this, 0.0); // Prevent one frame with uninitialized viewpoint.
+		camera->UpdateCameras(this); // Prevent one frame with uninitialized viewpoint.
 		simState=FSSIMSTATE_RUNNING;
 
 		for(auto ptr : addOnList)
@@ -2483,8 +2486,6 @@ void FsSimulation::SimulateOneStep(
 				focusAir = GetPlayerAirplane();
 			}
 		}
-
-		camera->UpdateCameras(this, passedTime);
 	}
 
 #ifdef CRASHINVESTIGATION
@@ -2522,7 +2523,6 @@ void FsSimulation::AfterSimulation(void)
 		{
 			FsCloseSubWindow(i);
 			FsSelectMainWindow();
-			camera->SelectViewPort(0);
 		}
 	}
 	FsSplitMainWindow(YSFALSE);
@@ -6029,6 +6029,7 @@ void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL show
 		}
 	}
 
+	camera->UpdateCameras(this);
 	FsCockpitIndicationSet cockpitIndicationSet;
 	SimMakeUpCockpitIndicationSet(cockpitIndicationSet);
 
@@ -6039,7 +6040,7 @@ void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL show
 	// FsSplitMainWindow(YSTRUE);  <- Test split.
 
 	FsSelectMainWindow();
-	camera->SelectViewPort(0);
+	camera->PrepareViewPort(0);
 	if(YSTRUE!=FsIsMainWindowSplit())
 	{
 		SimDrawScreen(0,cockpitIndicationSet,demoMode,showTimer,showTimeMarker, *camera->activeViewPort);
@@ -6068,14 +6069,14 @@ void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL show
 	if(FsIsSubWindowOpen(0)==YSTRUE)
 	{
 		FsSelectSubWindow(0);
-		camera->SelectViewPort(1);
+		camera->PrepareViewPort(1);
 		SimDrawScreen(0,cockpitIndicationSet,demoMode,YSFALSE,YSFALSE, *camera->activeViewPort);
 		drewSubWindow=YSTRUE;
 	}
 	if (FsIsSubWindowOpen(1) == YSTRUE)
 	{
 		FsSelectSubWindow(1);
-		camera->SelectViewPort(2);
+		camera->PrepareViewPort(2);
 		SimDrawScreen(0, cockpitIndicationSet, demoMode, YSFALSE, YSFALSE, *camera->activeViewPort);
 		drewSubWindow = YSTRUE;
 	}
@@ -6088,7 +6089,6 @@ void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL show
 	if(drewSubWindow==YSTRUE)
 	{
 		FsSelectMainWindow();
-		camera->SelectViewPort(0);
 	}
 
 	SimDrawGuiDialog();
@@ -6106,7 +6106,7 @@ void FsSimulation::SimDrawScreen(
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-1\n");
 #endif
-	camera->CalculateProjection(viewPort);
+
 	FsProjection *prj = viewPort.projection;
 
 	// printf("%s\n",ViewmodeToStr(viewPort.viewPort));
@@ -10007,7 +10007,7 @@ FsAirplane *FsSimulation::GetPlayerAirplane(void)
 
 const FsAirplane *FsSimulation::GetPlayerAirplane(void) const
 {
-	return localUser->GetAircraft();;
+	return localUser->GetAircraft();
 }
 
 FsGround *FsSimulation::GetPlayerGround(void)
