@@ -29,7 +29,7 @@ public:
 
 	int cx,cy;
 
-	double viewMagFix;
+	double zoomProjection; //viewMagFix
 
 protected:
 	mutable YSBOOL matrixCached;

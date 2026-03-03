@@ -69,9 +69,6 @@
 YsListAllocator <FsAirplane> FsAirplaneAllocator;
 YsListAllocator <FsGround> FsGroundAllocator;
 
-
-static const double PROJ_PLANE_DIST_SCALE = 1.41421356 * 0.75;
-
 FsVisualSrf *cockpit=nullptr;
 
 ////////////////////////////////////////////////////////////
@@ -148,11 +145,10 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	currentTime=0.0;
 	aircraftTroubleTimer=0.0;
 	lastTime=0;
-	camera->mainViewMode = new ActualViewMode;
-	camera->subViewModeL = new ActualViewMode;
-	camera->subViewModeR = new ActualViewMode;
+	camera->mainViewPort = new FsViewPort;
+	camera->leftViewPort = new FsViewPort;
+	camera->rightViewPort = new FsViewPort;
 	viewAttitudeTransition=YsZeroAtt();
-	viewMagUser=1.0;
 	relViewAtt.Set(0.0,-YsPi/9.0,0.0);
 	relViewDist=2.0;
 	focusAir=NULL;
@@ -1451,7 +1447,7 @@ void FsSimulation::RunSimulationOneStep(FsSimulation::FSSIMULATIONSTATE &simStat
 	case FSSIMSTATE_INITIALIZE:
 		ClearKeyBuffer();
 		PrepareRunSimulation();
-		DecideAllViewPoint(0.0); // Prevent one frame with uninitialized viewpoint.
+		camera->UpdateCameras(this, 0.0); // Prevent one frame with uninitialized viewpoint.
 		simState=FSSIMSTATE_RUNNING;
 
 		for(auto ptr : addOnList)
@@ -2030,7 +2026,7 @@ void FsSimulation::PrepareRunSimulation(void)
 		pFlap=playerPlane->Prop().GetFlap();
 		ppFlap=playerPlane->Prop().GetFlap();
 		userInput.hasAb=playerPlane->Prop().GetHasAfterburner();
-		viewMagUser=playerPlane->Prop().GetDefaultZoom();
+		camera->zoomUser=playerPlane->Prop().GetDefaultZoom();
 	}
 
 	fsConsole.Printf("....\n");
@@ -2488,7 +2484,7 @@ void FsSimulation::SimulateOneStep(
 			}
 		}
 
-		DecideAllViewPoint(passedTime);
+		camera->UpdateCameras(this, passedTime);
 	}
 
 #ifdef CRASHINVESTIGATION
@@ -2500,11 +2496,6 @@ void FsSimulation::SimulateOneStep(
 #ifdef CRASHINVESTIGATION
 	printf("S-1\n");
 #endif
-}
-
-void FsSimulation::DecideAllViewPoint(const double dt)
-{
-	camera->DecideAllViewPoint(this, dt);
 }
 
 void FsSimulation::AfterSimulation(void)
@@ -2531,6 +2522,7 @@ void FsSimulation::AfterSimulation(void)
 		{
 			FsCloseSubWindow(i);
 			FsSelectMainWindow();
+			camera->SelectViewPort(0);
 		}
 	}
 	FsSplitMainWindow(YSFALSE);
@@ -4590,7 +4582,7 @@ void FsSimulation::SimControlByUser(const double &dt,FSUSERCONTROL userControl)
 #endif
 
 		// 2010/02/12 Control View Attitude by Hat>>
-		if(camera->mainViewMode->viewMode==FSOUTSIDEPLAYER2 || camera->mainViewMode->viewMode ==FSOUTSIDEPLAYER3)
+		if(camera->mainViewPort->viewMode==FSOUTSIDEPLAYER2 || camera->mainViewPort->viewMode ==FSOUTSIDEPLAYER3)
 		{
 			double dh,dp;
 			switch(userInput.pov)
@@ -4659,9 +4651,9 @@ void FsSimulation::SimControlByUser(const double &dt,FSUSERCONTROL userControl)
 				relViewAtt.SetB(0.0);
 			}
 		}
-		else*/ if(camera->mainViewMode->viewMode ==FSGHOSTVIEW)
+		else*/ if(camera->mainViewPort->viewMode ==FSGHOSTVIEW)
 		{
-			SimProcessGhostView(dt);
+			camera->ProcessGhostView(this, dt);
 		}
 		else if(NULL!=playerObj)
 		{
@@ -5156,89 +5148,6 @@ void FsSimulation::SimProcessChatMode(YSBOOL lb,YSBOOL mb,YSBOOL rb,int mx,int m
 	{
 		chatDlg->CharIn(chr);
 	}
-}
-
-void FsSimulation::SimProcessGhostView(const double dt)
-{
-	camera->ProcessGhostView(this, dt);
-	/*auto& viewPoint = mainWindowActualViewMode.viewPoint;
-	auto &viewAttitude=mainWindowActualViewMode.viewAttitude;
-
-	const double accel=120.0;
-	double vp,vh,vb,vy,desigSpd;
-	vp=userInput.ctlElevator*(YsPi/2.0)*dt;
-	vb=userInput.ctlAileron*(YsPi)*dt;
-	vh=(sin(viewAttitude.b())/5.0*dt)*YsAbs(cos(viewAttitude.p()));
-	//vy=userInput.ctlRudder*dt;
-	double speedMult = userInput.ctlThrottle;
-
-#if 1
-	{
-		viewAttitude.SetP(YsBound(viewAttitude.p()+vp,-YsPi/2,YsPi/2));
-		viewAttitude.SetH(viewAttitude.h()+vb);  // vb~=Aileron.  Let aileron control heading.
-		if(viewAttitude.p()<-YsPi/2)
-		{
-			viewAttitude.SetP(-YsPi/2);
-		}
-		else if(viewAttitude.p()>YsPi/2)
-		{
-			viewAttitude.SetP(YsPi/2);
-		}
-		viewAttitude.SetB(viewAttitude.b()/2.0);
-
-		if(userInput.ctlFireWeaponButton==YSTRUE)
-		{
-			desigSpd=350.0*speedMult+5;
-		}
-		else if(userInput.ctlCycleWeaponButton==YSTRUE)
-		{
-			desigSpd=-350.0*speedMult+5;
-		}
-		else
-		{
-			desigSpd=0.0;
-		}
-	}
-#else
-	{
-		viewAttitude.NoseUp(vp);
-		viewAttitude.SetH(viewAttitude.h()+vh);
-		viewAttitude.SetB(viewAttitude.b()+vb);
-		viewAttitude.YawLeft(vy);
-
-		// 1200m/s in 10secs -> 120m/ss
-		desigSpd=userInput.ctlThrottle*300.0;
-	}
-#endif
-
-	if(ghostViewSpeed<desigSpd)
-	{
-		ghostViewSpeed+=accel*dt;
-		if(ghostViewSpeed>desigSpd)
-		{
-			ghostViewSpeed=desigSpd;
-		}
-	}
-	else
-	{
-		ghostViewSpeed-=accel*dt;
-		if(ghostViewSpeed<desigSpd)
-		{
-			ghostViewSpeed=desigSpd;
-		}
-	}
-	
-	YsVec3 displacement;
-	displacement=viewAttitude.GetForwardVector()*ghostViewSpeed*dt;
-	viewPoint+=displacement;
-
-	double elv;
-	elv=GetFieldElevation(viewPoint.x(),viewPoint.z());
-	if(viewPoint.y()<elv+0.25)
-	{
-		viewPoint.SetY(elv+0.25);
-	}
-	*/
 }
 
 void FsSimulation::SimProcessLoadingDialog(YSBOOL lb,YSBOOL mb,YSBOOL rb,int mx,int my)
@@ -6120,7 +6029,6 @@ void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL show
 		}
 	}
 
-
 	FsCockpitIndicationSet cockpitIndicationSet;
 	SimMakeUpCockpitIndicationSet(cockpitIndicationSet);
 
@@ -6131,16 +6039,17 @@ void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL show
 	// FsSplitMainWindow(YSTRUE);  <- Test split.
 
 	FsSelectMainWindow();
+	camera->SelectViewPort(0);
 	if(YSTRUE!=FsIsMainWindowSplit())
 	{
-		SimDrawScreen(0,cockpitIndicationSet,demoMode,showTimer,showTimeMarker, *camera->mainViewMode);
+		SimDrawScreen(0,cockpitIndicationSet,demoMode,showTimer,showTimeMarker, *camera->activeViewPort);
 	}
 	else
 	{
 		FsSetActiveSplitWindow(0);
-		SimDrawScreen(0,cockpitIndicationSet,demoMode,showTimer,showTimeMarker, *camera->mainViewMode);
+		SimDrawScreen(0,cockpitIndicationSet,demoMode,showTimer,showTimeMarker, *camera->activeViewPort);
 		FsSetActiveSplitWindow(1);
-		SimDrawScreen(0,cockpitIndicationSet,demoMode,showTimer,showTimeMarker, *camera->mainViewMode);
+		SimDrawScreen(0,cockpitIndicationSet,demoMode,showTimer,showTimeMarker, *camera->activeViewPort);
 	}
 
 #ifdef CRASHINVESTIGATION_S8_LEVEL2
@@ -6155,17 +6064,19 @@ void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL show
 #endif
 
 	drewSubWindow=YSFALSE;
-
+	
 	if(FsIsSubWindowOpen(0)==YSTRUE)
 	{
 		FsSelectSubWindow(0);
-		SimDrawScreen(0,cockpitIndicationSet,demoMode,YSFALSE,YSFALSE, *camera->subViewModeL);
+		camera->SelectViewPort(1);
+		SimDrawScreen(0,cockpitIndicationSet,demoMode,YSFALSE,YSFALSE, *camera->activeViewPort);
 		drewSubWindow=YSTRUE;
 	}
 	if (FsIsSubWindowOpen(1) == YSTRUE)
 	{
 		FsSelectSubWindow(1);
-		SimDrawScreen(0, cockpitIndicationSet, demoMode, YSFALSE, YSFALSE, *camera->subViewModeR);
+		camera->SelectViewPort(2);
+		SimDrawScreen(0, cockpitIndicationSet, demoMode, YSFALSE, YSFALSE, *camera->activeViewPort);
 		drewSubWindow = YSTRUE;
 	}
 
@@ -6177,6 +6088,7 @@ void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL show
 	if(drewSubWindow==YSTRUE)
 	{
 		FsSelectMainWindow();
+		camera->SelectViewPort(0);
 	}
 
 	SimDrawGuiDialog();
@@ -6189,16 +6101,15 @@ void FsSimulation::SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL show
 }
 
 void FsSimulation::SimDrawScreen(
-	const double& dt, const FsCockpitIndicationSet& cockpitIndicationSet, YSBOOL demoMode, YSBOOL showTimer, YSBOOL showTimeMarker, const ActualViewMode& actualViewMode)
+	const double& dt, const FsCockpitIndicationSet& cockpitIndicationSet, YSBOOL demoMode, YSBOOL showTimer, YSBOOL showTimeMarker, FsViewPort& viewPort)
 {
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-1\n");
 #endif
-	FsProjection prj;
-	GetProjection(prj, actualViewMode);
+	camera->CalculateProjection(viewPort);
+	FsProjection *prj = viewPort.projection;
 
-
-	// printf("%s\n",ViewmodeToStr(actualViewMode.actualViewMode));
+	// printf("%s\n",ViewmodeToStr(viewPort.viewPort));
 
 
 	YsGLParticleManager partMan;
@@ -6207,7 +6118,7 @@ void FsSimulation::SimDrawScreen(
 
 		if (cfgPtr->cloudType == FSCLOUDPARTICLE)
 		{
-			solidCloud->AddToParticleManager(partMan, env, *weather, actualViewMode.viewAttitude.GetForwardVector(), actualViewMode.viewMat, prj.nearz, prj.farz, prj.tanFov);
+			solidCloud->AddToParticleManager(partMan, env, *weather, viewPort.viewAttitude.GetForwardVector(), viewPort.viewMat, prj->nearz, prj->farz, prj->tanFov);
 		}
 		if (cfgPtr->smkType == FSSMKPARTICLE)
 		{
@@ -6218,7 +6129,7 @@ void FsSimulation::SimDrawScreen(
 			}
 		}
 
-		partMan.Sort(actualViewMode.viewPoint, actualViewMode.viewAttitude.GetForwardVector(), threadPool);
+		partMan.Sort(viewPort.viewPoint, viewPort.viewAttitude.GetForwardVector(), threadPool);
 
 		auto& commonTexture = FsCommonTexture::GetCommonTexture();
 		commonTexture.GetParticleSpriteTexture();
@@ -6226,12 +6137,12 @@ void FsSimulation::SimDrawScreen(
 		if (YSTRUE == FsIsPointSpriteAvailable())
 		{
 			const double pointSpriteDistThreshold = 1000.0;
-			partMan.MakeBufferForTriangle(actualViewMode.viewAttitude.GetForwardVector(), 0.125, pointSpriteDistThreshold);
+			partMan.MakeBufferForTriangle(viewPort.viewAttitude.GetForwardVector(), 0.125, pointSpriteDistThreshold);
 			partMan.MakeBufferForPointSprite(pointSpriteDistThreshold);
 		}
 		else
 		{
-			partMan.MakeBufferForTriangle(actualViewMode.viewAttitude.GetForwardVector(), 0.125, prj.farz);
+			partMan.MakeBufferForTriangle(viewPort.viewAttitude.GetForwardVector(), 0.125, prj->farz);
 		}
 	}
 
@@ -6241,7 +6152,7 @@ void FsSimulation::SimDrawScreen(
 	printf("SIMDRAW-2\n");
 #endif
 
-	SimDrawPrepare(actualViewMode);
+	SimDrawPrepare(viewPort);
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-3\n");
@@ -6249,7 +6160,7 @@ void FsSimulation::SimDrawScreen(
 
 	if (weather->GetFog() == YSTRUE)
 	{
-		FsFogOn(fogColor, actualViewMode.fogVisibility);
+		FsFogOn(fogColor, viewPort.fogVisibility);
 	}
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
@@ -6258,12 +6169,12 @@ void FsSimulation::SimDrawScreen(
 
 	if (YSTRUE == FsIsShadowMapAvailable())
 	{
-		SimDrawShadowMap(actualViewMode);
+		SimDrawShadowMap(viewPort);
 	}
 
 
-	auto projTfmBkg = SimDrawPrepareBackground(actualViewMode);
-	SimDrawBackground(actualViewMode, projTfmBkg);
+	auto projTfmBkg = SimDrawPrepareBackground(viewPort);
+	SimDrawBackground(viewPort, projTfmBkg);
 	if (weather->GetFog() == YSTRUE)
 	{
 		FsFogOff();
@@ -6284,12 +6195,12 @@ void FsSimulation::SimDrawScreen(
 #endif
 
 
-		if (actualViewMode.viewMode != FSCOCKPITVIEW &&
-			actualViewMode.viewMode != FSADDITIONALAIRPLANEVIEW &&
-			actualViewMode.viewMode != FSADDITIONALAIRPLANEVIEW_CABIN &&
-			actualViewMode.viewMode != FSGHOSTVIEW)
+		if (viewPort.viewMode != FSCOCKPITVIEW &&
+			viewPort.viewMode != FSADDITIONALAIRPLANEVIEW &&
+			viewPort.viewMode != FSADDITIONALAIRPLANEVIEW_CABIN &&
+			viewPort.viewMode != FSGHOSTVIEW)
 		{
-			prj.nearz = 1.0;
+			prj->nearz = 1.0;
 		}
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
@@ -6303,37 +6214,37 @@ void FsSimulation::SimDrawScreen(
 		//   the clipping.
 		if (cfgPtr->zbuffQuality <= 0)
 		{
-			auto usedProj = SimDrawPrepareRange(actualViewMode, prj.nearz, prj.farz);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
+			auto usedProj = SimDrawPrepareRange(viewPort, prj->nearz, prj->farz);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, viewPort, usedProj);
 		}
 		else if (cfgPtr->zbuffQuality == 1)
 		{
-			auto usedProj = SimDrawPrepareRange(actualViewMode, 200.0, prj.farz);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
-			usedProj = SimDrawPrepareRange(actualViewMode, prj.nearz, 201.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
+			auto usedProj = SimDrawPrepareRange(viewPort, 200.0, prj->farz);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, viewPort, usedProj);
+			usedProj = SimDrawPrepareRange(viewPort, prj->nearz, 201.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, viewPort, usedProj);
 		}
 		else if (cfgPtr->zbuffQuality == 2)
 		{
-			auto usedProj = SimDrawPrepareRange(actualViewMode, 400.0, prj.farz);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
-			usedProj = SimDrawPrepareRange(actualViewMode, 100.0, 401.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
-			usedProj = SimDrawPrepareRange(actualViewMode, prj.nearz, 101.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
+			auto usedProj = SimDrawPrepareRange(viewPort, 400.0, prj->farz);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, viewPort, usedProj);
+			usedProj = SimDrawPrepareRange(viewPort, 100.0, 401.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, viewPort, usedProj);
+			usedProj = SimDrawPrepareRange(viewPort, prj->nearz, 101.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, viewPort, usedProj);
 		}
 		else if (cfgPtr->zbuffQuality >= 3)
 		{
-			auto usedProj = SimDrawPrepareRange(actualViewMode, 1000.0, prj.farz);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
-			usedProj = SimDrawPrepareRange(actualViewMode, 500.0, 1001.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
-			usedProj = SimDrawPrepareRange(actualViewMode, 300.0, 501.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
-			usedProj = SimDrawPrepareRange(actualViewMode, 100.0, 301.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
-			usedProj = SimDrawPrepareRange(actualViewMode, prj.nearz, 101.0);
-			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, actualViewMode, usedProj);
+			auto usedProj = SimDrawPrepareRange(viewPort, 1000.0, prj->farz);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, viewPort, usedProj);
+			usedProj = SimDrawPrepareRange(viewPort, 500.0, 1001.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, viewPort, usedProj);
+			usedProj = SimDrawPrepareRange(viewPort, 300.0, 501.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, viewPort, usedProj);
+			usedProj = SimDrawPrepareRange(viewPort, 100.0, 301.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, viewPort, usedProj);
+			usedProj = SimDrawPrepareRange(viewPort, prj->nearz, 101.0);
+			SimDrawScreenZBufferSensitive(cockpitIndicationSet, partMan, viewPort, usedProj);
 		}
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
@@ -6342,7 +6253,7 @@ void FsSimulation::SimDrawScreen(
 
 	}
 
-	auto projForeGround = SimDrawPrepareNormal(actualViewMode);
+	auto projForeGround = SimDrawPrepareNormal(viewPort);
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-6\n");
@@ -6356,20 +6267,20 @@ void FsSimulation::SimDrawScreen(
 
 	if (cfgPtr->drawVirtualJoystick == YSTRUE)
 	{
-		SimDrawJoystick(actualViewMode);
+		SimDrawJoystick(viewPort);
 	}
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-8\n");
 #endif
 
-	SimDrawForeground(actualViewMode, projForeGround, cockpitIndicationSet, demoMode, showTimer, showTimeMarker);
+	SimDrawForeground(viewPort, projForeGround, cockpitIndicationSet, demoMode, showTimer, showTimeMarker);
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-9\n");
 #endif
 
-	SimDrawBlackout(actualViewMode);
+	SimDrawBlackout(viewPort);
 
 	// QueryPerformanceCounter(&ctr3);
 	if (FsIsMainWindowActive() == YSTRUE)
@@ -6423,13 +6334,12 @@ void FsSimulation::SimDrawScreen(
 #endif
 }
 
-void FsSimulation::SimDrawShadowMap(const ActualViewMode &actualViewMode)
+void FsSimulation::SimDrawShadowMap(FsViewPort &viewPort)
 {
 	if(YSTRUE==FsIsShadowMapAvailable() && cfgPtr->drawShadow==YSTRUE)
 	{
-		auto& viewPoint = actualViewMode.viewPoint;
-		FsProjection proj;
-		GetProjection(proj, actualViewMode);
+		auto& viewPoint = viewPort.viewPoint;
+		FsProjection *proj = viewPort.projection;
 
 		auto &commonTexture=FsCommonTexture::GetCommonTexture();
 		commonTexture.ReadyShadowMap();
@@ -6439,8 +6349,8 @@ void FsSimulation::SimDrawShadowMap(const ActualViewMode &actualViewMode)
 			auto texUnit=commonTexture.GetShadowMapTexture(i);
 			if(nullptr!=texUnit)
 			{
-				auto &projMat=actualViewMode.shadowProjMat[i];
-				auto &viewMat=actualViewMode.shadowViewMat[i];
+				auto &projMat=viewPort.shadowProjMat[i];
+				auto &viewMat=viewPort.shadowViewMat[i];
 				auto texWid=texUnit->GetWidth();
 				auto texHei=texUnit->GetHeight();
 
@@ -6477,7 +6387,7 @@ void FsSimulation::SimDrawShadowMap(const ActualViewMode &actualViewMode)
 				FsEndRenderShadowMap();
 
 				texUnit->Bind(5+i);
-				FsEnableShadowMap(actualViewMode.viewMat,projMat,viewMat,5+i,0+i);
+				FsEnableShadowMap(viewPort.viewMat,projMat,viewMat,5+i,0+i);
 			}
 		}
 	}
@@ -6520,7 +6430,7 @@ void FsSimulation::SimDrawGuiDialog(void) const
 void FsSimulation::SimDrawScreenZBufferSensitive(
 	const FsCockpitIndicationSet &,
 	const YsGLParticleManager &particleMan,
-	const ActualViewMode &actualViewMode,
+	FsViewPort &viewPort,
 	class FsProjection &proj)
 {
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
@@ -6544,16 +6454,16 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 
 	if(weather->GetFog()==YSTRUE)
 	{
-		FsFogOn(fogColor,actualViewMode.fogVisibility);
+		FsFogOn(fogColor,viewPort.fogVisibility);
 	}
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
 	printf("SimDrawScreenZBufferSensitive %d\n",__LINE__);
 #endif
 
-	SimDrawMap(actualViewMode,proj,0.0,0.0);
+	SimDrawMap(viewPort,proj,0.0,0.0);
 
-	// field.DrawProtectPolygon(actualViewMode.viewPoint,actualViewMode.viewAttitude,proj.GetMatrix(),nearZ);
+	// field.DrawProtectPolygon(viewPort.viewPoint,viewPort.viewAttitude,proj.GetMatrix(),nearZ);
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
 	printf("SimDrawScreenZBufferSensitive %d\n",__LINE__);
@@ -6566,20 +6476,20 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 	}
 	if(cfgPtr->drawTransparency!=YSTRUE || cfgPtr->drawTransparentLater!=YSTRUE)
 	{
-		SimDrawAirplane(actualViewMode,proj,FSVISUAL_DRAWALL);
-		SimDrawGround(actualViewMode,proj,FSVISUAL_DRAWALL);
+		SimDrawAirplane(viewPort,proj,FSVISUAL_DRAWALL);
+		SimDrawGround(viewPort,proj,FSVISUAL_DRAWALL);
 		bulletHolder.BeginDraw();
 		bulletHolder.Draw(
-		    cfgPtr->drawCoarseOrdinance,actualViewMode.viewMat,proj.GetMatrix(),cfgPtr->drawTransparentSmoke,smokeTrailType,currentTime,FSVISUAL_DRAWALL);
+		    cfgPtr->drawCoarseOrdinance,viewPort.viewMat,proj.GetMatrix(),cfgPtr->drawTransparentSmoke,smokeTrailType,currentTime,FSVISUAL_DRAWALL);
 		bulletHolder.EndDraw();
 	}
 	else
 	{
-		SimDrawAirplane(actualViewMode,proj,FSVISUAL_DRAWOPAQUE);
-		SimDrawGround(actualViewMode,proj,FSVISUAL_DRAWOPAQUE);
+		SimDrawAirplane(viewPort,proj,FSVISUAL_DRAWOPAQUE);
+		SimDrawGround(viewPort,proj,FSVISUAL_DRAWOPAQUE);
 		bulletHolder.BeginDraw();
 		bulletHolder.Draw(
-		    cfgPtr->drawCoarseOrdinance,actualViewMode.viewMat,proj.GetMatrix(),cfgPtr->drawTransparentSmoke,smokeTrailType,currentTime,FSVISUAL_DRAWOPAQUE);
+		    cfgPtr->drawCoarseOrdinance,viewPort.viewMat,proj.GetMatrix(),cfgPtr->drawTransparentSmoke,smokeTrailType,currentTime,FSVISUAL_DRAWOPAQUE);
 		bulletHolder.EndDraw();
 	}
 
@@ -6594,7 +6504,7 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 #endif
 
 	YsScenery::numSceneryDrawn=0;
-	SimDrawField(actualViewMode,proj);
+	SimDrawField(viewPort,proj);
 	// printf("# Scn Drawn=%d\n",YsScenery::numSceneryDrawn);
 	// printf("View Point=%s\n",viewPoint.Txt());
 	// printf("nearZ=%.2lf  farZ=%.2lf  tanFov=%.2lf\n",nearZ,farZ,tanFov);
@@ -6604,11 +6514,11 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 	printf("SimDrawScreenZBufferSensitive %d\n",__LINE__);
 #endif
 
-	weather->DrawCloudLayer(actualViewMode.viewPoint);  // DrawCloudLayer must come before drawing solid clouds, which may be drawn by particles
+	weather->DrawCloudLayer(viewPort.viewPoint);  // DrawCloudLayer must come before drawing solid clouds, which may be drawn by particles
 
 	if(cfgPtr->cloudType == FSCLOUDSOLID)
 	{
-		solidCloud->Draw(env,*weather,actualViewMode.viewMat,proj.nearz,proj.farz,proj.tanFov);
+		solidCloud->Draw(env,*weather,viewPort.viewMat,proj.nearz,proj.farz,proj.tanFov);
 	}
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
@@ -6617,11 +6527,11 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 
 	if(cfgPtr->drawTransparency==YSTRUE && cfgPtr->drawTransparentLater==YSTRUE)
 	{
-		SimDrawAirplane(actualViewMode,proj,FSVISUAL_DRAWTRANSPARENT);
-		SimDrawGround(actualViewMode,proj,FSVISUAL_DRAWTRANSPARENT);
+		SimDrawAirplane(viewPort,proj,FSVISUAL_DRAWTRANSPARENT);
+		SimDrawGround(viewPort,proj,FSVISUAL_DRAWTRANSPARENT);
 		bulletHolder.BeginDraw();
 		bulletHolder.Draw(
-		    cfgPtr->drawCoarseOrdinance,actualViewMode.viewMat,proj.GetMatrix(),cfgPtr->drawTransparentSmoke,smokeTrailType,currentTime,FSVISUAL_DRAWTRANSPARENT);
+		    cfgPtr->drawCoarseOrdinance,viewPort.viewMat,proj.GetMatrix(),cfgPtr->drawTransparentSmoke,smokeTrailType,currentTime,FSVISUAL_DRAWTRANSPARENT);
 		bulletHolder.EndDraw();
 	}
 
@@ -6629,14 +6539,14 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 	printf("SimDrawScreenZBufferSensitive %d\n",__LINE__);
 #endif
 
-	SimDrawShadow(actualViewMode,proj);
+	SimDrawShadow(viewPort,proj);
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
 	printf("SimDrawScreenZBufferSensitive %d\n",__LINE__);
 #endif
 
 	particleStore.Draw(particleMan);  // Draw before explosion.  Burning fire must not be hidden by semi-transparent smoke sphere.
-	explosionHolder.Draw(actualViewMode.viewPoint,cfgPtr->drawTransparency,cfgPtr->useOpenGlListForExplosion);
+	explosionHolder.Draw(viewPort.viewPoint,cfgPtr->drawTransparency,cfgPtr->useOpenGlListForExplosion);
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREENZBUFFERSENSITIVE
 	printf("SimDrawScreenZBufferSensitive %d\n",__LINE__);
@@ -6658,11 +6568,11 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 	printf("SimDrawScreenZBufferSensitive %d\n",__LINE__);
 #endif
 
-	if(actualViewMode.isViewPointInCloud==YSTRUE)
+	if(viewPort.isViewPointInCloud==YSTRUE)
 	{
 		if(weather->GetFog()==YSFALSE)
 		{
-			solidCloud->ReduceVisibilityByPolygon(actualViewMode.viewMat,fogColor,cfgPtr->drawTransparency);
+			solidCloud->ReduceVisibilityByPolygon(viewPort.viewMat,fogColor,cfgPtr->drawTransparency);
 		}
 	}
 
@@ -6673,13 +6583,12 @@ void FsSimulation::SimDrawScreenZBufferSensitive(
 // #### Draw a wall of quadrilateral in front of the camera if isViewPointInCloud==YSTRUE && (it is Non-OpenGL or fog is off)
 }
 
-FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode)
+FsProjection FsSimulation::SimDrawPrepare(FsViewPort &viewPort)
 {
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-2.1\n");
 #endif
 
-	FsProjection prj;
 	int wid,hei,sizx,sizy;
 
 	FsGetWindowSize(wid,hei);
@@ -6688,10 +6597,11 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode)
 	printf("SIMDRAW-2.2\n");
 #endif
 	
-	GetProjection(prj,actualViewMode);
-	nearZ=prj.nearz;
-	farZ=prj.farz;
-	tanFov=prj.tanFov;
+	FsProjection *prj = viewPort.projection;
+
+	nearZ=prj->nearz;
+	farZ=prj->farz;
+	tanFov=prj->tanFov;
 
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
@@ -6699,18 +6609,18 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode)
 #endif
 
 	FsClearScreenAndZBuffer(YsBlack());
-	FsSetSceneProjection(prj);
-	FsSetCameraPosition(actualViewMode.viewPoint,actualViewMode.viewAttitude,YSTRUE);
+	FsSetSceneProjection(*prj);
+	FsSetCameraPosition(viewPort.viewPoint,viewPort.viewAttitude,YSTRUE);
 
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 	printf("SIMDRAW-2.6\n");
 #endif
 
-	FsSetDirectionalLight(actualViewMode.viewPoint,cfgPtr->lightSourceDirection,env);
+	FsSetDirectionalLight(viewPort.viewPoint,cfgPtr->lightSourceDirection,env);
 
 	sizx=hei*4/3;
 	sizy=hei;
-	if (actualViewMode.centerThisCamera == YSFALSE)
+	if (viewPort.centerThisCamera == YSFALSE)
 	{
 		hud->SetAreaByCenter(wid / 2, hei * 2 / 3, sizx * 2 / 3, sizy * 2 / 3);
 	}
@@ -6728,13 +6638,12 @@ FsProjection FsSimulation::SimDrawPrepare(const ActualViewMode &actualViewMode)
 	printf("SIMDRAW-2.9\n");
 #endif
 
-	return prj;
+	return *prj;
 }
 
-FsProjection FsSimulation::SimDrawPrepareBackground(const ActualViewMode &actualViewMode)
+FsProjection FsSimulation::SimDrawPrepareBackground(FsViewPort &viewPort)
 {
-	FsProjection prj;
-	GetProjection(prj,actualViewMode);
+	FsProjection prj = *viewPort.projection;
 
 	prj.farz=40000.0; // #### 80000.0 ? 20000.0  What to do with sky sphere?
 	nearZ=prj.nearz;
@@ -6743,26 +6652,25 @@ FsProjection FsSimulation::SimDrawPrepareBackground(const ActualViewMode &actual
 
 
 	FsSetSceneProjection(prj);
-	FsSetCameraPosition(actualViewMode.viewPoint,actualViewMode.viewAttitude,YSTRUE);
+	FsSetCameraPosition(viewPort.viewPoint,viewPort.viewAttitude,YSTRUE);
 
 	return prj;
 }
 
-FsProjection FsSimulation::SimDrawPrepareRange(const ActualViewMode &actualViewMode,const double &nZ,const double &fZ)  // OpenGL Only
+FsProjection FsSimulation::SimDrawPrepareRange(FsViewPort &viewPort,const double &nZ,const double &fZ)  // OpenGL Only
 {
-	FsProjection prj;
 	int wid,hei;
 	FsGetWindowSize(wid,hei);
 
 	FsFlushScene();
 	
-	GetProjection(prj,actualViewMode);
+	FsProjection prj = *viewPort.projection;
 	prj.nearz=nZ;
 	prj.farz=fZ;
 
 
 	FsSetSceneProjection(prj);
-	FsSetCameraPosition(actualViewMode.viewPoint,actualViewMode.viewAttitude,YSTRUE);
+	FsSetCameraPosition(viewPort.viewPoint,viewPort.viewAttitude,YSTRUE);
 
 	nearZ=prj.nearz;
 	farZ=prj.farz;
@@ -6771,27 +6679,26 @@ FsProjection FsSimulation::SimDrawPrepareRange(const ActualViewMode &actualViewM
 	return prj;
 }
 
-FsProjection FsSimulation::SimDrawPrepareNormal(const ActualViewMode &actualViewMode) // OpenGL Only
+FsProjection FsSimulation::SimDrawPrepareNormal(FsViewPort &viewPort) // OpenGL Only
 {
-	FsProjection prj;
 	int wid,hei;
 	FsGetWindowSize(wid,hei);
 
 	FsFlushScene();
 	
-	GetProjection(prj,actualViewMode);
+	FsProjection prj = *viewPort.projection;
 	nearZ=prj.nearz;
 	farZ=prj.farz;
 	tanFov=prj.tanFov;
 
 
 	FsSetSceneProjection(prj);
-	FsSetCameraPosition(actualViewMode.viewPoint,actualViewMode.viewAttitude,YSTRUE);
+	FsSetCameraPosition(viewPort.viewPoint,viewPort.viewAttitude,YSTRUE);
 
 	return prj;
 }
 
-void FsSimulation::SimDrawBackground(const ActualViewMode &actualViewMode,const FsProjection &proj) const
+void FsSimulation::SimDrawBackground(const FsViewPort &viewPort,const FsProjection &proj) const
 {
 	auto gnd=gndColor;
 	auto sky=skyColor;
@@ -6813,15 +6720,15 @@ void FsSimulation::SimDrawBackground(const ActualViewMode &actualViewMode,const 
 
 	if(weather->GetFog()==YSTRUE)
 	{
-		groundSky->DrawByFog(actualViewMode.viewPoint,actualViewMode.viewAttitude,gnd,sky,horizonColor,farZ,gndSpecular);
+		groundSky->DrawByFog(viewPort.viewPoint,viewPort.viewAttitude,gnd,sky,horizonColor,farZ,gndSpecular);
 	}
 	else if(cfgPtr->horizonGradation==YSTRUE)
 	{
-		groundSky->DrawGradation(actualViewMode.viewPoint,actualViewMode.viewAttitude,gnd,sky,horizonColor,farZ,gndSpecular);
+		groundSky->DrawGradation(viewPort.viewPoint,viewPort.viewAttitude,gnd,sky,horizonColor,farZ,gndSpecular);
 	}
 	else
 	{
-		groundSky->DrawCrappy(actualViewMode.viewPoint,gnd,sky,farZ,gndSpecular);
+		groundSky->DrawCrappy(viewPort.viewPoint,gnd,sky,farZ,gndSpecular);
 	}
 
 	// 2016/11/26 To reduce the number of fragments,
@@ -6829,7 +6736,7 @@ void FsSimulation::SimDrawBackground(const ActualViewMode &actualViewMode,const 
 	//            SimDrawMap must increment the stencil value in each pixel.
 	{
 		int div;
-		auto y=actualViewMode.viewPoint.y();
+		auto y=viewPort.viewPoint.y();
 		if(y>2700.0)
 		{
 			div=4050;
@@ -6850,11 +6757,11 @@ void FsSimulation::SimDrawBackground(const ActualViewMode &actualViewMode,const 
 		{
 			div=50;
 		}
-		groundSky->DrawGroundMesh(actualViewMode.viewPoint,actualViewMode.viewAttitude,gnd,div,gndSpecular, cfgPtr->useOpenGlGroundTexture);
+		groundSky->DrawGroundMesh(viewPort.viewPoint,viewPort.viewAttitude,gnd,div,gndSpecular, cfgPtr->useOpenGlGroundTexture);
 	}
 }
 
-void FsSimulation::SimDrawMap(const ActualViewMode &actualViewMode,const FsProjection &proj,const double &elvMin,const double &elvMax) const
+void FsSimulation::SimDrawMap(const FsViewPort &viewPort,const FsProjection &proj,const double &elvMin,const double &elvMax) const
 {
 	// >>>> Map and shadow
 	YSBOOL drawPset=YSFALSE;
@@ -6873,7 +6780,7 @@ void FsSimulation::SimDrawMap(const ActualViewMode &actualViewMode,const FsProje
 	field.CacheMapDrawingOrder();
 	field.DrawMapVisual
 	   (env,
-	    actualViewMode.viewPoint,actualViewMode.viewAttitude,proj.GetMatrix(),elvMin,elvMax,drawPset,currentTime,
+	    viewPort.viewPoint,viewPort.viewAttitude,proj.GetMatrix(),elvMin,elvMax,drawPset,currentTime,
 	    cfgPtr->useOpenGlGroundTexture,cfgPtr->useOpenGlRunwayLightTexture);
 
 	int nGndShadowDrawn,nAirShadowDrawn;
@@ -6882,10 +6789,10 @@ void FsSimulation::SimDrawMap(const ActualViewMode &actualViewMode,const FsProje
 	// <<<< Map and shadow
 }
 
-void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const FsProjection &proj,unsigned int drawFlag) const
+void FsSimulation::SimDrawAirplane(const FsViewPort &viewPort,const FsProjection &proj,unsigned int drawFlag) const
 {
-	auto &viewPoint=actualViewMode.viewPoint;
-	auto &viewMat=actualViewMode.viewMat;
+	auto &viewPoint=viewPort.viewPoint;
+	auto &viewMat=viewPort.viewMat;
 
 	FsAirplane *seeker;
 	double airRad;
@@ -6899,7 +6806,7 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 			airPos=seeker->GetPosition();
 			airRad=seeker->GetApproximatedCollideRadius();
 
-			if(actualViewMode.viewMode==FSBOMBINGVIEW &&
+			if(viewPort.viewMode==FSBOMBINGVIEW &&
 			   IsPlayerAirplane(seeker)==YSTRUE &&
 			   seeker->IsAlive()==YSTRUE)
 			{
@@ -6915,55 +6822,55 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 				// If cfgPtr->airLod==0 (Automatic), Weapon LOD is also automatic
 				// Otherwise, Weapon LOD depends on drawCoarseOrdinance
 
-				if (IsObjectVisible(seeker, actualViewMode, proj))
+				if (camera->IsObjectVisible(this, seeker, *camera->activeViewPort))
 				{
 					switch (cfgPtr->airLod)
 					{
 					case 0: // Default
-						lodDist = airRad * 16.0 * actualViewMode.viewMagFix; // 20041204
-						lodDist *= viewMagUser; // 2006/08/01
+						lodDist = airRad * 16.0 * viewPort.zoomViewMode; // 20041204
+						lodDist *= camera->zoomViewMode; // 2006/08/01
 						if ((airPos - viewPoint).GetSquareLength() < lodDist * lodDist)
 						{
-							seeker->Draw(0, actualViewMode.viewMat, proj.GetMatrix(), viewPoint, drawFlag, currentTime);
+							seeker->Draw(0, viewPort.viewMat, proj.GetMatrix(), viewPoint, drawFlag, currentTime);
 						}
 						else
 						{
-							seeker->Draw(1, actualViewMode.viewMat, proj.GetMatrix(), viewPoint, drawFlag, currentTime);
+							seeker->Draw(1, viewPort.viewMat, proj.GetMatrix(), viewPoint, drawFlag, currentTime);
 							drawCoarseOrdinance = YSTRUE;
 						}
 						break;
 					case 1: // Always High Quality
-						seeker->Draw(0, actualViewMode.viewMat, proj.GetMatrix(), viewPoint, drawFlag, currentTime);
+						seeker->Draw(0, viewPort.viewMat, proj.GetMatrix(), viewPoint, drawFlag, currentTime);
 						break;
 					case 2: // Always Coarse
-						seeker->Draw(1, actualViewMode.viewMat, proj.GetMatrix(), viewPoint, drawFlag, currentTime);
+						seeker->Draw(1, viewPort.viewMat, proj.GetMatrix(), viewPoint, drawFlag, currentTime);
 						break;
 					case 3: // Super-coarse
 						seeker->UntransformedCollisionShell().Draw(
-							actualViewMode.viewMat, proj.GetMatrix(), seeker->GetPosition(), seeker->GetAttitude(), drawFlag);
+							viewPort.viewMat, proj.GetMatrix(), seeker->GetPosition(), seeker->GetAttitude(), drawFlag);
 						break;
 					}
 					if (cfgPtr->drawOrdinance == YSTRUE)
 					{
 						seeker->Prop().DrawOrdinanceVisual(
-							drawCoarseOrdinance, seeker->weaponShapeOverrideStatic, actualViewMode.viewMat, proj.GetMatrix(), drawFlag);
+							drawCoarseOrdinance, seeker->weaponShapeOverrideStatic, viewPort.viewMat, proj.GetMatrix(), drawFlag);
 					}
 				}
 			}
 		}
 
-		if((actualViewMode.viewMode==FSCOCKPITVIEW ||
-		    actualViewMode.viewMode==FSADDITIONALAIRPLANEVIEW ||
-		    actualViewMode.viewMode==FSADDITIONALAIRPLANEVIEW_CABIN) &&
+		if((viewPort.viewMode==FSCOCKPITVIEW ||
+		    viewPort.viewMode==FSADDITIONALAIRPLANEVIEW ||
+		    viewPort.viewMode==FSADDITIONALAIRPLANEVIEW_CABIN) &&
 		   IsPlayerAirplane(seeker)==YSTRUE && seeker->IsAlive() == YSTRUE)
 		{
 			if(seeker->cockpit!=nullptr)
 			{
-				seeker->cockpit.Draw(actualViewMode.viewMat,proj.GetMatrix(),seeker->GetPosition(),seeker->GetAttitude(),drawFlag);
+				seeker->cockpit.Draw(viewPort.viewMat,proj.GetMatrix(),seeker->GetPosition(),seeker->GetAttitude(),drawFlag);
 			}
 			else if(cockpit!=nullptr)
 			{
-				cockpit->Draw(actualViewMode.viewMat,proj.GetMatrix(),seeker->GetPosition(),seeker->GetAttitude(),drawFlag);
+				cockpit->Draw(viewPort.viewMat,proj.GetMatrix(),seeker->GetPosition(),seeker->GetAttitude(),drawFlag);
 			}
 		}
 	}
@@ -6973,102 +6880,10 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 	// Hence, now they are drawn in SimDrawAirplaneVaporSmoke
 }
 
-//FOV and screen size (pixels) check for draw culling purposes
-bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const
+void FsSimulation::SimDrawGround(const FsViewPort &viewPort,const FsProjection &proj,unsigned int drawFlag) const
 {
-	obj->isOnScreen = YSFALSE;
-	obj->isSubpixel = YSTRUE;
-
-	//calculate object position in player's view
-	YsVec3 objPosInCamSpace = actualViewMode.viewMat * obj->GetPosition();
-
-	//load visual bounding box corners
-	YsVec3 boxMin, boxMax;
-	obj->vis.GetBoundingBox(boxMin, boxMax);
-
-	YsVec3 empty(0.0, 0.0, 0.0);
-	if (boxMin == empty && boxMax == empty) //Blockplanes fail DNM bbox check. Simple hack to force drawing
-	{
-		obj->isOnScreen = YSTRUE;
-		obj->isSubpixel = YSFALSE;
-		return true;
-	}
-
-	//calculate span of bounding box
-	double boundingBoxDiag = 1.0 * ((boxMin - boxMax).GetLength());
-
-	//distance from object to camera (magnitude of obj position vector in camera space)
-	double objDistToCam = objPosInCamSpace.GetLength();
-
-	//compute obj size on screen
-	double apparentRadInPixels = boundingBoxDiag * proj.prjPlnDist / objDistToCam;
-
-	//if object is within bounding box span length of cam, draw it regardless of viewport visibility
-	//(angular culling method below sometimes fails for extreme angles at close distances to camera)
-	if (objDistToCam < boundingBoxDiag)
-	{
-		obj->isOnScreen = YSTRUE;
-		obj->isSubpixel = YSFALSE;
-		return true;
-	}
-
-	//don't perform FOV check if obj too small to see
-	if (apparentRadInPixels < 1.0)
-	{
-		obj->isOnScreen = YSFALSE;
-		obj->isSubpixel = YSTRUE;
-		return false;
-	}
-
-    // compute object's apparent angular radius:
-    // (angle between bounding box span and cam axis at object's Z distance)
-    //             .
-    //            /|
-    //           / |
-    //          /  |
-    //         /   | boundingBoxDiag
-    //        /    |
-    //       /x    |
-    //  cam /------+---> cam axis (+Z)
-    //      |      |
-    //     objPosInCamSpace.z()
-    //
-    // angular offset (x): x = atan2(boundingBoxDiag, abs(objPosInCamSpace.z()))
-	double objAngularRad = atan2(YsGreatestOf((boxMax).GetLength(), (boxMin).GetLength(),0.00), objDistToCam); //Must check both directions in case of offset center i.e. towers	
-
-    //compute view angles from camera axis
-    //      +X/+Y  . objPosInCamSpace
-    //      ^     /|
-    //      |    / |
-    //      |   /  |
-    //      |  /   | 
-    //      | /    |
-    //      |/a    | horizontal/vertical view angle (in XZ/YZ plane): a = atan2(objPosInCamSpace.x/y(), objPosInCamSpace.z())
-    // cam /------+---> cam axis (+Z)
-    //
-	double objHorizViewAngle = atan2(objPosInCamSpace.x(), objPosInCamSpace.z());
-	double objVertViewAngle = atan2(objPosInCamSpace.y(), objPosInCamSpace.z());
-
-	//determine FOV angles based on portrait or landscape aspect ratio
-	double horizFovAngle = lastProjection->viewportDim.x() >= lastProjection->viewportDim.y() ? proj.fov : proj.fovSecondary;
-	double vertFovAngle = lastProjection->viewportDim.x() >= lastProjection->viewportDim.y() ? proj.fovSecondary : proj.fov;
-
-	//check if the object is within horizontal and vertical FOV +/- angular rad
-	//centerCameraPerspective check accounts for additional 1/6th FOV at top edge in cockpit view
-	//temporary fudge factor 0.9 on negative vertical to bandaid tall tower edge cases
-	bool objIsInFov = objHorizViewAngle >= -horizFovAngle - objAngularRad && objHorizViewAngle <= horizFovAngle + objAngularRad &&
-		0.9*objVertViewAngle >= -vertFovAngle - objAngularRad && objVertViewAngle <= vertFovAngle * (1.67 - 0.67 * cfgPtr->centerCameraPerspective) + objAngularRad;
-
-	obj->isSubpixel = YSFALSE;
-	if (objIsInFov == true) { obj->isOnScreen = YSTRUE; }
-
-	return objIsInFov;
-}
-
-void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsProjection &proj,unsigned int drawFlag) const
-{
-	auto &viewPoint=actualViewMode.viewPoint;
-	auto &viewMat=actualViewMode.viewMat;
+	auto &viewPoint=viewPort.viewPoint;
+	auto &viewMat=viewPort.viewMat;
 
 	FsGround *seeker;
 	seeker=NULL;
@@ -7076,13 +6891,13 @@ void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsPr
 	{
 		if(seeker->IsAlive()==YSTRUE)
 		{
-			if(actualViewMode.viewMode==FSBOMBINGVIEW &&
+			if(viewPort.viewMode==FSBOMBINGVIEW &&
 			   GetPlayerGround()==seeker)
 			{
 				continue;
 			}
 
-			if(IsObjectVisible(seeker, actualViewMode, proj))
+			if (camera->IsObjectVisible(this, seeker, *camera->activeViewPort))
 			{
 				switch(cfgPtr->gndLod)
 				{
@@ -7110,14 +6925,14 @@ void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsPr
 			}
 		}
 
-		if((actualViewMode.viewMode==FSCOCKPITVIEW ||
-		    actualViewMode.viewMode==FSADDITIONALAIRPLANEVIEW ||
-		    actualViewMode.viewMode==FSADDITIONALAIRPLANEVIEW_CABIN) &&
+		if((viewPort.viewMode==FSCOCKPITVIEW ||
+		    viewPort.viewMode==FSADDITIONALAIRPLANEVIEW ||
+		    viewPort.viewMode==FSADDITIONALAIRPLANEVIEW_CABIN) &&
 		   GetPlayerGround()==seeker)
 		{
 			if(seeker->cockpit!=nullptr)
 			{
-				seeker->cockpit.Draw(actualViewMode.viewMat,proj.GetMatrix(),seeker->GetPosition(),seeker->GetAttitude(),drawFlag);
+				seeker->cockpit.Draw(viewPort.viewMat,proj.GetMatrix(),seeker->GetPosition(),seeker->GetAttitude(),drawFlag);
 			}
 		}
 	}
@@ -7168,9 +6983,9 @@ void FsSimulation::SimDrawAirplaneVaporSmoke(void) const
 	}
 }
 
-void FsSimulation::SimDrawField(const ActualViewMode &actualViewMode,const class FsProjection &proj) const
+void FsSimulation::SimDrawField(const FsViewPort &viewPort,const class FsProjection &proj) const
 {
-	field.DrawVisual(actualViewMode.viewPoint,actualViewMode.viewAttitude,proj.GetMatrix(),YSFALSE, cfgPtr->useOpenGlGroundTexture); // forShadowMap=YSFALSE
+	field.DrawVisual(viewPort.viewPoint,viewPort.viewAttitude,proj.GetMatrix(),YSFALSE, cfgPtr->useOpenGlGroundTexture); // forShadowMap=YSFALSE
 
 	if(cfgPtr->cloudType == FSCLOUDFLAT && env!=FSNIGHT)
 	{
@@ -7178,20 +6993,20 @@ void FsSimulation::SimDrawField(const ActualViewMode &actualViewMode,const class
 	}
 }
 
-void FsSimulation::SimDrawShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj)  // For OpenGL/Direct3D, not for BlueImpulseSDK
+void FsSimulation::SimDrawShadow(FsViewPort &viewPort,const class FsProjection &proj)  // For OpenGL/Direct3D, not for BlueImpulseSDK
 {
 	if(YSTRUE!=FsIsShadowMapAvailable() || cfgPtr->drawShadow!=YSTRUE)
 	{
 		FsBeginDrawShadow();  // Set polygon offset -1,-1 and enable.
-		SimDrawComplexShadow(actualViewMode,proj);
+		SimDrawComplexShadow(viewPort,proj);
 		FsEndDrawShadow();    // Disable polygon offset.
 	}
 }
 
-void FsSimulation::SimDrawComplexShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj) // For OpenGL/Direct3D, not for BlueImpulseSDK
+void FsSimulation::SimDrawComplexShadow(FsViewPort &viewPort,const class FsProjection &proj) // For OpenGL/Direct3D, not for BlueImpulseSDK
 {
-	auto &viewPoint=actualViewMode.viewPoint;
-	auto &viewMat=actualViewMode.viewMat;
+	auto &viewPoint=viewPort.viewPoint;
+	auto &viewMat=viewPort.viewMat;
 	auto &projMat=proj.GetMatrix();
 
 	if(cfgPtr->drawShadow==YSTRUE)
@@ -7262,8 +7077,7 @@ void FsSimulation::SimDrawComplexShadow(const ActualViewMode &actualViewMode,con
 		}
 
 		FsGround *gndSeeker;
-		FsProjection prj;
-		GetProjection(prj,actualViewMode);
+		FsProjection prj = *viewPort.projection;
 
 		gndSeeker=NULL;
 		while((gndSeeker=FindNextGround(gndSeeker))!=NULL)
@@ -7332,9 +7146,9 @@ void FsSimulation::SimDrawComplexShadow(const ActualViewMode &actualViewMode,con
 	}
 }
 
-void FsSimulation::SimDrawJoystick(const ActualViewMode &actualViewMode) const
+void FsSimulation::SimDrawJoystick(const FsViewPort &viewPort) const
 {
-	if(actualViewMode.viewMode==FSCOCKPITVIEW)
+	if(viewPort.viewMode==FSCOCKPITVIEW)
 	{
 		YsVec3 jsPos,jsUv,jsEv;
 		YsAtt3 jsAtt;
@@ -7350,7 +7164,7 @@ void FsSimulation::SimDrawJoystick(const ActualViewMode &actualViewMode) const
 
 extern void FsTestPerformance(void);
 
-void FsSimulation::SimDrawAircraftInterior(const ActualViewMode &actualViewMode,const FsProjection &proj,const FsAirplane *air,unsigned int instDrawSwitch,const FsCockpitIndicationSet &cockpitIndicationSet) const
+void FsSimulation::SimDrawAircraftInterior(const FsViewPort &viewPort,const FsProjection &proj,const FsAirplane *air,unsigned int instDrawSwitch,const FsCockpitIndicationSet &cockpitIndicationSet) const
 {
 	YsVec3 localViewPos;
 	YsVec3 offset;
@@ -7359,7 +7173,7 @@ void FsSimulation::SimDrawAircraftInterior(const ActualViewMode &actualViewMode,
 
 	offset=air->GetPosition();
 
-	switch(actualViewMode.viewMode)
+	switch(viewPort.viewMode)
 	{
 	default:
 	case FSCOCKPITVIEW:
@@ -7368,7 +7182,7 @@ void FsSimulation::SimDrawAircraftInterior(const ActualViewMode &actualViewMode,
 	case FSADDITIONALAIRPLANEVIEW:
 	case FSADDITIONALAIRPLANEVIEW_CABIN:
 		const FsAdditionalViewpoint *vp;
-		vp=air->Prop().GetAdditionalView(camera->mainViewMode->cockpitViewId);
+		vp=air->Prop().GetAdditionalView(camera->mainViewPort->cockpitViewId);
 		if(vp!=NULL)
 		{
 			localViewPos=vp->pos;
@@ -7379,7 +7193,7 @@ void FsSimulation::SimDrawAircraftInterior(const ActualViewMode &actualViewMode,
 	air->GetAttitude().Mul(fakeViewPos,fakeViewPos);
 
 
-	instViewAtt=actualViewMode.viewAttitude;
+	instViewAtt=viewPort.viewAttitude;
 
 	instViewMat.Initialize();
 	instViewMat.RotateXY(-instViewAtt.b());
@@ -7389,10 +7203,10 @@ void FsSimulation::SimDrawAircraftInterior(const ActualViewMode &actualViewMode,
 
 	FsSetCameraPosition(fakeViewPos,instViewAtt,YSFALSE); // BiStartBuffer(&eye);
 
-	if(YSTRUE==NeedToDrawInstrument(actualViewMode))
+	if(YSTRUE==NeedToDrawInstrument(viewPort))
 	{
 		// This block draws 3D HUD and 3D Inst Panel
-		if(FSCOCKPITVIEW!=actualViewMode.viewMode && FSADDITIONALAIRPLANEVIEW!=actualViewMode.viewMode)
+		if(FSCOCKPITVIEW!=viewPort.viewMode && FSADDITIONALAIRPLANEVIEW!=viewPort.viewMode)
 		{
 			instViewAtt=air->GetAttitude();
 
@@ -7440,28 +7254,28 @@ void FsSimulation::SimDrawAircraftInterior(const ActualViewMode &actualViewMode,
 	// // Prepare to draw attitude on HUD
 	// printf("2\n");FsTestPerformance();
 	FsFlushScene(); // BiFlushBuffer();
-	FsSetCameraPosition(actualViewMode.viewPoint,actualViewMode.viewAttitude,YSTRUE); // BiStartBuffer(&eye);
+	FsSetCameraPosition(viewPort.viewPoint,viewPort.viewAttitude,YSTRUE); // BiStartBuffer(&eye);
 
 
 	// #### ltc.TestDraw();  Lattice Test
 	if(cfgPtr->neverDrawAirplaneContainer==YSFALSE)
 	{
-		if(YSTRUE==NeedToDrawGameInfo(actualViewMode))
+		if(YSTRUE==NeedToDrawGameInfo(viewPort))
 		{
-			SimDrawContainer(actualViewMode);
+			SimDrawContainer(viewPort);
 			SimDrawGunAim();
-			SimDrawBombingAim(actualViewMode);
+			SimDrawBombingAim(viewPort);
 		}
 		else if(cfgPtr->drawPlayerNameAlways==YSTRUE)
 		{
-			SimDrawContainer(actualViewMode);
+			SimDrawContainer(viewPort);
 		}
 	}
 
 	FsFlushScene(); // Added 2003/05/14
 }
 
-void FsSimulation::SimDrawGroundInterior(const ActualViewMode &actualViewMode,const class FsProjection &proj,const FsGround *gnd,const FsCockpitIndicationSet &cockpitIndicationSet) const
+void FsSimulation::SimDrawGroundInterior(const FsViewPort &viewPort,const class FsProjection &proj,const FsGround *gnd,const FsCockpitIndicationSet &cockpitIndicationSet) const
 {
 	YsVec3 localViewPos;
 	YsVec3 offset;
@@ -7470,7 +7284,7 @@ void FsSimulation::SimDrawGroundInterior(const ActualViewMode &actualViewMode,co
 
 	offset=gnd->GetPosition();
 
-	switch(actualViewMode.viewMode)
+	switch(viewPort.viewMode)
 	{
 	default:
 	case FSCOCKPITVIEW:
@@ -7479,7 +7293,7 @@ void FsSimulation::SimDrawGroundInterior(const ActualViewMode &actualViewMode,co
 	case FSADDITIONALAIRPLANEVIEW:
 	case FSADDITIONALAIRPLANEVIEW_CABIN:
 		const FsAdditionalViewpoint *vp;
-		vp=gnd->Prop().GetAdditionalView(camera->mainViewMode->cockpitViewId);
+		vp=gnd->Prop().GetAdditionalView(camera->mainViewPort->cockpitViewId);
 		if(vp!=NULL)
 		{
 			localViewPos=vp->pos;
@@ -7490,7 +7304,7 @@ void FsSimulation::SimDrawGroundInterior(const ActualViewMode &actualViewMode,co
 	gnd->GetAttitude().Mul(fakeViewPos,fakeViewPos);
 
 
-	instViewAtt=actualViewMode.viewAttitude;
+	instViewAtt=viewPort.viewAttitude;
 
 	instViewMat.Initialize();
 	instViewMat.RotateXY(-instViewAtt.b());
@@ -7500,27 +7314,27 @@ void FsSimulation::SimDrawGroundInterior(const ActualViewMode &actualViewMode,co
 
 	FsSetCameraPosition(fakeViewPos,instViewAtt,YSFALSE); // BiStartBuffer(&eye);
 
-	if(YSTRUE==NeedToDrawInstrument(actualViewMode))
+	if(YSTRUE==NeedToDrawInstrument(viewPort))
 	{
 		SimDrawHud3d(fakeViewPos,instViewAtt,cockpitIndicationSet);
 	}
 
 
 	FsFlushScene(); // BiFlushBuffer();
-	FsSetCameraPosition(actualViewMode.viewPoint,actualViewMode.viewAttitude,YSTRUE); // BiStartBuffer(&eye);
+	FsSetCameraPosition(viewPort.viewPoint,viewPort.viewAttitude,YSTRUE); // BiStartBuffer(&eye);
 
 
 	if(cfgPtr->neverDrawAirplaneContainer==YSFALSE)
 	{
-		if(YSTRUE==NeedToDrawGameInfo(actualViewMode))
+		if(YSTRUE==NeedToDrawGameInfo(viewPort))
 		{
-			SimDrawContainer(actualViewMode);
+			SimDrawContainer(viewPort);
 			SimDrawGunAim();
-			SimDrawBombingAim(actualViewMode);
+			SimDrawBombingAim(viewPort);
 		}
 		else if(cfgPtr->drawPlayerNameAlways==YSTRUE)
 		{
-			SimDrawContainer(actualViewMode);
+			SimDrawContainer(viewPort);
 		}
 	}
 
@@ -7528,7 +7342,7 @@ void FsSimulation::SimDrawGroundInterior(const ActualViewMode &actualViewMode,co
 	FsFlushScene(); // BiFlushBuffer();
 }
 
-void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const class FsProjection &proj,const FsCockpitIndicationSet &cockpitIndicationSet,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker) const
+void FsSimulation::SimDrawForeground(const FsViewPort &viewPort,const class FsProjection &proj,const FsCockpitIndicationSet &cockpitIndicationSet,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker) const
 {
 	// printf("1\n");FsTestPerformance();
 
@@ -7552,38 +7366,38 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 	printf("SimDrawForeground-2\n");
 #endif
 
-	unsigned int instDrawSwitch=GetInstrumentDrawSwitch(actualViewMode);
+	unsigned int instDrawSwitch=GetInstrumentDrawSwitch(viewPort);
 
 	if(playerPlane!=NULL &&
 	   playerPlane->IsAlive()==YSTRUE &&
-	   (actualViewMode.viewMode==FSCOCKPITVIEW || 
-	    actualViewMode.viewMode==FSADDITIONALAIRPLANEVIEW ||
-	    actualViewMode.viewMode==FSADDITIONALAIRPLANEVIEW_CABIN ||
-	    actualViewMode.viewMode==FSBOMBINGVIEW ||
-	    YSTRUE==NeedToDrawGameInfo(actualViewMode) ||
-	    YSTRUE==NeedToDrawInstrument(actualViewMode)))
+	   (viewPort.viewMode==FSCOCKPITVIEW || 
+	    viewPort.viewMode==FSADDITIONALAIRPLANEVIEW ||
+	    viewPort.viewMode==FSADDITIONALAIRPLANEVIEW_CABIN ||
+	    viewPort.viewMode==FSBOMBINGVIEW ||
+	    YSTRUE==NeedToDrawGameInfo(viewPort) ||
+	    YSTRUE==NeedToDrawInstrument(viewPort)))
 	{
 #ifdef CRASHINVESTIGATION_SIMDRAWFOREGROUND
 		printf("SimDrawForeground-3\n");
 #endif
-		SimDrawAircraftInterior(actualViewMode,proj,playerPlane,instDrawSwitch,cockpitIndicationSet);
+		SimDrawAircraftInterior(viewPort,proj,playerPlane,instDrawSwitch,cockpitIndicationSet);
 #ifdef CRASHINVESTIGATION_SIMDRAWFOREGROUND
 		printf("SimDrawForeground-4\n");
 #endif
 	}
 	else if(playerGround!=NULL &&
 	        playerGround->IsAlive()==YSTRUE &&
-	        (actualViewMode.viewMode==FSCOCKPITVIEW ||
-	         actualViewMode.viewMode==FSADDITIONALAIRPLANEVIEW ||
-	         actualViewMode.viewMode==FSADDITIONALAIRPLANEVIEW_CABIN ||
-	         actualViewMode.viewMode==FSBOMBINGVIEW ||
-	         YSTRUE==NeedToDrawGameInfo(actualViewMode) ||
-	         YSTRUE==NeedToDrawInstrument(actualViewMode)))
+	        (viewPort.viewMode==FSCOCKPITVIEW ||
+	         viewPort.viewMode==FSADDITIONALAIRPLANEVIEW ||
+	         viewPort.viewMode==FSADDITIONALAIRPLANEVIEW_CABIN ||
+	         viewPort.viewMode==FSBOMBINGVIEW ||
+	         YSTRUE==NeedToDrawGameInfo(viewPort) ||
+	         YSTRUE==NeedToDrawInstrument(viewPort)))
 	{
 #ifdef CRASHINVESTIGATION_SIMDRAWFOREGROUND
 		printf("SimDrawForeground-5\n");
 #endif
-		SimDrawGroundInterior(actualViewMode,proj,playerGround,cockpitIndicationSet);
+		SimDrawGroundInterior(viewPort,proj,playerGround,cockpitIndicationSet);
 #ifdef CRASHINVESTIGATION_SIMDRAWFOREGROUND
 		printf("SimDrawForeground-6\n");
 #endif
@@ -7602,7 +7416,7 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 
 	if(playerPlane!=NULL)
 	{
-		if(0!=(instDrawSwitch&FSISS_2DHUD) && YSTRUE==NeedToDrawInstrument(actualViewMode) && YSTRUE==playerPlane->Prop().CheckHUDVisible())
+		if(0!=(instDrawSwitch&FSISS_2DHUD) && YSTRUE==NeedToDrawInstrument(viewPort) && YSTRUE==playerPlane->Prop().CheckHUDVisible())
 		{
 			YSBOOL autoPilot=(NULL!=playerPlane->GetAutopilot() ? YSTRUE : YSFALSE);
 			if(long(currentTime*2.0)%2==0)
@@ -7672,7 +7486,7 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 			}
 		}
 
-		if(YSTRUE==NeedToDrawInstrument(actualViewMode))
+		if(YSTRUE==NeedToDrawInstrument(viewPort))
 		{
 			// Draw structural integrity
 			int sx,sy;
@@ -7737,9 +7551,9 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 
 	if(NULL!=playerPlane || NULL!=playerGround)
 	{
-		if(YSTRUE==FsIsMainWindowActive() && NeedToDrawInstrument(actualViewMode)==YSTRUE)
+		if(YSTRUE==FsIsMainWindowActive() && NeedToDrawInstrument(viewPort)==YSTRUE)
 		{
-			SimDrawRadar(actualViewMode);
+			SimDrawRadar(viewPort);
 		}
 	}
 
@@ -7812,7 +7626,7 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 			}
 		}
 
-		if(camera->mainViewMode->viewMode==FSGHOSTVIEW)
+		if(camera->mainViewPort->viewMode==FSGHOSTVIEW)
 		{
 			YsString str;
 			str.Printf(str,"%.1lf m/s",camera->ghostViewSpeed);
@@ -7915,7 +7729,7 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 	FsFlushScene();
 }
 
-void FsSimulation::SimDrawRadar(const ActualViewMode &actualViewMode) const
+void FsSimulation::SimDrawRadar(const FsViewPort &viewPort) const
 {
 	FsHorizontalRadar radar;
 
@@ -7989,7 +7803,7 @@ void FsSimulation::SimDrawRadar(const ActualViewMode &actualViewMode) const
 		long x2=wid-10;
 		long y2=10+radarSize;
 
-		radar.DrawBasic(this,x1,y1,x2,y2,radarRange,*playerGround,playerGround->GetPosition(),actualViewMode.viewAttitude,0,cfgPtr->radarAltitudeLimit);
+		radar.DrawBasic(this,x1,y1,x2,y2,radarRange,*playerGround,playerGround->GetPosition(),viewPort.viewAttitude,0,cfgPtr->radarAltitudeLimit);
 	}
 }
 
@@ -8465,10 +8279,10 @@ void FsSimulation::SimDrawFlush(void) const
 	FsPlugInCallWindowBufferSwapped(currentTime,this);
 }
 
-void FsSimulation::SimDrawContainer(const ActualViewMode &actualViewMode) const
+void FsSimulation::SimDrawContainer(const FsViewPort &viewPort) const
 {
-	auto &viewPoint=actualViewMode.viewPoint;
-	auto &viewAttitude=actualViewMode.viewAttitude;
+	auto &viewPoint=viewPort.viewPoint;
+	auto &viewAttitude=viewPort.viewAttitude;
 
 	const YsVec3 *trg;
 	YsMatrix4x4 mat;
@@ -8787,10 +8601,10 @@ YSRESULT FsSimulation::SimCalculateGunAim(const FsAirplane *&target,YsVec3 &aim)
 	return YSERR;
 }
 
-void FsSimulation::SimDrawBombingAim(const ActualViewMode &actualViewMode) const
+void FsSimulation::SimDrawBombingAim(const FsViewPort &viewPort) const
 {
-	auto &viewPoint=actualViewMode.viewPoint;
-	auto &viewAttitude=actualViewMode.viewAttitude;
+	auto &viewPoint=viewPort.viewPoint;
+	auto &viewAttitude=viewPort.viewAttitude;
 
 	const YsMatrix4x4 *mat;
 	const FsAirplane *playerPlane;
@@ -8801,7 +8615,7 @@ void FsSimulation::SimDrawBombingAim(const ActualViewMode &actualViewMode) const
 	if(playerPlane!=NULL &&
 	   (playerPlane->Prop().GetSelectedWeaponPerformance().category==FSWEAPONCAT_FREEFALL) &&
 	   ((fabs(userInput.viewHdg)< YsDegToRad( 10.0) && fabs(userInput.viewPch)< YsDegToRad( 10.0)) ||
-	    actualViewMode.viewMode==FSBOMBINGVIEW))
+	    viewPort.viewMode==FSBOMBINGVIEW))
 	{
 		YsVec3 estimated;
 		if(playerPlane->Prop().ComputeEstimatedBombLandingPosition(estimated,GetWeather())==YSOK)
@@ -9560,95 +9374,15 @@ void FsSimulation::SetUpGunnerSubMenu(void)
 	}
 }
 
-void FsSimulation::GetProjection(FsProjection &prj,const ActualViewMode &actualViewMode)
-{
-	int wid, hei;
-	const FsAirplane *playerPlane;
-	playerPlane = GetPlayerAirplane();
-
-	FsGetDrawingAreaSize(wid,hei);
-	YsVec2i drawingArea(wid, hei);
-
-	if (FsIsMainWindowActive() == YSFALSE)
-	{
-		if (FsIsSubWindowActive(0) == YSTRUE)
-		{
-			lastProjection = &camera->subViewModeL->projection;
-			camera->subViewModeL->prevProjection = camera->subViewModeL->projection;
-		}
-		else if (FsIsSubWindowActive(1) == YSTRUE)
-		{
-			lastProjection = &camera->subViewModeR->projection;
-			camera->subViewModeR->prevProjection = camera->subViewModeR->projection;
-		}
-	}
-	else
-	{
-		lastProjection = &camera->mainViewMode->projection;
-		camera->mainViewMode->prevProjection = camera->mainViewMode->projection;
-	}
-
-	if(actualViewMode.centerThisCamera == YSFALSE && NULL != playerPlane)
-	{
-		const YsVec2 scrnCen = playerPlane->Prop().GetScreenCenter();
-		prj.cx = (int)((double)wid * (1.0 + scrnCen.x()) / 2.0);
-		prj.cy = (int)((double)hei * (1.0 - scrnCen.y()) / 2.0);
-	}
-	else
-	{
-		prj.cx = wid / 2;
-		prj.cy = hei / 2;
-	}
-
-	if (drawingArea != lastProjection->viewportDim || viewMagUser != lastViewMagUser || actualViewMode.viewMagFix != lastProjection->viewMagFix)
-	{
-		lastViewMagUser = viewMagUser;
-		prj.viewMagFix = actualViewMode.viewMagFix;
-
-		prj.fovInPixels = YsGreater(wid / 2, hei / 2);  // 2010/07/05 It was ...,prj.cx,prj.cy);
-
-		prj.prjMode = YsProjectionTransformation::PERSPECTIVE;
-		prj.prjPlnDist = (double)hei / (PROJ_PLANE_DIST_SCALE);  // 2010/07/05 Fix vertical fov (double)wid/(double)1.41421356;
-		prj.prjPlnDist *= (actualViewMode.viewMagFix * viewMagUser / 1.8);
-		prj.tanFov = (double)prj.fovInPixels / prj.prjPlnDist;
-		prj.tanFovSecondary = (double)YsSmaller(wid / 2, hei / 2) / prj.prjPlnDist;
-		prj.fov = atan(prj.tanFov);
-		prj.fovSecondary = atan(prj.tanFovSecondary);
-		prj.viewportDim.Set(wid, hei);
-
-		prj.nearz = 0.1;
-		prj.farz = 18000.0;
-
-		prj.UncacheMatrix();
-
-		*lastProjection = prj;
-	}
-	else
-	{
-		prj.fovInPixels = lastProjection->fovInPixels;
-		prj.prjMode = lastProjection->prjMode;
-		prj.prjPlnDist = lastProjection->prjPlnDist;
-		prj.tanFov = lastProjection->tanFov;
-		prj.tanFovSecondary = lastProjection->tanFovSecondary;
-		prj.fov = lastProjection->fov;
-		prj.fovSecondary = lastProjection->fovSecondary;
-		prj.viewportDim.Set(wid, hei);
-		prj.nearz = lastProjection->nearz;
-		prj.farz = lastProjection->farz;
-		prj.viewMagFix = lastProjection->viewMagFix;
-	}
-	
-}
-
 void FsSimulation::SetSubWindowViewMode(int windowId,FSVIEWMODE viewMode)
 {
 	if (windowId == 0)
 	{
-		camera->subViewModeL->nextViewMode = viewMode;
+		camera->leftViewPort->nextViewMode = viewMode;
 	}
 	else if (windowId == 1)
 	{
-		camera->subViewModeR->nextViewMode = viewMode;
+		camera->rightViewPort->nextViewMode = viewMode;
 	}
 }
 
@@ -9664,7 +9398,9 @@ YSBOOL FsSimulation::GetShowUserNameMasterSwitch(void) const
 
 void FsSimulation::GetStandardProjection(class FsProjection &prj)
 {
-	int wid,hei,fovInPixel;
+	FsCamera cam;
+	cam.GetStandardProjection(prj);
+	/*int wid,hei,fovInPixel;
 	FsGetWindowSize(wid,hei);
 
 	prj.prjMode=YsProjectionTransformation::PERSPECTIVE;
@@ -9680,9 +9416,9 @@ void FsSimulation::GetStandardProjection(class FsProjection &prj)
 	prj.nearz=0.1;
 	prj.farz=20000.0;
 
-	prj.viewMagFix = 1.0;
+	prj.zoomProjection = 1.0;
 
-	prj.UncacheMatrix();
+	prj.UncacheMatrix();*/
 }
 
 double FsSimulation::GetFirstRecordTime(void)
@@ -9871,18 +9607,17 @@ YSBOOL FsSimulation::Explode(FsExistence &obj,YSBOOL sound)
 	return YSTRUE;
 }
 
-void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,YsVec2i drawingAreaSize)
+void FsSimulation::SimDecideViewpointAndCheckIsInCloud(FsViewPort &viewPort,YsVec2i drawingAreaSize)
 {
 	//Only shadow map generation is left here. All else is in FsCamera
 
 	if(YSTRUE==FsIsShadowMapAvailable())
 	{
-		FsProjection prj;
-		GetProjection(prj,actualViewMode);
+		FsProjection prj = *viewPort.projection;
 		YsAtt3 lightViewAtt;
 
-		const auto cameraEv=actualViewMode.viewAttitude.GetForwardVector();
-		const auto cameraUv=actualViewMode.viewAttitude.GetUpVector();
+		const auto cameraEv=viewPort.viewAttitude.GetForwardVector();
+		const auto cameraUv=viewPort.viewAttitude.GetUpVector();
 		
 		const YsVec3 lightEv=-YsUnitVector(cfgPtr->lightSourceDirection);
 		const double cameraEvSimilarity=fabs(lightEv*cameraEv);
@@ -9911,7 +9646,7 @@ void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualVie
 //		auto vz=v[0].z();
 //		for(auto &x : v)
 //		{
-//			actualViewMode.viewMat.MulInverse(x,x,0.0);
+//			viewPort.viewMat.MulInverse(x,x,0.0);
 //		}
 //
 //		YsArray <double,8> zProfile;
@@ -9921,7 +9656,7 @@ void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualVie
 //		zProfile.Add(8000.0);  // Must be max_num_shadowmap+1 dists.
 //
 //		auto &commonTexture=FsCommonTexture::GetCommonTexture();
-//		assert(commonTexture.GetMaxNumShadowMap()==ActualViewMode::NUM_SHADOW_MAP);
+//		assert(commonTexture.GetMaxNumShadowMap()==viewPort::NUM_SHADOW_MAP);
 //		assert(commonTexture.GetMaxNumShadowMap()==zProfile.GetN()-1);
 //
 //		for(YSSIZE_T i=0; i<zProfile.GetN()-1; ++i)
@@ -9931,14 +9666,14 @@ void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualVie
 //
 //			YsVec3 frustumCorner[8]=
 //			{
-//				actualViewMode.viewPoint+v[0]*t0,
-//				actualViewMode.viewPoint+v[1]*t0,
-//				actualViewMode.viewPoint+v[2]*t0,
-//				actualViewMode.viewPoint+v[3]*t0,
-//				actualViewMode.viewPoint+v[0]*t1,
-//				actualViewMode.viewPoint+v[1]*t1,
-//				actualViewMode.viewPoint+v[2]*t1,
-//				actualViewMode.viewPoint+v[3]*t1,
+//				viewPort.viewPoint+v[0]*t0,
+//				viewPort.viewPoint+v[1]*t0,
+//				viewPort.viewPoint+v[2]*t0,
+//				viewPort.viewPoint+v[3]*t0,
+//				viewPort.viewPoint+v[0]*t1,
+//				viewPort.viewPoint+v[1]*t1,
+//				viewPort.viewPoint+v[2]*t1,
+//				viewPort.viewPoint+v[3]*t1,
 //			};
 //			YsBoundingBoxMaker3 bbx;
 //			for(auto &fc : frustumCorner)
@@ -9958,7 +9693,7 @@ void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualVie
 //			lightViewAtt.Mul(nearCen,nearCen);
 //			const YsVec3 lightOrigin=nearCen;
 //
-//			auto &m=actualViewMode.shadowViewMat[i];
+//			auto &m=viewPort.shadowViewMat[i];
 //			m.LoadIdentity();
 //			m.RotateXY(-lightViewAtt.b());
 //			m.RotateZY(-lightViewAtt.p());
@@ -9970,19 +9705,19 @@ void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualVie
 //			proj.SetAspectRatio(aspect);
 //			proj.SetOrthogonalProjectionHeight(dy);
 //			proj.SetNearFar(0.0,dz);
-//			actualViewMode.shadowProjMat[i]=proj.GetProjectionMatrix();
+//			viewPort.shadowProjMat[i]=proj.GetProjectionMatrix();
 //		}
 
 
 		// Control distance based on sin(theata)
 		// where theata is the angle between the lightVec and cameraVec
 		{
-			const auto cameraEv=actualViewMode.viewAttitude.GetForwardVector();
+			const auto cameraEv=viewPort.viewAttitude.GetForwardVector();
 			const YsVec3 lightEv=-YsUnitVector(cfgPtr->lightSourceDirection);
 			const double cosTheata=cameraEv*lightEv;
 			const double sinTheata=sqrt(1.0-YsSmaller(1.0,cosTheata*cosTheata));
 
-			const double baseDist=YsBound(actualViewMode.viewTargetDist,30.0,200.0);
+			const double baseDist=YsBound(viewPort.offsetRadius,30.0,200.0);
 
 			const double lightVolumeProfile[3]=
 			{
@@ -10005,13 +9740,13 @@ void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualVie
 			for(int i=0; i<3; ++i)
 			{
 				const YsVec3 push=cameraEv*lightVolumeProfile[i]*sinTheata;
-				const YsVec3 lightOrigin=actualViewMode.viewPoint+push-lightEv*lightPullProfile[i];
+				const YsVec3 lightOrigin=viewPort.viewPoint+push-lightEv*lightPullProfile[i];
 			
-				actualViewMode.shadowViewMat[i].LoadIdentity();
-				actualViewMode.shadowViewMat[i].RotateXY(-lightViewAtt.b());
-				actualViewMode.shadowViewMat[i].RotateZY(-lightViewAtt.p());
-				actualViewMode.shadowViewMat[i].RotateXZ(-lightViewAtt.h());
-				actualViewMode.shadowViewMat[i].Translate(-lightOrigin);
+				viewPort.shadowViewMat[i].LoadIdentity();
+				viewPort.shadowViewMat[i].RotateXY(-lightViewAtt.b());
+				viewPort.shadowViewMat[i].RotateZY(-lightViewAtt.p());
+				viewPort.shadowViewMat[i].RotateXZ(-lightViewAtt.h());
+				viewPort.shadowViewMat[i].Translate(-lightOrigin);
 			
 				// Needs adjustment, and should use cascade-shadow map. -> Nah, forget about it.  Cascade shadow map doesn't work.
 				YsProjectionTransformation proj;
@@ -10019,16 +9754,16 @@ void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualVie
 				proj.SetAspectRatio(1.0);
 				proj.SetOrthogonalProjectionHeight(lightVolumeProfile[i]*2.0);
 				proj.SetNearFar(0.0,lightDepthProfile[i]);
-				actualViewMode.shadowProjMat[i]=proj.GetProjectionMatrix();
+				viewPort.shadowProjMat[i]=proj.GetProjectionMatrix();
 			}
 		}
 
 
 		// Ad-hoc shadow transformation
 //		{
-//			const YsVec3 lightOrigin=actualViewMode.viewPoint-lightEv*200.0;
+//			const YsVec3 lightOrigin=viewPort.viewPoint-lightEv*200.0;
 //		
-//			for(auto &m : actualViewMode.shadowViewMat)
+//			for(auto &m : viewPort.shadowViewMat)
 //			{
 //				m.LoadIdentity();
 //				m.RotateXY(-lightViewAtt.b());
@@ -10043,24 +9778,24 @@ void FsSimulation::SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualVie
 //			proj.SetAspectRatio(1.0);
 //			proj.SetOrthogonalProjectionHeight(150.0);
 //			proj.SetNearFar(0.0,1000.0);
-//			actualViewMode.shadowProjMat[0]=proj.GetProjectionMatrix();
+//			viewPort.shadowProjMat[0]=proj.GetProjectionMatrix();
 //		
 //			proj.SetOrthogonalProjectionHeight(2000.0);
 //			proj.SetNearFar(0.0,5000.0);
-//			actualViewMode.shadowProjMat[1]=proj.GetProjectionMatrix();
+//			viewPort.shadowProjMat[1]=proj.GetProjectionMatrix();
 //
 //			proj.SetOrthogonalProjectionHeight(5000.0);
 //			proj.SetNearFar(0.0,10000.0);
-//			actualViewMode.shadowProjMat[2]=proj.GetProjectionMatrix();
+//			viewPort.shadowProjMat[2]=proj.GetProjectionMatrix();
 //		}
 	}
 	else
 	{
-		for(auto &m : actualViewMode.shadowProjMat)
+		for(auto &m : viewPort.shadowProjMat)
 		{
 			m.LoadIdentity();
 		}
-		for(auto &m : actualViewMode.shadowViewMat)
+		for(auto &m : viewPort.shadowViewMat)
 		{
 			m.LoadIdentity();
 		}
@@ -10093,10 +9828,10 @@ double FsSimulation::GetFogVis(void)
 	return weather->GetFogVisibility();
 }
 
-void FsSimulation::SimCalculateShadowMap(ActualViewMode& callBackVM, FSVIEWMODE viewmode, YsVec2i drawingAreaSize)
+void FsSimulation::SimCalculateShadowMap(FsViewPort& callBackVP, YsVec2i drawingAreaSize)
 {
 	//Callback to protected function to keep shadow calcs out of FsCamera
-	SimDecideViewpointAndCheckIsInCloud(callBackVM, viewmode, drawingAreaSize);
+	SimDecideViewpointAndCheckIsInCloud(callBackVP, drawingAreaSize);
 }
 
 void FsSimulation::AirplaneCrash(FsAirplane *crashedPlane,FSDIEDOF diedOf,int collType)
@@ -10254,7 +9989,7 @@ void FsSimulation::CheckContinueDraw(void)
 	FsCockpitIndicationSet cockpitIndicationSet;
 	SimMakeUpCockpitIndicationSet(cockpitIndicationSet);
 
-	SimDrawScreen(0.0,cockpitIndicationSet,YSFALSE,YSFALSE,YSFALSE,*camera->mainViewMode);
+	SimDrawScreen(0.0,cockpitIndicationSet,YSFALSE,YSFALSE,YSFALSE,*camera->mainViewPort);
 	SimDrawGuiDialog();
 	SimDrawFlush(); // <- Swap buffers inside.
 
@@ -10966,10 +10701,10 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 
 				FSVIEWMODE nextViewMode=FSCOCKPITVIEW;
 				int nextAdditionalAirplaneViewId=0;
-				const int curIndex=(camera->mainViewMode->viewMode==FSADDITIONALAIRPLANEVIEW ? camera->mainViewMode->cockpitViewId : 0);
+				const int curIndex=(camera->mainViewPort->viewMode==FSADDITIONALAIRPLANEVIEW ? camera->mainViewPort->cockpitViewId : 0);
 				for(int idx=0; idx<viewModeAndIndex.GetN(); ++idx)
 				{
-					if(camera->mainViewMode->viewMode ==viewModeAndIndex[idx].viewmode &&
+					if(camera->mainViewPort->viewMode ==viewModeAndIndex[idx].viewmode &&
 					   curIndex==viewModeAndIndex[idx].refIndex)
 					{
 						nextViewMode=viewModeAndIndex.GetCyclic(idx+dir).viewmode;
@@ -10977,43 +10712,43 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 						break;
 					}
 				}
-				camera->mainViewMode->nextViewMode =nextViewMode;
-				camera->mainViewMode->cockpitViewId=nextAdditionalAirplaneViewId;
+				camera->mainViewPort->nextViewMode =nextViewMode;
+				camera->mainViewPort->cockpitViewId=nextAdditionalAirplaneViewId;
 			}
 		}
 		break;
 	case FSBTF_OUTSIDEPLAYERVIEW:
 		if(GetPlayerAirplane()!=NULL)
 		{
-			if(camera->mainViewMode->viewMode==FSOUTSIDEPLAYERPLANE)
+			if(camera->mainViewPort->viewMode==FSOUTSIDEPLAYERPLANE)
 			{
-				camera->mainViewMode->nextViewMode =FSFIXEDPOINTPLAYERPLANE;
+				camera->mainViewPort->nextViewMode =FSFIXEDPOINTPLAYERPLANE;
 				camera->UpdateViewpointAccordingToPlayerAirplane(500.0,YSTRUE);
 			}
-			else if(camera->mainViewMode->viewMode==FSFIXEDPOINTPLAYERPLANE)
+			else if(camera->mainViewPort->viewMode==FSFIXEDPOINTPLAYERPLANE)
 			{
-				camera->mainViewMode->nextViewMode =FSVARIABLEPOINTPLAYERPLANE;
+				camera->mainViewPort->nextViewMode =FSVARIABLEPOINTPLAYERPLANE;
 				camera->UpdateViewpointAccordingToPlayerAirplane(500.0,YSTRUE);
 			}
-			else if(camera->mainViewMode->viewMode==FSVARIABLEPOINTPLAYERPLANE)
+			else if(camera->mainViewPort->viewMode==FSVARIABLEPOINTPLAYERPLANE)
 			{
-				camera->mainViewMode->nextViewMode =FSFROMTOPOFPLAYERPLANE;
+				camera->mainViewPort->nextViewMode =FSFROMTOPOFPLAYERPLANE;
 				camera->UpdateViewpointAccordingToPlayerAirplane(500.0,YSTRUE);
 			}
-			else if(camera->mainViewMode->viewMode==FSFROMTOPOFPLAYERPLANE)
+			else if(camera->mainViewPort->viewMode==FSFROMTOPOFPLAYERPLANE)
 			{
-				camera->mainViewMode->nextViewMode =FSPLAYERPLANEFROMSIDE;
+				camera->mainViewPort->nextViewMode =FSPLAYERPLANEFROMSIDE;
 			}
 			else
 			{
-				camera->mainViewMode->nextViewMode =FSOUTSIDEPLAYERPLANE;
+				camera->mainViewPort->nextViewMode =FSOUTSIDEPLAYERPLANE;
 			}
 		}
 		break;
 	case FSBTF_COMPUTERAIRPLANEVIEW:
 		if(0<=dir)
 		{
-			if(camera->mainViewMode->viewMode==FSANOTHERAIRPLANE)
+			if(camera->mainViewPort->viewMode==FSANOTHERAIRPLANE)
 			{
 				int i,nAir;
 
@@ -11033,13 +10768,13 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 			}
 			else
 			{
-				camera->mainViewMode->nextViewMode =FSANOTHERAIRPLANE;
+				camera->mainViewPort->nextViewMode =FSANOTHERAIRPLANE;
 				focusAir=FindNextAirplane(NULL);
 			}
 		}
 		else
 		{
-			if(camera->mainViewMode->viewMode==FSANOTHERAIRPLANE)
+			if(camera->mainViewPort->viewMode==FSANOTHERAIRPLANE)
 			{
 				int i,nAir;
 
@@ -11059,14 +10794,14 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 			}
 			else
 			{
-				camera->mainViewMode->nextViewMode =FSANOTHERAIRPLANE;
+				camera->mainViewPort->nextViewMode =FSANOTHERAIRPLANE;
 				focusAir=FindPrevAirplane(NULL);
 			}
 		}
 		break;
 	case FSBTF_WEAPONVIEW:
 		{
-			camera->mainViewMode->nextViewMode =FSMISSILEVIEW;
+			camera->mainViewPort->nextViewMode =FSMISSILEVIEW;
 		}
 		break;
 	case FSBTF_CHANGEAIRPLANE:
@@ -11113,7 +10848,7 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 			}
 			if(0<view.GetN())
 			{
-				if(NULL==focusAir || (FSCARRIERVIEW!= camera->mainViewMode->viewMode && FSTOWERVIEW!= camera->mainViewMode->viewMode))
+				if(NULL==focusAir || (FSCARRIERVIEW!= camera->mainViewPort->viewMode && FSTOWERVIEW!= camera->mainViewPort->viewMode))
 				{
 					focusAir=GetPlayerAirplane();
 					if(NULL==focusAir || YSTRUE!=focusAir->IsAlive())
@@ -11130,13 +10865,13 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 					}
 					YsQuickSort(dist.GetN(),dist.GetEditableArray(),view.GetEditableArray());
 
-					FSVIEWMODE curMode= camera->mainViewMode->viewMode;
+					FSVIEWMODE curMode= camera->mainViewPort->viewMode;
 					int curIndex=0;
-					if(FSCARRIERVIEW== camera->mainViewMode->viewMode && NULL!=focusGnd)
+					if(FSCARRIERVIEW== camera->mainViewPort->viewMode && NULL!=focusGnd)
 					{
 						curIndex=(int)focusGnd->SearchKey();
 					}
-					else if(FSTOWERVIEW== camera->mainViewMode->viewMode)
+					else if(FSTOWERVIEW== camera->mainViewPort->viewMode)
 					{
 						curIndex=towerViewId;
 					}
@@ -11157,12 +10892,12 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 						focusGnd=FindGround((YSHASHKEY)nextView.refIndex);
 						if(NULL!=focusGnd)
 						{
-							camera->mainViewMode->nextViewMode =FSCARRIERVIEW;
+							camera->mainViewPort->nextViewMode =FSCARRIERVIEW;
 						}
 					}
 					else if(FSTOWERVIEW==nextView.viewmode)
 					{
-						camera->mainViewMode->nextViewMode =FSTOWERVIEW;
+						camera->mainViewPort->nextViewMode =FSTOWERVIEW;
 						towerViewId=nextView.refIndex;
 						towerViewPos=nextView.pos;
 					}
@@ -11171,12 +10906,12 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 		}
 		break;
 	case FSBTF_OUTSIDEPLAYERVIEW2:
-		if (camera->mainViewMode->viewMode != FSOUTSIDEPLAYER2)
+		if (camera->mainViewPort->viewMode != FSOUTSIDEPLAYER2)
 		{
 			relViewAtt.SetB(0.0);
 			focusAir = GetPlayerAirplane();
 			relViewDist = 2.0;
-			camera->mainViewMode->nextViewMode = FSOUTSIDEPLAYER2;
+			camera->mainViewPort->nextViewMode = FSOUTSIDEPLAYER2;
 		}
 		else
 		{
@@ -11185,12 +10920,12 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 		}
 		break;
 	case FSBTF_OUTSIDEPLAYERVIEW3:
-		if (camera->mainViewMode->viewMode != FSOUTSIDEPLAYER3)
+		if (camera->mainViewPort->viewMode != FSOUTSIDEPLAYER3)
 		{
 			relViewAtt.SetB(0.0);
 			focusAir = GetPlayerAirplane();
 			relViewDist = 2.0;
-			camera->mainViewMode->nextViewMode = FSOUTSIDEPLAYER3;
+			camera->mainViewPort->nextViewMode = FSOUTSIDEPLAYER3;
 		}
 		else
 		{
@@ -11201,23 +10936,23 @@ void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl
 		break;
 	case FSBTF_GHOSTVIEW:
 		{
-			if(camera->mainViewMode->viewMode !=FSGHOSTVIEW)
+			if(camera->mainViewPort->viewMode !=FSGHOSTVIEW)
 			{
-				camera->mainViewMode->nextViewMode =FSGHOSTVIEW;
+				camera->mainViewPort->nextViewMode =FSGHOSTVIEW;
 				camera->ghostViewSpeed=0.0;
 			}
 		}
 		break;
 	case FSBTF_VIEWZOOM:
-		if(viewMagUser<12.0)
+		if(camera->zoomUser <12.0)
 		{
-			viewMagUser*=1.1;
+			camera->zoomUser *=1.1;
 		}
 		break;
 	case FSBTF_VIEWMOOZ:
-		if(viewMagUser>1.0)
+		if(camera->zoomUser >1.0)
 		{
-			viewMagUser/=1.1;
+			camera->zoomUser /=1.1;
 		}
 		break;
 	case FSBTF_SWITCHVIEWTARGET:
@@ -12616,21 +12351,21 @@ void FsSimulation::AdjustPrecisionOfFlightRecord(const double &precPos,const dou
 	}
 }
 
-YSBOOL FsSimulation::NeedToDrawInstrument(const ActualViewMode &actualViewMode) const
+YSBOOL FsSimulation::NeedToDrawInstrument(const FsViewPort &viewPort) const
 {
 	const FsAirplane *playerPlane=GetPlayerAirplane();
 	if(playerPlane!=NULL && playerPlane->IsAlive()==YSTRUE)
 	{
-		unsigned int instDrawSwitch=GetInstrumentDrawSwitch(actualViewMode);
+		unsigned int instDrawSwitch=GetInstrumentDrawSwitch(viewPort);
 		const double angleThr=YsDegToRad(10.0);
 
-		if(actualViewMode.viewMode==FSCOCKPITVIEW || actualViewMode.viewMode ==FSADDITIONALAIRPLANEVIEW)
+		if(viewPort.viewMode==FSCOCKPITVIEW || viewPort.viewMode ==FSADDITIONALAIRPLANEVIEW)
 		{
 			if(0!=(instDrawSwitch&(FSISS_3DHUD|FSISS_3DINSTPANEL)))
 			{
 				return YSTRUE;
 			}
-			else if(fabs(actualViewMode.viewHdg)<angleThr && fabs(actualViewMode.viewPch)<angleThr)
+			else if(fabs(viewPort.viewHdg)<angleThr && fabs(viewPort.viewPch)<angleThr)
 			{
 				return YSTRUE;
 			}
@@ -12638,15 +12373,15 @@ YSBOOL FsSimulation::NeedToDrawInstrument(const ActualViewMode &actualViewMode) 
 		}
 		if(cfgPtr->showHudAlways==YSTRUE)
 		{
-			if(actualViewMode.viewMode ==FSCOCKPITVIEW ||
-			   actualViewMode.viewMode ==FSADDITIONALAIRPLANEVIEW ||
-			   actualViewMode.viewMode ==FSOUTSIDEPLAYERPLANE ||
-			   actualViewMode.viewMode ==FSFIXEDPOINTPLAYERPLANE ||
-			   actualViewMode.viewMode ==FSVARIABLEPOINTPLAYERPLANE ||
-			   actualViewMode.viewMode ==FSFROMTOPOFPLAYERPLANE ||
-			   actualViewMode.viewMode ==FSPLAYERPLANEFROMSIDE ||
-			   actualViewMode.viewMode ==FSOUTSIDEPLAYER2 ||
-			   actualViewMode.viewMode ==FSOUTSIDEPLAYER3)
+			if(viewPort.viewMode ==FSCOCKPITVIEW ||
+			   viewPort.viewMode ==FSADDITIONALAIRPLANEVIEW ||
+			   viewPort.viewMode ==FSOUTSIDEPLAYERPLANE ||
+			   viewPort.viewMode ==FSFIXEDPOINTPLAYERPLANE ||
+			   viewPort.viewMode ==FSVARIABLEPOINTPLAYERPLANE ||
+			   viewPort.viewMode ==FSFROMTOPOFPLAYERPLANE ||
+			   viewPort.viewMode ==FSPLAYERPLANEFROMSIDE ||
+			   viewPort.viewMode ==FSOUTSIDEPLAYER2 ||
+			   viewPort.viewMode ==FSOUTSIDEPLAYER3)
 			{
 				return YSTRUE;
 			}
@@ -12656,7 +12391,7 @@ YSBOOL FsSimulation::NeedToDrawInstrument(const ActualViewMode &actualViewMode) 
 	const FsGround *playerGround=GetPlayerGround();
 	if(NULL!=playerGround && YSTRUE==playerGround->IsAlive())
 	{
-		if(FSCOCKPITVIEW==actualViewMode.viewMode /* && FSWEAPON_NULL!=playerGround->Prop().GetWeaponOfChoice() */)
+		if(FSCOCKPITVIEW==viewPort.viewMode /* && FSWEAPON_NULL!=playerGround->Prop().GetWeaponOfChoice() */)
 		{
 			return YSTRUE;
 		}
@@ -12665,39 +12400,39 @@ YSBOOL FsSimulation::NeedToDrawInstrument(const ActualViewMode &actualViewMode) 
 	return YSFALSE;
 }
 
-YSBOOL FsSimulation::NeedToDrawGameInfo(const ActualViewMode &actualViewMode) const
+YSBOOL FsSimulation::NeedToDrawGameInfo(const FsViewPort &viewPort) const
 {
 	const FsExistence *playerObj=GetPlayerObject();
 	if(playerObj!=NULL && playerObj->IsAlive()==YSTRUE)
 	{
-		if(FSBOMBINGVIEW==actualViewMode.viewMode)
+		if(FSBOMBINGVIEW==viewPort.viewMode)
 		{
 			return YSTRUE;
 		}
 
-		if(FSCOCKPITVIEW==actualViewMode.viewMode && FSEX_GROUND==playerObj->GetType())
+		if(FSCOCKPITVIEW==viewPort.viewMode && FSEX_GROUND==playerObj->GetType())
 		{
 			return YSTRUE;
 		}
 
-		unsigned int instDrawSwitch=GetInstrumentDrawSwitch(actualViewMode);
+		unsigned int instDrawSwitch=GetInstrumentDrawSwitch(viewPort);
 		const double angleThr=(0!=(instDrawSwitch&(FSISS_2DHUD|FSISS_3DHUD|FSISS_3DINSTPANEL)) ? YsDegToRad(60.0) : YsDegToRad(10.0));
-		if(FSCOCKPITVIEW==actualViewMode.viewMode &&
-		   fabs(actualViewMode.viewHdg)<angleThr &&
-		   fabs(actualViewMode.viewPch)<angleThr)
+		if(FSCOCKPITVIEW==viewPort.viewMode &&
+		   fabs(viewPort.viewHdg)<angleThr &&
+		   fabs(viewPort.viewPch)<angleThr)
 		{
 			return YSTRUE;
 		}
 		if(cfgPtr->showHudAlways==YSTRUE)
 		{
-			if(actualViewMode.viewMode ==FSADDITIONALAIRPLANEVIEW ||
-			   actualViewMode.viewMode ==FSOUTSIDEPLAYERPLANE ||
-			   actualViewMode.viewMode ==FSFIXEDPOINTPLAYERPLANE ||
-			   actualViewMode.viewMode ==FSVARIABLEPOINTPLAYERPLANE ||
-			   actualViewMode.viewMode ==FSFROMTOPOFPLAYERPLANE ||
-			   actualViewMode.viewMode ==FSPLAYERPLANEFROMSIDE ||
-			   actualViewMode.viewMode ==FSOUTSIDEPLAYER2 ||
-			   actualViewMode.viewMode ==FSOUTSIDEPLAYER3)
+			if(viewPort.viewMode ==FSADDITIONALAIRPLANEVIEW ||
+			   viewPort.viewMode ==FSOUTSIDEPLAYERPLANE ||
+			   viewPort.viewMode ==FSFIXEDPOINTPLAYERPLANE ||
+			   viewPort.viewMode ==FSVARIABLEPOINTPLAYERPLANE ||
+			   viewPort.viewMode ==FSFROMTOPOFPLAYERPLANE ||
+			   viewPort.viewMode ==FSPLAYERPLANEFROMSIDE ||
+			   viewPort.viewMode ==FSOUTSIDEPLAYER2 ||
+			   viewPort.viewMode ==FSOUTSIDEPLAYER3)
 			{
 				return YSTRUE;
 			}
@@ -12706,7 +12441,7 @@ YSBOOL FsSimulation::NeedToDrawGameInfo(const ActualViewMode &actualViewMode) co
 	return YSFALSE;
 }
 
-unsigned int FsSimulation::GetInstrumentDrawSwitch(const ActualViewMode &actualViewMode) const
+unsigned int FsSimulation::GetInstrumentDrawSwitch(const FsViewPort &viewPort) const
 {
 	unsigned int sw=0;
 
@@ -12735,17 +12470,17 @@ unsigned int FsSimulation::GetInstrumentDrawSwitch(const ActualViewMode &actualV
 			sw=FSISS_3DHUD;
 		}
 
-		if(FSCOCKPITVIEW==actualViewMode.viewMode && YSTRUE!=playerPlane->Prop().ShowHudInCockpit())
+		if(FSCOCKPITVIEW==viewPort.viewMode && YSTRUE!=playerPlane->Prop().ShowHudInCockpit())
 		{
 			sw&=~(FSISS_3DHUD|FSISS_2DHUD);
 		}
-		if(FSCOCKPITVIEW==actualViewMode.viewMode && YSTRUE!=playerPlane->Prop().ShowInstPanelInCockpit())
+		if(FSCOCKPITVIEW==viewPort.viewMode && YSTRUE!=playerPlane->Prop().ShowInstPanelInCockpit())
 		{
 			sw&=~FSISS_3DINSTPANEL;
 		}
-		if(FSADDITIONALAIRPLANEVIEW==actualViewMode.viewMode)
+		if(FSADDITIONALAIRPLANEVIEW==viewPort.viewMode)
 		{
-			const FsAdditionalViewpoint *vp=playerPlane->GetAdditionalView(camera->mainViewMode->cockpitViewId);
+			const FsAdditionalViewpoint *vp=playerPlane->GetAdditionalView(camera->mainViewPort->cockpitViewId);
 			if(vp!=NULL && YSTRUE!=vp->showHudIfAvailable)
 			{
 				sw&=~(FSISS_3DHUD|FSISS_2DHUD);

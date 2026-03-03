@@ -116,6 +116,7 @@ YSBOOL FsIsMainWindowActive(void)
 
 YSBOOL FsIsSubWindowActive(int subWndId)
 {
+	printf("sw checc\n");
 	if(0<=subWndId && subWndId<FsMaxNumSubWindow &&
 	   YSTRUE==subWindowManager.subWindowIsOpen[subWndId] &&
 	   YSTRUE==subWindowManager.subWindowIsActive &&

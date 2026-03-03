@@ -21,7 +21,7 @@
 #endif
 
 
-void FsSimulation::SimDrawBlackout(const ActualViewMode &actualViewMode) const
+void FsSimulation::SimDrawBlackout(const FsViewPort &viewPort) const
 {
 	const FsAirplane *playerPlane;
 
@@ -31,7 +31,7 @@ void FsSimulation::SimDrawBlackout(const ActualViewMode &actualViewMode) const
 	const double minusGLimit=-5.0;
 
 	if(cfgPtr->blackOut==YSTRUE &&
-	   actualViewMode.viewMode==FSCOCKPITVIEW &&
+		viewPort.viewMode==FSCOCKPITVIEW &&
 	   playerPlane!=NULL &&
 	   playerPlane->IsAlive()==YSTRUE &&
 	   (playerPlane->Prop().GetG()>plusGLimit ||

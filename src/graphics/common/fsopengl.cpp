@@ -6,7 +6,23 @@
 
 FsProjection::FsProjection()
 {
+	//Initialize projection for a 1280x720px image
+	prjMode = YsProjectionTransformation::PERSPECTIVE;
 	matrixCached=YSFALSE;
+	fovInPixels = 640;
+	fov = 71.7;
+	fovSecondary = 59.5;
+	tanFov = 3.02;
+	tanFovSecondary = 1.7;
+	prjPlnDist = 212.1;
+	nearz = 0.1;
+	farz = 18000.0;
+	viewportDim.Set(1280,720);
+
+	cx = 640;
+	cy = 360;
+
+	zoomProjection = 1.0;
 }
 
 void FsProjection::CacheMatrix(void) const

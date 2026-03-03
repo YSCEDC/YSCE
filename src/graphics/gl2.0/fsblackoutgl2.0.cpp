@@ -16,14 +16,14 @@
 #include "fsblackout.h"
 
 
-void FsSimulation::SimDrawBlackout(const ActualViewMode &actualViewMode) const
+void FsSimulation::SimDrawBlackout(const FsViewPort &viewPort) const
 {
 	const FsAirplane *playerPlane=GetPlayerAirplane();
 	const GLfloat plusGLimit=9.0f;
 	const GLfloat minusGLimit=-5.0f;
 
 	if(cfgPtr->blackOut==YSTRUE &&
-	   actualViewMode.viewMode==FSCOCKPITVIEW &&
+		viewPort.viewMode==FSCOCKPITVIEW &&
 	   playerPlane!=NULL &&
 	   playerPlane->IsAlive()==YSTRUE &&
 	   (playerPlane->Prop().GetG()>plusGLimit ||

@@ -80,7 +80,7 @@ public:
 	class FsGuiInFlightDialog *GetCurrentInFlightDialog(void) const;
 };
 
-class FsSimulation : public FsHasInFlightDialog, public ActualViewMode
+class FsSimulation : public FsHasInFlightDialog, public FsViewPort
 {
 private:
 	FsCamera* camera;
@@ -96,8 +96,8 @@ private:
 
 	YsArray <std::shared_ptr <FsSimExtensionBase> > addOnList;
 
-	FsProjection *lastProjection;
-	double lastViewMagUser;
+	//FsProjection *lastProjection;
+	//double lastViewMagUser;
 
 public:
 	enum FSSIMULATIONSTATE
@@ -235,7 +235,7 @@ protected:
 	
 	YsVec3 viewRefPoint;
 	YsAtt3 viewAttitudeTransition;
-	double viewMagUser;  // viewMagFix: Depends on view mode  viewMagUser: User control
+	//double viewMagUser;  // viewMagFix: Depends on view mode  viewMagUser: User control
 	mutable double nearZ,farZ,tanFov;
 	YsAtt3 relViewAtt;
 	double relViewDist;
@@ -503,7 +503,6 @@ public:
 	    (const double &dt,
 	     YSBOOL demoMode,YSBOOL record,YSBOOL showTimer,YSBOOL networkStandby,FSUSERCONTROL userControl,
 	     YSBOOL showTimeMarker);
-	void DecideAllViewPoint(const double dt);
 	void AfterSimulation(void);
 
 
@@ -735,9 +734,9 @@ public:
 	int RerecordByNewInterval(const double &itvl);
 	void AdjustPrecisionOfFlightRecord(const double &precPos,const double &precAng);
 
-	YSBOOL NeedToDrawInstrument(const ActualViewMode &ActualViewMode) const;
-	YSBOOL NeedToDrawGameInfo(const ActualViewMode &ActualViewMode) const;
-	unsigned int GetInstrumentDrawSwitch(const ActualViewMode &ActualViewMode) const;
+	YSBOOL NeedToDrawInstrument(const FsViewPort &viewPort) const;
+	YSBOOL NeedToDrawGameInfo(const FsViewPort &viewPort) const;
+	unsigned int GetInstrumentDrawSwitch(const FsViewPort &viewPort) const;
 
 protected:
 	void ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl);
@@ -797,32 +796,32 @@ public:
 	YSBOOL CheckIsInCloud(YsVec3 pos);
 	double GetFogVis(void);
 	YSRESULT PassGunAim(const FsAirplane*& target, YsVec3& aim);
-	void SimCalculateShadowMap(ActualViewMode& callBackVM, FSVIEWMODE viewmode, YsVec2i drawingAreaSize);
+	void SimCalculateShadowMap(FsViewPort& callBackVP, YsVec2i drawingAreaSize);
 protected:
 	void SimControlByComputer(const double &dt);
 	void SimMakeUpCockpitIndicationSet(class FsCockpitIndicationSet &cockpitIndicationSet) const;
 	void SimDrawAllScreen(YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker);
-	void SimDrawScreen(const double &dt,const FsCockpitIndicationSet &cockpitIndicationSet,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker,const ActualViewMode &actualViewMode);
-	void SimDrawShadowMap(const ActualViewMode &actualViewMode);
+	void SimDrawScreen(const double &dt,const FsCockpitIndicationSet &cockpitIndicationSet,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker,FsViewPort &viewPort);
+	void SimDrawShadowMap(FsViewPort &viewPort);
 	void SimDrawGuiDialog(void) const;
 	void SimDrawScreenZBufferSensitive(
 		const FsCockpitIndicationSet &cockpitIndicationSet,
 		const class YsGLParticleManager &particleMan,
-		const ActualViewMode &actualViewMode,
+		FsViewPort &viewPort,
 		class FsProjection &proj);
 
-	void SimDecideViewpointAndCheckIsInCloud(ActualViewMode &actualViewMode,FSVIEWMODE viewmode,YsVec2i drawingAreaSize);
-	class FsProjection SimDrawPrepare(const ActualViewMode &);
-	class FsProjection SimDrawPrepareBackground(const ActualViewMode &actualViewMode);
-	class FsProjection SimDrawPrepareRange(const ActualViewMode &actualViewMode,const double &nearZ,const double &farZ);
-	class FsProjection SimDrawPrepareNormal(const ActualViewMode &actualViewMode); // OpenGL Only
-	void SimDrawBackground(const ActualViewMode &actualViewMode,const FsProjection &proj) const;
-	void SimDrawMap(const ActualViewMode &actualViewMode,const FsProjection &prj,const double &elvMin,const double &elvMax) const;
-	void SimDrawJoystick(const ActualViewMode &actualViewMode) const;
-	void SimDrawForeground(const ActualViewMode &actualViewMode,const class FsProjection &proj,const FsCockpitIndicationSet &cockpitIndicationSet,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker) const;
-	void SimDrawAircraftInterior(const ActualViewMode &actualViewMode,const class FsProjection &proj,const FsAirplane *air,unsigned int instDrawSwitch,const FsCockpitIndicationSet &cockpitIndicationSet) const;
-	void SimDrawGroundInterior(const ActualViewMode &actualViewMode,const class FsProjection &proj,const FsGround *gnd,const class FsCockpitIndicationSet &cockpitIndicationSet) const;
-	void SimDrawRadar(const ActualViewMode &actualViewMode) const;
+	void SimDecideViewpointAndCheckIsInCloud(FsViewPort &viewPort, YsVec2i drawingAreaSize);
+	class FsProjection SimDrawPrepare(FsViewPort &);
+	class FsProjection SimDrawPrepareBackground(FsViewPort &viewPort);
+	class FsProjection SimDrawPrepareRange(FsViewPort &viewPort,const double &nearZ,const double &farZ);
+	class FsProjection SimDrawPrepareNormal(FsViewPort &viewPort); // OpenGL Only
+	void SimDrawBackground(const FsViewPort &viewPort,const FsProjection &proj) const;
+	void SimDrawMap(const FsViewPort &viewPort,const FsProjection &prj,const double &elvMin,const double &elvMax) const;
+	void SimDrawJoystick(const FsViewPort &viewPort) const;
+	void SimDrawForeground(const FsViewPort &viewPort,const class FsProjection &proj,const FsCockpitIndicationSet &cockpitIndicationSet,YSBOOL demoMode,YSBOOL showTimer,YSBOOL showTimeMarker) const;
+	void SimDrawAircraftInterior(const FsViewPort &viewPort,const class FsProjection &proj,const FsAirplane *air,unsigned int instDrawSwitch,const FsCockpitIndicationSet &cockpitIndicationSet) const;
+	void SimDrawGroundInterior(const FsViewPort &viewPort,const class FsProjection &proj,const FsGround *gnd,const class FsCockpitIndicationSet &cockpitIndicationSet) const;
+	void SimDrawRadar(const FsViewPort &viewPort) const;
 	void SimDrawInstPanel3d(const YsVec3 &fakeViewPos,const YsVec3 &localViewPos,const class FsCockpitIndicationSet &cockpitIndicationSet) const;
 	void SimDrawHud3d(const YsVec3 &instViewPos,const YsAtt3 &instViewAtt,const FsCockpitIndicationSet &ias) const;
 	void SimDraw2dVor1(const class FsCockpitIndicationSet &cockpitIndicationSet) const;
@@ -838,21 +837,21 @@ protected:
 	    YsString &adfId,
 	    YSBOOL &tuned,
 	    double &bearing) const;
-	void SimDrawBlackout(const ActualViewMode &actualViewMode) const;
-	void SimDrawAirplane(const ActualViewMode &actualViewMode,const class FsProjection &proj,unsigned int drawFlag) const;
-	void SimDrawGround(const ActualViewMode &actualViewMode,const class FsProjection &proj,unsigned int drawFlag) const;
+	void SimDrawBlackout(const FsViewPort &viewPort) const;
+	void SimDrawAirplane(const FsViewPort &viewPort,const class FsProjection &proj,unsigned int drawFlag) const;
+	void SimDrawGround(const FsViewPort &viewPort,const class FsProjection &proj,unsigned int drawFlag) const;
 	void SimDrawAirplaneVaporSmoke(void) const;
-	void SimDrawField(const ActualViewMode &actualViewMode,const class FsProjection &proj) const;
-	void SimDrawShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj);        // For OpenGL/Direct3D, not for BlueImpulseSDK
-	void SimDrawComplexShadow(const ActualViewMode &actualViewMode,const class FsProjection &proj) ; // For OpenGL/Direct3D, not for BlueImpulseSDK
+	void SimDrawField(const FsViewPort &viewPort,const class FsProjection &proj) const;
+	void SimDrawShadow(FsViewPort &viewPort,const class FsProjection &proj);        // For OpenGL/Direct3D, not for BlueImpulseSDK
+	void SimDrawComplexShadow(FsViewPort &viewPort,const class FsProjection &proj) ; // For OpenGL/Direct3D, not for BlueImpulseSDK
 	void SimDrawFlush(void) const;
 
-	void SimDrawContainer(const ActualViewMode &actualViewMode) const;
+	void SimDrawContainer(const FsViewPort &viewPort) const;
 	void SimDrawCrossDesignator(void) const;
 
 	void SimDrawGunAim(void) const;
 	YSRESULT SimCalculateGunAim(const FsAirplane *&target,YsVec3 &aim) const;
-	void SimDrawBombingAim(const ActualViewMode &actualViewMode) const;
+	void SimDrawBombingAim(const FsViewPort &viewPort) const;
 
 	void SimBlastSound(YSBOOL demoMode);
 
@@ -896,7 +895,6 @@ public:
 	// fom[0] will always be the wingLeader, and position to be YsOrigin()
 	void GetAircraftInFormation(YsArray <YsPair <FsAirplane *,YsVec3>,16> &fom,FsAirplane *wingLeader) const;
 
-	void GetProjection(class FsProjection &prj,const ActualViewMode &actualViewMode);
 	void SetSubWindowViewMode(int windowId,FSVIEWMODE viewMode);
 	void FlipShowUserNameMasterSwitch(void);
 	YSBOOL GetShowUserNameMasterSwitch(void) const;
@@ -942,9 +940,6 @@ public:
 	void OpenChatDialog(void);
 	void CloseChatDialog(void);
 	void OpenLoadingDialog(YSBOOL fuel,YSBOOL ammo,const FsAirplane &air);
-
-	//FOV and screen size (pixels) check for draw culling purposes
-	bool IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const;
 };
 
 #include "gui/fsmissiongoal.h"

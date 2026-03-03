@@ -17,7 +17,7 @@
 
 
 
-void FsSimulation::SimDrawBlackout(const ActualViewMode &actualViewMode) const
+void FsSimulation::SimDrawBlackout(const FsViewPort &viewPort) const
 {
 	auto ysD3dDev=YsD3dDevice::GetCurrent();
 
@@ -29,7 +29,7 @@ void FsSimulation::SimDrawBlackout(const ActualViewMode &actualViewMode) const
 	const double minusGLimit=-5.0;
 
 	if(cfgPtr->blackOut==YSTRUE &&
-	   actualViewMode.actualViewMode==FSCOCKPITVIEW &&
+		viewPort.viewMode==FSCOCKPITVIEW &&
 	   playerPlane!=NULL &&
 	   playerPlane->IsAlive()==YSTRUE &&
 	   (playerPlane->Prop().GetG()>plusGLimit ||

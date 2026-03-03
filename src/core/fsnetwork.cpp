@@ -7921,7 +7921,7 @@ void FsSimulation::NetFreeMemoryWhenPossible
 		}
 		
 		
-		camera->mainViewMode->nextViewMode=FSCOCKPITVIEW;  // 2004/09/04
+		camera->mainViewPort->nextViewMode=FSCOCKPITVIEW;  // 2004/09/04
 		focusAir=NULL;  // 2004/09/04
 		focusAir2=NULL; // 2004/09/04
 
@@ -8796,7 +8796,7 @@ YSRESULT FsSimulation::ServerState_StandBy(
 				escKeyCount=0;
 				terminate=YSFALSE;
 				SetPlayerAirplane(NULL);
-				camera->mainViewMode->nextViewMode=FSGHOSTVIEW;
+				camera->mainViewPort->nextViewMode=FSGHOSTVIEW;
 
 				std::queue <FSNET_CONSOLE_COMMAND> emptyQueue;
 				svr.commandQueue.swap(emptyQueue);
@@ -9996,7 +9996,7 @@ YSRESULT FsSimulation::ClientState_StandBy(
 					escKeyCount=0;
 					terminate=YSFALSE;
 					SetPlayerAirplane(NULL);
-					camera->mainViewMode->nextViewMode=FSGHOSTVIEW;
+					camera->mainViewPort->nextViewMode=FSGHOSTVIEW;
 
 					std::queue <FSNET_CONSOLE_COMMAND> emptyQueue;
 					cli.commandQueue.swap(emptyQueue);
@@ -10242,7 +10242,7 @@ YSRESULT FsSimulation::ClientState_SideWindow(const double &,class FsSocketClien
 
 	cli.GetSideWindowAssignment(air,hdg,pch);
 
-	camera->mainViewMode->nextViewMode=FSCOCKPITVIEW;
+	camera->mainViewPort->nextViewMode=FSCOCKPITVIEW;
 	userInput.viewHdg=hdg;
 	userInput.viewPch=pch;
 	if(air!=NULL && air->IsAlive()==YSTRUE)
@@ -10599,12 +10599,12 @@ printf("%s %d\n",__FUNCTION__,__LINE__);
 					   air->netNextState.tRemote>air->netPrevState.tRemote)
 					{
 						air->Prop().NetworkDecode(air->netPrevState,air->netNextState);
-						if (air == GetPlayerAirplane() && (camera->mainViewMode->viewMode == FSCOCKPITVIEW || camera->mainViewMode->viewMode == FSADDITIONALAIRPLANEVIEW))
+						if (air == GetPlayerAirplane() && (camera->mainViewPort->viewMode == FSCOCKPITVIEW || camera->mainViewPort->viewMode == FSADDITIONALAIRPLANEVIEW))
 						{
 							//To prevent jitter in observer mode cockpit view
 							//Currently camera is decided before packets are processed for some reason
 							//Reupdate camera position after aircraft position changes
-							DecideAllViewPoint(0.0);
+							camera->UpdateCameras(this, 0.0);
 						}
 					}
 				}

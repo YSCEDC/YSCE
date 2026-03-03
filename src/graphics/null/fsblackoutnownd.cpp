@@ -6,7 +6,7 @@
 
 
 
-void FsSimulation::SimDrawBlackout(const ActualViewMode &) const
+void FsSimulation::SimDrawBlackout(const FsViewPort &) const
 {
 }
 

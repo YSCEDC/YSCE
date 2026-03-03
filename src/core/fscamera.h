@@ -1,13 +1,13 @@
 #ifndef FSCAMERA_IS_INCLUDED
 #define FSCAMERA_IS_INCLUDED
 
-#include "ysclass.h"
-#include "ysclass11.h"
+#include <ysclass.h>
+#include <ysclass11.h>
 #include "fsdef.h"
 #include "fscontrol.h"
 #include "fsopengl.h"
 
-class ActualViewMode
+class FsViewPort
 {
 public:
 	enum FSVIEWMODE
@@ -56,7 +56,8 @@ public:
 		FSADDITIONALAIRPLANEVIEW_CABIN,  // 2011/02/01 For additional view in cabin
 
 		FSVIEWUP,
-		FSVIEWDOWN 					//Added 01/10/2023 - for subwindow view up and down
+		FSVIEWDOWN, 					//Added 01/10/2023 - for subwindow view up and down
+		VIEW_UNSPECIFIED
 	};
 
 	class ViewModeAndIndex
@@ -90,14 +91,16 @@ public:
 	YsVec3 viewPoint;
 	YsAtt3 viewAttitude;
 	YsMatrix4x4 viewMat;
-	double viewMagFix;
-	double prevViewMagFix;
+	double zoomViewMode; //viewMagFix
+	double prevZoomViewMode;
+	//double zoomThisPort;
+	//double prevZoomThisPort; //For subwindow-only view zoom, eg. targetting pod
 	YSBOOL isViewPointInCloud;
 	double fogVisibility;
 	YSBOOL centerThisCamera;
-	FsProjection projection;
-	FsProjection prevProjection;
-	double viewTargetDist;
+	FsProjection* projection;
+	FsProjection* prevProjection;
+	double offsetRadius; //viewTargetDist
 	int cockpitViewId;
 
 	enum
@@ -107,7 +110,7 @@ public:
 	YsMatrix4x4 shadowProjMat[NUM_SHADOW_MAP];
 	YsMatrix4x4 shadowViewMat[NUM_SHADOW_MAP];
 
-	ActualViewMode();
+	FsViewPort();
 };
 
 #include "fssimulation.h"
@@ -116,16 +119,20 @@ public:
 class FsSimulation;
 //class FsFlightConfig;
 
-class FsCamera : public ActualViewMode
+class FsCamera : public FsViewPort
 {
 public:
 	FsCamera();
+
 	double ghostViewSpeed;
 	double timeStep;
 	YsVec3 viewRefPoint;
-	ActualViewMode *mainViewMode;
-	ActualViewMode *subViewModeL;
-	ActualViewMode *subViewModeR;
+	double zoomUser; //viewMagUser
+	double prevZoomUser;
+	FsViewPort* activeViewPort;
+	FsViewPort* mainViewPort;
+	FsViewPort* leftViewPort;
+	FsViewPort* rightViewPort;
 
 	FsSimulation* sim;
 	FsFlightControl userInput;
@@ -136,32 +143,29 @@ public:
 
 	void ProcessGhostView(FsSimulation *sim, const double dt);
 
-	void DecideAllViewPoint(FsSimulation *sim, double dt);
-	void DecideViewpointAndCheckIsInCloud(ActualViewMode* actualViewMode, FSVIEWMODE nextViewMode, YsVec2i drawingAreaSize);
-	void DecideViewpoint(ActualViewMode& actualViewMode, FSVIEWMODE viewmode) const;
-	void DecideViewpoint_Air(ActualViewMode& actualViewMode, FSVIEWMODE viewmode,  FsAirplane* playerPlane) const;
+	void UpdateCameras(FsSimulation *sim, double dt);
+	void ApplyViewportEnvironment(FsViewPort* viewPort, YsVec2i drawingAreaSize);
+	void UpdateViewport(FsViewPort& viewPort, FSVIEWMODE next);
+	void DecideViewMode(FsViewPort& viewPort, FSVIEWMODE viewmode,  FsAirplane* playerPlane);
 	void AutoViewChange(FSVIEWMODE viewMode);
 	void UpdateViewpointAccordingToPlayerAirplane(const double& distance, YSBOOL reset);
+
+	void UpdateProjections(void);
+	void SelectViewPort(int port);
+	void CalculateProjection(FsViewPort& viewPort);
+	void GetStandardProjection(class FsProjection& prj);
+
+	bool IsObjectVisible(const FsSimulation* sim, FsExistence* obj, FsViewPort& viewPort);
 
 	/*void ViewingControl(FSBUTTONFUNCTION fnc, FSUSERCONTROL userControl);
 	YsArray <ViewModeAndIndexAndPosition> MakeAvailableILSView(void) const;
 	YsArray <ViewModeAndIndexAndPosition> MakeAvailableTowerView(void) const;
 	YsArray <const FsAirplane*> MakeAvailableViewTargetAirplane(YSBOOL includePlayer) const;
 
-	void SimAutoViewChange(FSVIEWMODE mainWindowViewMode, const double dt);
-	void SimDecideViewpointAndCheckIsInCloud(ActualViewMode& actualViewMode, FSVIEWMODE viewmode, YsVec2i drawingAreaSize);
-	void SimDecideViewpoint(ActualViewMode& actualViewMode, FSVIEWMODE viewmode) const;
-	void SimDecideViewpoint_Air(ActualViewMode& actualViewMode, FSVIEWMODE viewmode, const FsAirplane* playerPlane) const;
-	void SimDecideViewpoint_Gnd(ActualViewMode& actualViewMode, FSVIEWMODE viewmode, const FsGround* playerGround) const;
-	void SimDecideViewpoint_Common(ActualViewMode& actualViewMode, FSVIEWMODE viewmode) const;
-	YSBOOL CheckNoExtAirView(void) const;
-
-	void GetProjection(class FsProjection& prj, const ActualViewMode& actualViewMode);
-	void SetSubWindowViewMode(int windowId, FSVIEWMODE viewMode);
-
-	static void GetStandardProjection(class FsProjection& prj);
-
-	void UpdateViewpointAccordingToPlayerAirplane(const double& distance, YSBOOL reset);*/
+	void FsMakeBlackOutPolygon(YsGLVertexBuffer2D &vtxBuf,YsGLColorBuffer &colBuf,const double G)
+	void SimDrawBlackoutGl(const viewPort &viewPort) const
+	void SimDrawBlackoutGl2(const viewPort &viewPort) const
+	*/
 
 };
 
