@@ -27,6 +27,40 @@ public:
 	YSBOOL showInstPanelIfAvailable;
 };
 
+enum FSONBOARDVIEWPOINTTYPE
+{
+	ONBOARD_PILOT,
+	ONBOARD_WIZZO,
+	ONBOARD_TURRET,
+	ONBOARD_PASSENGER,
+	ONBOARD_EXTERNAL,
+	ONBOARD_WEAPONVIEW
+};
+class FsOnboardViewpoint
+{
+public:
+	int id;
+	YsString name;
+	//int turretId;
+
+	YsVec3 pos;
+	YsAtt3 att;
+	//double zoomDefault;
+	//double zoomMax;
+	//double zoomMin;
+	//FSONBOARDVIEWPOINTTYPE vpType;
+
+	YSBOOL hasHUD;
+	YSBOOL hasInstrument;
+	YSBOOL overwriteHUD;
+	YSBOOL overwriteInstrument;
+	YSBOOL isInterior;
+	//YSBOOL isOccupied;
+	//YSBOOL canControl;
+	//YSBOOL canShoot;
+	FsOnboardViewpoint();
+};
+
 ////////////////////////////////////////////////////////////////
 
 class FsVehicleProperty : public FsProperty
@@ -61,6 +95,7 @@ protected:
 	YsVec3 chCockpit;          // Cockpit(?) Position
 	YsVec3 chLookAt;
 	double chDefZoom;
+	YsArray <FsOnboardViewpoint> chOnboardViewList;
 	YsArray <FsAdditionalViewpoint> chExtraView;
 
 	YsArray <FsRotatingTurretProperty> chTurret;
@@ -87,6 +122,8 @@ public:
 
 	int GetNumAdditionalView(void) const;
 	const FsAdditionalViewpoint *GetAdditionalView(int id) const;
+	int GetNumOnboardViewpoint(void) const;
+	const FsOnboardViewpoint* GetOnboardViewpoint(int id) const;
 
 	YSBOOL IsRacingCheckPoint(void) const;
 	void SetIsRacingCheckPoint(YSBOOL flg);

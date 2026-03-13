@@ -7922,8 +7922,8 @@ void FsSimulation::NetFreeMemoryWhenPossible
 		
 		
 		camera->mainViewPort->nextViewMode=FSCOCKPITVIEW;  // 2004/09/04
-		focusAir=NULL;  // 2004/09/04
-		focusAir2=NULL; // 2004/09/04
+		camera->viewTargetObj=NULL;  // 2004/09/04
+		camera->viewSourceObj=NULL; // 2004/09/04
 
 		netNoActivityTime=0.0;
 	}

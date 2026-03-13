@@ -8,6 +8,11 @@ static const double frustrumFarDist = 18000.0;
 
 FsViewPort::FsViewPort()
 {
+	parentObject = NULL;
+	lookAtObj = NULL;
+	lookFromObj = NULL;
+	lookAtPos = YsOrigin();
+	lookFromPos = YsOrigin();
 	viewMode = FSCOCKPITVIEW;
 	nextViewMode = FSCOCKPITVIEW;
 	viewHdg = 0.0;
@@ -15,19 +20,24 @@ FsViewPort::FsViewPort()
 
 	viewPoint = YsVec3::Origin();
 	viewAttitude = YsZeroAtt();
-
+	
 	zoomViewMode = 1.0;
 	prevZoomViewMode = 1.0;
 	isViewPointInCloud = YSFALSE;
 	fogVisibility = 0.0;
 	centerThisCamera = YSTRUE;
 	offsetRadius = 0.0;
-	cockpitViewId = 0;
+	onboardViewId = 0;
 
 	projection = new FsProjection;
 	projection->zoomProjection = 1.0;
 
 	prevProjection = projection;
+}
+
+void FsViewPort::SetParentObject(FsExistence* obj)
+{
+	parentObject = obj;
 }
 
 FsCamera::FsCamera()
@@ -43,6 +53,19 @@ FsCamera::FsCamera()
 	prevZoomUser = 1.0;
 	sim = nullptr;
 	cfg = nullptr;
+	towerViewId = 0;
+	towerViewPos = YsOrigin();
+	ilsViewId = 0;
+	ilsViewPos = YsOrigin();
+	viewTargetObj = NULL;
+	viewSourceObj = NULL;
+	viewTargetPos = YsOrigin();
+	viewSourcePos = YsOrigin();
+	viewOffSetAngle = YsZeroAtt();
+	viewOffsetPos = YsOrigin();
+	viewOffsetRadius = 1.0;
+	//mainViewPort->SetParentObject(sim->GetPlayerObject());
+	//Generate list of ILS and towers here
 }
 
 FsCamera::~FsCamera()
@@ -309,8 +332,29 @@ void FsCamera::UpdateCameras(FsSimulation *currentSim)
 	userInput = sim->GetUserInput();
 	cfg = sim->GetConfig();
 
+	for (int i = 0; i < ilsList.GetN(); i++)
+	{
+		ilsList[i].Update();
+	}
 	//ViewingControl()
 
+}
+
+void FsCamera::SelectViewPort(int port)
+{
+	switch (port)
+	{
+	default:
+	case 0:
+		activeViewPort = mainViewPort;
+		break;
+	case 1:
+		activeViewPort = leftViewPort;
+		break;
+	case 2:
+		activeViewPort = rightViewPort;
+		break;
+	}
 }
 
 void FsCamera::PrepareViewPort(int port)
@@ -327,6 +371,10 @@ void FsCamera::PrepareViewPort(int port)
 	case 2:
 		activeViewPort = rightViewPort;
 		break;
+	}
+	//if (activeViewPort->parentObject == NULL)
+	{
+		activeViewPort->parentObject = sim->GetPlayerObject();
 	}
 	CalculateProjection(*activeViewPort);
 	UpdateViewPort(*activeViewPort, VIEW_UNSPECIFIED);
@@ -345,13 +393,12 @@ void FsCamera::UpdateViewPort(FsViewPort &viewPort, FSVIEWMODE next)
 	viewPort.zoomViewMode=1.0;       // by Default
 	viewPort.viewHdg=userInput.viewHdg;  // by Default
 	viewPort.viewPch=userInput.viewPch;  // by Default
-	viewPort.centerThisCamera = YSTRUE; //default to centered, overwrite where required
 
 	if(viewPort.viewMode!=FSGHOSTVIEW)
 	{
 		if (playerPlane != NULL)
 		{
-			DecideViewMode(viewPort, viewPort.viewMode, playerPlane);
+			DecideViewMode(viewPort, playerPlane);
 		}
 		else if (sim->CheckNoExtAirView() != YSTRUE)
 		{
@@ -361,7 +408,7 @@ void FsCamera::UpdateViewPort(FsViewPort &viewPort, FSVIEWMODE next)
 			{
 				if (air != NULL)
 				{
-					DecideViewMode(viewPort, viewPort.viewMode, air);
+					DecideViewMode(viewPort, air);
 				}
 			}
 		}
@@ -400,67 +447,81 @@ void FsCamera::ApplyViewPortEnvironment(FsViewPort* viewPort, YsVec2i drawingAre
 	sim->SimCalculateShadowMap(vp, drawingAreaSize);
 }
 
-void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *playerPlane)
+void FsCamera::DecideViewMode(FsViewPort &viewPort, FsAirplane *playerPlane)
 {
-	const FsAirplane* focus1 = sim->GetFocusAir();
-	const FsAirplane* focus2 = sim->GetFocusAir2();
-	const FsGround* focusGnd = sim->GetFocusGnd();
-	switch(mode)
+	viewPort.lookAtObj = viewTargetObj;
+	viewPort.lookFromObj = viewSourceObj;
+	viewPort.lookFromPos = viewSourcePos;
+	viewPort.lookAtPos = viewTargetPos;
+	double relDist;
+	YsAtt3 relAtt;
+	sim->GetRelView(relDist, relAtt);
+
+	switch(viewPort.viewMode)
 	{
+	///////////////////////////////// Onboard
 	case FSCOCKPITVIEW:
-		if(playerPlane->Prop().IsActive()==YSTRUE || playerPlane->Prop().IsAlive()==YSFALSE)
-		{
-			viewPort.centerThisCamera = cfg->centerCameraPerspective;
-			YsVec3 cock;
-			YsMatrix4x4 mat;
-			playerPlane->Prop().GetCockpitPosition(cock);
-
-			mat.Translate(playerPlane->GetPosition());
-			mat.Rotate(playerPlane->GetAttitude());
-
-			viewPort.viewPoint=mat*cock;
-
-			viewPort.viewAttitude=playerPlane->GetAttitude();
-
-			const YsAtt3 &neutAtt=playerPlane->Prop().GetNeutralHeadDirection();
-
-			viewPort.viewAttitude.YawLeft(neutAtt.h());
-			viewPort.viewAttitude.NoseUp(neutAtt.p());
-			viewPort.viewAttitude.SetB(viewPort.viewAttitude.b()+neutAtt.b());
-
-			viewPort.viewAttitude.YawLeft(userInput.viewHdg);
-			viewPort.viewAttitude.NoseUp(userInput.viewPch);
-		}
-		else
-		{
-			UpdateViewPort(viewPort,FSFIXEDPOINTPLAYERPLANE);
-		}
-		break;
+	case FSADDITIONALAIRPLANEVIEW:
+	case FSADDITIONALAIRPLANEVIEW_CABIN:
+	case FSBACKMIRRORVIEW:
+	case FS45DEGREERIGHTVIEW:
+	case FS45DEGREELEFTVIEW:
+	case FS90DEGREERIGHTVIEW:
+	case FS90DEGREELEFTVIEW:
+	case FSVIEWUP:
+	case FSVIEWDOWN:
 	case FSBOMBINGVIEW:
-		if(playerPlane->Prop().IsActive()==YSTRUE || playerPlane->Prop().IsAlive()==YSFALSE)
+		if (viewPort.parentObject != nullptr && (viewPort.parentObject->CommonProp().IsActive() == YSTRUE))
 		{
-			YsVec3 cock;
-			YsMatrix4x4 mat;
-			playerPlane->Prop().GetCockpitPosition(cock);
+			YsBool3 lock;
+			lock.Set(YSFALSE, YSFALSE, YSFALSE);
+			YsAtt3 dir = YsZeroAtt();
+			if (viewPort.onboardViewId == 0)
+			{
+				dir = ((FsAirplane*)viewPort.parentObject)->Prop().GetNeutralHeadDirection();
+			}
 
-			mat.Translate(playerPlane->GetPosition());
-			mat.Rotate(playerPlane->GetAttitude());
-
-			viewPort.viewPoint=mat*cock;
-
-			viewPort.viewAttitude=playerPlane->GetAttitude();
-			viewPort.viewAttitude.NoseUp(-YsDegToRad(60.0));
-		}
-		else
-		{
-			UpdateViewPort(viewPort,FSFIXEDPOINTPLAYERPLANE);
+			switch (viewPort.viewMode)
+			{
+			case FSBACKMIRRORVIEW:
+				dir.Set(YsPi, 0.0, 0.0);
+				lock.Set(YSTRUE, YSTRUE, YSTRUE);
+				break;
+			case FS45DEGREERIGHTVIEW:
+				dir.Set(-YsPi / 4.0, 0.0, 0.0);
+				lock.Set(YSTRUE, YSTRUE, YSTRUE);
+				break;
+			case FS45DEGREELEFTVIEW:
+				dir.Set(YsPi / 4.0, 0.0, 0.0);
+				lock.Set(YSTRUE, YSTRUE, YSTRUE);
+				break;
+			case FS90DEGREERIGHTVIEW:
+				dir.Set(-YsPi / 2.0, 0.0, 0.0);
+				lock.Set(YSTRUE, YSTRUE, YSTRUE);
+				break;
+			case FS90DEGREELEFTVIEW:
+				dir.Set(YsPi / 2.0, 0.0, 0.0);
+				lock.Set(YSTRUE, YSTRUE, YSTRUE);
+				break;
+			case FSVIEWUP:
+				dir.Set(0.0, YsPi / 2.0, 0.0);
+				lock.Set(YSTRUE, YSTRUE, YSTRUE);
+				break;
+			case FSVIEWDOWN:
+				dir.Set(0.0, -YsPi / 2.0, 0.0);
+				lock.Set(YSTRUE, YSTRUE, YSTRUE);
+				break;
+			}
+			
+			CalculateOnboardView(viewPort, viewPort.parentObject, viewPort.onboardViewId, YsOrigin(), dir, lock);
 		}
 		break;
+	///////////////////////////////// Flyby
 	case FSOUTSIDEPLAYERPLANE:
 		{
-			viewPort.viewPoint=playerPlane->GetPosition();
+			viewPort.viewPoint=viewPort.parentObject->GetPosition();
 
-			auto dist=playerPlane->GetApproximatedCollideRadius()*2.0;
+			auto dist= viewPort.parentObject->GetApproximatedCollideRadius()*2.0;
 
 			YsVec3 tmp;
 			tmp=viewRefPoint-viewPort.viewPoint;
@@ -474,7 +535,7 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 	case FSFIXEDPOINTPLAYERPLANE:
 		{
 			YsVec3 tmp;
-			tmp=(playerPlane->GetPosition())-viewRefPoint;
+			tmp=(viewPort.parentObject->GetPosition())-viewRefPoint;
 
 			viewPort.viewPoint=viewRefPoint+tmp*5.0/6.0;
 			viewPort.viewAttitude.SetForwardVector(tmp);
@@ -483,75 +544,59 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 	case FSVARIABLEPOINTPLAYERPLANE:
 		{
 			YsVec3 tmp;
-			tmp=playerPlane->Prop().GetPosition();
+			tmp= viewPort.parentObject->CommonProp().GetPosition();
 			viewPort.viewPoint=viewRefPoint;
 			tmp=tmp-viewPort.viewPoint;
 			viewPort.viewAttitude.SetForwardVector(tmp);
 		}
 		break;
+	///////////////////////////////// External
 	case FSFROMTOPOFPLAYERPLANE:
-		viewPort.viewPoint=playerPlane->Prop().GetPosition();
-		viewPort.viewPoint.Set(viewPort.viewPoint.x(),viewPort.viewPoint.y()+30.0,viewPort.viewPoint.z()-10.0);
-		viewPort.viewAttitude.Set(0.0,YsDegToRad(-72),0.0);
+		if (viewPort.lookAtObj->IsActive() == YSTRUE)
+		{
+			YsBool3 local, lock;
+			local.Set(YSTRUE, YSFALSE, YSFALSE);
+			lock.Set(YSTRUE, YSTRUE, YSTRUE);
+			YsAtt3 dir;
+			dir.Set(YsPi/2, YsDegToRad(-72), 0.0);
+			CalculateExternalView(viewPort, viewPort.parentObject->GetApproximatedCollideRadius() * 2.0 * viewOffsetRadius, dir, viewOffSetAngle, local, lock, YSFALSE);
+		}
 		break;
 	case FSPLAYERPLANEFROMSIDE:
+		if (viewPort.lookAtObj->IsActive() == YSTRUE)
 		{
-			const double offsetRadius =playerPlane->Prop().GetOutsideRadius()*1.5;
-
-			YsVec3 offset;
-			viewPort.viewPoint=playerPlane->Prop().GetPosition();
-			viewPort.viewAttitude=playerPlane->Prop().GetAttitude();
-			viewPort.viewAttitude.Set(viewPort.viewAttitude.h()+YsPi/2.0,0.0,0.0);
-			offset.Set(0.0,0.0,-offsetRadius);
-			offset.RotateXZ(viewPort.viewAttitude.h());
-			viewPort.viewPoint+=offset;
-
-			viewPort.offsetRadius = offsetRadius;
+			YsBool3 local, lock;
+			local.Set(YSTRUE, YSFALSE, YSFALSE);
+			lock.Set(YSTRUE, YSTRUE, YSTRUE);
+			YsAtt3 dir;
+			dir.Set(YsPi / 2.0, 0.0, 0.0);
+			CalculateExternalView(viewPort, viewPort.parentObject->GetApproximatedCollideRadius() * 2.0 * viewOffsetRadius, dir, viewOffSetAngle, local, lock, YSFALSE);
 		}
 		break;
-	case FSANOTHERAIRPLANE:
-		if(sim->CheckNoExtAirView()!=YSTRUE)  // 2006/06/11
+	case FSOUTSIDEPLAYER2:
+		if (viewPort.lookAtObj->IsActive() == YSTRUE)
 		{
-			if(focus1!=NULL && focus1 !=playerPlane && focus1->IsAlive()==YSTRUE)
-			{
-				const YsVec3 &p1= focus1->GetPosition();
-				const YsAtt3 &a1= focus1->GetAttitude();
-
-				const YsVec3 &p2=playerPlane->GetPosition();
-				// const YsAtt3 &a2=playerPlane->GetAttitude();
-
-				const double radius= focus1->GetApproximatedCollideRadius();
-
-				const YsVec3 viewDir=p2-p1;
-
-				viewPort.viewAttitude.SetForwardVector(viewDir);
-				viewPort.viewAttitude.SetB(a1.b());
-
-				if(YSTRUE== focus1->Prop().IsOnGround() && radius*sin(viewPort.viewAttitude.p())> focus1->Prop().GetGroundStandingHeight()/2.0)
-				{
-					const double p=asin((focus1->Prop().GetGroundStandingHeight()/2.0)/radius);
-					viewPort.viewAttitude.SetP(p);
-				}
-
-				YsVec3 off(1.0,0.6,-3.0);
-				off*=radius;
-				viewPort.viewAttitude.Mul(off,off); // off=att.GetMatrix()*off;
-
-				viewPort.offsetRadius =off.GetLength();
-
-				viewPort.viewPoint=p1+off;
-
-				if(viewPort.viewPoint.y()< focus1->Prop().GetGroundElevation()+0.5)
-				{
-					viewPort.viewPoint.SetY(focus1->Prop().GetGroundElevation()+0.5);
-				}
-
-				return;
-			}
+			YsBool3 local, lock;
+			local.Set(YSFALSE, YSFALSE, YSFALSE);
+			lock.Set(YSFALSE, YSFALSE, YSFALSE);
+			YsAtt3 dir;
+			dir.Set(0.0, YsDegToRad(-15), 0.0);
+			CalculateExternalView(viewPort, relDist * viewPort.parentObject->GetApproximatedCollideRadius()*viewOffsetRadius, dir, viewOffSetAngle, local, lock, YSFALSE);
 		}
-		// If no other airplane is found,
-		UpdateViewPort(viewPort,FSCOCKPITVIEW);  // Actual viewmode will be automatically set
 		break;
+	case FSOUTSIDEPLAYER3:
+		if (viewPort.lookAtObj->IsActive() == YSTRUE)
+		{
+			YsBool3 local, lock;
+			local.Set(YSTRUE, YSTRUE, YSTRUE);
+			lock.Set(YSFALSE, YSFALSE, YSFALSE);
+			YsAtt3 dir;
+			dir.Set(0.0, YsDegToRad(-15), 0.0);
+
+			CalculateExternalView(viewPort, relDist * viewPort.parentObject->GetApproximatedCollideRadius()* viewOffsetRadius, dir, viewOffSetAngle, local, lock, cfg->externalCameraDelay);
+		}
+		break;
+	/////////////////////////////////// Weapon
 	case FSMISSILEVIEW:
 		{
 			YsVec3 &pos=viewPort.viewPoint;
@@ -575,11 +620,11 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 		{
 			YSRESULT res;
 			res=YSERR;
-			if(mode==FSMYWEAPONVIEW_OLD)
+			if(viewPort.viewMode ==FSMYWEAPONVIEW_OLD)
 			{
 				res=sim->FindOldestMissileOfOwner(viewPort.viewPoint,viewPort.viewAttitude,playerPlane);
 			}
-			else if(mode==FSMYWEAPONVIEW_NEW)
+			else if(viewPort.viewMode ==FSMYWEAPONVIEW_NEW)
 			{
 				res= sim->FindNewestMissileOfOwner(viewPort.viewPoint,viewPort.viewAttitude,playerPlane);
 			}
@@ -603,24 +648,24 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 		}
 		break;
 	case FSLOCKEDTARGETVIEW:
-		if(playerPlane!=NULL)
+		if(viewPort.parentObject !=NULL)
 		{
 			const FsExistence *trg;
 			YsVec3 ccip;
 			viewPort.zoomViewMode = 40.0;
 
-			if((playerPlane->Prop().GetSelectedWeaponPerformance().targetAir == YSTRUE &&
-				sim->FindAirplane(playerPlane->Prop().GetAirTargetKey()) != NULL) ||
-				(playerPlane->Prop().GetSelectedWeaponPerformance().targetGnd == YSTRUE &&
-					sim->FindGround(playerPlane->Prop().GetGroundTargetKey()) != NULL))
+			if((((FsAirplane*)viewPort.parentObject)->Prop().GetSelectedWeaponPerformance().targetAir == YSTRUE &&
+				sim->FindAirplane(((FsAirplane*)viewPort.parentObject)->Prop().GetAirTargetKey()) != NULL) ||
+				(((FsAirplane*)viewPort.parentObject)->Prop().GetSelectedWeaponPerformance().targetGnd == YSTRUE &&
+					sim->FindGround(((FsAirplane*)viewPort.parentObject)->Prop().GetGroundTargetKey()) != NULL))
 			{
-				if(playerPlane->Prop().GetSelectedWeaponPerformance().targetAir != YSTRUE)
+				if(((FsAirplane*)viewPort.parentObject)->Prop().GetSelectedWeaponPerformance().targetAir != YSTRUE)
 				{
-					trg=sim->FindGround(playerPlane->Prop().GetGroundTargetKey());
+					trg=sim->FindGround(((FsAirplane*)viewPort.parentObject)->Prop().GetGroundTargetKey());
 				}
 				else //Prioritize air targets if weapon can target both
 				{
-					trg=sim->FindAirplane(playerPlane->Prop().GetAirTargetKey());
+					trg=sim->FindAirplane(((FsAirplane*)viewPort.parentObject)->Prop().GetAirTargetKey());
 				}
 
 				if(trg!=NULL)
@@ -628,28 +673,28 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 					double offsetRadius =trg->GetApproximatedCollideRadius()*1.5;
 
 					YsVec3 ev,uv;
-					ev=trg->GetPosition()-playerPlane->GetPosition();
+					ev=trg->GetPosition()-viewPort.parentObject->GetPosition();
 					ev.Normalize();
-					uv=playerPlane->GetAttitude().GetUpVector();
+					uv=viewPort.parentObject->GetAttitude().GetUpVector();
 					viewPort.viewPoint=trg->GetPosition()-ev* offsetRadius;
 					viewPort.viewAttitude.SetTwoVector(ev,uv);
 					viewPort.offsetRadius = offsetRadius;
 					return;
 				}
 			}
-			else if (playerPlane->Prop().GetSelectedWeaponPerformance().category == FSWEAPONCAT_FREEFALL &&
-				playerPlane->Prop().ComputeEstimatedBombLandingPosition(ccip, sim->GetWeather()) == YSOK)
+			else if (((FsAirplane*)viewPort.parentObject)->Prop().GetSelectedWeaponPerformance().category == FSWEAPONCAT_FREEFALL &&
+				((FsAirplane*)viewPort.parentObject)->Prop().ComputeEstimatedBombLandingPosition(ccip, sim->GetWeather()) == YSOK)
 			{
-				double offsetRadius = playerPlane->GetApproximatedCollideRadius();
+				double offsetRadius = viewPort.parentObject->GetApproximatedCollideRadius();
 				YsVec3 viewPos, viewDirec, cameraOffset, bombPos;
 				YsAtt3 viewAtt;
 
-				playerPlane->Prop().FindNextWeaponSlot(playerPlane->Prop().GetSelectedWeaponType(),bombPos);
-				bombPos = playerPlane->Prop().GetMatrix() * bombPos;
+				((FsAirplane*)viewPort.parentObject)->Prop().FindNextWeaponSlot(((FsAirplane*)viewPort.parentObject)->Prop().GetSelectedWeaponType(),bombPos);
+				bombPos = viewPort.parentObject->GetMatrix() * bombPos;
 				
 				viewDirec = ccip - bombPos;
 				viewAtt.SetForwardVector(viewDirec);
-				viewAtt.SetUpVector(playerPlane->Prop().GetAttitude().GetUpVector());
+				viewAtt.SetUpVector(viewPort.parentObject->GetAttitude().GetUpVector());
 
 				cameraOffset.Set(0.0, 0.0, offsetRadius);
 				viewAtt.Mul(cameraOffset, cameraOffset);
@@ -659,15 +704,15 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 				viewPort.offsetRadius = offsetRadius;
 				return;
 			}
-			else if(playerPlane->Prop().GetSelectedWeaponType()==FSWEAPON_GUN)
+			else if(((FsAirplane*)viewPort.parentObject)->Prop().GetSelectedWeaponType()==FSWEAPON_GUN)
 			{
-				if(playerPlane->Prop().GetHasPilotControlledTurret()==YSTRUE)
+				if(((FsAirplane*)viewPort.parentObject)->Prop().GetHasPilotControlledTurret()==YSTRUE)
 				{
 					YsVec3 dir;
-					playerPlane->Prop().GetFirstPilotControlledTurretPosition(viewPort.viewPoint);
-					playerPlane->Prop().GetFirstPilotControlledTurretDirection(dir);
+					((FsAirplane*)viewPort.parentObject)->Prop().GetFirstPilotControlledTurretPosition(viewPort.viewPoint);
+					((FsAirplane*)viewPort.parentObject)->Prop().GetFirstPilotControlledTurretDirection(dir);
 
-					viewPort.viewAttitude.SetTwoVector(dir,playerPlane->GetAttitude().GetUpVector());
+					viewPort.viewAttitude.SetTwoVector(dir, viewPort.parentObject->GetAttitude().GetUpVector());
 					return;
 				}
 				else
@@ -676,13 +721,13 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 					YsVec3 aim;
 					if(sim->PassGunAim(target,aim)==YSOK)
 					{
-						double offsetRadius =playerPlane->GetApproximatedCollideRadius();
+						double offsetRadius = viewPort.parentObject->GetApproximatedCollideRadius();
 
 						YsVec3 ev;
-						ev=aim-playerPlane->Prop().GetPosition();
+						ev=aim- viewPort.parentObject->GetPosition();
 						ev.Normalize();
-						viewPort.viewPoint=playerPlane->Prop().GetPosition()+ev* offsetRadius;
-						viewPort.viewAttitude.SetTwoVector(ev,playerPlane->GetAttitude().GetUpVector());
+						viewPort.viewPoint= viewPort.parentObject->GetPosition()+ev* offsetRadius;
+						viewPort.viewAttitude.SetTwoVector(ev, viewPort.parentObject->GetAttitude().GetUpVector());
 						viewPort.offsetRadius = offsetRadius;
 						return;
 					}
@@ -690,14 +735,14 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 					{
 						YsVec3 gunPos, gunAim, cameraOffset;
 						YsAtt3 gunDir;
-						double offsetRadius = playerPlane->GetApproximatedCollideRadius();
+						double offsetRadius = viewPort.parentObject->GetApproximatedCollideRadius();
 						cameraOffset.Set(0.0, 0.0, offsetRadius);
 
-						playerPlane->Prop().GetGunPosition(gunPos, gunAim);
-						gunPos = playerPlane->Prop().GetMatrix() * gunPos;
+						((FsAirplane*)viewPort.parentObject)->Prop().GetGunPosition(gunPos, gunAim);
+						gunPos = viewPort.parentObject->GetMatrix() * gunPos;
 						gunAim.Normalize();
-						playerPlane->Prop().GetAttitude().Mul(gunAim,gunAim);
-						gunDir.SetTwoVector(gunAim,playerPlane->Prop().GetAttitude().GetUpVector());
+						viewPort.parentObject->GetAttitude().Mul(gunAim,gunAim);
+						gunDir.SetTwoVector(gunAim, viewPort.parentObject->GetAttitude().GetUpVector());
 
 						viewPort.viewAttitude = gunDir;
 						viewPort.viewPoint = gunPos + gunAim* offsetRadius;
@@ -707,247 +752,62 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 				}
 			}
 
-			double offsetRadius =playerPlane->GetApproximatedCollideRadius();
+			double offsetRadius = viewPort.parentObject->GetApproximatedCollideRadius();
 
 			YsVec3 ev, vVec;
 			YsAtt3 vAtt;
-			playerPlane->Prop().GetVelocity(vVec);
+			viewPort.parentObject->CommonProp().GetVelocity(vVec);
 			vAtt.SetForwardVector(vVec);
-			viewPort.viewPoint=playerPlane->Prop().GetPosition();
+			viewPort.viewPoint= viewPort.parentObject->GetPosition();
 			viewPort.viewAttitude=vAtt;
 			ev=viewPort.viewAttitude.GetForwardVector();
 			viewPort.viewPoint+=ev* offsetRadius;
 			viewPort.offsetRadius = offsetRadius;
 		}
 		break;
+	/////////////////// Object to object
+	case FSANOTHERAIRPLANE:
 	case FSAIRTOAIRVIEW:
 	case FSAIRFROMAIRVIEW:
-		if(sim->CheckNoExtAirView()!=YSTRUE)  // 2006/06/11
+	case FSPLAYERTOGNDVIEW:
+	case FSGNDTOPLAYERVIEW:
+		if (sim->CheckNoExtAirView() != YSTRUE && viewPort.lookAtObj != NULL && viewPort.lookFromObj != NULL)
 		{
-			const FsAirplane *from=sim->GetFocusAir();
-			const FsAirplane *to=sim->GetFocusAir2();
-
-			if(focus1 !=NULL && focus2 !=NULL)
-			{
-				YsVec3 off;
-				const YsVec3 *p1,*p2;
-				const YsAtt3 *a1,*a2;
-				YsVec3 upv;
-
-				p1=&focus1->GetPosition();
-				a1=&focus1->GetAttitude();
-
-				p2=&focus2->GetPosition();
-				a2=&focus2->GetAttitude();
-
-				if(focus1->Prop().IsActive()==YSTRUE)
-				{
-					upv=a1->GetUpVector();
-				}
-				else
-				{
-					upv=a2->GetUpVector();
-				}
-
-				if(mode==FSAIRTOAIRVIEW)
-				{
-					viewPort.viewAttitude.SetTwoVector(*p2-*p1,upv);
-				}
-				else if(mode==FSAIRFROMAIRVIEW)
-				{
-					viewPort.viewAttitude.SetTwoVector(*p1-*p2,upv);
-				}
-
-				off.Set(1.0,0.6,-3.0);
-				off*= focus1->GetApproximatedCollideRadius();
-				viewPort.viewAttitude.Mul(off,off);  // off=att.GetMatrix()*off;
-				viewPort.offsetRadius =off.GetLength();
-
-				viewPort.viewPoint=*p1+off;
-				if(viewPort.viewPoint.y()<1.0)
-				{
-					viewPort.viewPoint.SetY(1.0);
-				}
-			}
-		}
-		else
-		{
-			UpdateViewPort(viewPort,FSCOCKPITVIEW);
+			CalculateObjectToObjectView(viewPort);
 		}
 		break;
+	///////////////////////// Point to object
 	case FSCARRIERVIEW:
-		if(NULL!=focusGnd && NULL != focus1)
+		if (viewPort.lookFromObj != NULL && viewPort.lookAtObj != NULL)
 		{
-			if(focusGnd !=NULL && focusGnd->IsAlive()==YSTRUE)
-			{
-				YsVec3 off;
-				YsMatrix4x4 mat;
-				mat.Initialize();
-				mat.Translate(focusGnd->GetPosition());
-				mat.Rotate(focusGnd->GetAttitude());
-
-				if(focusGnd->Prop().GetAircraftCarrierProperty()!=NULL)
-				{
-					off= focusGnd->Prop().GetAircraftCarrierProperty()->GetBridgePos();
-				}
-				else
-				{
-					off.Set(25.0,52.0,-28.0);
-				}
-
-				YsVec3 ofstAir= focus1->GetLookAtOffset();
-				focus1->GetAttitude().Mul(ofstAir,ofstAir);
-
-				viewPort.viewPoint=ofstAir+mat*off;
-				viewPort.offsetRadius =ofstAir.GetLength();
-
-				viewPort.zoomViewMode =2.0;
-
-				viewPort.viewAttitude.SetForwardVector(focus1->GetPosition()-viewPort.viewPoint);
-			}
-			else
-			{
-				UpdateViewPort(viewPort,FSCOCKPITVIEW);
-			}
+			CalculateCameraToObjectView(viewPort);
 		}
 		break;
 	case FSTOWERVIEW:
 	case FSTOWERVIEW_NOMAGNIFY:
+		if (viewPort.lookAtObj != NULL)
 		{
-			if(sim->GetFocusAir()!=NULL)
-			{
-				YsVec3 dir, towerPos;
-				towerPos = sim->GetTowerPos();
-				dir= sim->GetFocusAir()->GetPosition()-towerPos;
-				dir.Normalize();
-				viewPort.viewAttitude.SetForwardVector(dir);
-				viewPort.viewPoint= towerPos;
-
-				if(mode==FSTOWERVIEW)
-				{
-					viewPort.zoomViewMode =8.0;
-				}
-			}
-			else
-			{
-				UpdateViewPort(viewPort,FSCOCKPITVIEW);
-			}
+			CalculatePointToObjectView(viewPort);
 		}
 		break;
 	case FSAIRTOTOWERVIEW:
 	case FSAIRTOTOWERVIEWSOLO:
-		if(focus1!=NULL)
+		if (viewPort.lookFromObj != NULL)
 		{
-			double r;
-			YsVec3 dir, towerPos;
-			towerPos = sim->GetTowerPos();
-			dir= towerPos -focus1->GetPosition();
-			dir.Normalize();
-
-			r=focus1->GetRadiusFromCollision();
-
-			if(mode==FSAIRTOTOWERVIEW)
-			{
-				r*=3.0;
-			}
-			else
-			{
-				r*=1.5;
-			}
-
-			YsVec3 ofst=focus1->GetLookAtOffset();
-			focus1->GetAttitude().Mul(ofst,ofst);
-
-			viewPort.viewPoint=focus1->GetPosition()+ofst-dir*r;
-			if(viewPort.viewPoint.y()< towerPos.y())
-			{
-				viewPort.viewPoint.SetY(towerPos.y());
-			}
-			viewPort.offsetRadius =(ofst-dir*r).GetLength();
-
-			dir=focus1->GetPosition()-viewPort.viewPoint;
-
-			viewPort.viewAttitude.SetForwardVector(dir);
-			viewPort.viewAttitude.SetB(0.0);
-		}
-		else
-		{
-			UpdateViewPort(viewPort,FSCOCKPITVIEW);
+			CalculateObjectToPointView(viewPort);
 		}
 		break;
-	case FSPLAYERTOGNDVIEW:
-		if(focusGnd!=NULL)
-		{
-			YsVec3 gnd=focusGnd->GetCollisionShellCenter();
-
-			focusGnd->GetAttitude().Mul(gnd,gnd);
-			gnd+=focusGnd->GetPosition();
-
-			YsVec3 vec=gnd-playerPlane->GetPosition();
-			vec.Normalize();
-
-			const double rad=playerPlane->Prop().GetOutsideRadius()*2.0;
-			vec*=rad;
-			vec.SubY(rad*0.5);
-			if(vec.y()>=0.0)
-			{
-				vec.SetY(0.0);
-			}
-
-			viewPort.viewAttitude.SetForwardVector(vec);
-			viewPort.viewAttitude.SetB(0.0);
-			viewPort.offsetRadius =rad;
-
-			viewPort.viewPoint=playerPlane->GetPosition()-vec;
-		}
-		else
-		{
-			UpdateViewPort(viewPort,FSCOCKPITVIEW);
-		}
-		break;
-	case FSGNDTOPLAYERVIEW:
-		if(focusGnd!=NULL)
-		{
-			YsVec3 gnd=focusGnd->GetCollisionShellCenter();
-
-			focusGnd->GetAttitude().Mul(gnd,gnd);
-			gnd+=focusGnd->GetPosition();
-
-			YsVec3 vec=playerPlane->GetPosition()-gnd;
-			vec.Normalize();
-
-			const double rad=playerPlane->Prop().GetOutsideRadius()*2.0;
-			vec*=rad;
-			vec.SubY(rad*0.5);
-			if(vec.y()>=0.0)
-			{
-				vec.SetY(0.0);
-			}
-
-			viewPort.viewAttitude.SetForwardVector(vec);
-			viewPort.viewAttitude.SetB(0.0);
-			viewPort.offsetRadius =rad;
-
-			viewPort.viewPoint=playerPlane->GetPosition()-vec;
-		}
-		else
-		{
-			UpdateViewPort(viewPort,FSCOCKPITVIEW);
-		}
-		break;
+	////////////////////////////////// Other
 	case FSSPOTPLANEVIEW:
-		if(focus1!=NULL)
+		if(viewPort.lookAtObj !=NULL)
 		{
 			YsVec3 dir,fomCen;
-			double relDist;
-			YsAtt3 relAtt;
-			sim->GetRelView(relDist, relAtt);
-			double dist= relDist*focus1->GetApproximatedCollideRadius();
+			double dist= relDist* viewPort.lookAtObj->GetApproximatedCollideRadius();
 			dir.Set(0,0,dist);
 
 			relAtt.Mul(dir,dir);
 
-			viewPort.viewPoint=focus1->GetPosition()-dir;
+			viewPort.viewPoint= viewPort.lookAtObj->GetPosition()-dir;
 			viewPort.viewAttitude=relAtt;
 			viewPort.offsetRadius =dist;
 		}
@@ -966,164 +826,11 @@ void FsCamera::DecideViewMode(FsViewPort &viewPort,FSVIEWMODE mode, FsAirplane *
 	case FSTURNVIEW:
 		UpdateViewPort(viewPort,FSOUTSIDEPLAYER2);
 		break;
-	case FSOUTSIDEPLAYER2:
-	{
-		const FsExistence* toLookAt = focus1;
-		double relDist;
-		YsAtt3 relAtt;
-		sim->GetRelView(relDist,relAtt);
-		if (NULL != toLookAt)
-		{
-			YsVec3 dir, fomCen;
-			double dist;
-			dist = relDist * toLookAt->GetApproximatedCollideRadius();
-			dir.Set(0, 0, dist);
-
-			relAtt.Mul(dir, dir);
-
-			YsVec3 ofst = toLookAt->GetLookAtOffset();
-			toLookAt->GetAttitude().Mul(ofst, ofst);
-
-			viewPort.viewPoint = toLookAt->GetPosition() + ofst - dir;
-			viewPort.viewAttitude = relAtt;
-			viewPort.offsetRadius = dist;
-		}
-	}
-	break;
-	case FSOUTSIDEPLAYER3:
-	{
-		const FsExistence* toLookAt = focus1;
-		if (NULL != toLookAt)
-		{
-			YsVec3 ev[2], uv[2], newEv, newUv;
-			YsVec3 dir, fomCen;
-			double dist, relDist;
-			YsAtt3 relAtt;
-			sim->GetRelView(relDist, relAtt);
-			dist = relDist * toLookAt->GetApproximatedCollideRadius();
-			dir.Set(0, 0, dist);
-
-			YsAtt3 airAtt;
-			if (cfg->externalCameraDelay != YSTRUE || toLookAt->GetAttitudeFromRecord(airAtt, sim->CurrentTime() - 0.8) != YSOK)
-			{
-				airAtt = toLookAt->GetAttitude();
-			}
-			airAtt.Mul(newEv, relAtt.GetForwardVector());
-			airAtt.Mul(newUv, relAtt.GetUpVector());
-			viewPort.viewAttitude.SetTwoVector(newEv, newUv);
-			viewPort.viewAttitude.Mul(dir, dir);
-			viewPort.offsetRadius = dist;
-
-			YsVec3 ofst = toLookAt->GetLookAtOffset();
-			toLookAt->GetAttitude().Mul(ofst, ofst);
-
-			viewPort.viewPoint = toLookAt->GetPosition() + ofst - dir;
-		}
-	}
-	break;
-	case FSADDITIONALAIRPLANEVIEW:
-		if (playerPlane != NULL)
-		{
-			viewPort.centerThisCamera = cfg->centerCameraPerspective;
-			const FsAdditionalViewpoint* vp;
-			vp = playerPlane->GetAdditionalView(viewPort.cockpitViewId);
-			if (vp != NULL)
-			{
-				switch (vp->vpType)
-				{
-				default:
-				case FS_ADVW_INSIDE:
-					viewPort.viewMode = FSADDITIONALAIRPLANEVIEW;
-					break;
-				case FS_ADVW_OUTSIDE:
-					viewPort.viewMode = FSOUTSIDEPLAYER2;
-					break;
-				case FS_ADVW_CABIN:
-					viewPort.viewMode = FSADDITIONALAIRPLANEVIEW_CABIN;
-					break;
-				}
-
-				YsVec3 ev, uv;
-				playerPlane->GetMatrix().Mul(viewPort.viewPoint, vp->pos, 1.0);
-				playerPlane->GetMatrix().Mul(ev, vp->att.GetForwardVector(), 0.0);
-				playerPlane->GetMatrix().Mul(uv, vp->att.GetUpVector(), 0.0);
-				viewPort.viewAttitude.SetTwoVector(ev, uv);
-
-				viewPort.viewAttitude.YawLeft(userInput.viewHdg);
-				viewPort.viewAttitude.NoseUp(userInput.viewPch);
-			}
-			else
-			{
-				UpdateViewPort(viewPort, FSCOCKPITVIEW);
-			}
-		}
-		break;
-	case FSBACKMIRRORVIEW:
-	case FS45DEGREERIGHTVIEW:
-	case FS45DEGREELEFTVIEW:
-	case FS90DEGREERIGHTVIEW:
-	case FS90DEGREELEFTVIEW:
-	case FSVIEWUP:
-	case FSVIEWDOWN:
-		switch (mode)
-		{
-		case FSBACKMIRRORVIEW:
-			viewPort.viewHdg = YsPi;
-			viewPort.viewPch = 0.0;
-			break;
-		case FS45DEGREERIGHTVIEW:
-			viewPort.viewHdg = -YsPi / 4.0;
-			viewPort.viewPch = 0.0;
-			break;
-		case FS45DEGREELEFTVIEW:
-			viewPort.viewHdg = YsPi / 4.0;
-			viewPort.viewPch = 0.0;
-			break;
-		case FS90DEGREERIGHTVIEW:
-			viewPort.viewHdg = -YsPi / 2.0;
-			viewPort.viewPch = 0.0;
-			break;
-		case FS90DEGREELEFTVIEW:
-			viewPort.viewHdg = YsPi / 2.0;
-			viewPort.viewPch = 0.0;
-			break;
-		case FSVIEWUP:
-			viewPort.viewHdg = 0.0;
-			viewPort.viewPch = YsPi / 2.0;
-			break;
-		case FSVIEWDOWN:
-			viewPort.viewHdg = 0.0;
-			viewPort.viewPch = -YsPi / 2.0;
-			break;
-		}
-
-		if (playerPlane->IsActive() == YSTRUE || playerPlane->IsAlive() == YSFALSE)
-		{
-			YsVec3 cock = playerPlane->GetCockpitPosition();
-
-			YsMatrix4x4 mat;
-			mat.Translate(playerPlane->GetPosition());
-			mat.Rotate(playerPlane->GetAttitude());
-
-			viewPort.viewPoint = mat * cock;
-
-			viewPort.viewAttitude = playerPlane->GetAttitude();
-			viewPort.viewAttitude.YawLeft(viewPort.viewHdg);
-			viewPort.viewAttitude.NoseUp(viewPort.viewPch);
-
-			viewPort.viewMode = FSCOCKPITVIEW;
-		}
-		else
-		{
-			UpdateViewPort(viewPort, FSCOCKPITVIEW);
-		}
-		break;
 	}
 }
 
 void FsCamera::AutoViewChange(FSVIEWMODE viewMode)
 {
-	const FsAirplane* focusAir = sim->GetFocusAir();
 	double relDist;
 	YsAtt3 relAtt;
 	sim->GetRelView(relDist, relAtt);
@@ -1139,10 +846,9 @@ void FsCamera::AutoViewChange(FSVIEWMODE viewMode)
 		break;
 	case FSVARIABLEPOINTPLAYERPLANE:
 		{
-			auto playerPlane=sim->GetPlayerAirplane();
-			if(nullptr!=playerPlane)
+			if(nullptr!=activeViewPort->lookAtObj)
 			{
-				YsVec3 tmp=playerPlane->Prop().GetPosition();
+				YsVec3 tmp= activeViewPort->lookAtObj->CommonProp().GetPosition();
 
 				if((tmp-viewRefPoint).GetSquareLength()>=300.0*300.0)
 				{
@@ -1160,13 +866,12 @@ void FsCamera::AutoViewChange(FSVIEWMODE viewMode)
 		{
 			for(int i=0; i< sim->GetNumAirplane(); i++)
 			{
-				const FsAirplane *air=focusAir;
-				if(air==NULL || air==sim->GetPlayerAirplane() || air->IsAlive()!=YSTRUE)
+				if(viewTargetObj==NULL || viewTargetObj ==sim->GetPlayerAirplane() || viewTargetObj->IsAlive()!=YSTRUE)
 				{
-					focusAir=sim->FindNextAirplane(focusAir);
-					if(focusAir==NULL)
+					viewTargetObj =sim->FindNextAirplane((const FsAirplane*)viewTargetObj);
+					if(viewTargetObj ==NULL)
 					{
-						focusAir=sim->FindNextAirplane(focusAir);
+						viewTargetObj =sim->FindNextAirplane((const FsAirplane*)viewTargetObj);
 					}
 				}
 				else
@@ -1176,29 +881,30 @@ void FsCamera::AutoViewChange(FSVIEWMODE viewMode)
 			}
 		}
 		break;
+	case FSCARRIERVIEW:
 	case FSTOWERVIEW:
 	case FSTOWERVIEW_NOMAGNIFY:
 	case FSAIRTOTOWERVIEW:
 	case FSAIRTOTOWERVIEWSOLO:
-		if(focusAir==NULL)
+		if(viewTargetObj ==NULL)
 		{
-			focusAir=sim->FindNextAirplane(NULL);
+			viewTargetObj =sim->FindNextAirplane(NULL);
 		}
 		break;
 	case FSSPOTPLANEVIEW:
-		if(focusAir!=NULL)
+		if(viewTargetObj !=NULL)
 		{
 			YsVec3 dir;
 			double dist;
-			dist= relDist *focusAir->GetApproximatedCollideRadius();
+			dist= relDist * viewTargetObj->GetApproximatedCollideRadius();
 			dir.Set(0,0,dist);
 
 			YsVec3 ev1,ev2;
-			ev1=focusAir->GetAttitude().GetForwardVector();
+			ev1= viewTargetObj->GetAttitude().GetForwardVector();
 			ev2=relAtt.GetForwardVector();
 
 			relAtt.Mul(dir,dir); // dir=relViewAtt.GetMatrix()*dir;
-			relAtt.SetB((ev1*ev2)*focusAir->GetAttitude().b()/2.0);
+			relAtt.SetB((ev1*ev2)* viewTargetObj->GetAttitude().b()/2.0);
 		}
 		break;
 	case FSVERTICALORBITINGVIEW:
@@ -1213,33 +919,370 @@ void FsCamera::AutoViewChange(FSVIEWMODE viewMode)
 	}
 }
 
-void FsCamera::UpdateViewpointAccordingToPlayerAirplane(const double &distance,YSBOOL reset)
+void FsCamera::CalculateOnboardView(FsViewPort& viewPort, FsExistence* focus, int viewIdx, YsVec3 posOffset, YsAtt3 attOffset, YsBool3 locked)
 {
-	const YsAtt3 *att;
-	const YsVec3 *pos;
-	FsAirplane *playerPlane;
-
-	playerPlane=sim->GetPlayerAirplane();
-	if(playerPlane!=NULL)
+	if (viewPort.parentObject != NULL)
 	{
-		pos=&playerPlane->GetPosition();
-
-		if(reset==YSTRUE || (*pos-viewRefPoint).GetSquareLength()>=distance*distance)
+		if (viewIdx < viewPort.parentObject->CommonProp().GetNumOnboardViewpoint())
 		{
-			YsVec3 offset;
-			att=&playerPlane->GetAttitude();
-			offset.Set(20.0,5.0,distance/4.0);
-			att->Mul(offset,offset);
-			viewRefPoint=*pos+offset;
-			if(viewRefPoint.y()<5.0)
+			YsVec3 pos;
+			YsAtt3 att;
+
+			const FsOnboardViewpoint* onboard;
+			onboard = viewPort.parentObject->CommonProp().GetOnboardViewpoint(viewIdx);
+
+			pos = onboard->pos + posOffset;
+			att = onboard->att;
+			att.AddH(attOffset.h());
+			att.AddP(attOffset.p());
+			att.AddB(attOffset.b());
+			viewPort.viewMode = FSCOCKPITVIEW;
+
+			YsMatrix4x4 mat = viewPort.parentObject->GetMatrix();
+
+			viewPort.viewPoint = mat * pos;
+
+			viewPort.viewAttitude = viewPort.parentObject->GetAttitude();
+			viewPort.viewAttitude.YawLeft(att.h());
+			viewPort.viewAttitude.NoseUp(att.p());
+			viewPort.viewAttitude.SetB(viewPort.viewAttitude.b() + att.b());
+
+			if (locked.x != YSTRUE)
 			{
-				viewRefPoint.Set(viewRefPoint.x(),5.0,viewRefPoint.z());
+				viewPort.viewAttitude.YawLeft(userInput.viewHdg);
+			}
+			if (locked.y != YSTRUE)
+			{
+				viewPort.viewAttitude.NoseUp(userInput.viewPch);
 			}
 		}
+		else if (viewIdx == 99) //Temporary hardcode for bombing view. Make better weapon seeker view handling later
+		{
+			viewPort.viewMode = FSBOMBINGVIEW;
+			YsVec3 cock;
+			YsMatrix4x4 mat;
+			cock = viewPort.parentObject->GetCockpitPosition();
+
+			mat.Translate(viewPort.parentObject->GetPosition());
+			mat.Rotate(viewPort.parentObject->GetAttitude());
+
+			viewPort.viewPoint = mat * cock;
+
+			viewPort.viewAttitude = viewPort.parentObject->GetAttitude();
+			viewPort.viewAttitude.NoseUp(-YsDegToRad(60.0));
+		}
+		else
+		{
+			viewPort.onboardViewId = 0;
+		}
+
 	}
 }
 
-void FsCamera::ProcessGhostView(FsSimulation* sim, const double dt)
+void FsCamera::CalculateFlybyView(FsViewPort& viewPort, double range, double resetRange)
+{
+}
+
+void FsCamera::CalculateExternalView(FsViewPort& viewPort, double radius, YsAtt3 neutral, YsAtt3 offset, YsBool3 local, YsBool3 locked, YSBOOL delay)
+{
+	YsAtt3 airAtt, pointing;
+	YsVec3 pos;
+
+	if (delay != YSTRUE || viewPort.parentObject->GetAttitudeFromRecord(airAtt, sim->CurrentTime() - 0.1) != YSOK)
+	{
+		airAtt = viewPort.parentObject->GetAttitude();
+	}
+	
+	pointing.Set(airAtt.h() * local.x, airAtt.p() * local.y, airAtt.b() * local.z);
+	pointing.YawLeft(neutral.h() + offset.h() * locked.InvX());
+	pointing.NoseUp(neutral.p() + offset.p() * locked.InvY());
+	pointing.AddB(neutral.b() + offset.b() * locked.InvZ());
+
+	pos = pointing.GetForwardVector() * radius;
+	
+
+	viewPort.viewPoint = viewPort.parentObject->CommonProp().GetPosition() - pos;
+	viewPort.viewAttitude = pointing;
+}
+
+void FsCamera::CalculateWeaponView(FsViewPort& viewPort, FsWeapon* wep, YSBOOL direction)
+{
+}
+
+void FsCamera::CalculateChaseView(FsViewPort& viewPort, FsExistence* lookAt)
+{
+}
+
+void FsCamera::CalculateObjectToObjectView(FsViewPort& viewPort)
+{
+	//if (sim->CheckNoExtAirView() != YSTRUE)  // 2006/06/11
+		//{
+		//	if(viewSourceAir !=NULL && viewSourceAir !=parent && viewSourceAir->IsAlive()==YSTRUE)
+		//	{
+		//		const YsVec3 &p1= viewSourceAir->GetPosition();
+		//		const YsAtt3 &a1= viewSourceAir->GetAttitude();
+
+		//		const YsVec3 &p2= viewPort.lookAtObj->GetPosition();
+		//		// const YsAtt3 &a2=playerPlane->GetAttitude();
+
+		//		const double radius= viewSourceAir->GetApproximatedCollideRadius();
+
+		//		const YsVec3 viewDir=p2-p1;
+
+		//		FsAirplane* source = (FsAirplane*)viewSourceAir;
+
+		//		viewPort.viewAttitude.SetForwardVector(viewDir);
+		//		viewPort.viewAttitude.SetB(a1.b());
+		//		
+		//		if(YSTRUE== source->Prop().IsOnGround() && radius*sin(viewPort.viewAttitude.p())> source->Prop().GetGroundStandingHeight()/2.0)
+		//		{
+		//			const double p=asin((source->Prop().GetGroundStandingHeight()/2.0)/radius);
+		//			viewPort.viewAttitude.SetP(p);
+		//		}
+
+		//		YsVec3 off(1.0,0.6,-3.0);
+		//		off*=radius;
+		//		viewPort.viewAttitude.Mul(off,off); // off=att.GetMatrix()*off;
+
+		//		viewPort.offsetRadius =off.GetLength();
+
+		//		viewPort.viewPoint=p1+off;
+
+		//		if(viewPort.viewPoint.y()< source->Prop().GetGroundElevation()+0.5)
+		//		{
+		//			viewPort.viewPoint.SetY(source->Prop().GetGroundElevation()+0.5);
+		//		}
+
+		//		return;
+		//	}
+		//}
+		//// If no other airplane is found,
+		//UpdateViewPort(viewPort,FSCOCKPITVIEW);  // Actual viewmode will be automatically set
+		
+
+	//if (sim->CheckNoExtAirView() != YSTRUE)  // 2006/06/11
+		//{
+		//	//const FsAirplane *from=sim->GetFocusAir();
+		//	//const FsAirplane *to=sim->GetFocusAir2();
+
+		//	if(viewPort.lookAtObj !=NULL && viewSourceAir !=NULL)
+		//	{
+		//		YsVec3 off;
+		//		const YsVec3 *p1,*p2;
+		//		const YsAtt3 *a1,*a2;
+		//		YsVec3 upv;
+
+		//		p1=&viewPort.lookAtObj->GetPosition();
+		//		a1=&viewPort.lookAtObj->GetAttitude();
+
+		//		p2=&viewSourceAir->GetPosition();
+		//		a2=&viewSourceAir->GetAttitude();
+
+		//		if(viewPort.lookAtObj->CommonProp().IsActive()==YSTRUE)
+		//		{
+		//			upv=a1->GetUpVector();
+		//		}
+		//		else
+		//		{
+		//			upv=a2->GetUpVector();
+		//		}
+
+		//		if(viewPort.viewMode ==FSAIRTOAIRVIEW)
+		//		{
+		//			viewPort.viewAttitude.SetTwoVector(*p2-*p1,upv);
+		//		}
+		//		else if(viewPort.viewMode ==FSAIRFROMAIRVIEW)
+		//		{
+		//			viewPort.viewAttitude.SetTwoVector(*p1-*p2,upv);
+		//		}
+
+		//		off.Set(1.0,0.6,-3.0);
+		//		off*= viewPort.lookAtObj->GetApproximatedCollideRadius();
+		//		viewPort.viewAttitude.Mul(off,off);  // off=att.GetMatrix()*off;
+		//		viewPort.offsetRadius =off.GetLength();
+
+		//		viewPort.viewPoint=*p1+off;
+		//		if(viewPort.viewPoint.y()<1.0)
+		//		{
+		//			viewPort.viewPoint.SetY(1.0);
+		//		}
+		//	}
+		//}
+		//else
+		//{
+		//	UpdateViewPort(viewPort,FSCOCKPITVIEW);
+		//}
+	/*if(viewPort.lookAtObj !=NULL)
+		{
+			YsVec3 gnd= viewPort.lookAtObj->GetCollisionShellCenter();
+
+			viewPort.lookAtObj->GetAttitude().Mul(gnd,gnd);
+			gnd+= viewPort.lookAtObj->GetPosition();
+
+			YsVec3 vec=gnd-viewSourceAir->GetPosition();
+			vec.Normalize();
+
+			const double rad= viewSourceAir->CommonProp().GetOutsideRadius()*2.0;
+			vec*=rad;
+			vec.SubY(rad*0.5);
+			if(vec.y()>=0.0)
+			{
+				vec.SetY(0.0);
+			}
+
+			viewPort.viewAttitude.SetForwardVector(vec);
+			viewPort.viewAttitude.SetB(0.0);
+			viewPort.offsetRadius =rad;
+
+			viewPort.viewPoint= viewSourceAir->GetPosition()-vec;
+		}
+		else
+		{
+			UpdateViewPort(viewPort,FSCOCKPITVIEW);
+		}*/
+
+	//if (viewSourceGnd != NULL)
+	//{
+	//	YsVec3 gnd = viewSourceGnd->GetCollisionShellCenter();
+
+	//	viewSourceGnd->GetAttitude().Mul(gnd, gnd);
+	//	gnd += viewSourceGnd->GetPosition();
+
+	//	YsVec3 vec = viewPort.lookAtObj->GetPosition() - gnd;
+	//	vec.Normalize();
+
+	//	const double rad = viewPort.lookAtObj->CommonProp().GetOutsideRadius() * 2.0;
+	//	vec *= rad;
+	//	vec.SubY(rad * 0.5);
+	//	if (vec.y() >= 0.0)
+	//	{
+	//		vec.SetY(0.0);
+	//	}
+
+	//	viewPort.viewAttitude.SetForwardVector(vec);
+	//	viewPort.viewAttitude.SetB(0.0);
+	//	viewPort.offsetRadius = rad;
+
+	//	viewPort.viewPoint = viewPort.lookAtObj->GetPosition() - vec;
+	//}
+	//else
+	//{
+	//	UpdateViewPort(viewPort, FSCOCKPITVIEW);
+	//}
+}
+
+void FsCamera::CalculateCameraToObjectView(FsViewPort& viewPort)
+{
+	/*if(NULL!=viewSourceGnd && NULL != viewPort.lookAtObj)
+		{
+			if(viewSourceGnd !=NULL && viewSourceGnd->IsAlive()==YSTRUE)
+			{
+				YsVec3 off;
+				YsMatrix4x4 mat;
+				mat.Initialize();
+				mat.Translate(viewSourceGnd->GetPosition());
+				mat.Rotate(viewSourceGnd->GetAttitude());
+				FsGround* source = (FsGround*)viewSourceGnd;
+				if(source->Prop().GetAircraftCarrierProperty()!=NULL)
+				{
+					off= source->Prop().GetAircraftCarrierProperty()->GetBridgePos();
+				}
+				else
+				{
+					off.Set(25.0,52.0,-28.0);
+				}
+
+				YsVec3 ofstAir= viewPort.lookAtObj->GetLookAtOffset();
+				viewPort.lookAtObj->GetAttitude().Mul(ofstAir,ofstAir);
+
+				viewSourcePos = mat * off;
+				viewTargetPos = viewPort.lookAtObj->GetPosition() + ofstAir;
+
+
+
+				viewPort.viewAttitude.SetForwardVector(viewTargetPos-viewSourcePos);
+			}
+			else
+			{
+				UpdateViewPort(viewPort,FSCOCKPITVIEW);
+			}
+		}*/
+}
+
+void FsCamera::CalculatePointToObjectView(FsViewPort& viewPort)
+{
+	/*{
+			if(viewPort.lookAtObj !=NULL)
+			{
+				YsVec3 dir;
+				dir= viewPort.lookAtObj->GetPosition()-viewSourcePos;
+				dir.Normalize();
+				viewPort.viewAttitude.SetForwardVector(dir);
+				viewPort.viewPoint=viewSourcePos;
+
+				if(viewPort.viewMode ==FSTOWERVIEW)
+				{
+					viewPort.zoomViewMode =8.0;
+				}
+			}
+			else
+			{
+				UpdateViewPort(viewPort,FSCOCKPITVIEW);
+			}
+		}*/
+}
+
+void FsCamera::CalculateObjectToPointView(FsViewPort& viewPort)
+{
+	/*if(viewSourceAir!=NULL)
+		{
+			double r;
+			YsVec3 dir;
+			dir= viewTargetPos- viewSourceAir->GetPosition();
+			dir.Normalize();
+
+			r= viewSourceAir->GetRadiusFromCollision();
+
+			if(viewPort.viewMode ==FSAIRTOTOWERVIEW)
+			{
+				r*=3.0;
+			}
+			else
+			{
+				r*=1.5;
+			}
+
+			YsVec3 ofst= viewSourceAir->GetLookAtOffset();
+			viewSourceAir->GetAttitude().Mul(ofst,ofst);
+
+			viewPort.viewPoint= viewSourceAir->GetPosition()+ofst-dir*r;
+			if(viewPort.viewPoint.y()< towerViewPos.y())
+			{
+				viewPort.viewPoint.SetY(towerViewPos.y());
+			}
+			viewPort.offsetRadius =(ofst-dir*r).GetLength();
+
+			dir= viewSourceAir->GetPosition()-viewPort.viewPoint;
+
+			viewPort.viewAttitude.SetForwardVector(dir);
+			viewPort.viewAttitude.SetB(0.0);
+		}
+		else
+		{
+			UpdateViewPort(viewPort,FSCOCKPITVIEW);
+		}*/
+}
+
+void FsCamera::CalculatePointToPointView(FsViewPort& viewPort, YsVec3 from, YsVec3 to)
+{
+}
+
+void FsCamera::CalculateConstantRotationView(FsViewPort& viewPort, YsAtt3 rot)
+{
+
+}
+
+void FsCamera::CalculateGhostView(FsSimulation* sim, const double dt)
 {
 	FsFlightControl *userInput = &sim->GetUserInput();
 	auto &viewPoint= mainViewPort->viewPoint;
@@ -1307,106 +1350,147 @@ void FsCamera::ProcessGhostView(FsSimulation* sim, const double dt)
 	}
 }
 
-/*
-void FsCamera::ViewingControl(FSBUTTONFUNCTION fnc, FSUSERCONTROL userControl)
+void FsCamera::UpdateViewpointAccordingToPlayerAirplane(const double& distance, YSBOOL reset)
 {
-	const int dir = (YSTRUE != FsGetKeyState(FSKEY_SHIFT) ? 1 : -1);
+	const YsAtt3* att;
+	const YsVec3* pos;
 
+	if (activeViewPort->lookAtObj != NULL)
+	{
+		pos = &activeViewPort->lookAtObj->GetPosition();
+
+		if (reset == YSTRUE || (*pos - viewRefPoint).GetSquareLength() >= distance * distance)
+		{
+			YsVec3 offset;
+			att = &activeViewPort->lookAtObj->GetAttitude();
+			offset.Set(20.0, 5.0, distance / 4.0);
+			att->Mul(offset, offset);
+			viewRefPoint = *pos + offset;
+			if (viewRefPoint.y() < 5.0)
+			{
+				viewRefPoint.Set(viewRefPoint.x(), 5.0, viewRefPoint.z());
+			}
+		}
+	}
+}
+
+void FsCamera::SelectNextView(FSBUTTONFUNCTION fnc, FSUSERCONTROL userControl)
+{
+	printf("ViewingControl | ");
+	const int dir = (YSTRUE != FsGetKeyState(FSKEY_SHIFT) ? 1 : -1);
+	double viewDist;
+	YsAtt3 viewAtt;
+	sim->GetRelView(viewDist, viewAtt);
+	YsArray <ViewModeAndIndexAndPosition> fillerA, fillerB;
 	switch (fnc)
 	{
+	case FSBTF_LOOKLEFT: //This is unsmooth because each function call is discrete. To smooth it, need to update view vector in FsSimulation
+		viewOffSetAngle.AddH(-0.05);
+		break;
+	case FSBTF_LOOKRIGHT:
+		viewOffSetAngle.AddH(0.05);
+		break;
+	case FSBTF_LOOKUP:
+		viewOffSetAngle.AddP(-0.05);
+		break;
+	case FSBTF_LOOKDOWN:
+		viewOffSetAngle.AddP(0.05);
+		break;
+	case FSBTF_LOOKFORWARD:
+		viewOffsetRadius /= 1.05;
+		break;
+	case FSBTF_LOOKBACK:
+		viewOffsetRadius *= 1.05;
+		break;
 	case FSBTF_COCKPITVIEW:
 	{
-		const FsExistence* playerObj = GetPlayerObject();
+		printf("Cockpit");
+		viewOffSetAngle = YsZeroAtt();
+		viewOffsetRadius = 1.0;
+		FsExistence* playerObj = sim->GetPlayerObject();
+		activeViewPort->parentObject = playerObj;
+		
 		if (playerObj != NULL)
 		{
-			YsArray <ViewModeAndIndex> viewModeAndIndex;
-			viewModeAndIndex.Increment();
-			viewModeAndIndex.Last().Set(FSCOCKPITVIEW, 0);
-
-			if (playerObj->GetType() == FSEX_AIRPLANE)
+			YSBOOL bombLoaded = ((FsAirplane*)activeViewPort->parentObject)->Prop().FreeFallBombIsLoaded() > 0 ? YSTRUE : YSFALSE;
+			if (activeViewPort->onboardViewId < activeViewPort->parentObject->CommonProp().GetNumOnboardViewpoint()-1 &&
+				(activeViewPort->viewMode == FSCOCKPITVIEW ||
+				 activeViewPort->viewMode == FSADDITIONALAIRPLANEVIEW ||
+				 activeViewPort->viewMode == FSADDITIONALAIRPLANEVIEW_CABIN ||
+				 activeViewPort->viewMode == FSBOMBINGVIEW))
 			{
-				const FsAirplane* air = (const FsAirplane*)playerObj;
-				for (int idx = 0; idx < air->Prop().GetNumAdditionalView(); ++idx)
-				{
-					viewModeAndIndex.Increment();
-					viewModeAndIndex.Last().Set(FSADDITIONALAIRPLANEVIEW, idx);
-				}
-				if (air->Prop().FreeFallBombIsLoaded() > 0)
-				{
-					viewModeAndIndex.Increment();
-					viewModeAndIndex.Last().Set(FSBOMBINGVIEW, 0);
-				}
+				activeViewPort->onboardViewId++;
 			}
-			else if (playerObj->GetType() == FSEX_GROUND)
+			else if (activeViewPort->viewMode != FSCOCKPITVIEW && activeViewPort->viewMode != FSBOMBINGVIEW)
 			{
-				const FsGround* gnd = (const FsGround*)playerObj;
-				for (int idx = 0; idx < gnd->Prop().GetNumAdditionalView(); ++idx)
+				activeViewPort->onboardViewId = 0;
+			}
+			else
+			{
+				if (bombLoaded == YSTRUE && activeViewPort->onboardViewId != 99) //This is janky and needs to be updated
 				{
-					viewModeAndIndex.Increment();
-					viewModeAndIndex.Last().Set(FSADDITIONALAIRPLANEVIEW, idx);
+					activeViewPort->onboardViewId = 99;
+				}
+				else
+				{
+					activeViewPort->onboardViewId = 0;
 				}
 			}
 
-			FSVIEWMODE nextViewMode = FSCOCKPITVIEW;
-			int nextAdditionalAirplaneViewId = 0;
-			const int curIndex = (mainWindowViewmode == FSADDITIONALAIRPLANEVIEW ? mainWindowAdditionalAirplaneViewId : 0);
-			for (int idx = 0; idx < viewModeAndIndex.GetN(); ++idx)
-			{
-				if (mainWindowViewmode == viewModeAndIndex[idx].viewmode &&
-					curIndex == viewModeAndIndex[idx].refIndex)
-				{
-					nextViewMode = viewModeAndIndex.GetCyclic(idx + dir).viewmode;
-					nextAdditionalAirplaneViewId = viewModeAndIndex.GetCyclic(idx + dir).refIndex;
-					break;
-				}
-			}
-			mainWindowViewmode = nextViewMode;
-			mainWindowAdditionalAirplaneViewId = nextAdditionalAirplaneViewId;
+			activeViewPort->nextViewMode = FSCOCKPITVIEW;
+			viewSourceObj = NULL;
+			viewTargetObj = NULL;
 		}
 	}
 	break;
 	case FSBTF_OUTSIDEPLAYERVIEW:
-		if (GetPlayerAirplane() != NULL)
+		printf("OutsidePlayer");
+		viewOffSetAngle = YsZeroAtt();
+		viewOffsetRadius = 1.0;
+		if (activeViewPort->parentObject != NULL)
 		{
-			if (mainWindowViewmode == FSOUTSIDEPLAYERPLANE)
+			if (activeViewPort->viewMode == FSOUTSIDEPLAYERPLANE)
 			{
-				mainWindowViewmode = FSFIXEDPOINTPLAYERPLANE;
+				activeViewPort->nextViewMode = FSFIXEDPOINTPLAYERPLANE;
 				UpdateViewpointAccordingToPlayerAirplane(500.0, YSTRUE);
 			}
-			else if (mainWindowViewmode == FSFIXEDPOINTPLAYERPLANE)
+			else if (activeViewPort->viewMode == FSFIXEDPOINTPLAYERPLANE)
 			{
-				mainWindowViewmode = FSVARIABLEPOINTPLAYERPLANE;
+				activeViewPort->nextViewMode = FSVARIABLEPOINTPLAYERPLANE;
 				UpdateViewpointAccordingToPlayerAirplane(500.0, YSTRUE);
 			}
-			else if (mainWindowViewmode == FSVARIABLEPOINTPLAYERPLANE)
+			else if (activeViewPort->viewMode == FSVARIABLEPOINTPLAYERPLANE)
 			{
-				mainWindowViewmode = FSFROMTOPOFPLAYERPLANE;
+				activeViewPort->nextViewMode = FSFROMTOPOFPLAYERPLANE;
 				UpdateViewpointAccordingToPlayerAirplane(500.0, YSTRUE);
 			}
-			else if (mainWindowViewmode == FSFROMTOPOFPLAYERPLANE)
+			else if (activeViewPort->viewMode == FSFROMTOPOFPLAYERPLANE)
 			{
-				mainWindowViewmode = FSPLAYERPLANEFROMSIDE;
+				activeViewPort->nextViewMode = FSPLAYERPLANEFROMSIDE;
 			}
 			else
 			{
-				mainWindowViewmode = FSOUTSIDEPLAYERPLANE;
+				activeViewPort->nextViewMode = FSOUTSIDEPLAYERPLANE;
 			}
+			viewTargetObj = activeViewPort->parentObject;
+			viewSourceObj = NULL;
 		}
 		break;
 	case FSBTF_COMPUTERAIRPLANEVIEW:
+		printf("ComputerAirplane");
 		if (0 <= dir)
 		{
-			if (mainWindowViewmode == FSANOTHERAIRPLANE)
+			if (mainViewPort->viewMode == FSANOTHERAIRPLANE)
 			{
 				int i, nAir;
 
-				nAir = GetNumAirplane();
-				focusAir = FindNextAirplane(focusAir);
+				nAir = sim->GetNumAirplane();
+				viewSourceObj = sim->FindNextAirplane((const FsAirplane* )viewSourceObj);
 				for (i = 0; i < nAir; ++i)
 				{
-					if (focusAir == NULL || focusAir == GetPlayerObject() || focusAir->IsAlive() != YSTRUE)
+					if (viewSourceObj == NULL || viewSourceObj == sim->GetPlayerObject() || viewSourceObj->IsAlive() != YSTRUE)
 					{
-						focusAir = FindNextAirplane(focusAir);
+						viewSourceObj = sim->FindNextAirplane((const FsAirplane* )viewSourceObj);
 					}
 					else
 					{
@@ -1416,23 +1500,23 @@ void FsCamera::ViewingControl(FSBUTTONFUNCTION fnc, FSUSERCONTROL userControl)
 			}
 			else
 			{
-				mainWindowViewmode = FSANOTHERAIRPLANE;
-				focusAir = FindNextAirplane(NULL);
+				mainViewPort->nextViewMode = FSANOTHERAIRPLANE;
+				viewSourceObj = sim->FindNextAirplane(NULL);
 			}
 		}
 		else
 		{
-			if (mainWindowViewmode == FSANOTHERAIRPLANE)
+			if (mainViewPort->viewMode == FSANOTHERAIRPLANE)
 			{
 				int i, nAir;
 
-				nAir = GetNumAirplane();
-				focusAir = FindPrevAirplane(focusAir);
+				nAir = sim->GetNumAirplane();
+				viewSourceObj = sim->FindPrevAirplane((const FsAirplane* )viewSourceObj);
 				for (i = 0; i < nAir; ++i)
 				{
-					if (focusAir == NULL || focusAir == GetPlayerObject() || focusAir->IsAlive() != YSTRUE)
+					if (viewSourceObj == NULL || viewSourceObj == sim->GetPlayerObject() || viewSourceObj->IsAlive() != YSTRUE)
 					{
-						focusAir = FindPrevAirplane(focusAir);
+						viewSourceObj = sim->FindPrevAirplane((const FsAirplane* )viewSourceObj);
 					}
 					else
 					{
@@ -1442,155 +1526,189 @@ void FsCamera::ViewingControl(FSBUTTONFUNCTION fnc, FSUSERCONTROL userControl)
 			}
 			else
 			{
-				mainWindowViewmode = FSANOTHERAIRPLANE;
-				focusAir = FindPrevAirplane(NULL);
+				mainViewPort->nextViewMode = FSANOTHERAIRPLANE;
+				viewSourceObj = sim->FindPrevAirplane(NULL);
 			}
 		}
+		viewTargetObj = sim->GetPlayerObject();
 		break;
 	case FSBTF_WEAPONVIEW:
 	{
-		mainWindowViewmode = FSMISSILEVIEW;
+		mainViewPort->nextViewMode = FSMISSILEVIEW;
 	}
 	break;
 	case FSBTF_CHANGEAIRPLANE:
-		if (EveryAirplaneIsRecordedAirplane() == YSTRUE || userControl == FSUSC_VIEWCONTROLONLY)
+		printf("ChangeAirplane");
+		if (sim->EveryAirplaneIsRecordedAirplane() == YSTRUE || userControl == FSUSC_VIEWCONTROLONLY)
 		{
-			if (CheckNoExtAirView() != YSTRUE)  // 2006/07/19, corrected 2006/08/25
+			if (sim->CheckNoExtAirView() != YSTRUE)  // 2006/07/19, corrected 2006/08/25
 			{
+				activeViewPort->onboardViewId = 0;
 				int i, nAir;
 				FsAirplane* next;
 
-				nAir = GetNumAirplane();
-				next = GetPlayerAirplane();
+				nAir = sim->GetNumAirplane();
+				next = sim->GetPlayerAirplane();
 				for (i = 0; i < nAir; i++)
 				{
-					next = FindNextAirplane(next);
+					next = sim->FindNextAirplane(next);
 					if (next == NULL)
 					{
-						next = FindNextAirplane(next);
+						next = sim->FindNextAirplane(next);
 					}
 					if (next->IsAlive() == YSTRUE)
 					{
-						SetPlayerAirplane(next, YSFALSE);
+						activeViewPort->SetParentObject(next);
+						activeViewPort->lookAtObj = next;
+						sim->SetPlayerAirplane(next, YSFALSE);
 						break;
 					}
 				}
 			}
 			else
 			{
-				AddTimedMessage("The server does not allow third airplane view.");
+				sim->AddTimedMessage("The server does not allow third airplane view.");
 			}
 		}
 		break;
 	case FSBTF_ILSVIEW:
-	case FSBTF_CONTROLTOWERVIEW:
-	{
-		YsArray <ViewModeAndIndexAndPosition> view;
-		if (FSBTF_ILSVIEW == fnc)
+		printf("ILS");
+		sim->GetTowerILSArrays(fillerA, fillerB);
+		if (viewTargetObj != NULL)
 		{
-			view = MakeAvailableILSView();
-		}
-		else
-		{
-			view = MakeAvailableTowerView();
-		}
-		if (0 < view.GetN())
-		{
-			if (NULL == focusAir || (FSCARRIERVIEW != mainWindowViewmode && FSTOWERVIEW != mainWindowViewmode))
+			//Remove dead objects
+			YsArray <GroundCameraList> activeList = ilsList;
+			for (int i = 0; i < ilsList.GetN(); i++)
 			{
-				focusAir = GetPlayerAirplane();
-				if (NULL == focusAir || YSTRUE != focusAir->IsAlive())
+				int rem = 0;
+				if (activeList[i-rem].active == YSFALSE)
 				{
-					focusAir = FindFirstAliveAirplane(focusAir);
+					printf("Remove dead\n");
+					activeList.Delete(i - rem);
+					rem++;
 				}
 			}
-			if (NULL != focusAir)
+
+			//Reorder ilsList by distance
+			YsArray <double> dist(activeList.GetN(), NULL);
+			int distIdx = 0;
+			for (int idx = 0; idx < activeList.GetN(); ++idx)
 			{
-				YsArray <double> dist(view.GetN(), NULL);
-				for (int idx = 0; idx < view.GetN(); ++idx)
-				{
-					dist[idx] = (view[idx].pos - focusAir->GetPosition()).GetSquareLength();
-				}
-				YsQuickSort(dist.GetN(), dist.GetEditableArray(), view.GetEditableArray());
+				dist[idx] = (activeList[idx].pos - viewTargetObj->GetPosition()).GetSquareLength();
+			}
+			YsQuickSort(dist.GetN(), dist.GetEditableArray(), activeList.GetEditableArray());
 
-				FSVIEWMODE curMode = mainWindowViewmode;
-				int curIndex = 0;
-				if (FSCARRIERVIEW == mainWindowViewmode && NULL != focusGnd)
-				{
-					curIndex = (int)focusGnd->SearchKey();
-				}
-				else if (FSTOWERVIEW == mainWindowViewmode)
-				{
-					curIndex = towerViewId;
-				}
-
+			if (mainViewPort->viewMode == FSCARRIERVIEW && viewSourceObj != NULL)
+			{
+				printf("Next ILS\n");
 				YSSIZE_T nextIndex = 0;
-				for (YSSIZE_T idx = 0; idx < view.GetN(); ++idx)
+				for (YSSIZE_T idx = 0; idx < activeList.GetN(); ++idx)
 				{
-					if (curMode == view[idx].viewmode && curIndex == view[idx].refIndex)
+					if (viewSourceObj->SearchKey() == activeList[idx].searchKey)
 					{
-						nextIndex = (idx + view.GetN() + dir) % view.GetN();
+						nextIndex = (idx + activeList.GetN() + dir) % activeList.GetN();
 						break;
 					}
 				}
+				viewSourceObj = activeList[nextIndex].obj;
+				currentViewKey = activeList[nextIndex].searchKey;
+			}
+			else
+			{
+				printf("First ILS\n");
+				viewSourceObj = activeList[0].obj;
+				currentViewKey = activeList[0].searchKey;
+			}
 
-				auto& nextView = view[nextIndex];
-				if (FSCARRIERVIEW == nextView.viewmode)
+			mainViewPort->nextViewMode = FSCARRIERVIEW;
+			viewSourcePos = viewSourceObj->GetPosition();
+			viewTargetObj = sim->GetPlayerObject();
+		}
+		break;
+	case FSBTF_CONTROLTOWERVIEW:
+		printf("Tower");
+		sim->GetTowerILSArrays(fillerA, fillerB);
+		viewTargetObj = sim->GetPlayerObject();
+		if (viewTargetObj != NULL)
+		{
+			YsArray <TowerCameraList> activeList = towerList;
+			YsArray <double> dist(activeList.GetN(), NULL);
+			for (int idx = 0; idx < activeList.GetN(); ++idx)
+			{
+				dist[idx] = (activeList[idx].pos - viewTargetObj->GetPosition()).GetSquareLength();
+			}
+			YsQuickSort(dist.GetN(), dist.GetEditableArray(), activeList.GetEditableArray());
+
+			if (mainViewPort->viewMode == FSTOWERVIEW || mainViewPort->viewMode == FSTOWERVIEW_NOMAGNIFY)
+			{
+				YSSIZE_T nextIndex = 0;
+				for (YSSIZE_T idx = 0; idx < activeList.GetN(); ++idx)
 				{
-					focusGnd = FindGround((YSHASHKEY)nextView.refIndex);
-					if (NULL != focusGnd)
+					if (currentViewKey == activeList[idx].refKey)
 					{
-						mainWindowViewmode = FSCARRIERVIEW;
+						nextIndex = (idx + activeList.GetN() + dir) % activeList.GetN();
+						break;
 					}
 				}
-				else if (FSTOWERVIEW == nextView.viewmode)
-				{
-					mainWindowViewmode = FSTOWERVIEW;
-					towerViewId = nextView.refIndex;
-					towerViewPos = nextView.pos;
-				}
+				viewSourcePos = activeList[nextIndex].pos;
+				currentViewKey = activeList[nextIndex].refKey;
+			}
+			else
+			{
+				viewSourcePos = activeList[0].pos;
+				currentViewKey = activeList[0].refKey;
 			}
 		}
-	}
-	break;
-	case FSBTF_OUTSIDEPLAYERVIEW2:
-		if (mainWindowViewmode != FSOUTSIDEPLAYER2)
-		{
-			relViewAtt.SetB(0.0);
-			focusAir = GetPlayerAirplane();
-			relViewDist = 2.0;
-			mainWindowViewmode = FSOUTSIDEPLAYER2;
-		}
-		else
-		{
-			relViewDist *= 2;
-			if (relViewDist > 8.0) { relViewDist = 1.0; }
-		}
-		break;
-	case FSBTF_OUTSIDEPLAYERVIEW3:
-		if (mainWindowViewmode != FSOUTSIDEPLAYER3)
-		{
-			relViewAtt.SetB(0.0);
-			focusAir = GetPlayerAirplane();
-			relViewDist = 2.0;
-			mainWindowViewmode = FSOUTSIDEPLAYER3;
-		}
-		else
-		{
-			relViewDist *= 2;
-			if (relViewDist > 8.0) { relViewDist = 1.0; }
-		}
+		mainViewPort->nextViewMode = FSTOWERVIEW;
+		viewSourceObj = NULL;
 
 		break;
-	case FSBTF_GHOSTVIEW:
-	{
-		if (mainWindowViewmode != FSGHOSTVIEW)
+	case FSBTF_OUTSIDEPLAYERVIEW2:
+		printf("Outside2");
+		viewOffSetAngle = YsZeroAtt();
+		viewOffsetRadius = 1.0;
+		if (mainViewPort->viewMode != FSOUTSIDEPLAYER2)
 		{
-			mainWindowViewmode = FSGHOSTVIEW;
+			viewAtt.SetB(0.0);
+			viewDist = 2.0;
+			mainViewPort->nextViewMode = FSOUTSIDEPLAYER2;
+		}
+		else
+		{
+			viewDist *= 2;
+			if (viewDist > 8.0) { viewDist = 1.0; }
+		}
+		viewTargetObj = sim->GetPlayerAirplane();
+		viewSourceObj = NULL;
+		break;
+	case FSBTF_OUTSIDEPLAYERVIEW3:
+		printf("Outside3");
+		viewOffSetAngle = YsZeroAtt();
+		viewOffsetRadius = 1.0;
+		if (mainViewPort->viewMode != FSOUTSIDEPLAYER3)
+		{
+			viewAtt.SetB(0.0);
+			viewDist = 2.0;
+			mainViewPort->nextViewMode = FSOUTSIDEPLAYER3;
+		}
+		else
+		{
+			viewDist *= 2;
+			if (viewDist > 8.0) { viewDist = 1.0; }
+		}
+		viewTargetObj = sim->GetPlayerAirplane();
+		viewSourceObj = NULL;
+		break;
+	case FSBTF_GHOSTVIEW:
+		printf("Ghost");
+		if (mainViewPort->viewMode != FSGHOSTVIEW)
+		{
+			mainViewPort->nextViewMode = FSGHOSTVIEW;
 			ghostViewSpeed = 0.0;
 		}
-	}
-	break;
+		viewTargetObj = NULL;
+		viewSourceObj = NULL;
+		break;
 	case FSBTF_VIEWZOOM:
 		if (zoomUser < 12.0)
 		{
@@ -1604,9 +1722,9 @@ void FsCamera::ViewingControl(FSBUTTONFUNCTION fnc, FSUSERCONTROL userControl)
 		}
 		break;
 	case FSBTF_SWITCHVIEWTARGET:
-	{
+		printf("SwitchTarget");
 		const YSBOOL includePlayer = YSTRUE;
-		auto targetAirCandidate = MakeAvailableViewTargetAirplane(includePlayer);
+		auto targetAirCandidate = sim->GetAllAirplaneList();
 		if (0 < targetAirCandidate.GetN())
 		{
 			const int dir = (YSTRUE != FsGetKeyState(FSKEY_SHIFT) ? 1 : -1);
@@ -1614,18 +1732,19 @@ void FsCamera::ViewingControl(FSBUTTONFUNCTION fnc, FSUSERCONTROL userControl)
 			auto nextFocusAir = targetAirCandidate[0];
 			for (int idx = 0; idx < targetAirCandidate.GetN(); ++idx)
 			{
-				if (targetAirCandidate[idx] == focusAir)
+				if (targetAirCandidate[idx] == viewTargetObj)
 				{
 					nextFocusAir = targetAirCandidate.GetCyclic(idx + dir);
 					break;
 				}
 			}
-			focusAir = nextFocusAir;
+			mainViewPort->SetParentObject(sim->FindAirplane(nextFocusAir->SearchKey()));
+			viewTargetObj = sim->FindAirplane(nextFocusAir->SearchKey());
 		}
+		break;
 	}
-	break;
-	}
-}*/
+	printf("\n");
+}
 
 void FsCamera::UpdateProjections(void)
 {
@@ -1644,15 +1763,22 @@ void FsCamera::UpdateProjections(void)
 void FsCamera::CalculateProjection(FsViewPort& viewPort)
 {
 	int wid, hei;
-	const FsAirplane *playerPlane;
-	playerPlane = sim->GetPlayerAirplane();
+
+	if (viewPort.nextViewMode == FSCOCKPITVIEW && cfg->centerCameraPerspective == YSFALSE)
+	{
+		viewPort.centerThisCamera = YSFALSE;
+	}
+	else
+	{
+		viewPort.centerThisCamera = YSTRUE;
+	}
 
 	FsGetDrawingAreaSize(wid,hei);
 	YsVec2i drawingArea(wid, hei);
 
-	if(viewPort.centerThisCamera == YSFALSE && NULL != playerPlane)
+	if(viewPort.centerThisCamera == YSFALSE && viewPort.parentObject != NULL)
 	{
-		const YsVec2 scrnCen = playerPlane->Prop().GetScreenCenter();
+		const YsVec2 scrnCen = ((FsAirplane*)viewPort.parentObject)->Prop().GetScreenCenter();
 		viewPort.projection->cx = (int)((double)wid * (1.0 + scrnCen.x()) / 2.0);
 		viewPort.projection->cy = (int)((double)hei * (1.0 - scrnCen.y()) / 2.0);
 	}

@@ -8396,6 +8396,7 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 
 		if(cmd>=0)
 		{
+			FsOnboardViewpoint vp;
 			res=YSERR;
 			switch(cmd)
 			{
@@ -8590,6 +8591,14 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 				break;
 			case 52: // "COCKPITP"
 				res=FsGetVec3(chCockpit,ac-1,av+1);
+				vp.name.Set("COCKPITP");
+				vp.id = 0;
+				vp.att = YsZeroAtt();
+				FsGetVec3(vp.pos, ac - 1, av + 1);
+				vp.isInterior = YSTRUE;
+				vp.hasHUD = YSTRUE;
+				vp.hasInstrument = YSFALSE;
+				chOnboardViewList.Append(vp);
 				break;
 			case 53: // "REFTHRLD"
 				res=FsGetNonDimensional(refThrLanding,av[1]);
@@ -8881,6 +8890,8 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 				res=YSOK;
 				break;
 			case 116:  //"INSTPANL",  // Draw an instrument panel instead of a hud.
+				chOnboardViewList[0].hasInstrument = YSTRUE;
+				chOnboardViewList[0].hasHUD = YSFALSE;
 				chHasHud=YSFALSE;
 				chHasInstPanel=YSTRUE;
 				if(ac>=2)
@@ -9171,6 +9182,62 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 			case 144: // "EXCAMERA",  // Extra Camera
 				if(ac>=9)
 				{
+					vp.name.Set(av[1]);
+					if (FsGetVec3(vp.pos, ac - 2, av + 2) == YSOK &&
+						FsGetAtt3(vp.att, ac - 5, av + 5) == YSOK)
+					{
+						vp.isInterior = YSTRUE;
+						res = YSOK;
+
+						int commentPosition = 9999;
+
+						for (int i = 8; i < ac; ++i)
+						{
+							if (av[i][0] == '#')
+							{
+								commentPosition = i;
+							}
+						}
+
+						for (int i = 8; i < ac; ++i)
+						{
+							if (i >= commentPosition)
+							{
+								break;
+							}
+							if (0 == strcmp(av[i], "INSIDE"))
+							{
+								vp.isInterior = YSTRUE;
+								res = YSOK;
+							}
+							else if (0 == strcmp(av[i], "OUTSIDE"))
+							{
+								vp.isInterior = YSFALSE;
+								vp.hasHUD = YSFALSE;
+								vp.hasInstrument = YSFALSE;
+								res = YSOK;
+							}
+							else if (0 == strcmp(av[i], "CABIN"))
+							{
+								vp.isInterior = YSTRUE;
+								vp.hasHUD = YSFALSE;
+								vp.hasInstrument = YSFALSE;
+								res = YSOK;
+							}
+							else if (0 == strcmp(av[i], "NOHUD"))
+							{
+								vp.hasHUD = YSFALSE;
+								vp.overwriteHUD = YSTRUE;
+							}
+							else if (0 == strcmp(av[i], "NOINSTPANEL"))
+							{
+								vp.hasInstrument = YSFALSE;
+								vp.overwriteInstrument = YSTRUE;
+							}
+						}
+						vp.id = chOnboardViewList.GetN();
+						chOnboardViewList.Append(vp);
+					}
 					FsAdditionalViewpoint view;
 					view.name.Set(av[1]);
 					if(FsGetVec3(view.pos,ac-2,av+2)==YSOK &&
@@ -9308,6 +9375,7 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 				if(ac>=2)
 				{
 					res=FsGetBool(chUseBothHudAndInstPanel,av[1]);
+					chOnboardViewList[0].hasHUD = chUseBothHudAndInstPanel;
 					if(YSTRUE==chUseBothHudAndInstPanel)
 					{
 						if(YSTRUE!=chScreenCenterLocked)
@@ -9325,6 +9393,7 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 				if(ac>=4)
 				{
 					res=FsGetAtt3(chNeutralHeadAttitude,ac-1,av+1);
+					chOnboardViewList[0].att = chNeutralHeadAttitude;
 				}
 				else
 				{
@@ -9724,6 +9793,19 @@ YSRESULT FsAirplaneProperty::SendCommand(const char in[])
 				}
 				break;
 			}
+			
+			for (int q = chOnboardViewList.GetN()-1; q > 0; q--) //This is a janky patch to handle INSTPANL being defined after EXCAMERA in .dat
+			{
+				if (chOnboardViewList[q].overwriteHUD != YSTRUE && chOnboardViewList[q].isInterior == YSTRUE)
+				{
+					chOnboardViewList[q].hasHUD = chOnboardViewList[0].hasHUD;
+				}
+				if (chOnboardViewList[q].overwriteInstrument != YSTRUE && chOnboardViewList[q].isInterior == YSTRUE)
+				{
+					chOnboardViewList[q].hasInstrument = chOnboardViewList[0].hasInstrument;
+				}
+			}
+
 			if(res!=YSOK)
 			{
 				fsStderr.Printf("Error in parameter:%s\n",in);

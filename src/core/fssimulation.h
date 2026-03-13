@@ -228,10 +228,10 @@ protected:
 	YSBOOL gndSpecular;
 
 	FSREPLAYMODE replayMode;
-	const FsAirplane *focusAir,*focusAir2;
-	const FsGround *focusGnd;
-	int towerViewId;
-	YsVec3 towerViewPos;
+	//const FsAirplane *focusAir,*focusAir2;
+	//const FsGround *focusGnd;
+	//int towerViewId;
+	//YsVec3 towerViewPos;
 	
 	YsVec3 viewRefPoint;
 	YsAtt3 viewAttitudeTransition;
@@ -329,15 +329,18 @@ public:
 	FsFlightControl GetUserInput(void);
 	FsFlightConfig* GetConfig(void);
 	double GetTimeStep(void);
-	const FsAirplane* GetFocusAir(void);
-	YSRESULT SetFocusAir(FsAirplane* air);
-	const FsAirplane* GetFocusAir2(void);
-	const FsGround* GetFocusGnd(void);
+	//const FsAirplane* GetFocusAir(void);
+	//YSRESULT SetFocusAir(FsAirplane* air);
+	//const FsAirplane* GetFocusAir2(void);
+	//const FsGround* GetFocusGnd(void);
 	YSRESULT FindFirstGuidedMissile(YsVec3& vec, YsAtt3& att);
 	YSRESULT FindOldestMissileOfOwner(YsVec3& vec, YsAtt3& att, const FsAirplane* owner);
 	YSRESULT FindNewestMissileOfOwner(YsVec3& vec, YsAtt3& att, const FsAirplane* owner);
 	void GetRelView(double& dist, YsAtt3& att);
-	YsVec3 GetTowerPos(void);
+	void GetTowerILSArrays(YsArray <ViewModeAndIndexAndPosition>& tower, YsArray <ViewModeAndIndexAndPosition>& ils);
+	YsArray <const FsAirplane*> GetAllAirplaneList(void);
+	//YsVec3 GetTowerPos();
+	//void GetTowerPosAndId(YsVec3* pos, int* id);
 	FsCamera* GetCamera(void);
 	void RegisterExtension(std::shared_ptr <FsSimExtensionBase> addOnPtr);
 	std::shared_ptr <class FsSimExtensionBase> FindExtension(const YsString &str) const;

@@ -15,6 +15,19 @@
 #include "fsstdout.h"
 #include "fscontrol.h"
 
+FsOnboardViewpoint::FsOnboardViewpoint()
+{
+	hasHUD = YSTRUE;
+	hasInstrument = YSFALSE;
+	overwriteHUD = YSFALSE;
+	overwriteInstrument = YSFALSE;
+	isInterior = YSTRUE;
+	pos = YsOrigin();
+	att = YsZeroAtt();
+	id = 0;
+	name = "";
+}
+
 FsVehicleProperty::FsVehicleProperty()
 {
 	InitializeState();
@@ -112,6 +125,20 @@ const FsAdditionalViewpoint *FsVehicleProperty::GetAdditionalView(int id) const
 	if(YSTRUE==chExtraView.IsInRange(id))
 	{
 		return &chExtraView[id];
+	}
+	return NULL;
+}
+
+int FsVehicleProperty::GetNumOnboardViewpoint(void) const
+{
+	return (int)chOnboardViewList.GetN();
+}
+
+const FsOnboardViewpoint * FsVehicleProperty::GetOnboardViewpoint(int id) const
+{
+	if (YSTRUE == chOnboardViewList.IsInRange(id))
+	{
+		return &chOnboardViewList[id];
 	}
 	return NULL;
 }

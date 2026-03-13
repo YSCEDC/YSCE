@@ -24,6 +24,117 @@ const char *FsTrueFalseString(YSBOOL tf);
 void FsGetTodayFileString(YsString &str);
 void FsGetTodayTimeString(YsString &str);
 
+class YsBool3 //Three bools in one, for pairing with Vec3 or Att3
+{
+public:
+	YSBOOL x;
+	YSBOOL y;
+	YSBOOL z;
+
+	void SetX(YSBOOL set)
+	{
+		x = set;
+	}
+	void SetY(YSBOOL set)
+	{
+		y = set;
+	}
+	void SetZ(YSBOOL set)
+	{
+		z = set;
+	}
+	void Set(YSBOOL setA, YSBOOL setB, YSBOOL setC)
+	{
+		x = setA;
+		y = setB;
+		z = setC;
+	}
+	YSBOOL InvX(void) //Return inverse value of a
+	{
+		if (x == YSTRUE)
+		{
+			return YSFALSE;
+		}
+		return YSTRUE;
+	}
+	YSBOOL InvY(void) //Return inverse value of a
+	{
+		if (y == YSTRUE)
+		{
+			return YSFALSE;
+		}
+		return YSTRUE;
+	}
+	YSBOOL InvZ(void) //Return inverse value of a
+	{
+		if (z == YSTRUE)
+		{
+			return YSFALSE;
+		}
+		return YSTRUE;
+	}
+	void FlipAll(void)
+	{
+		if (x == YSTRUE)
+		{
+			x = YSFALSE;
+		}
+		else
+		{
+			x = YSTRUE;
+		}
+		if (y == YSTRUE)
+		{
+			y = YSFALSE;
+		}
+		else
+		{
+			y = YSTRUE;
+		}
+		if (z == YSTRUE)
+		{
+			z = YSFALSE;
+		}
+		else
+		{
+			z = YSTRUE;
+		}
+	}
+	void FlipX(void)
+	{
+		if (x == YSTRUE)
+		{
+			x = YSFALSE;
+		}
+		else
+		{
+			x = YSTRUE;
+		}
+	}
+	void FlipY(void)
+	{
+		if (y == YSTRUE)
+		{
+			y = YSFALSE;
+		}
+		else
+		{
+			y = YSTRUE;
+		}
+	}
+	void FlipZ(void)
+	{
+		if (z == YSTRUE)
+		{
+			z = YSFALSE;
+		}
+		else
+		{
+			z = YSTRUE;
+		}
+	}
+};
+
 
 class FsAutoCloseFile
 {

@@ -56,9 +56,11 @@ YSRESULT FsSimulation::PrepareRunDemoMode(FsDemoModeInfo &info,const char sysMsg
 
 	if(info.type==FSDEMO_DOGFIGHT)
 	{
+		const FsAirplane* a;
+		const FsAirplane* b;
 		camera->mainViewPort->nextViewMode =FSAIRTOAIRVIEW;
-		DemoModeReconsiderViewTarget(focusAir,focusAir2);
-		DemoModeReconsiderPlayerAirplane(focusAir,focusAir2);
+		DemoModeReconsiderViewTarget(a,b);
+		DemoModeReconsiderPlayerAirplane(a,b);
 		info.nextReconsiderViewTargetTime=0.0;
 	}
 	else if(info.type==FSDEMO_LANDING)
@@ -131,14 +133,16 @@ YSBOOL FsSimulation::DemoModeOneStep(FsDemoModeInfo &info,YSBOOL drawSmokeAndVap
 			switch(info.type)
 			{
 			case FSDEMO_DOGFIGHT:
+				const FsAirplane* a;
+				const FsAirplane* b;
 				if(camera->mainViewPort->viewMode==FSAIRTOAIRVIEW)
 				{
 					camera->mainViewPort->nextViewMode =FSAIRFROMAIRVIEW;
-					if(DemoModeReconsiderViewTarget(focusAir,focusAir2)!=YSOK)
+					if(DemoModeReconsiderViewTarget(a,b)!=YSOK)
 					{
 						return YSFALSE;
 					}
-					DemoModeReconsiderPlayerAirplane(focusAir,focusAir2);
+					DemoModeReconsiderPlayerAirplane(a,b);
 					info.nextReconsiderViewTargetTime=currentTime+5.0;
 				}
 				else
@@ -172,8 +176,8 @@ YSBOOL FsSimulation::DemoModeOneStep(FsDemoModeInfo &info,YSBOOL drawSmokeAndVap
 		if(info.type==FSDEMO_DOGFIGHT)
 		{
 			const FsAirplane *air1,*air2;
-			air1=focusAir;
-			air2=focusAir2;
+			air1=(const FsAirplane*)camera->viewTargetObj;
+			air2=(const FsAirplane*)camera->viewSourceObj;
 
 			if(info.nextReconsiderViewTargetTime<YsTolerance &&
 			   (air1->Prop().IsActive()!=YSTRUE || air2->Prop().IsActive()!=YSTRUE))
@@ -687,31 +691,32 @@ YSRESULT FsSimulation::DemoModeReconsiderViewTarget(const FsAirplane *&fromAirpl
 
 	if(victimView==YSTRUE)
 	{
-		fromAirplane=victimPtr;
-		toAirplane=winnerPtr;
+		camera->viewSourceObj =victimPtr;
+		camera->viewTargetObj =winnerPtr;
 	}
 	else
 	{
-		fromAirplane=winnerPtr;
-		toAirplane=victimPtr;
+		camera->viewSourceObj =winnerPtr;
+		camera->viewTargetObj =victimPtr;
 	}
 	return YSOK;
 }
 
 YSRESULT FsSimulation::DemoModeReconsiderPlayerAirplane(const FsAirplane *fromAir,const FsAirplane *toAir)
 {
-	const FsAirplane *air;
-	air=fromAir;
-	if(air!=NULL && air->Prop().IsActive()==YSTRUE)
+	const FsAirplane *tgt;
+	const FsAirplane* src;
+	src= (const FsAirplane*)camera->viewSourceObj;
+	tgt = (const FsAirplane*)camera->viewTargetObj;
+	if(src !=NULL && src->Prop().IsActive()==YSTRUE)
 	{
-		SetPlayerAirplane(fromAir);
+		SetPlayerAirplane(src);
 	}
 	else
 	{
-		air=toAir;
-		if(air!=NULL && air->Prop().IsAlive()==YSTRUE)
+		if(tgt !=NULL && tgt->Prop().IsAlive()==YSTRUE)
 		{
-			SetPlayerAirplane(toAir);
+			SetPlayerAirplane(tgt);
 		}
 	}
 	return YSOK;
@@ -870,17 +875,17 @@ YSRESULT FsSimulation::DemoModeReconsiderLandingViewMode(FsDemoModeInfo &info)
 			break;
 		case FSCARRIERVIEW:
 			YsPrintf("Carrier View\n");
-			focusGnd=ils;
-			focusAir=player;
+			camera->viewSourceObj =FindGround(ils->SearchKey());
+			camera->viewTargetObj =FindAirplane(player->SearchKey());
 			break;
 		case FSPLAYERTOGNDVIEW:
 		case FSGNDTOPLAYERVIEW:
-			focusGnd=ils;
+			camera->viewSourceObj = FindGround(ils->SearchKey());
 			break;
 		case FSAIRTOAIRVIEW:
 		case FSAIRFROMAIRVIEW:
-			focusAir=player;
-			focusAir2=spotPlane;
+			camera->viewTargetObj = FindAirplane(player->SearchKey());
+			camera->viewSourceObj = FindAirplane(spotPlane->SearchKey());
 			break;
 		}
 		return YSOK;
@@ -1083,9 +1088,9 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			if(info.acroType==FSACRO_STARCROSS && ap!=NULL && ap->bombBurstMode>=8)
 			{
 				camera->mainViewPort->nextViewMode =FSTOWERVIEW_NOMAGNIFY;
-				towerViewPos=ap->bombBurstBreakPoint;
-				towerViewPos.AddX(100.0);
-				towerViewPos.AddY(2500.0);
+				camera->towerViewPos=ap->bombBurstBreakPoint;
+				camera->towerViewPos.AddX(100.0);
+				camera->towerViewPos.AddY(2500.0);
 			}
 			else
 			{
@@ -1114,7 +1119,7 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			if(info.refObj!=NULL)
 			{
 				camera->mainViewPort->nextViewMode =FSCARRIERVIEW;
-				focusGnd=info.refObj;
+				camera->viewSourceObj =info.refObj;
 			}
 			else
 			{
@@ -1151,13 +1156,13 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			break;
 		case 7:
 			camera->mainViewPort->nextViewMode =FSAIRTOAIRVIEW;
-			focusAir=info.formation[0];
-			focusAir2=info.formation[3];
+			camera->viewTargetObj =info.formation[0];
+			camera->viewSourceObj =info.formation[3];
 			break;
 		case 8:
 			camera->mainViewPort->nextViewMode =FSAIRTOAIRVIEW;
-			focusAir=info.formation[3];
-			focusAir2=info.formation[0];
+			camera->viewTargetObj =info.formation[3];
+			camera->viewSourceObj =info.formation[0];
 			break;
 		}
 		return YSOK;
@@ -1204,8 +1209,8 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			break;
 		case 4:
 			camera->mainViewPort->nextViewMode =FSAIRTOAIRVIEW;
-			focusAir=info.solo[1];
-			focusAir2=info.solo[0];
+			camera->viewTargetObj =info.solo[1];
+			camera->viewSourceObj =info.solo[0];
 			break;
 		}
 		return YSOK;
@@ -1280,8 +1285,8 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 						shuffle[i]=shuffle[j];
 						shuffle[j]=swap;
 					}
-					focusAir=shuffle[0];
-					focusAir2=shuffle[1];
+					camera->viewTargetObj =shuffle[0];
+					camera->viewSourceObj =shuffle[1];
 				}
 			}
 			break;
@@ -1411,8 +1416,8 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			break;
 		case 4:
 			camera->mainViewPort->nextViewMode =FSAIRTOAIRVIEW;
-			focusAir=info.solo[0];
-			focusAir2=info.solo[1];
+			camera->viewTargetObj =info.solo[0];
+			camera->viewSourceObj =info.solo[1];
 			break;
 		case 5:
 			SetPlayerAirplane(info.solo[1]);
@@ -1447,15 +1452,15 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			break;
 		case 4:
 			camera->mainViewPort->nextViewMode =FSTOWERVIEW_NOMAGNIFY;
-			towerViewPos.Set(1500.0,0.0,0.0);
-			info.solo[0]->GetAttitude().Mul(towerViewPos,towerViewPos);
-			towerViewPos+=info.solo[0]->GetPosition();
+			camera->towerViewPos.Set(1500.0,0.0,0.0);
+			info.solo[0]->GetAttitude().Mul(camera->towerViewPos, camera->towerViewPos);
+			camera->towerViewPos+=info.solo[0]->GetPosition();
 			break;
 		case 5:
 			camera->mainViewPort->nextViewMode =FSTOWERVIEW_NOMAGNIFY;
-			towerViewPos.Set(-1500.0,0.0,0.0);
-			info.solo[0]->GetAttitude().Mul(towerViewPos,towerViewPos);
-			towerViewPos+=info.solo[0]->GetPosition();
+			camera->towerViewPos.Set(-1500.0,0.0,0.0);
+			info.solo[0]->GetAttitude().Mul(camera->towerViewPos, camera->towerViewPos);
+			camera->towerViewPos+=info.solo[0]->GetPosition();
 			break;
 		}
 		return YSOK;
@@ -1533,8 +1538,8 @@ YSRESULT FsSimulation::DemoModeReconsiderConcordeFlyByViewMode(FsDemoModeInfo &i
 
 	if(candidate.GetN()>0)
 	{
-		focusAir=candidate[rand()%candidate.GetN()];
-		SetPlayerAirplane(focusAir);
+		camera->viewTargetObj =candidate[rand()%candidate.GetN()];
+		SetPlayerAirplane((const FsAirplane*)camera->viewTargetObj);
 	}
 	else
 	{
@@ -1562,7 +1567,7 @@ YSRESULT FsSimulation::DemoModeReconsiderConcordeFlyByViewMode(FsDemoModeInfo &i
 		available.Append(FSOUTSIDEPLAYER2);
 		available.Append(FSOUTSIDEPLAYER3);
 
-		if(focusAir->GetPosition().y()>=150.0)
+		if(camera->viewTargetObj->GetPosition().y()>=150.0)
 		{
 			available.Append(FSVERTICALORBITINGVIEW);
 			available.Append(FSHORIZONTALORBITINGVIEW);
@@ -1574,10 +1579,10 @@ YSRESULT FsSimulation::DemoModeReconsiderConcordeFlyByViewMode(FsDemoModeInfo &i
 		YsVec3 d;
 		if(info.refObj!=NULL)
 		{
-			d=info.refObj->GetPosition()-focusAir->GetPosition();
+			d=info.refObj->GetPosition()-camera->viewTargetObj->GetPosition();
 			if(d.GetSquareLength()<YsSqr(2500.0))
 			{
-				focusGnd=info.refObj;
+				camera->viewSourceObj =info.refObj;
 				if(info.useGndToPlayerView==YSTRUE)
 				{
 					available.Append(FSGNDTOPLAYERVIEW); // Wasnt' it FSCARRIERVIEW?
@@ -1589,19 +1594,22 @@ YSRESULT FsSimulation::DemoModeReconsiderConcordeFlyByViewMode(FsDemoModeInfo &i
 			}
 		}
 
-		for(i=0; i<towerPosition.GetN(); i++)
+		for(i=0; i<camera->towerList.GetN(); i++)
 		{
-			d=towerPosition[i]-focusAir->GetPosition();
+			d= camera->towerList[i].pos-camera->viewTargetObj->GetPosition();
 			if(d.GetSquareLength()<YsSqr(5000.0))
 			{
-				towerViewId=i;
-				towerViewPos=towerPosition[i];
 				if(info.useGndToPlayerView==YSTRUE)
 				{
+					camera->currentViewKey = i;
+					camera->viewSourcePos = camera->towerList[i].pos;
 					available.Append(FSTOWERVIEW);
 				}
 				if(info.usePlayerToGndView==YSTRUE)
 				{
+					camera->currentViewKey = i;
+					camera->viewTargetPos = camera->towerList[i].pos;
+					camera->viewSourceObj = GetPlayerObject();
 					available.Append(FSAIRTOTOWERVIEW);
 					available.Append(FSAIRTOTOWERVIEWSOLO);
 				}
@@ -1612,21 +1620,16 @@ YSRESULT FsSimulation::DemoModeReconsiderConcordeFlyByViewMode(FsDemoModeInfo &i
 
 	if(info.formation[0]!=NULL && info.formation[1]!=NULL)
 	{
-		if(focusAir==info.formation[0])
-		{
-			focusAir2=info.formation[1];
-		}
-		else
-		{
-			focusAir2=info.formation[0];
-		}
-
 		if(info.useAirToAirView==YSTRUE)
 		{
+			camera->viewTargetObj = info.formation[0];
+			camera->viewSourceObj = info.formation[1];
 			available.Append(FSAIRTOAIRVIEW);
 		}
 		if(info.useAirFromAirView==YSTRUE)
 		{
+			camera->viewTargetObj = info.formation[1];
+			camera->viewSourceObj = info.formation[0];
 			available.Append(FSAIRFROMAIRVIEW);
 		}
 	}
@@ -1670,8 +1673,8 @@ YSRESULT FsSimulation::DemoModeSetAcrobatViewModeTowerToAirplane(FsDemoModeInfo 
 	}
 
 	camera->mainViewPort->nextViewMode =FSTOWERVIEW;
-	towerViewPos=info.showCenter;
-	focusAir=air;
+	camera->viewSourcePos=info.showCenter;
+	camera->viewTargetObj =air;
 	return YSOK;
 }
 
