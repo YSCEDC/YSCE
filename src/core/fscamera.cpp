@@ -895,20 +895,26 @@ void FsCamera::AutoViewChange(FSVIEWMODE viewMode)
 		}
 		break;
 	case FSVERTICALORBITINGVIEW:
+	{
 		YsAtt3 rot;
-		rot.Set(0.0,-YsPi/12,0.0);
-		CalculateConstantRotationView(*activeViewPort,rot);
+		rot.Set(0.0, -YsPi / 12, 0.0);
+		CalculateConstantRotationView(*activeViewPort, rot);
 		break;
+	}
 	case FSHORIZONTALORBITINGVIEW:
+	{
 		YsAtt3 rot;
 		rot.Set(YsPi / 12, 0.0, 0.0);
 		CalculateConstantRotationView(*activeViewPort, rot);
 		break;
+	}
 	case FSTURNVIEW:
+	{
 		YsAtt3 rot;
 		rot.Set(YsPi / 12, 0.0, 0.0);
 		CalculateConstantRotationView(*activeViewPort, rot);
 		break;
+	}
 	}
 }
 
