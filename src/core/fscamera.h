@@ -163,24 +163,24 @@ public:
 	YsVec3 viewPoint;
 	YsAtt3 viewAttitude;
 	YsMatrix4x4 viewMat;
+	FsProjection* projection;
+	FsProjection* prevProjection;
+	YSBOOL centerThisCamera;
+	YSBOOL isViewPointInCloud;
+	double fogVisibility;
+
 	double zoomViewMode; //viewMagFix
 	double prevZoomViewMode;
 	//double zoomThisPort;
 	//double prevZoomThisPort; //For subwindow-only view zoom, eg. targetting pod
-	YSBOOL isViewPointInCloud;
-	double fogVisibility;
-	YSBOOL centerThisCamera;
-	FsProjection* projection;
-	FsProjection* prevProjection;
 	double offsetRadius; //viewTargetDist
-	int onboardViewId;
 
 	FsExistence* parentObject;
 	FsExistence* lookAtObj;
 	FsExistence* lookFromObj;
 	YsVec3 lookAtPos;
 	YsVec3 lookFromPos;
-
+	int currentViewId;
 
 	enum
 	{
@@ -209,8 +209,8 @@ public:
 	YsArray <TowerCameraList> towerList;
 	double ghostViewSpeed;
 	double timeStep;
-	YsVec3 viewRefPoint;
-	YsVec3 towerViewPos;
+	//YsVec3 viewRefPoint;
+	//YsVec3 towerViewPos;
 	int towerViewId;
 	YsVec3 ilsViewPos;
 	int ilsViewId;
@@ -218,13 +218,13 @@ public:
 	//FsExistence* viewSourceAir;
 	//FsExistence* viewTargetGnd;
 	//FsExistence* viewSourceGnd;
-	FsExistence* viewTargetObj;
-	FsExistence* viewSourceObj;
-	YsVec3 viewTargetPos, viewSourcePos;
-	YsAtt3 viewOffSetAngle;
+	//FsExistence* viewTargetObj;
+	//FsExistence* viewSourceObj;
+	//YsVec3 viewTargetPos, viewSourcePos;
+	YsAtt3 viewOffsetAngle;
 	YsVec3 viewOffsetPos;
 	double viewOffsetRadius;
-	int currentViewKey;
+	//int currentViewKey;
 
 	double zoomUser; //viewMagUser
 	double prevZoomUser;

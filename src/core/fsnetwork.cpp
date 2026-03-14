@@ -7921,9 +7921,9 @@ void FsSimulation::NetFreeMemoryWhenPossible
 		}
 		
 		
-		camera->mainViewPort->nextViewMode=FSCOCKPITVIEW;  // 2004/09/04
-		camera->viewTargetObj=NULL;  // 2004/09/04
-		camera->viewSourceObj=NULL; // 2004/09/04
+		camera->activeViewPort->nextViewMode=FSCOCKPITVIEW;  // 2004/09/04
+		camera->activeViewPort->lookAtObj=NULL;  // 2004/09/04
+		camera->activeViewPort->lookFromObj=NULL; // 2004/09/04
 
 		netNoActivityTime=0.0;
 	}
@@ -8796,7 +8796,7 @@ YSRESULT FsSimulation::ServerState_StandBy(
 				escKeyCount=0;
 				terminate=YSFALSE;
 				SetPlayerAirplane(NULL);
-				camera->mainViewPort->nextViewMode=FSGHOSTVIEW;
+				camera->activeViewPort->nextViewMode=FSGHOSTVIEW;
 
 				std::queue <FSNET_CONSOLE_COMMAND> emptyQueue;
 				svr.commandQueue.swap(emptyQueue);
@@ -9996,7 +9996,7 @@ YSRESULT FsSimulation::ClientState_StandBy(
 					escKeyCount=0;
 					terminate=YSFALSE;
 					SetPlayerAirplane(NULL);
-					camera->mainViewPort->nextViewMode=FSGHOSTVIEW;
+					camera->activeViewPort->nextViewMode=FSGHOSTVIEW;
 
 					std::queue <FSNET_CONSOLE_COMMAND> emptyQueue;
 					cli.commandQueue.swap(emptyQueue);
@@ -10242,7 +10242,7 @@ YSRESULT FsSimulation::ClientState_SideWindow(const double &,class FsSocketClien
 
 	cli.GetSideWindowAssignment(air,hdg,pch);
 
-	camera->mainViewPort->nextViewMode=FSCOCKPITVIEW;
+	camera->activeViewPort->nextViewMode=FSCOCKPITVIEW;
 	userInput.viewHdg=hdg;
 	userInput.viewPch=pch;
 	if(air!=NULL && air->IsAlive()==YSTRUE)
@@ -10599,7 +10599,7 @@ printf("%s %d\n",__FUNCTION__,__LINE__);
 					   air->netNextState.tRemote>air->netPrevState.tRemote)
 					{
 						air->Prop().NetworkDecode(air->netPrevState,air->netNextState);
-						if (air == GetPlayerAirplane() && (camera->mainViewPort->viewMode == FSCOCKPITVIEW || camera->mainViewPort->viewMode == FSADDITIONALAIRPLANEVIEW))
+						if (air == GetPlayerAirplane() && (camera->activeViewPort->viewMode == FSCOCKPITVIEW || camera->activeViewPort->viewMode == FSADDITIONALAIRPLANEVIEW))
 						{
 							//To prevent jitter in observer mode cockpit view
 							//Currently camera is decided before packets are processed for some reason

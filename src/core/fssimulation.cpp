@@ -148,11 +148,6 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	viewAttitudeTransition=YsZeroAtt();
 	relViewAtt.Set(0.0,-YsPi/9.0,0.0);
 	relViewDist=2.0;
-	//focusAir=NULL;
-	//focusAir2=NULL;
-	//focusGnd=NULL;
-	//towerViewId=0;
-	//towerViewPos=YsOrigin();
 
 	tallestGroundObjectHeight=0.0;
 
@@ -168,16 +163,6 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	lastFpsUpdateTime=0;
 
 	allowedWeaponType=(unsigned int)FSWEAPON_ALLOWALLWEAPON;
-
-	if(nullptr==cockpit)
-	{
-		cockpit=new FsVisualSrf;
-		if(cockpit->Load(L"aircraft/cockpit1.srf")!=YSOK)
-		{
-			delete cockpit;
-			cockpit=nullptr;
-		}
-	}
 
 	netServer=NULL;
 	netClient=NULL;
@@ -437,27 +422,6 @@ double FsSimulation::GetTimeStep(void)
 	return realTimeStep;
 }
 
-//const FsAirplane* FsSimulation::GetFocusAir(void)
-//{
-//	return focusAir;
-//}
-//
-//YSRESULT FsSimulation::SetFocusAir(FsAirplane* air)
-//{
-//	focusAir = air;
-//	return YSOK;
-//}
-//
-//const FsAirplane* FsSimulation::GetFocusAir2(void)
-//{
-//	return focusAir2;
-//}
-//
-//const FsGround* FsSimulation::GetFocusGnd(void)
-//{
-//	return focusGnd;
-//}
-
 YSRESULT FsSimulation::PassGunAim(const FsAirplane*& target, YsVec3& aim)
 {
 	return SimCalculateGunAim(target, aim);
@@ -494,17 +458,6 @@ YsArray <const FsAirplane*> FsSimulation::GetAllAirplaneList()
 {
 	return MakeAvailableViewTargetAirplane(YSTRUE);
 }
-
-//YsVec3 FsSimulation::GetTowerPos()
-//{
-//	return towerViewPos;
-//}
-//
-//void FsSimulation::GetTowerPosAndId(YsVec3* pos, int* id)
-//{
-//	id = &towerViewId;
-//	pos = &towerViewPos;
-//}
 
 FsCamera* FsSimulation::GetCamera(void)
 {
@@ -935,16 +888,14 @@ YSRESULT FsSimulation::DeleteAirplane(FsAirplane *air)
 
 
 
-		if(camera->viewTargetObj ==air)
+		if(camera->activeViewPort->lookAtObj ==air)
 		{
-			camera->viewTargetObj =NULL;
+			camera->activeViewPort->lookAtObj =NULL;
 		}
-		if(camera->viewSourceObj ==air)
+		if(camera->activeViewPort->lookFromObj ==air)
 		{
-			camera->viewSourceObj =NULL;
+			camera->activeViewPort->lookFromObj =NULL;
 		}
-
-
 
 		airplaneList.Delete(air->thisInTheList);  // (*)
 		return YSOK;
@@ -2500,15 +2451,15 @@ void FsSimulation::SimulateOneStep(
 
 		if(CheckNoExtAirView()==YSTRUE)  // 2006/06/11
 		{
-			camera->viewTargetObj =GetPlayerAirplane();
+			camera->activeViewPort->lookAtObj =GetPlayerAirplane();
 		}
-		else if (camera->viewTargetObj == NULL || camera->viewTargetObj->IsAlive() != YSTRUE)
+		else if (camera->activeViewPort->lookAtObj == NULL || camera->activeViewPort->lookAtObj->IsAlive() != YSTRUE)
 		{
-			camera->viewTargetObj = FindNextAirplane((const FsAirplane*)camera->viewTargetObj);
+			camera->activeViewPort->lookAtObj = FindNextAirplane((const FsAirplane*)camera->activeViewPort->lookAtObj);
 
-			if (camera->viewTargetObj == NULL)
+			if (camera->activeViewPort->lookAtObj == NULL)
 			{
-				camera->viewTargetObj = GetPlayerAirplane();
+				camera->activeViewPort->lookAtObj = GetPlayerAirplane();
 			}
 		}
 	}
@@ -4648,35 +4599,7 @@ void FsSimulation::SimControlByUser(const double &dt,FSUSERCONTROL userControl)
 #ifdef CRASHINVESTIGATION_SIMCONTROLBYUSER
 		printf("C11\n");
 #endif
-
-		/* if(ctlAssign.IsButtonPressed(FSBTF_OUTSIDEPLAYERVIEW2,joy)==YSTRUE ||
-		   ctlAssign.IsButtonPressed(FSBTF_OUTSIDEPLAYERVIEW3,joy)==YSTRUE)
-		{
-			if(userInput.ctlFireWeaponButton!=YSTRUE && userInput.ctlCycleWeaponButton!=YSTRUE)
-			{
-				relViewAtt.NoseUp((YsPi/2.0)*userInput.ctlElevator*dt);
-				relViewAtt.YawLeft((YsPi/2.0)*userInput.ctlAileron*dt);
-			}
-			else if(userInput.ctlFireWeaponButton==YSTRUE && userInput.ctlCycleWeaponButton==YSTRUE)
-			{
-				relViewAtt.Set(0.0,-YsPi/9.0,0.0);
-				relViewDist=2.0;
-			}
-			else if(userInput.ctlFireWeaponButton==YSTRUE)
-			{
-				relViewDist=YsBound(relViewDist+userInput.ctlElevator*dt,0.5,10.0);
-			}
-			else if(userInput.ctlCycleWeaponButton==YSTRUE)
-			{
-				relViewAtt.SetB(relViewAtt.b()+(YsPi/2.0)*userInput.ctlAileron*dt);
-			}
-
-			if(ctlAssign.IsButtonPressed(FSBTF_RADAR,joy)==YSTRUE)
-			{
-				relViewAtt.SetB(0.0);
-			}
-		}
-		else*/ if(camera->mainViewPort->viewMode ==FSGHOSTVIEW)
+		if(camera->mainViewPort->viewMode ==FSGHOSTVIEW)
 		{
 			camera->CalculateGhostView(this, dt);
 		}
@@ -5514,7 +5437,6 @@ void FsSimulation::SimProcessButtonFunction(FSBUTTONFUNCTION fnc,FSUSERCONTROL u
 	}
 
 	userInput.ProcessButtonFunction(currentTime,playerObj,fnc);
-	//ViewingControl(fnc,userControl);
 	camera->SelectNextView(fnc, userControl);
 }
 
@@ -6136,9 +6058,6 @@ void FsSimulation::SimDrawScreen(
 
 	FsProjection *prj = viewPort.projection;
 
-	// printf("%s\n",ViewmodeToStr(viewPort.viewPort));
-
-
 	YsGLParticleManager partMan;
 	{
 		particleStore.AddToParticleManager(partMan);
@@ -6219,28 +6138,6 @@ void FsSimulation::SimDrawScreen(
 	{
 #ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
 		printf("SIMDRAW-5.1\n");
-#endif
-		/*YsString curVM = camera->ViewmodeToStr(viewPort.viewMode);
-		printf("ViewMode ");
-		for (int i = 0; i < curVM.length(); i++)
-		{
-			printf("%c", curVM[i]);
-		}
-		printf("\n");
-		if (viewPort.viewMode != FSCOCKPITVIEW &&
-			viewPort.viewMode != FSADDITIONALAIRPLANEVIEW &&
-			viewPort.viewMode != FSADDITIONALAIRPLANEVIEW_CABIN &&
-			viewPort.viewMode != FSGHOSTVIEW)
-		{
-			prj->nearz = 1.0;
-		}
-		else
-		{
-			prj->nearz = 0.1;
-		}*/
-
-#ifdef CRASHINVESTIGATION_SIMDRAWSCREEN
-		printf("SIMDRAW-5.2\n");
 #endif
 
 		// See update.txt for changes of depth intervals.
@@ -7210,9 +7107,9 @@ void FsSimulation::SimDrawAircraftInterior(const FsViewPort &viewPort,const FsPr
 	offset=air->GetPosition();
 
 	int searchId;
-	if (viewPort.onboardViewId < viewPort.parentObject->CommonProp().GetNumOnboardViewpoint())
+	if (viewPort.currentViewId < viewPort.parentObject->CommonProp().GetNumOnboardViewpoint())
 	{
-		searchId = viewPort.onboardViewId;
+		searchId = viewPort.currentViewId;
 	}
 	else
 	{
@@ -7322,7 +7219,7 @@ void FsSimulation::SimDrawGroundInterior(const FsViewPort &viewPort,const class 
 	case FSADDITIONALAIRPLANEVIEW:
 	case FSADDITIONALAIRPLANEVIEW_CABIN:
 		const FsAdditionalViewpoint *vp;
-		vp=gnd->Prop().GetAdditionalView(camera->mainViewPort->onboardViewId);
+		vp=gnd->Prop().GetAdditionalView(viewPort.currentViewId);
 		if(vp!=NULL)
 		{
 			localViewPos=vp->pos;
@@ -9429,25 +9326,6 @@ void FsSimulation::GetStandardProjection(class FsProjection &prj)
 {
 	FsCamera cam;
 	cam.GetStandardProjection(prj);
-	/*int wid,hei,fovInPixel;
-	FsGetWindowSize(wid,hei);
-
-	prj.prjMode=YsProjectionTransformation::PERSPECTIVE;
-
-	prj.cx=wid/2;
-	prj.cy=hei/2;
-	fovInPixel=YsGreater(prj.cx,prj.cy);
-
-	prj.prjPlnDist=(double)wid/(double)1.41421356;
-	prj.tanFov=(double)fovInPixel/prj.prjPlnDist;
-	prj.viewportDim.Set(wid,hei);
-
-	prj.nearz=0.1;
-	prj.farz=20000.0;
-
-	prj.zoomProjection = 1.0;
-
-	prj.UncacheMatrix();*/
 }
 
 double FsSimulation::GetFirstRecordTime(void)
@@ -10687,330 +10565,10 @@ const YsSceneryPointSet *FsSimulation::SearchMotionPathByTag(const char tag[]) c
 	return NULL;
 }
 
-
-/*
-void FsSimulation::ViewingControl(FSBUTTONFUNCTION fnc,FSUSERCONTROL userControl)
-{
-	const int dir=(YSTRUE!=FsGetKeyState(FSKEY_SHIFT) ? 1 : -1);
-	
-	switch(fnc)
-	{
-	case FSBTF_COCKPITVIEW:
-		{
-			const FsExistence *playerObj=GetPlayerObject();
-			if(playerObj!=NULL)
-			{
-				YsArray <ViewModeAndIndex> viewModeAndIndex;
-				viewModeAndIndex.Increment();
-				viewModeAndIndex.Last().Set(FSCOCKPITVIEW,0);
-
-				if(playerObj->GetType()==FSEX_AIRPLANE)
-				{
-					const FsAirplane *air=(const FsAirplane *)playerObj;
-					for(int idx=0; idx<air->Prop().GetNumAdditionalView(); ++idx)
-					{
-						viewModeAndIndex.Increment();
-						viewModeAndIndex.Last().Set(FSADDITIONALAIRPLANEVIEW,idx);
-					}
-					if(air->Prop().FreeFallBombIsLoaded()>0)
-					{
-						viewModeAndIndex.Increment();
-						viewModeAndIndex.Last().Set(FSBOMBINGVIEW,0);
-					}
-				}
-				else if(playerObj->GetType()==FSEX_GROUND)
-				{
-					const FsGround *gnd=(const FsGround *)playerObj;
-					for(int idx=0; idx<gnd->Prop().GetNumAdditionalView(); ++idx)
-					{
-						viewModeAndIndex.Increment();
-						viewModeAndIndex.Last().Set(FSADDITIONALAIRPLANEVIEW,idx);
-					}
-				}
-
-				FSVIEWMODE nextViewMode=FSCOCKPITVIEW;
-				int nextAdditionalAirplaneViewId=0;
-				const int curIndex=(camera->mainViewPort->viewMode==FSADDITIONALAIRPLANEVIEW ? camera->mainViewPort->cockpitViewId : 0);
-				for(int idx=0; idx<viewModeAndIndex.GetN(); ++idx)
-				{
-					if(camera->mainViewPort->viewMode ==viewModeAndIndex[idx].viewmode &&
-					   curIndex==viewModeAndIndex[idx].refIndex)
-					{
-						nextViewMode=viewModeAndIndex.GetCyclic(idx+dir).viewmode;
-						nextAdditionalAirplaneViewId=viewModeAndIndex.GetCyclic(idx+dir).refIndex;
-						break;
-					}
-				}
-				camera->mainViewPort->nextViewMode =nextViewMode;
-				camera->mainViewPort->cockpitViewId=nextAdditionalAirplaneViewId;
-			}
-		}
-		break;
-	case FSBTF_OUTSIDEPLAYERVIEW:
-		if(GetPlayerAirplane()!=NULL)
-		{
-			if(camera->mainViewPort->viewMode==FSOUTSIDEPLAYERPLANE)
-			{
-				camera->mainViewPort->nextViewMode =FSFIXEDPOINTPLAYERPLANE;
-				camera->UpdateViewpointAccordingToPlayerAirplane(500.0,YSTRUE);
-			}
-			else if(camera->mainViewPort->viewMode==FSFIXEDPOINTPLAYERPLANE)
-			{
-				camera->mainViewPort->nextViewMode =FSVARIABLEPOINTPLAYERPLANE;
-				camera->UpdateViewpointAccordingToPlayerAirplane(500.0,YSTRUE);
-			}
-			else if(camera->mainViewPort->viewMode==FSVARIABLEPOINTPLAYERPLANE)
-			{
-				camera->mainViewPort->nextViewMode =FSFROMTOPOFPLAYERPLANE;
-				camera->UpdateViewpointAccordingToPlayerAirplane(500.0,YSTRUE);
-			}
-			else if(camera->mainViewPort->viewMode==FSFROMTOPOFPLAYERPLANE)
-			{
-				camera->mainViewPort->nextViewMode =FSPLAYERPLANEFROMSIDE;
-			}
-			else
-			{
-				camera->mainViewPort->nextViewMode =FSOUTSIDEPLAYERPLANE;
-			}
-		}
-		break;
-	case FSBTF_COMPUTERAIRPLANEVIEW:
-		if(0<=dir)
-		{
-			if(camera->mainViewPort->viewMode==FSANOTHERAIRPLANE)
-			{
-				int i,nAir;
-
-				nAir=GetNumAirplane();
-				focusAir=FindNextAirplane(focusAir);
-				for(i=0; i<nAir; ++i)
-				{
-					if(focusAir==NULL || focusAir==GetPlayerObject() || focusAir->IsAlive()!=YSTRUE)
-					{
-						focusAir=FindNextAirplane(focusAir);
-					}
-					else
-					{
-						break;
-					}
-				}
-			}
-			else
-			{
-				camera->mainViewPort->nextViewMode =FSANOTHERAIRPLANE;
-				focusAir=FindNextAirplane(NULL);
-			}
-		}
-		else
-		{
-			if(camera->mainViewPort->viewMode==FSANOTHERAIRPLANE)
-			{
-				int i,nAir;
-
-				nAir=GetNumAirplane();
-				focusAir=FindPrevAirplane(focusAir);
-				for(i=0; i<nAir; ++i)
-				{
-					if(focusAir==NULL || focusAir==GetPlayerObject() || focusAir->IsAlive()!=YSTRUE)
-					{
-						focusAir=FindPrevAirplane(focusAir);
-					}
-					else
-					{
-						break;
-					}
-				}
-			}
-			else
-			{
-				camera->mainViewPort->nextViewMode =FSANOTHERAIRPLANE;
-				focusAir=FindPrevAirplane(NULL);
-			}
-		}
-		break;
-	case FSBTF_WEAPONVIEW:
-		{
-			camera->mainViewPort->nextViewMode =FSMISSILEVIEW;
-		}
-		break;
-	case FSBTF_CHANGEAIRPLANE:
-		if(EveryAirplaneIsRecordedAirplane()==YSTRUE || userControl==FSUSC_VIEWCONTROLONLY)
-		{
-			if(CheckNoExtAirView()!=YSTRUE)  // 2006/07/19, corrected 2006/08/25
-			{
-				int i,nAir;
-				FsAirplane *next;
-
-				nAir=GetNumAirplane();
-				next=GetPlayerAirplane();
-				for(i=0; i<nAir; i++)
-				{
-					next=FindNextAirplane(next);
-					if(next==NULL)
-					{
-						next=FindNextAirplane(next);
-					}
-					if(next->IsAlive()==YSTRUE)
-					{
-						SetPlayerAirplane(next, YSFALSE);
-						break;
-					}
-				}
-			}
-			else
-			{
-				AddTimedMessage("The server does not allow third airplane view.");
-			}
-		}
-		break;
-	case FSBTF_ILSVIEW:
-	case FSBTF_CONTROLTOWERVIEW:
-		{
-			YsArray <ViewModeAndIndexAndPosition> view;
-			if(FSBTF_ILSVIEW==fnc)
-			{
-				view=MakeAvailableILSView();
-			}
-			else
-			{
-				view=MakeAvailableTowerView();
-			}
-			if(0<view.GetN())
-			{
-				if(NULL==focusAir || (FSCARRIERVIEW!= camera->mainViewPort->viewMode && FSTOWERVIEW!= camera->mainViewPort->viewMode))
-				{
-					focusAir=GetPlayerAirplane();
-					if(NULL==focusAir || YSTRUE!=focusAir->IsAlive())
-					{
-						focusAir=FindFirstAliveAirplane(focusAir);
-					}
-				}
-				if(NULL!=focusAir)
-				{
-					YsArray <double> dist(view.GetN(),NULL);
-					for(int idx=0; idx<view.GetN(); ++idx)
-					{
-						dist[idx]=(view[idx].pos-focusAir->GetPosition()).GetSquareLength();
-					}
-					YsQuickSort(dist.GetN(),dist.GetEditableArray(),view.GetEditableArray());
-
-					FSVIEWMODE curMode= camera->mainViewPort->viewMode;
-					int curIndex=0;
-					if(FSCARRIERVIEW== camera->mainViewPort->viewMode && NULL!=focusGnd)
-					{
-						curIndex=(int)focusGnd->SearchKey();
-					}
-					else if(FSTOWERVIEW== camera->mainViewPort->viewMode)
-					{
-						curIndex=towerViewId;
-					}
-
-					YSSIZE_T nextIndex=0;
-					for(YSSIZE_T idx=0; idx<view.GetN(); ++idx)
-					{
-						if(curMode==view[idx].viewmode && curIndex==view[idx].refIndex)
-						{
-							nextIndex=(idx+view.GetN()+dir)%view.GetN();
-							break;
-						}
-					}
-
-					auto &nextView=view[nextIndex];
-					if(FSCARRIERVIEW==nextView.viewmode)
-					{
-						focusGnd=FindGround((YSHASHKEY)nextView.refIndex);
-						if(NULL!=focusGnd)
-						{
-							camera->mainViewPort->nextViewMode =FSCARRIERVIEW;
-						}
-					}
-					else if(FSTOWERVIEW==nextView.viewmode)
-					{
-						camera->mainViewPort->nextViewMode =FSTOWERVIEW;
-						towerViewId=nextView.refIndex;
-						towerViewPos=nextView.pos;
-					}
-				}
-			}
-		}
-		break;
-	case FSBTF_OUTSIDEPLAYERVIEW2:
-		if (camera->mainViewPort->viewMode != FSOUTSIDEPLAYER2)
-		{
-			relViewAtt.SetB(0.0);
-			focusAir = GetPlayerAirplane();
-			relViewDist = 2.0;
-			camera->mainViewPort->nextViewMode = FSOUTSIDEPLAYER2;
-		}
-		else
-		{
-			relViewDist *= 2;
-			if (relViewDist > 8.0) { relViewDist = 1.0; }
-		}
-		break;
-	case FSBTF_OUTSIDEPLAYERVIEW3:
-		if (camera->mainViewPort->viewMode != FSOUTSIDEPLAYER3)
-		{
-			relViewAtt.SetB(0.0);
-			focusAir = GetPlayerAirplane();
-			relViewDist = 2.0;
-			camera->mainViewPort->nextViewMode = FSOUTSIDEPLAYER3;
-		}
-		else
-		{
-			relViewDist *= 2;
-			if (relViewDist > 8.0) { relViewDist = 1.0; }
-		}
-
-		break;
-	case FSBTF_GHOSTVIEW:
-		{
-			if(camera->mainViewPort->viewMode !=FSGHOSTVIEW)
-			{
-				camera->mainViewPort->nextViewMode =FSGHOSTVIEW;
-				camera->ghostViewSpeed=0.0;
-			}
-		}
-		break;
-	case FSBTF_VIEWZOOM:
-		if(camera->zoomUser <12.0)
-		{
-			camera->zoomUser *=1.1;
-		}
-		break;
-	case FSBTF_VIEWMOOZ:
-		if(camera->zoomUser >1.0)
-		{
-			camera->zoomUser /=1.1;
-		}
-		break;
-	case FSBTF_SWITCHVIEWTARGET:
-		{
-			const YSBOOL includePlayer=YSTRUE;
-			auto targetAirCandidate=MakeAvailableViewTargetAirplane(includePlayer);
-			if(0<targetAirCandidate.GetN())
-			{
-				const int dir=(YSTRUE!=FsGetKeyState(FSKEY_SHIFT) ? 1 : -1);
-
-				auto nextFocusAir=targetAirCandidate[0];
-				for(int idx=0; idx<targetAirCandidate.GetN(); ++idx)
-				{
-					if(targetAirCandidate[idx]==focusAir)
-					{
-						nextFocusAir=targetAirCandidate.GetCyclic(idx+dir);
-						break;
-					}
-				}
-				focusAir=nextFocusAir;
-			}
-		}
-		break;
-	}
-}*/
-
 YsArray <FsSimulation::ViewModeAndIndexAndPosition> FsSimulation::MakeAvailableILSView(void) const
 {
 	YsArray <ViewModeAndIndexAndPosition> view;
+	camera->ilsList.ClearDeep();
 
 	// Tower: refIndex=towerIdx
 	// ILS/Carrier: refIndex=gnd search key
@@ -11042,7 +10600,7 @@ YsArray <FsSimulation::ViewModeAndIndexAndPosition> FsSimulation::MakeAvailableI
 YsArray <FsSimulation::ViewModeAndIndexAndPosition> FsSimulation::MakeAvailableTowerView(void) const
 {
 	YsArray <ViewModeAndIndexAndPosition> view;
-
+	camera->towerList.ClearDeep();
 	// Tower: refIndex=towerIdx
 	// ILS/Carrier: refIndex=gnd search key
 
@@ -12493,9 +12051,9 @@ unsigned int FsSimulation::GetInstrumentDrawSwitch(const FsViewPort &viewPort) c
 	if (viewPort.parentObject != NULL)
 	{
 		int searchId;
-		if (viewPort.onboardViewId < viewPort.parentObject->CommonProp().GetNumOnboardViewpoint())
+		if (viewPort.currentViewId < viewPort.parentObject->CommonProp().GetNumOnboardViewpoint())
 		{
-			searchId = viewPort.onboardViewId;
+			searchId = viewPort.currentViewId;
 		}
 		else
 		{
@@ -12504,77 +12062,20 @@ unsigned int FsSimulation::GetInstrumentDrawSwitch(const FsViewPort &viewPort) c
 		onboard = viewPort.parentObject->CommonProp().GetOnboardViewpoint(searchId);
 		if (onboard->hasInstrument == YSTRUE && ((FsAirplane*)viewPort.parentObject)->instPanel != NULL)
 		{
-			//sw |= FSISS_3DINSTPANEL;
 			sw += FSISS_3DINSTPANEL;
 		}
-		if (onboard->hasHUD == YSTRUE || (cfgPtr->useHudAlways == YSTRUE && onboard->isInterior == YSTRUE)) //This might break F8 HUD setting
+		if (onboard->hasHUD == YSTRUE || (cfgPtr->useHudAlways == YSTRUE && onboard->isInterior == YSTRUE)) //This might break F8 HUD setting?
 		{
 			if (YSTRUE != cfgPtr->useSimpleHud)
 			{
-				//sw |= FSISS_3DHUD;
 				sw += FSISS_3DHUD;
 			}
 			else
 			{
-				//sw |= FSISS_2DHUD;
 				sw += FSISS_2DHUD;
 			}
 		}
-
-		if (sw == 0)
-		{
-			//sw = FSISS_3DHUD;
-		}
-
 	}
-	
-
-	//const FsAirplane *playerPlane=GetPlayerAirplane();
-	//if(NULL!=playerPlane)
-	//{
-	//	if(NULL!=playerPlane->instPanel)
-	//	{
-	//		sw|=FSISS_3DINSTPANEL;
-	//	}
-
-	//	if(playerPlane->Prop().HasHud()==YSTRUE || cfgPtr->useHudAlways==YSTRUE)
-	//	{
-	//		if(YSTRUE!=cfgPtr->useSimpleHud)
-	//		{
-	//			sw|=FSISS_3DHUD;
-	//		}
-	//		else
-	//		{
-	//			sw|=FSISS_2DHUD;
-	//		}
-	//	}
-
-	//	if(0==sw)  // Defensive programming.  Just in case.
-	//	{
-	//		sw=FSISS_3DHUD;
-	//	}
-
-	//	if(FSCOCKPITVIEW==viewPort.viewMode && YSTRUE!=playerPlane->Prop().ShowHudInCockpit())
-	//	{
-	//		sw&=~(FSISS_3DHUD|FSISS_2DHUD);
-	//	}
-	//	if(FSCOCKPITVIEW==viewPort.viewMode && YSTRUE!=playerPlane->Prop().ShowInstPanelInCockpit())
-	//	{
-	//		sw&=~FSISS_3DINSTPANEL;
-	//	}
-	//	if(FSADDITIONALAIRPLANEVIEW==viewPort.viewMode)
-	//	{
-	//		const FsAdditionalViewpoint *vp=playerPlane->GetAdditionalView(camera->mainViewPort->onboardViewId);
-	//		if(vp!=NULL && YSTRUE!=vp->showHudIfAvailable)
-	//		{
-	//			sw&=~(FSISS_3DHUD|FSISS_2DHUD);
-	//		}
-	//		if(NULL!=vp && YSTRUE!=vp->showInstPanelIfAvailable)
-	//		{
-	//			sw&=~FSISS_3DINSTPANEL;
-	//		}
-	//	}
-	//}
 	return sw;
 }
 

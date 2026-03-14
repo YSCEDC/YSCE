@@ -58,7 +58,7 @@ YSRESULT FsSimulation::PrepareRunDemoMode(FsDemoModeInfo &info,const char sysMsg
 	{
 		const FsAirplane* a;
 		const FsAirplane* b;
-		camera->mainViewPort->nextViewMode =FSAIRTOAIRVIEW;
+		camera->activeViewPort->nextViewMode =FSAIRTOAIRVIEW;
 		DemoModeReconsiderViewTarget(a,b);
 		DemoModeReconsiderPlayerAirplane(a,b);
 		info.nextReconsiderViewTargetTime=0.0;
@@ -135,9 +135,9 @@ YSBOOL FsSimulation::DemoModeOneStep(FsDemoModeInfo &info,YSBOOL drawSmokeAndVap
 			case FSDEMO_DOGFIGHT:
 				const FsAirplane* a;
 				const FsAirplane* b;
-				if(camera->mainViewPort->viewMode==FSAIRTOAIRVIEW)
+				if(camera->activeViewPort->viewMode==FSAIRTOAIRVIEW)
 				{
-					camera->mainViewPort->nextViewMode =FSAIRFROMAIRVIEW;
+					camera->activeViewPort->nextViewMode =FSAIRFROMAIRVIEW;
 					if(DemoModeReconsiderViewTarget(a,b)!=YSOK)
 					{
 						return YSFALSE;
@@ -147,7 +147,7 @@ YSBOOL FsSimulation::DemoModeOneStep(FsDemoModeInfo &info,YSBOOL drawSmokeAndVap
 				}
 				else
 				{
-					camera->mainViewPort->nextViewMode =FSAIRTOAIRVIEW;
+					camera->activeViewPort->nextViewMode =FSAIRTOAIRVIEW;
 					info.nextReconsiderViewTargetTime=0.0;
 				}
 				break;
@@ -176,8 +176,8 @@ YSBOOL FsSimulation::DemoModeOneStep(FsDemoModeInfo &info,YSBOOL drawSmokeAndVap
 		if(info.type==FSDEMO_DOGFIGHT)
 		{
 			const FsAirplane *air1,*air2;
-			air1=(const FsAirplane*)camera->viewTargetObj;
-			air2=(const FsAirplane*)camera->viewSourceObj;
+			air1 = (const FsAirplane*)camera->activeViewPort->lookAtObj;
+			air2=(const FsAirplane*)camera->activeViewPort->lookFromObj;
 
 			if(info.nextReconsiderViewTargetTime<YsTolerance &&
 			   (air1->Prop().IsActive()!=YSTRUE || air2->Prop().IsActive()!=YSTRUE))
@@ -691,13 +691,13 @@ YSRESULT FsSimulation::DemoModeReconsiderViewTarget(const FsAirplane *&fromAirpl
 
 	if(victimView==YSTRUE)
 	{
-		camera->viewSourceObj =victimPtr;
-		camera->viewTargetObj =winnerPtr;
+		camera->activeViewPort->lookFromObj =victimPtr;
+		camera->activeViewPort->lookAtObj = winnerPtr;
 	}
 	else
 	{
-		camera->viewSourceObj =winnerPtr;
-		camera->viewTargetObj =victimPtr;
+		camera->activeViewPort->lookFromObj =winnerPtr;
+		camera->activeViewPort->lookAtObj =victimPtr;
 	}
 	return YSOK;
 }
@@ -706,8 +706,8 @@ YSRESULT FsSimulation::DemoModeReconsiderPlayerAirplane(const FsAirplane *fromAi
 {
 	const FsAirplane *tgt;
 	const FsAirplane* src;
-	src= (const FsAirplane*)camera->viewSourceObj;
-	tgt = (const FsAirplane*)camera->viewTargetObj;
+	src= (const FsAirplane*)camera->activeViewPort->lookFromObj;
+	tgt = (const FsAirplane*)camera->activeViewPort->lookAtObj;
 	if(src !=NULL && src->Prop().IsActive()==YSTRUE)
 	{
 		SetPlayerAirplane(src);
@@ -853,17 +853,17 @@ YSRESULT FsSimulation::DemoModeReconsiderLandingViewMode(FsDemoModeInfo &info)
 		double sgn;
 
 		FSVIEWMODE prevViewmode;
-		prevViewmode= camera->mainViewPort->viewMode;
+		prevViewmode= camera->activeViewPort->viewMode;
 
-		camera->mainViewPort->nextViewMode =candidate[n];
-		switch(camera->mainViewPort->nextViewMode)
+		camera->activeViewPort->nextViewMode =candidate[n];
+		switch(camera->activeViewPort->nextViewMode)
 		{
 		case FSCOCKPITVIEW:
 			YsPrintf("Cockpit View\n");
 			break;
 		case FSSPOTPLANEVIEW:
 			YsPrintf("Spot Plane\n");
-			if(prevViewmode!= camera->mainViewPort->nextViewMode)
+			if(prevViewmode!= camera->activeViewPort->nextViewMode)
 			{
 				relViewDist=2.0;
 				// relViewAtt.SetH(YsPi*2.0*double(rand()%360)/360.0);
@@ -875,17 +875,26 @@ YSRESULT FsSimulation::DemoModeReconsiderLandingViewMode(FsDemoModeInfo &info)
 			break;
 		case FSCARRIERVIEW:
 			YsPrintf("Carrier View\n");
-			camera->viewSourceObj =FindGround(ils->SearchKey());
-			camera->viewTargetObj =FindAirplane(player->SearchKey());
+			if (ils != NULL)
+			{
+				camera->activeViewPort->lookFromObj = FindGround(ils->SearchKey());
+			}
+			camera->activeViewPort->lookAtObj =FindAirplane(player->SearchKey());
 			break;
 		case FSPLAYERTOGNDVIEW:
 		case FSGNDTOPLAYERVIEW:
-			camera->viewSourceObj = FindGround(ils->SearchKey());
+			if (ils != NULL)
+			{
+				camera->activeViewPort->lookFromObj = FindGround(ils->SearchKey());
+			}
 			break;
 		case FSAIRTOAIRVIEW:
 		case FSAIRFROMAIRVIEW:
-			camera->viewTargetObj = FindAirplane(player->SearchKey());
-			camera->viewSourceObj = FindAirplane(spotPlane->SearchKey());
+			if (spotPlane != NULL)
+			{
+				camera->activeViewPort->lookFromObj = FindAirplane(spotPlane->SearchKey());
+			}
+			camera->activeViewPort->lookAtObj = FindAirplane(player->SearchKey());
 			break;
 		}
 		return YSOK;
@@ -964,11 +973,11 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			break;
 		case 2:
 			DemoModeSetAcrobatViewModeCockpitView(info,info.formation[1]);
-			camera->mainViewPort->nextViewMode =FS90DEGREERIGHTVIEW;
+			camera->activeViewPort->nextViewMode =FS90DEGREERIGHTVIEW;
 			break;
 		case 3:
 			DemoModeSetAcrobatViewModeCockpitView(info,info.formation[2]);
-			camera->mainViewPort->nextViewMode =FS90DEGREELEFTVIEW;
+			camera->activeViewPort->nextViewMode =FS90DEGREELEFTVIEW;
 			break;
 		case 4:
 			DemoModeSetAcrobatViewModeOutsideView3(info,info.formation[1]);
@@ -993,11 +1002,11 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			break;
 		case 2:
 			DemoModeSetAcrobatViewModeCockpitView(info,info.formation[0]);
-			camera->mainViewPort->nextViewMode =FS90DEGREERIGHTVIEW;
+			camera->activeViewPort->nextViewMode =FS90DEGREERIGHTVIEW;
 			break;
 		case 3:
 			DemoModeSetAcrobatViewModeCockpitView(info,info.formation[2]);
-			camera->mainViewPort->nextViewMode =FS90DEGREELEFTVIEW;
+			camera->activeViewPort->nextViewMode =FS90DEGREELEFTVIEW;
 			break;
 		case 4:
 			DemoModeSetAcrobatViewModeOutsideView3(info,info.formation[0]);
@@ -1024,23 +1033,23 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			DemoModeSetAcrobatViewModeCockpitView(info,NULL);
 			if(GetPlayerAirplane()==info.formation[0])
 			{
-				camera->mainViewPort->nextViewMode =FSBACKMIRRORVIEW;
+				camera->activeViewPort->nextViewMode =FSBACKMIRRORVIEW;
 			}
 			else if(GetPlayerAirplane()==info.formation[1])
 			{
-				camera->mainViewPort->nextViewMode =FS90DEGREERIGHTVIEW;
+				camera->activeViewPort->nextViewMode =FS90DEGREERIGHTVIEW;
 			}
 			else if(GetPlayerAirplane()==info.formation[2])
 			{
-				camera->mainViewPort->nextViewMode =FS90DEGREELEFTVIEW;
+				camera->activeViewPort->nextViewMode =FS90DEGREELEFTVIEW;
 			}
 			else if(GetPlayerAirplane()==info.formation[3])
 			{
-				camera->mainViewPort->nextViewMode =FSCOCKPITVIEW;
+				camera->activeViewPort->nextViewMode =FSCOCKPITVIEW;
 			}
 			else if(GetPlayerAirplane()==info.formation[4])
 			{
-				camera->mainViewPort->nextViewMode =FSCOCKPITVIEW;
+				camera->activeViewPort->nextViewMode =FSCOCKPITVIEW;
 			}
 			break;
 		case 3:
@@ -1081,16 +1090,16 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			DemoModeSetAcrobatViewModeTowerToAirplane(info,NULL);
 			if(ap!=NULL && ap->bombBurstMode>=8)
 			{
-				camera->mainViewPort->nextViewMode =FSTOWERVIEW_NOMAGNIFY;
+				camera->activeViewPort->nextViewMode =FSTOWERVIEW_NOMAGNIFY;
 			}
 			break;
 		case 1:
 			if(info.acroType==FSACRO_STARCROSS && ap!=NULL && ap->bombBurstMode>=8)
 			{
-				camera->mainViewPort->nextViewMode =FSTOWERVIEW_NOMAGNIFY;
-				camera->towerViewPos=ap->bombBurstBreakPoint;
-				camera->towerViewPos.AddX(100.0);
-				camera->towerViewPos.AddY(2500.0);
+				camera->activeViewPort->nextViewMode =FSTOWERVIEW_NOMAGNIFY;
+				camera->activeViewPort->lookFromPos=ap->bombBurstBreakPoint;
+				camera->activeViewPort->lookFromPos.AddX(100.0);
+				camera->activeViewPort->lookFromPos.AddY(2500.0);
 			}
 			else
 			{
@@ -1101,7 +1110,7 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			DemoModeSetAcrobatViewModeCockpitView(info,NULL);
 			if(ap!=NULL && ap->bombBurstMode>=3)
 			{
-				camera->mainViewPort->nextViewMode =FSCOCKPITVIEW;
+				camera->activeViewPort->nextViewMode =FSCOCKPITVIEW;
 			}
 			break;
 		case 3:
@@ -1118,8 +1127,8 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 		case 4:
 			if(info.refObj!=NULL)
 			{
-				camera->mainViewPort->nextViewMode =FSCARRIERVIEW;
-				camera->viewSourceObj =info.refObj;
+				camera->activeViewPort->nextViewMode =FSCARRIERVIEW;
+				camera->activeViewPort->lookFromObj =info.refObj;
 			}
 			else
 			{
@@ -1155,14 +1164,14 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			DemoModeSetAcrobatViewModeOutsideView3(info,info.formation[3]);
 			break;
 		case 7:
-			camera->mainViewPort->nextViewMode =FSAIRTOAIRVIEW;
-			camera->viewTargetObj =info.formation[0];
-			camera->viewSourceObj =info.formation[3];
+			camera->activeViewPort->nextViewMode =FSAIRTOAIRVIEW;
+			camera->activeViewPort->lookAtObj = info.formation[0];
+			camera->activeViewPort->lookFromObj =info.formation[3];
 			break;
 		case 8:
-			camera->mainViewPort->nextViewMode =FSAIRTOAIRVIEW;
-			camera->viewTargetObj =info.formation[3];
-			camera->viewSourceObj =info.formation[0];
+			camera->activeViewPort->nextViewMode =FSAIRTOAIRVIEW;
+			camera->activeViewPort->lookAtObj =info.formation[3];
+			camera->activeViewPort->lookFromObj =info.formation[0];
 			break;
 		}
 		return YSOK;
@@ -1178,7 +1187,7 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			break;
 		case 1:
 			DemoModeSetAcrobatViewModeAirplaneToTower(info,NULL);
-			camera->mainViewPort->nextViewMode =FSAIRTOTOWERVIEWSOLO;
+			camera->activeViewPort->nextViewMode =FSAIRTOTOWERVIEWSOLO;
 			break;
 		case 2:
 			DemoModeSetAcrobatViewModeCockpitView(info,NULL);
@@ -1204,13 +1213,13 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			break;
 		case 3:
 			SetPlayerAirplane(info.solo[1]);
-			camera->mainViewPort->nextViewMode =FSOUTSIDEPLAYER3;
+			camera->activeViewPort->nextViewMode =FSOUTSIDEPLAYER3;
 			relViewAtt.Set(-YsPi/4.0,-YsPi/18.0,0.0);
 			break;
 		case 4:
-			camera->mainViewPort->nextViewMode =FSAIRTOAIRVIEW;
-			camera->viewTargetObj =info.solo[1];
-			camera->viewSourceObj =info.solo[0];
+			camera->activeViewPort->nextViewMode =FSAIRTOAIRVIEW;
+			camera->activeViewPort->lookAtObj = info.solo[1];
+			camera->activeViewPort->lookFromObj =info.solo[0];
 			break;
 		}
 		return YSOK;
@@ -1241,7 +1250,7 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 				if(soloAp!=NULL && soloAp->bombBurstMode<=1)  // Until vertical climb roll
 				{
 					SetPlayerAirplane(info.solo[0]);
-					camera->mainViewPort->nextViewMode =FSOUTSIDEPLAYER3;
+					camera->activeViewPort->nextViewMode =FSOUTSIDEPLAYER3;
 					relViewAtt.Set(YsPi/18.0,-YsPi/18.0,0.0);
 				}
 				else if(soloAp!=NULL && soloAp->bombBurstMode==2)
@@ -1250,30 +1259,30 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 					if(i<30)
 					{
 						SetPlayerAirplane(info.solo[0]);
-						camera->mainViewPort->nextViewMode =FSOUTSIDEPLAYER3;
+						camera->activeViewPort->nextViewMode =FSOUTSIDEPLAYER3;
 						relViewAtt.Set(YsPi/18.0,-YsPi/18.0,0.0);
 					}
 					else if(i<60)
 					{
 						SetPlayerAirplane(info.solo[0]);
-						camera->mainViewPort->nextViewMode =FSFROMTOPOFPLAYERPLANE;
+						camera->activeViewPort->nextViewMode =FSFROMTOPOFPLAYERPLANE;
 					}
 					else
 					{
 						SetPlayerAirplane(info.solo[0]);
-						camera->mainViewPort->nextViewMode =FSOUTSIDEPLAYER2;
+						camera->activeViewPort->nextViewMode =FSOUTSIDEPLAYER2;
 						relViewAtt.Set(YsPi*(double)(rand()%200)/100.0,0.0,0.0);
 					}
 				}
 				else if(soloAp!=NULL && soloAp->bombBurstMode==3)
 				{
 					SetPlayerAirplane(info.solo[0]);
-					camera->mainViewPort->nextViewMode =FSFROMTOPOFPLAYERPLANE;
+					camera->activeViewPort->nextViewMode =FSFROMTOPOFPLAYERPLANE;
 				}
 				else
 				{
 					FsAirplane *shuffle[4],*swap;
-					camera->mainViewPort->nextViewMode =FSAIRTOAIRVIEW;
+					camera->activeViewPort->nextViewMode =FSAIRTOAIRVIEW;
 					shuffle[0]=info.formation[0];
 					shuffle[1]=info.formation[1];
 					shuffle[2]=info.formation[2];
@@ -1285,8 +1294,8 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 						shuffle[i]=shuffle[j];
 						shuffle[j]=swap;
 					}
-					camera->viewTargetObj =shuffle[0];
-					camera->viewSourceObj =shuffle[1];
+					camera->activeViewPort->lookAtObj =shuffle[0];
+					camera->activeViewPort->lookFromObj =shuffle[1];
 				}
 			}
 			break;
@@ -1310,7 +1319,7 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			DemoModeSetAcrobatViewModeCockpitView(info,NULL);
 			if(ap!=NULL && ap->bombBurstMode>=2)
 			{
-				camera->mainViewPort->nextViewMode =FSBACKMIRRORVIEW;
+				camera->activeViewPort->nextViewMode =FSBACKMIRRORVIEW;
 			}
 			break;
 		case 3:
@@ -1356,7 +1365,7 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			DemoModeSetAcrobatViewModeCockpitView(info,NULL);
 			if(ap!=NULL && ap->brlMode<2 && GetPlayerAirplane()!=info.formation[0])
 			{
-				camera->mainViewPort->nextViewMode =FSCOCKPITVIEW;
+				camera->activeViewPort->nextViewMode =FSCOCKPITVIEW;
 			}
 			break;
 		case 3:
@@ -1383,17 +1392,17 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			if(ap!=NULL && ap->cpMode==0)
 			{
 				SetPlayerAirplane(info.formation[3]);
-				camera->mainViewPort->nextViewMode =FS45DEGREERIGHTVIEW;
+				camera->activeViewPort->nextViewMode =FS45DEGREERIGHTVIEW;
 			}
 			else
 			{
 				SetPlayerAirplane(info.formation[3]);
-				camera->mainViewPort->nextViewMode =FSFROMTOPOFPLAYERPLANE;
+				camera->activeViewPort->nextViewMode =FSFROMTOPOFPLAYERPLANE;
 			}
 			break;
 		case 3:
 			SetPlayerAirplane(info.formation[3]);
-			camera->mainViewPort->nextViewMode =FSOUTSIDEPLAYER3;
+			camera->activeViewPort->nextViewMode =FSOUTSIDEPLAYER3;
 			relViewAtt.Set(-YsPi/4.0,-YsPi/18.0,0.0);
 			break;
 		}
@@ -1415,13 +1424,13 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			DemoModeSetAcrobatViewModeOutsideView3(info,NULL);
 			break;
 		case 4:
-			camera->mainViewPort->nextViewMode =FSAIRTOAIRVIEW;
-			camera->viewTargetObj =info.solo[0];
-			camera->viewSourceObj =info.solo[1];
+			camera->activeViewPort->nextViewMode =FSAIRTOAIRVIEW;
+			camera->activeViewPort->lookAtObj =info.solo[0];
+			camera->activeViewPort->lookFromObj =info.solo[1];
 			break;
 		case 5:
 			SetPlayerAirplane(info.solo[1]);
-			camera->mainViewPort->nextViewMode =FSOUTSIDEPLAYER3;
+			camera->activeViewPort->nextViewMode =FSOUTSIDEPLAYER3;
 			relViewAtt.Set(YsPi,-YsPi/18.0,0.0);
 			break;
 		}
@@ -1451,16 +1460,16 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			DemoModeSetAcrobatViewModeOutsideView3(info,NULL);
 			break;
 		case 4:
-			camera->mainViewPort->nextViewMode =FSTOWERVIEW_NOMAGNIFY;
-			camera->towerViewPos.Set(1500.0,0.0,0.0);
-			info.solo[0]->GetAttitude().Mul(camera->towerViewPos, camera->towerViewPos);
-			camera->towerViewPos+=info.solo[0]->GetPosition();
+			camera->activeViewPort->nextViewMode =FSTOWERVIEW_NOMAGNIFY;
+			camera->activeViewPort->lookFromPos.Set(1500.0,0.0,0.0);
+			info.solo[0]->GetAttitude().Mul(camera->activeViewPort->lookFromPos, camera->activeViewPort->lookFromPos);
+			camera->activeViewPort->lookFromPos +=info.solo[0]->GetPosition();
 			break;
 		case 5:
-			camera->mainViewPort->nextViewMode =FSTOWERVIEW_NOMAGNIFY;
-			camera->towerViewPos.Set(-1500.0,0.0,0.0);
-			info.solo[0]->GetAttitude().Mul(camera->towerViewPos, camera->towerViewPos);
-			camera->towerViewPos+=info.solo[0]->GetPosition();
+			camera->activeViewPort->nextViewMode =FSTOWERVIEW_NOMAGNIFY;
+			camera->activeViewPort->lookFromPos.Set(-1500.0,0.0,0.0);
+			info.solo[0]->GetAttitude().Mul(camera->activeViewPort->lookFromPos, camera->activeViewPort->lookFromPos);
+			camera->activeViewPort->lookFromPos +=info.solo[0]->GetPosition();
 			break;
 		}
 		return YSOK;
@@ -1480,7 +1489,7 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			DemoModeSetAcrobatViewModeCockpitView(info,air);
 			if(ap!=NULL && ap->cpMode!=0)
 			{
-				camera->mainViewPort->nextViewMode =FSCOCKPITVIEW;
+				camera->activeViewPort->nextViewMode =FSCOCKPITVIEW;
 			}
 			break;
 		case 3:
@@ -1498,7 +1507,7 @@ YSRESULT FsSimulation::DemoModeReconsiderAcrobatViewMode(FsDemoModeInfo &info)
 			break;
 		case 1:
 			DemoModeSetAcrobatViewModeAirplaneToTower(info,NULL);
-			camera->mainViewPort->nextViewMode =FSAIRTOTOWERVIEWSOLO;
+			camera->activeViewPort->nextViewMode =FSAIRTOTOWERVIEWSOLO;
 			break;
 		case 2:
 			DemoModeSetAcrobatViewModeOutsideView3(info,NULL);
@@ -1538,8 +1547,8 @@ YSRESULT FsSimulation::DemoModeReconsiderConcordeFlyByViewMode(FsDemoModeInfo &i
 
 	if(candidate.GetN()>0)
 	{
-		camera->viewTargetObj =candidate[rand()%candidate.GetN()];
-		SetPlayerAirplane((const FsAirplane*)camera->viewTargetObj);
+		camera->activeViewPort->lookAtObj =candidate[rand()%candidate.GetN()];
+		SetPlayerAirplane((const FsAirplane*)camera->activeViewPort->lookAtObj);
 	}
 	else
 	{
@@ -1567,7 +1576,7 @@ YSRESULT FsSimulation::DemoModeReconsiderConcordeFlyByViewMode(FsDemoModeInfo &i
 		available.Append(FSOUTSIDEPLAYER2);
 		available.Append(FSOUTSIDEPLAYER3);
 
-		if(camera->viewTargetObj->GetPosition().y()>=150.0)
+		if(camera->activeViewPort->lookAtObj->GetPosition().y()>=150.0)
 		{
 			available.Append(FSVERTICALORBITINGVIEW);
 			available.Append(FSHORIZONTALORBITINGVIEW);
@@ -1579,10 +1588,10 @@ YSRESULT FsSimulation::DemoModeReconsiderConcordeFlyByViewMode(FsDemoModeInfo &i
 		YsVec3 d;
 		if(info.refObj!=NULL)
 		{
-			d=info.refObj->GetPosition()-camera->viewTargetObj->GetPosition();
+			d=info.refObj->GetPosition()-camera->activeViewPort->lookAtObj->GetPosition();
 			if(d.GetSquareLength()<YsSqr(2500.0))
 			{
-				camera->viewSourceObj =info.refObj;
+				camera->activeViewPort->lookFromObj =info.refObj;
 				if(info.useGndToPlayerView==YSTRUE)
 				{
 					available.Append(FSGNDTOPLAYERVIEW); // Wasnt' it FSCARRIERVIEW?
@@ -1596,20 +1605,20 @@ YSRESULT FsSimulation::DemoModeReconsiderConcordeFlyByViewMode(FsDemoModeInfo &i
 
 		for(i=0; i<camera->towerList.GetN(); i++)
 		{
-			d= camera->towerList[i].pos-camera->viewTargetObj->GetPosition();
+			d= camera->towerList[i].pos-camera->activeViewPort->lookAtObj->GetPosition();
 			if(d.GetSquareLength()<YsSqr(5000.0))
 			{
 				if(info.useGndToPlayerView==YSTRUE)
 				{
-					camera->currentViewKey = i;
-					camera->viewSourcePos = camera->towerList[i].pos;
+					camera->activeViewPort->currentViewId = i;
+					camera->activeViewPort->lookFromPos = camera->towerList[i].pos;
 					available.Append(FSTOWERVIEW);
 				}
 				if(info.usePlayerToGndView==YSTRUE)
 				{
-					camera->currentViewKey = i;
-					camera->viewTargetPos = camera->towerList[i].pos;
-					camera->viewSourceObj = GetPlayerObject();
+					camera->currentViewId = i;
+					camera->activeViewPort->lookAtPos = camera->towerList[i].pos;
+					camera->activeViewPort->lookFromObj = GetPlayerObject();
 					available.Append(FSAIRTOTOWERVIEW);
 					available.Append(FSAIRTOTOWERVIEWSOLO);
 				}
@@ -1622,14 +1631,14 @@ YSRESULT FsSimulation::DemoModeReconsiderConcordeFlyByViewMode(FsDemoModeInfo &i
 	{
 		if(info.useAirToAirView==YSTRUE)
 		{
-			camera->viewTargetObj = info.formation[0];
-			camera->viewSourceObj = info.formation[1];
+			camera->activeViewPort->lookAtObj = info.formation[0];
+			camera->activeViewPort->lookFromObj = info.formation[1];
 			available.Append(FSAIRTOAIRVIEW);
 		}
 		if(info.useAirFromAirView==YSTRUE)
 		{
-			camera->viewTargetObj = info.formation[1];
-			camera->viewSourceObj = info.formation[0];
+			camera->activeViewPort->lookAtObj = info.formation[1];
+			camera->activeViewPort->lookFromObj = info.formation[0];
 			available.Append(FSAIRFROMAIRVIEW);
 		}
 	}
@@ -1638,8 +1647,8 @@ YSRESULT FsSimulation::DemoModeReconsiderConcordeFlyByViewMode(FsDemoModeInfo &i
 	{
 		int n;
 		n=rand()%available.GetN();
-		camera->mainViewPort->nextViewMode =available[n];
-		if(camera->mainViewPort->nextViewMode ==FSVERTICALORBITINGVIEW)
+		camera->activeViewPort->nextViewMode =available[n];
+		if(camera->activeViewPort->nextViewMode ==FSVERTICALORBITINGVIEW)
 		{
 			relViewAtt.SetB(YsPi/6.0);
 		}
@@ -1672,9 +1681,9 @@ YSRESULT FsSimulation::DemoModeSetAcrobatViewModeTowerToAirplane(FsDemoModeInfo 
 		}
 	}
 
-	camera->mainViewPort->nextViewMode =FSTOWERVIEW;
-	camera->viewSourcePos=info.showCenter;
-	camera->viewTargetObj =air;
+	camera->activeViewPort->nextViewMode =FSTOWERVIEW;
+	camera->activeViewPort->lookFromPos=info.showCenter;
+	camera->activeViewPort->lookAtObj =air;
 	return YSOK;
 }
 
@@ -1682,7 +1691,7 @@ YSRESULT FsSimulation::DemoModeSetAcrobatViewModeAirplaneToTower(FsDemoModeInfo 
 {
 	if(DemoModeSetAcrobatViewModeTowerToAirplane(info,air)==YSOK)
 	{
-		camera->mainViewPort->nextViewMode =FSAIRTOTOWERVIEW;
+		camera->activeViewPort->nextViewMode =FSAIRTOTOWERVIEW;
 		return YSOK;
 	}
 	return YSERR;
@@ -1712,18 +1721,18 @@ YSRESULT FsSimulation::DemoModeSetAcrobatViewModeCockpitView(FsDemoModeInfo &inf
 		{
 		default:
 		case 4:
-			camera->mainViewPort->nextViewMode =FSCOCKPITVIEW;
+			camera->activeViewPort->nextViewMode =FSCOCKPITVIEW;
 			break;
 		case 1:
-			camera->mainViewPort->nextViewMode =FSBACKMIRRORVIEW;
+			camera->activeViewPort->nextViewMode =FSBACKMIRRORVIEW;
 			break;
 		case 2:
 		case 5:
-			camera->mainViewPort->nextViewMode =FS45DEGREERIGHTVIEW;
+			camera->activeViewPort->nextViewMode =FS45DEGREERIGHTVIEW;
 			break;
 		case 3:
 		case 6:
-			camera->mainViewPort->nextViewMode =FS45DEGREELEFTVIEW;
+			camera->activeViewPort->nextViewMode =FS45DEGREELEFTVIEW;
 			break;
 		}
 		return YSOK;
@@ -1751,7 +1760,7 @@ YSRESULT FsSimulation::DemoModeSetAcrobatViewModeOutsideView3(FsDemoModeInfo &in
 	if(air!=NULL)
 	{
 		SetPlayerAirplane(air);
-		camera->mainViewPort->nextViewMode =FSOUTSIDEPLAYER3;
+		camera->activeViewPort->nextViewMode =FSOUTSIDEPLAYER3;
 		switch(fomPosition)
 		{
 		default:
