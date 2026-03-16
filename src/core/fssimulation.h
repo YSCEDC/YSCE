@@ -84,6 +84,7 @@ class FsSimulation : public FsHasInFlightDialog, public FsViewPort
 {
 private:
 	FsCamera* camera;
+	FsPhysics* phys;
 	YsString simTitle;
 
 	FsSimulation(const FsSimulation &);

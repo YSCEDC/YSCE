@@ -50,6 +50,7 @@
 #include "fspersona.h"
 
 #include "fstexturemanager.h"
+#include "fsphysics.h"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -125,6 +126,7 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	goal->SetIsActiveMission(YSFALSE);  // By default, FsSimulation doesn't have an active mission.
 	simEvent=new FsSimulationEventStore;
 	camera = new FsCamera;
+	phys = new FsPhysics;
 	airTrafficSequence=FsAirTrafficSequence::Create();
 
 	// In-Game Message Bitmap >>
@@ -287,7 +289,7 @@ FsSimulation::~FsSimulation()
 	delete goal;
 	delete simEvent;
 	delete camera;
-
+	delete phys;
 	delete localUser;
 
 	FsAirTrafficSequence::Delete(airTrafficSequence);
