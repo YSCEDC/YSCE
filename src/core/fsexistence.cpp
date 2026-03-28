@@ -380,7 +380,11 @@ void FsExistence::SetCollisionShell(const FsVisualSrf &src)
 
 void FsExistence::SetTransformationToCollisionShell(const YsMatrix4x4 &mat)
 {
-	coll.SetMatrix(mat);
+	if (transformedCollShellThisStep != YSTRUE)
+	{
+		transformedCollShellThisStep = YSTRUE;
+		coll.SetMatrix(mat);
+	}
 }
 
 void FsExistence::ClearCollisionShell(void)
@@ -391,77 +395,77 @@ void FsExistence::ClearCollisionShell(void)
 	coll.CleanUp();
 }
 
-YSBOOL FsExistence::MayCollideWith(const FsExistence &test,const double clearance) const
-{
-	return MayCollideWith(GetInverseMatrix(),test,test.GetMatrix(),clearance);
-}
-
-YSBOOL FsExistence::MayCollideWith(const YsMatrix4x4 &ownInverseMat,const FsExistence &test,const YsMatrix4x4 &testMat,const double clearance) const
-{
-	YsVec3 corner[8];
-	corner[0].Set(test.collBbx[0].x(),test.collBbx[0].y(),test.collBbx[0].z());
-	corner[1].Set(test.collBbx[1].x(),test.collBbx[0].y(),test.collBbx[0].z());
-	corner[2].Set(test.collBbx[0].x(),test.collBbx[1].y(),test.collBbx[0].z());
-	corner[3].Set(test.collBbx[1].x(),test.collBbx[1].y(),test.collBbx[0].z());
-	corner[4].Set(test.collBbx[0].x(),test.collBbx[0].y(),test.collBbx[1].z());
-	corner[5].Set(test.collBbx[1].x(),test.collBbx[0].y(),test.collBbx[1].z());
-	corner[6].Set(test.collBbx[0].x(),test.collBbx[1].y(),test.collBbx[1].z());
-	corner[7].Set(test.collBbx[1].x(),test.collBbx[1].y(),test.collBbx[1].z());
-
-	YSBOOL allAbove=YSTRUE,allBelow=YSTRUE,allLeft=YSTRUE,allRight=YSTRUE,allAhead=YSTRUE,allBehind=YSTRUE;
-
-	const YsMatrix4x4 &thisMat=ownInverseMat;
-	YsMatrix4x4 tfm=thisMat*testMat;
-
-	const double &xMin=collBbx[0].x()-clearance,&xMax=collBbx[1].x()+clearance;
-	const double &yMin=collBbx[0].y()-clearance,&yMax=collBbx[1].y()+clearance;
-	const double &zMin=collBbx[0].z()-clearance,&zMax=collBbx[1].z()+clearance;
-
-	for(int i=0; i<8; i++)
-	{
-		YsVec3 tst;
-		tfm.Mul(tst,corner[i],1.0);
-
-		if(tst.x()<=xMax)
-		{
-			allRight=YSFALSE;
-		}
-		if(xMin<=tst.x())
-		{
-			allLeft=YSFALSE;
-		}
-
-		if(tst.y()<=yMax)
-		{
-			allAbove=YSFALSE;
-		}
-		if(yMin<=tst.y())
-		{
-			allBelow=YSFALSE;
-		}
-
-		if(tst.z()<=zMax)
-		{
-			allBehind=YSFALSE;
-		}
-		if(zMin<=tst.z())
-		{
-			allAhead=YSFALSE;
-		}
-	}
-
-	if(YSTRUE==allAbove || 
-	   YSTRUE==allBelow || 
-	   YSTRUE==allLeft || 
-	   YSTRUE==allRight || 
-	   YSTRUE==allBehind || 
-	   YSTRUE==allAhead)
-	{
-		return YSFALSE;
-	}
-
-	return YSTRUE;
-}
+//YSBOOL FsExistence::MayCollideWith(const FsExistence &test,const double clearance) const
+//{
+//	return MayCollideWith(GetInverseMatrix(),test,test.GetMatrix(),clearance);
+//}
+//
+//YSBOOL FsExistence::MayCollideWith(const YsMatrix4x4 &ownInverseMat,const FsExistence &test,const YsMatrix4x4 &testMat,const double clearance) const
+//{
+//	YsVec3 corner[8];
+//	corner[0].Set(test.collBbx[0].x(),test.collBbx[0].y(),test.collBbx[0].z());
+//	corner[1].Set(test.collBbx[1].x(),test.collBbx[0].y(),test.collBbx[0].z());
+//	corner[2].Set(test.collBbx[0].x(),test.collBbx[1].y(),test.collBbx[0].z());
+//	corner[3].Set(test.collBbx[1].x(),test.collBbx[1].y(),test.collBbx[0].z());
+//	corner[4].Set(test.collBbx[0].x(),test.collBbx[0].y(),test.collBbx[1].z());
+//	corner[5].Set(test.collBbx[1].x(),test.collBbx[0].y(),test.collBbx[1].z());
+//	corner[6].Set(test.collBbx[0].x(),test.collBbx[1].y(),test.collBbx[1].z());
+//	corner[7].Set(test.collBbx[1].x(),test.collBbx[1].y(),test.collBbx[1].z());
+//
+//	YSBOOL allAbove=YSTRUE,allBelow=YSTRUE,allLeft=YSTRUE,allRight=YSTRUE,allAhead=YSTRUE,allBehind=YSTRUE;
+//
+//	const YsMatrix4x4 &thisMat=ownInverseMat;
+//	YsMatrix4x4 tfm=thisMat*testMat;
+//
+//	const double &xMin=collBbx[0].x()-clearance,&xMax=collBbx[1].x()+clearance;
+//	const double &yMin=collBbx[0].y()-clearance,&yMax=collBbx[1].y()+clearance;
+//	const double &zMin=collBbx[0].z()-clearance,&zMax=collBbx[1].z()+clearance;
+//
+//	for(int i=0; i<8; i++)
+//	{
+//		YsVec3 tst;
+//		tfm.Mul(tst,corner[i],1.0);
+//
+//		if(tst.x()<=xMax)
+//		{
+//			allRight=YSFALSE;
+//		}
+//		if(xMin<=tst.x())
+//		{
+//			allLeft=YSFALSE;
+//		}
+//
+//		if(tst.y()<=yMax)
+//		{
+//			allAbove=YSFALSE;
+//		}
+//		if(yMin<=tst.y())
+//		{
+//			allBelow=YSFALSE;
+//		}
+//
+//		if(tst.z()<=zMax)
+//		{
+//			allBehind=YSFALSE;
+//		}
+//		if(zMin<=tst.z())
+//		{
+//			allAhead=YSFALSE;
+//		}
+//	}
+//
+//	if(YSTRUE==allAbove || 
+//	   YSTRUE==allBelow || 
+//	   YSTRUE==allLeft || 
+//	   YSTRUE==allRight || 
+//	   YSTRUE==allBehind || 
+//	   YSTRUE==allAhead)
+//	{
+//		return YSFALSE;
+//	}
+//
+//	return YSTRUE;
+//}
 
 /*! Added 2018/01/06.
 */

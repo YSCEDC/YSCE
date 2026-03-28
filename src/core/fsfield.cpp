@@ -177,6 +177,15 @@ YSRESULT FsField::GetGroundSkyColor(YsColor &gnd,YsColor &sky) const
 	return YSERR;
 }
 
+double FsField::FieldMakeTerrainListAndGetHeighest(YsArray <YsSceneryItem*>& terrainList)
+{
+	if (fld != NULL)
+	{
+		return fld->MakeTerrainListAndGetHeighest(terrainList);
+	}
+	return 0.0;
+}
+
 const YsSceneryItem * FsField::GetFieldElevation(double &elv,const double &x,const double &z) const
 {
 	elv=0.0;
@@ -310,6 +319,15 @@ YSRESULT FsField::GetFirstPointOfPointSet(YsVec3 &point,const YsSceneryPointSet 
 	if(NULL!=fld)
 	{
 		return fld->GetFirstPointOfPointSet(point,pst);
+	}
+	return YSERR;
+}
+
+YSRESULT FsField::SearchElevationGridById(YsSceneryElevationGrid* grid, int id) const
+{
+	if (fld != NULL)
+	{
+		return fld->SearchElevationGridById(grid, id);
 	}
 	return YSERR;
 }

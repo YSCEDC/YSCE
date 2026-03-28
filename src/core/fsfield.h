@@ -54,6 +54,7 @@ public:
 
 	YSRESULT GetGroundSkyColor(YsColor &gnd,YsColor &sky) const;
 
+	double FieldMakeTerrainListAndGetHeighest(YsArray <YsSceneryItem*>& terrainList);
 	const YsSceneryItem *GetFieldElevation(double &elv,const double &x,const double &z) const;
 	const YsSceneryItem *GetFieldElevationAndNormal(double &elv,YsVec3 &nom,const double &x,const double &z) const;
 	double GetBaseElevation(void) const;
@@ -83,6 +84,7 @@ public:
 	YSRESULT GetPointSet(YsArray <YsVec3,N> &point,const YsSceneryPointSet *pst) const;
 
 	YSRESULT GetFirstPointOfPointSet(YsVec3 &point,const YsSceneryPointSet *pst) const;
+	YSRESULT SearchElevationGridById(YsSceneryElevationGrid* grid, int id) const;
 };
 
 template <const int N>

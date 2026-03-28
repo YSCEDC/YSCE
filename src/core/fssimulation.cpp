@@ -483,6 +483,40 @@ std::shared_ptr <class FsSimExtensionBase> FsSimulation::FindExtension(const YsS
 	return nullptr;
 }
 
+YSRESULT FsSimulation::CacheTerrainPosition()
+{
+	if (fieldLoaded == YSTRUE)
+	{
+		highestTerrainHeight = field.FieldMakeTerrainListAndGetHeighest(terrainList);
+		int nTer = 0, nShl = 0;
+		for (int i = 0; i < terrainList.GetN(); i++)
+		{
+			if (terrainList[i]->GetObjType() == YsSceneryItem::ELEVATIONGRID)
+			{
+				nTer++;
+			}
+			else
+			{
+				nShl++;
+			}
+			terrainList[i]->CacheGlobalPositionAndAttitude();
+		}
+		printf("Highest terrain %fm (%i .ter %i .srf)\n", highestTerrainHeight, nTer, nShl);
+		return YSOK;
+	}
+	return YSERR;
+}
+
+YsSceneryElevationGrid* FsSimulation::GetElevationGridById(int id)
+{
+	YsSceneryElevationGrid* res = NULL;
+	if (fieldLoaded == YSTRUE)
+	{
+		field.SearchElevationGridById(res, id);
+	}
+	return res;
+}
+
 YSRESULT FsSimulation::TestAircraftCarrierDataIntegrity(void) const
 {
 	YSRESULT res=YSOK;
@@ -1144,6 +1178,7 @@ FsField *FsSimulation::SetField(FsField &fld,const YsVec3 &pos,const YsAtt3 &att
 
 	RemakeLattice();
 
+	CacheTerrainPosition();
 	return &field;
 }
 
@@ -1187,7 +1222,7 @@ YSRESULT FsSimulation::CheckStartPositionIsAvailable(int /*fieldId*/,const char 
 YSBOOL FsSimulation::SimTestCollision(const class FsVisualSrf &shl,const YsVec3 &pos,const YsAtt3 &att)
 // Used from fsnetwork.cpp to check if the new object can be generated without collision.
 {
-	FsVisualSrf coll1;
+	FsVisualSrf coll1, coll2;
 	YsMatrix4x4 mat;
 
 	coll1=shl;
@@ -1204,7 +1239,10 @@ YSBOOL FsSimulation::SimTestCollision(const class FsVisualSrf &shl,const YsVec3 
 	{
 		FsAirplane *air2=airCandidate[i];
 		YsVec3 collPos;
-		if(YSTRUE==air2->IsAlive() && YSTRUE==CheckMidAir(collPos,coll1.Conv(),*air2))
+		YsShellPolygonHandle plHd;
+		coll2 = air2->TransformedCollisionShell();
+		if (air2->IsAlive() == YSTRUE && phys->CheckShellShellIntersection(&coll1, &coll2, 0.0, collPos, plHd, plHd) == YSTRUE)
+		//if(YSTRUE==air2->IsAlive() && YSTRUE==CheckMidAir(collPos,coll1.Conv(),*air2))
 		{
 			return YSTRUE;
 		}
@@ -1216,7 +1254,10 @@ YSBOOL FsSimulation::SimTestCollision(const class FsVisualSrf &shl,const YsVec3 
 	{
 		FsGround *gnd2=gndCandidate[i];
 		YsVec3 collPos;
-		if(YSTRUE==gnd2->IsAlive() && YSTRUE==CheckMidAir(collPos,coll1.Conv(),*gnd2))
+		YsShellPolygonHandle plHd;
+		coll2 = gnd2->TransformedCollisionShell();
+		if (YSTRUE == gnd2->IsAlive() && phys->CheckShellShellIntersection(&coll1, &coll2, 0.0, collPos, plHd, plHd) == YSTRUE)
+		//if(YSTRUE==gnd2->IsAlive() && YSTRUE==CheckMidAir(collPos,coll1.Conv(),*gnd2))
 		{
 			return YSTRUE;
 		}
@@ -1429,6 +1470,7 @@ void FsSimulation::RunSimulationOneStep(FsSimulation::FSSIMULATIONSTATE &simStat
 		ClearKeyBuffer();
 		PrepareRunSimulation();
 		camera->UpdateCameras(this); // Prevent one frame with uninitialized viewpoint.
+		phys->UpdatePhysics(this);
 		simState=FSSIMSTATE_RUNNING;
 
 		for(auto ptr : addOnList)
@@ -2251,6 +2293,7 @@ void FsSimulation::SimulateOneStep(
 		printf("S0\n");
 	#endif
 	RealTimeStep();
+	phys->UpdatePhysics(this);
 
 	if(NULL==firstPlayer.GetObject(this) && NULL!=GetPlayerObject())
 	{
@@ -3519,7 +3562,9 @@ void FsSimulation::SimMove(const double &dt)
 			}
 		}
 
-		airplane->SetTransformationToCollisionShell(airplane->Prop().GetMatrix());
+		//airplane->SetTransformationToCollisionShell(airplane->Prop().GetMatrix());
+		//Collision shell is now only transformed when there is a possible collision, rather than every frame
+		airplane->transformedCollShellThisStep = YSFALSE;
 		airId++;
 
 #ifdef CRASHINVESTIGATION_S1_LEVEL2
@@ -3583,7 +3628,9 @@ void FsSimulation::SimMove(const double &dt)
 		YsMatrix4x4 mat;
 		mat.Translate(ground->GetPosition());
 		mat.Rotate(ground->GetAttitude());
-		ground->SetTransformationToCollisionShell(mat);
+		//ground->SetTransformationToCollisionShell(mat);
+		//Collision shell is now only transformed when there is a possible collision, rather than every frame
+		ground->transformedCollShellThisStep = YSFALSE;
 	}
 
 #ifdef CRASHINVESTIGATION_S1_LEVEL2
@@ -3690,28 +3737,30 @@ void FsSimulation::SimCheckTailStrike(void)
 		if(air->IsAlive()==YSTRUE && air->isPlayingRecord!=YSTRUE && air->isNetSubstitute!=YSTRUE)
 		{
 			YsVec3 untransformed;
-			if(YSTRUE==air->TestTailStrike(untransformed))
-			{
-				if(cfgPtr->noTailStrike==YSTRUE)
-				{
-					if(air==GetPlayerAirplane())
-					{
-						AddTimedMessage("Tail Strike!");
-						air->Prop().BouncePitchByTailStrike();
-					}
-				}
-				else
-				{
-					if(untransformed.z()<-YsAbs(untransformed.x())*2.0)  // Really tail?
-					{
-						AirplaneCrash(air,FSDIEDOF_TAILSTRIKE,1);
-					}
-					else
-					{
-						AirplaneCrash(air,FSDIEDOF_TERRAIN,1);
-					}
-				}
-			}
+			YsVec3 collPos;
+			phys->CheckObjectTerrainCollision(air, 0.0, collPos);
+			//if(YSTRUE==air->TestTailStrike(untransformed))
+			//{
+			//	if(cfgPtr->noTailStrike==YSTRUE)
+			//	{
+			//		if(air==GetPlayerAirplane())
+			//		{
+			//			AddTimedMessage("Tail Strike!");
+			//			air->Prop().BouncePitchByTailStrike();
+			//		}
+			//	}
+			//	else
+			//	{
+			//		if(untransformed.z()<-YsAbs(untransformed.x())*2.0)  // Really tail?
+			//		{
+			//			AirplaneCrash(air,FSDIEDOF_TAILSTRIKE,1);
+			//		}
+			//		else
+			//		{
+			//			AirplaneCrash(air,FSDIEDOF_TERRAIN,1);
+			//		}
+			//	}
+			//}
 		}
 	}
 }
@@ -3886,7 +3935,8 @@ void FsSimulation::SimComputeAirToObjCollision(void)
 							(air1->Prop().IsActive() == YSTRUE || air2->Prop().IsActive() == YSTRUE))  // 2005/03/03
 						{
 							YsVec3 collPos;
-							if (CheckMidAir(collPos, *air1, *air2) == YSTRUE)
+							//if (CheckMidAir(collPos, *air1, *air2) == YSTRUE)
+							if (phys->CheckObjectObjectCollision(air1, air2, 0.0, collPos) == YSTRUE)
 							{
 								air1->airCollision.Increment();
 								air1->airCollision.Last().objKey = air2->SearchKey();
@@ -3912,7 +3962,8 @@ void FsSimulation::SimComputeAirToObjCollision(void)
 						if (gnd2->IsAlive() == YSTRUE)
 						{
 							YsVec3 collPos;
-							if (CheckMidAir(collPos, *air1, *gnd2) == YSTRUE)
+							//if (CheckMidAir(collPos, *air1, *gnd2) == YSTRUE)
+							if (phys->CheckObjectObjectCollision(air1, gnd2, 0.0, collPos) == YSTRUE)
 							{
 								air1->gndCollision.Increment();
 								air1->gndCollision.Last().objKey = gnd2->SearchKey();
@@ -4121,7 +4172,8 @@ void FsSimulation::SimProcessCollisionAndTerrain(const double & /*dt*/)
 					if(gnd2!=gnd1 && YSTRUE==gnd2->IsAlive())
 					{
 						YsVec3 collPos;
-						if(YSTRUE==CheckMidAir(collPos,*gnd1,*gnd2))
+						//if(YSTRUE==CheckMidAir(collPos,*gnd1,*gnd2))
+						if (phys->CheckObjectObjectCollision(gnd1, gnd2, 0.0, collPos) == YSTRUE)
 						{
 							gnd1->Bounce(collPos);
 							gnd2->Bounce(collPos);
@@ -4159,58 +4211,61 @@ void FsSimulation::SimProcessCollisionAndTerrain(const double & /*dt*/)
 	}
 }
 
-YSBOOL FsSimulation::MayCollide(const YsVec3 &objPos,const double objRad,const FsExistence *selfPtr,const int nExclude,const FsExistence * const exclude[]) const
-{
-	if(YSTRUE==MayCollideWithAir(objPos,objRad,selfPtr,nExclude,exclude) ||
-	   YSTRUE==MayCollideWithGround(objPos,objRad,selfPtr,nExclude,exclude))
-	{
-		return YSTRUE;
-	}
-	return YSFALSE;
-}
+//YSBOOL FsSimulation::MayCollide(const YsVec3 &objPos,const double objRad,const FsExistence *selfPtr,const int nExclude,const FsExistence * const exclude[]) const
+//{
+//	//HTRADIUS overlap check
+//	if(YSTRUE==MayCollideWithAir(objPos,objRad,selfPtr,nExclude,exclude) ||
+//	   YSTRUE==MayCollideWithGround(objPos,objRad,selfPtr,nExclude,exclude))
+//	{
+//		return YSTRUE;
+//	}
+//	return YSFALSE;
+//}
 
-YSBOOL FsSimulation::MayCollideWithAir(const YsVec3 &objPos,const double objRad,const FsExistence *selfPtr,const int nExclude,const FsExistence * const exclude[]) const
-{
-	YsArray <FsAirplane *,256> airCandidate;
-	GetLattice().GetAirCollisionCandidate(airCandidate,objPos,objRad);
-	for(int i=0; i<airCandidate.GetN(); i++)
-	{
-		const YsVec3 dif=objPos-airCandidate[i]->GetPosition();;
-		const double air2Rad=airCandidate[i]->Prop().GetOutsideRadius();
-		if(airCandidate[i]!=selfPtr &&
-		   YSTRUE==airCandidate[i]->IsAlive() &&
-		   YSTRUE!=YsIsIncluded <const FsExistence *> (nExclude,exclude,airCandidate[i]) && 
-		   dif.GetSquareLength()<=YsSqr((objRad+air2Rad)))
-		{
-			printf("May collide with %s\n",airCandidate[i]->GetIdentifier());
-			return YSTRUE;
-		}
-	}
-	return YSFALSE;
-}
-
-YSBOOL FsSimulation::MayCollideWithGround(const YsVec3 &objPos,const double objRad,const FsExistence *selfPtr,const int nExclude,const FsExistence * const exclude[]) const
-{
-	YsArray <FsGround *,256> gndCandidate;
-	GetLattice().GetGndCollisionCandidate(gndCandidate,objPos,objRad);
-	for(int i=0; i<gndCandidate.GetN(); i++)
-	{
-		const YsVec3 dif=objPos-gndCandidate[i]->GetPosition();
-		const double gnd2Rad=gndCandidate[i]->Prop().GetOutsideRadius();
-		if(gndCandidate[i]!=selfPtr &&
-		   YSTRUE!=gndCandidate[i]->IsAlive() &&
-		   YSTRUE!=YsIsIncluded <const FsExistence *> (nExclude,exclude,gndCandidate[i]) && 
-		   dif.GetSquareLength()<=YsSqr((objRad+gnd2Rad)))
-		{
-			printf("May collide with %s\n",gndCandidate[i]->GetIdentifier());
-			return YSTRUE;
-		}
-	}
-	return YSFALSE;
-}
+//YSBOOL FsSimulation::MayCollideWithAir(const YsVec3 &objPos,const double objRad,const FsExistence *selfPtr,const int nExclude,const FsExistence * const exclude[]) const
+//{
+//	YsArray <FsAirplane *,256> airCandidate;
+//	GetLattice().GetAirCollisionCandidate(airCandidate,objPos,objRad);
+//	for(int i=0; i<airCandidate.GetN(); i++)
+//	{
+//		const YsVec3 dif=objPos-airCandidate[i]->GetPosition();;
+//		const double air2Rad=airCandidate[i]->Prop().GetOutsideRadius();
+//		if(airCandidate[i]!=selfPtr &&
+//		   YSTRUE==airCandidate[i]->IsAlive() &&
+//		   YSTRUE!=YsIsIncluded <const FsExistence *> (nExclude,exclude,airCandidate[i]) && 
+//		   dif.GetSquareLength()<=YsSqr((objRad+air2Rad)))
+//		{
+//			printf("May collide with %s\n",airCandidate[i]->GetIdentifier());
+//			return YSTRUE;
+//		}
+//	}
+//	return YSFALSE;
+//}
+//
+//YSBOOL FsSimulation::MayCollideWithGround(const YsVec3 &objPos,const double objRad,const FsExistence *selfPtr,const int nExclude,const FsExistence * const exclude[]) const
+//{
+//	YsArray <FsGround *,256> gndCandidate;
+//	GetLattice().GetGndCollisionCandidate(gndCandidate,objPos,objRad);
+//	for(int i=0; i<gndCandidate.GetN(); i++)
+//	{
+//		const YsVec3 dif=objPos-gndCandidate[i]->GetPosition();
+//		const double gnd2Rad=gndCandidate[i]->Prop().GetOutsideRadius();
+//		if(gndCandidate[i]!=selfPtr &&
+//		   YSTRUE!=gndCandidate[i]->IsAlive() &&
+//		   YSTRUE!=YsIsIncluded <const FsExistence *> (nExclude,exclude,gndCandidate[i]) && 
+//		   dif.GetSquareLength()<=YsSqr((objRad+gnd2Rad)))
+//		{
+//			printf("May collide with %s\n",gndCandidate[i]->GetIdentifier());
+//			return YSTRUE;
+//		}
+//	}
+//	return YSFALSE;
+//}
 
 YSBOOL FsSimulation::MayCollide(const YsVec3 &objPos,const YsAtt3 &objAtt,const double clearance,const FsExistence *selfPtr,const int nExclude,const FsExistence * const exclude[]) const
 {
+	//Bbx overlap check
+	//This is called from fsai_air.cpp to check for future collisions
 	if(YSTRUE==MayCollideWithAir(objPos,objAtt,clearance,selfPtr,nExclude,exclude) ||
 	   YSTRUE==MayCollideWithGround(objPos,objAtt,clearance,selfPtr,nExclude,exclude))
 	{
@@ -4227,8 +4282,8 @@ YSBOOL FsSimulation::MayCollideWithAir(const YsVec3 &objPos,const YsAtt3 &objAtt
 	GetLattice().GetAirCollisionCandidate(airCandidate,objPos,objRad);
 	if(0<airCandidate.GetN())
 	{
-		YsMatrix4x4 objMat;
-		objMat.Multiply(objPos,objAtt);
+		YsMatrix4x4 futureMat;
+		futureMat.Multiply(objPos,objAtt);
 
 		YsMatrix4x4 objMatInverse;
 		objMatInverse.MultiplyInverse(objPos,objAtt);
@@ -4241,10 +4296,19 @@ YSBOOL FsSimulation::MayCollideWithAir(const YsVec3 &objPos,const YsAtt3 &objAtt
 			   YSTRUE!=YsIsIncluded <const FsExistence *> (nExclude,exclude,airCandidate[i]) && 
 			   dif.GetSquareLength()<=YsSqr((objRad+air2Rad)))
 			{
-				if(airCandidate[i]->MayCollideWith(airCandidate[i]->GetInverseMatrix(),*selfPtr,objMat,clearance) &&
-				   selfPtr->MayCollideWith(objMatInverse,*airCandidate[i],airCandidate[i]->GetMatrix(),clearance))
+				//if(airCandidate[i]->MayCollideWith(airCandidate[i]->GetInverseMatrix(),*selfPtr,futureMat,clearance) &&
+				//   selfPtr->MayCollideWith(objMatInverse,*airCandidate[i],airCandidate[i]->GetMatrix(),clearance))
+				//{
+				//	printf("Bbx may collide with %s\n",airCandidate[i]->GetIdentifier());
+				//	return YSTRUE;
+				//}
+				YsVec3 bbx1[2], bbx2[2];
+				bbx1[0] = selfPtr->GetCollisionShellBbx()[0];
+				bbx1[1] = selfPtr->GetCollisionShellBbx()[1];
+				bbx2[0] = airCandidate[i]->GetCollisionShellBbx()[0];
+				bbx2[1] = airCandidate[i]->GetCollisionShellBbx()[1];
+				if (phys->Check2BoundingBoxIntersection(bbx1, futureMat, bbx2, airCandidate[i]->GetMatrix(), clearance) == YSTRUE)
 				{
-					printf("Bbx may collide with %s\n",airCandidate[i]->GetIdentifier());
 					return YSTRUE;
 				}
 			}
@@ -4275,10 +4339,19 @@ YSBOOL FsSimulation::MayCollideWithGround(const YsVec3 &objPos,const YsAtt3 &obj
 			   YSTRUE!=YsIsIncluded <const FsExistence *> (nExclude,exclude,gndCandidate[i]) && 
 			   dif.GetSquareLength()<=YsSqr((objRad+gnd2Rad)))
 			{
-				if(gndCandidate[i]->MayCollideWith(gndCandidate[i]->GetInverseMatrix(),*selfPtr,objMat,clearance) &&
-				   selfPtr->MayCollideWith(objMatInverse,*gndCandidate[i],gndCandidate[i]->GetMatrix(),clearance))
+				//if(gndCandidate[i]->MayCollideWith(gndCandidate[i]->GetInverseMatrix(),*selfPtr,objMat,clearance) &&
+				//   selfPtr->MayCollideWith(objMatInverse,*gndCandidate[i],gndCandidate[i]->GetMatrix(),clearance))
+				//{
+				//	printf("Bbx may collide with %s\n",gndCandidate[i]->GetIdentifier());
+				//	return YSTRUE;
+				//}
+				YsVec3 bbx1[2], bbx2[2];
+				bbx1[0] = selfPtr->GetCollisionShellBbx()[0];
+				bbx1[1] = selfPtr->GetCollisionShellBbx()[1];
+				bbx2[0] = gndCandidate[i]->GetCollisionShellBbx()[0];
+				bbx2[1] = gndCandidate[i]->GetCollisionShellBbx()[1];
+				if (phys->Check2BoundingBoxIntersection(bbx1, selfPtr->GetMatrix(), bbx2, gndCandidate[i]->GetMatrix(), clearance) == YSTRUE)
 				{
-					printf("Bbx may collide with %s\n",gndCandidate[i]->GetIdentifier());
 					return YSTRUE;
 				}
 			}
@@ -9472,36 +9545,37 @@ YSBOOL FsSimulation::AllRecordedFlightsAreOver(double &lastRecordTime)
 	}
 }
 
-YSBOOL FsSimulation::CheckMidAir(YsVec3 &collisionPos,FsExistence &ex1,FsExistence &ex2)
-{
-	const YsVec3 *p1=&ex1.GetPosition();
-	const YsVec3 *p2=&ex2.GetPosition();
-	const double r1=ex1.GetApproximatedCollideRadius();
-	const double r2=ex2.GetApproximatedCollideRadius();
+//YSBOOL FsSimulation::CheckMidAir(YsVec3 &collisionPos,FsExistence &ex1,FsExistence &ex2)
+//{
+//	return phys->CheckObjectObjectCollision(&ex1, &ex2, 0.0, collisionPos);
+//	//const YsVec3 *p1=&ex1.GetPosition();
+//	//const YsVec3 *p2=&ex2.GetPosition();
+//	//const double r1=ex1.GetApproximatedCollideRadius();
+//	//const double r2=ex2.GetApproximatedCollideRadius();
+//
+//	//if((*p1-*p2).GetSquareLength()<(r1+r2)*(r1+r2))
+//	//{
+//	//	YsShellPolygonHandle plHd1,plHd2;
+//	//	if(YSTRUE==ex1.MayCollideWith(ex2) && YSTRUE==ex2.MayCollideWith(ex1))
+//	//	{
+//	//		if(YsCheckShellCollisionEx(collisionPos,plHd1,plHd2,ex1.TransformedCollisionShell().Conv(),ex2.TransformedCollisionShell().Conv())==YSTRUE)
+//	//		{
+//	//			return YSTRUE;
+//	//		}
+//	//	}
+//	//}
+//	//return YSFALSE;
+//}
 
-	if((*p1-*p2).GetSquareLength()<(r1+r2)*(r1+r2))
-	{
-		YsShellPolygonHandle plHd1,plHd2;
-		if(YSTRUE==ex1.MayCollideWith(ex2) && YSTRUE==ex2.MayCollideWith(ex1))
-		{
-			if(YsCheckShellCollisionEx(collisionPos,plHd1,plHd2,ex1.TransformedCollisionShell().Conv(),ex2.TransformedCollisionShell().Conv())==YSTRUE)
-			{
-				return YSTRUE;
-			}
-		}
-	}
-	return YSFALSE;
-}
-
-YSBOOL FsSimulation::CheckMidAir(YsVec3 &collisionPos,const YsShell &coll,FsExistence &ex2)
-{
-	YsShellPolygonHandle plHd1,plHd2;
-	if(YsCheckShellCollisionEx(collisionPos,plHd1,plHd2,coll,ex2.TransformedCollisionShell().Conv())==YSTRUE)
-	{
-		return YSTRUE;
-	}
-	return YSFALSE;
-}
+//YSBOOL FsSimulation::CheckMidAir(YsVec3 &collisionPos,const YsShell &coll,FsExistence &ex2)
+//{
+//	YsShellPolygonHandle plHd1,plHd2;
+//	if(YsCheckShellCollisionEx(collisionPos,plHd1,plHd2,coll,ex2.TransformedCollisionShell().Conv())==YSTRUE)
+//	{
+//		return YSTRUE;
+//	}
+//	return YSFALSE;
+//}
 
 YSBOOL FsSimulation::Explode(FsExistence &obj,YSBOOL sound)
 {

@@ -413,6 +413,11 @@ public:
 	static const char *GetObjTypeString(OBJTYPE t);
 	const YsVec3 &GetPosition(void) const;
 	const YsAtt3 &GetAttitude(void) const;
+	const YsVec3& GetGlobalPosition(void) const;
+	const YsVec3& GetGlobalCenterPosition(void) const;
+	const YsAtt3& GetGlobalAttitude(void) const;
+	const void CacheGlobalPositionAndAttitude(void);
+	const double& GetBbxDiag(void) const;
 	unsigned GetSearchKey(void) const;
 
 protected:
@@ -425,6 +430,11 @@ protected:
 
 	YsAtt3 att;
 	YsVec3 pos;
+	YsVec3 posGlobal; //Object origin in global coords (.ters have a corner origin)
+	YsVec3 centerGlobal; //Position of bbx center in global coords
+	YsAtt3 attGlobal;
+	double bbxDiag; //Radius of bounding sphere
+	YsVec3 bbx[2];
 
 	YsString fName;
 
@@ -434,6 +444,7 @@ protected:
 
 public:
 	virtual void GetBoundingBox(YsVec3 bbx[2]) const;
+	void SetBoundingBox(YsVec3 bbxin[2]);
 
 	int GetId(void) const;
 	const char *GetTag(void) const;
@@ -442,6 +453,8 @@ public:
 	const class YsScenery2DDrawing *Get2DDrawing(void) const;
 	class YsSceneryElevationGrid *GetElevationGrid(void);
 	const class YsSceneryElevationGrid *GetElevationGrid(void) const;
+	class YsSceneryShell* GetTerrainShell(void);
+	const class YsSceneryShell* GetTerrainShell(void) const;
 	class YsSceneryRectRegion *GetRectRegion(void);
 	const class YsSceneryRectRegion *GetRectRegion(void) const;
 	class YsSceneryGndObj *GetGndObj(void);
@@ -478,6 +491,7 @@ protected:
 	YsString collFName; // For serialization only.
 
 	YsVisualSrf shl,collShl;
+	YsVisualSrf transformedCollShell;
 	mutable YsShellLattice collLtc;
 
 	void Initialize(void);
@@ -493,7 +507,9 @@ protected:
 	YSRESULT CacheCollLattice(void) const;
 
 public:
+	YSRESULT TransformCollisionShell(YsMatrix4x4 mat);
 	const YsVisualSrf &GetCollisionShell(void) const;
+	YsVisualSrf& GetTransformedCollisionShell(void);
 	virtual void GetBoundingBox(YsVec3 bbx[2]) const;
 };
 
@@ -533,6 +549,7 @@ public:
 
 	YSRESULT Save(const char fn[]) const;
 	YSRESULT Save(YsTextOutputStream &textOut) const;
+	YsElevationGrid* GetGridData(void);
 	void GetSideWallConfiguration(YSBOOL sw[4],YsColor swc[4]) const;
 	virtual void GetBoundingBox(YsVec3 bbx[2]) const;
 	void RecomputeBoundingBox(void);
@@ -945,7 +962,6 @@ public:
 
 typedef YsEditArrayObjectHandle <YsSceneryAirRoute,2> YsSceneryAirRouteHandle;
 
-
 class YsScenery : public YsSceneryItem
 {
 friend class SeScenery;
@@ -1296,7 +1312,6 @@ public:
 	YSRESULT GetTransformation(YsMatrix4x4 &mat,const YsSceneryItem *itm) const;
 	YsMatrix4x4 GetTransformation(const YsSceneryItem *itm) const;
 
-
 	YSRESULT GetParentTransformation(YsMatrix4x4 &mat,const YsSceneryItem *itm) const;
 	const YsMatrix4x4 &ComputeTransformation(YsMatrix4x4 &mat,const YsVec3 &pos,const YsAtt3 &att) const;
 	YSRESULT GetOrigin(YsVec3 &pos,const YsSceneryItem *itm) const;
@@ -1341,10 +1356,12 @@ public:
 
 public:
 	double GetElevation(const YsSceneryItem *&evg,const YsVec3 &pos) const;
+	double MakeTerrainListAndGetHeighest(YsArray <YsSceneryItem*>& terrainList);
 protected:
 	YSRESULT GetElevation_Recursion(const YsSceneryItem *&evg,double &elv,const YsVec3 &pos) const;
 
 public:
+	YSRESULT SearchElevationGridById(YsSceneryElevationGrid* grid, int id);
 	void GetElevationAndNormal(const YsSceneryItem *&evg,double &elv,YsVec3 &nom,const YsVec3 &pos);
 protected:
 	YSRESULT GetElevationAndNormal_Recursion(const YsSceneryItem *&evg,double &elv,YsVec3 &nom,const YsVec3 &pos) const;

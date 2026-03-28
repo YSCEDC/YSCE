@@ -164,6 +164,7 @@ public:
 	void SetCollisionShell(const FsVisualSrf &src);
 	void SetTransformationToCollisionShell(const YsMatrix4x4 &mat);
 	void ClearCollisionShell(void);
+	YSBOOL transformedCollShellThisStep;
 	YSBOOL MayCollideWith(const FsExistence &test,const double clearance=0.0) const;
 
 	/*! A User Report indicated that I was wrongfully calculating propeller rotation of Class-3 objects based from state 0, 

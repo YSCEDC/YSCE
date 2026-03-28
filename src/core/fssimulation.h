@@ -36,7 +36,7 @@
 
 #include "fsconsole.h"
 #include "fsopengl.h"
-
+#include "fsphysics.h"
 #include "fsgamemode.h"
 
 class FsWorld;
@@ -331,6 +331,11 @@ public:
 	FsCamera* GetCamera(void);
 	void RegisterExtension(std::shared_ptr <FsSimExtensionBase> addOnPtr);
 	std::shared_ptr <class FsSimExtensionBase> FindExtension(const YsString &str) const;
+
+	double highestTerrainHeight;
+	YsArray <YsSceneryItem*> terrainList;
+	YSRESULT CacheTerrainPosition();
+	YsSceneryElevationGrid* GetElevationGridById(int id);
 
 	YSRESULT TestAircraftCarrierDataIntegrity(void) const;
 
@@ -756,7 +761,7 @@ public:
 	YSBOOL MayCollideWithGround(const YsVec3 &objPos,const double objRad,const FsExistence *selfPtr,const int nExclude,const FsExistence * const exclude[]) const;
 
 	/*! The following three MayCollide, MayCollideWithAir, and MayCollideWithGround will test bounding box collision between objects.
-	    It does not consider bounding box, so the result is very conservative. */
+	     */
 	YSBOOL MayCollide(const YsVec3 &objPos,const YsAtt3 &objAtt,const double clearance,const FsExistence *selfPtr,const int nExclude,const FsExistence * const exclude[]) const;
 	YSBOOL MayCollideWithAir(const YsVec3 &objPos,const YsAtt3 &objAtt,const double clearance,const FsExistence *selfPtr,const int nExclude,const FsExistence * const exclude[]) const;
 	YSBOOL MayCollideWithGround(const YsVec3 &objPos,const YsAtt3 &objAtt,const double clearance,const FsExistence *selfPtr,const int nExclude,const FsExistence * const exclude[]) const;

@@ -1210,6 +1210,72 @@ const YsAtt3 &YsSceneryItem::GetAttitude(void) const
 	return att;
 }
 
+const YsVec3& YsSceneryItem::GetGlobalPosition(void) const
+{
+	return posGlobal;
+}
+
+const YsVec3& YsSceneryItem::GetGlobalCenterPosition(void) const
+{
+	return centerGlobal;
+}
+
+const YsAtt3& YsSceneryItem::GetGlobalAttitude(void) const
+{
+	return attGlobal;
+}
+
+const void YsSceneryItem::CacheGlobalPositionAndAttitude(void)
+{
+	YsMatrix4x4 mat, attMat;
+	YsScenery* parent;
+	YsVec3 ev, uv;
+	ev.Set(0.0, 0.0, 1.0);
+	uv.Set(0.0, 1.0, 0.0);
+	bbxDiag = (bbx[1] - bbx[0]).GetLength() / 2;
+	centerGlobal = (bbx[0] + bbx[1]) / 2;
+	printf("Cache global %f %f %f | %f\n", bbx[1].x(), bbx[1].y(), bbx[1].z(),bbxDiag);
+	
+	attMat.Initialize();
+	attMat.Rotate(att);
+	attMat.Mul(ev, ev, 1.0);
+	attMat.Mul(uv, uv, 1.0);
+	mat.Initialize();
+	mat.Translate(pos);
+	mat.Rotate(att);
+	mat.Mul(centerGlobal, centerGlobal, 1.0);
+	posGlobal = pos;
+	
+	parent = owner;
+	while (parent != NULL)
+	{
+		attMat.Initialize();
+		attMat.Rotate(parent->att);
+		attMat.Mul(ev, ev, 1.0);
+		attMat.Mul(uv, uv, 1.0);
+		mat.Initialize();
+		mat.Translate(parent->GetPosition());
+		mat.Rotate(parent->att);
+		mat.Mul(posGlobal, posGlobal, 1.0);
+		mat.Mul(centerGlobal, centerGlobal, 1.0);
+		parent = parent->owner;
+	}
+	attGlobal.SetTwoVector(ev,uv);
+	if (objType == SHELL)
+	{
+		mat.Initialize();
+		mat.Translate(posGlobal);
+		mat.Rotate(attGlobal);
+		YsSceneryShell* shl = GetTerrainShell();
+		shl->TransformCollisionShell(mat);
+	}
+}
+
+const double& YsSceneryItem::GetBbxDiag(void) const
+{
+	return bbxDiag;
+}
+
 unsigned YsSceneryItem::GetSearchKey(void) const
 {
 	return searchKey;
@@ -1226,12 +1292,21 @@ void YsSceneryItem::Initialize()
 	visibleDist=0.0;
 	id=0;
 	tagStr="";
+	bbx[0] = YsOrigin();
+	bbx[1] = YsOrigin();
 }
 
-void YsSceneryItem::GetBoundingBox(YsVec3 bbx[2]) const
+void YsSceneryItem::GetBoundingBox(YsVec3 bbxout[2]) const
 {
-	bbx[0]=YsOrigin();
-	bbx[1]=YsOrigin();
+	bbxout[0]=bbx[0];
+	bbxout[1]=bbx[1];
+}
+
+void YsSceneryItem::SetBoundingBox(YsVec3 bbxin[2])
+{
+	bbx[0] = bbxin[0];
+	bbx[1] = bbxin[1];
+	bbxDiag = (bbx[1] - bbx[0]).GetLength()/2;
 }
 
 int YsSceneryItem::GetId(void) const
@@ -1276,6 +1351,24 @@ const YsSceneryElevationGrid *YsSceneryItem::GetElevationGrid(void) const
 	if(ELEVATIONGRID==GetObjType())
 	{
 		return (const YsSceneryElevationGrid *)this;
+	}
+	return NULL;
+}
+
+YsSceneryShell* YsSceneryItem::GetTerrainShell(void)
+{
+	if (SHELL == GetObjType())
+	{
+		return (YsSceneryShell*)this;
+	}
+	return NULL;
+}
+
+const YsSceneryShell* YsSceneryItem::GetTerrainShell(void) const
+{
+	if (SHELL == GetObjType())
+	{
+		return (const YsSceneryShell*)this;
 	}
 	return NULL;
 }
@@ -1432,6 +1525,25 @@ YSRESULT YsSceneryShell::CacheCollLattice(void) const
 	return YSERR;
 }
 
+YSRESULT YsSceneryShell::TransformCollisionShell(YsMatrix4x4 mat)
+{
+	YsVisualSrf shell = GetCollisionShell();
+	
+	if (0 < shell.GetNumPolygon())
+	{
+		YsVec3 discard[2];
+		shell.SetMatrix(mat);
+		shell.GetBoundingBox(discard[0],discard[1]); //This makes the shell recompute with the new matrix transformation
+		transformedCollShell = shell;
+
+		if (0 < transformedCollShell.GetNumPolygon())
+		{
+			return YSOK;
+		}
+	}
+	return YSERR;
+}
+
 const YsVisualSrf &YsSceneryShell::GetCollisionShell(void) const
 {
 	if(0<collShl.GetNumPolygon())
@@ -1439,6 +1551,19 @@ const YsVisualSrf &YsSceneryShell::GetCollisionShell(void) const
 		return collShl;
 	}
 	return shl;
+}
+
+YsVisualSrf& YsSceneryShell::GetTransformedCollisionShell(void)
+{
+	if (transformedCollShell.GetNumPolygon() < 1)
+	{
+		YsMatrix4x4 mat;
+		mat.Translate(posGlobal);
+		mat.Rotate(attGlobal);
+		TransformCollisionShell(mat);
+	}
+
+	return transformedCollShell;
 }
 
 void YsSceneryShell::GetBoundingBox(YsVec3 bbx[2]) const
@@ -1476,6 +1601,11 @@ YSRESULT YsSceneryElevationGrid::Save(const char fn[]) const
 YSRESULT YsSceneryElevationGrid::Save(YsTextOutputStream &textOut) const
 {
 	return evg.SaveTer(textOut);
+}
+
+YsElevationGrid* YsSceneryElevationGrid::GetGridData(void)
+{
+	return &evg;
 }
 
 void YsSceneryElevationGrid::GetSideWallConfiguration(YSBOOL sw[4],YsColor swc[4]) const
@@ -3185,6 +3315,83 @@ YSRESULT YsScenery::GetFirstPointOfPointSet(YsVec3 &point,const YsSceneryPointSe
 	return YSERR;
 }
 
+double YsScenery::MakeTerrainListAndGetHeighest(YsArray <YsSceneryItem*>& terrainList)
+{
+	YsListItem <YsScenery>* scn;
+	YsListItem <YsSceneryElevationGrid>* grid;
+	YsListItem <YsSceneryShell>* shell;
+	terrainList.CleanUp();
+	
+	YsArray <YsScenery*, 16> todo;
+	todo.Append(this);
+	while (todo.GetN() > 0)
+	{
+		grid = NULL;
+		while ((grid = todo[0]->FindNextElevationGrid(grid)) != NULL)
+		{
+			YsVec3 bbx[2];
+			terrainList.Add(&grid->dat);
+			terrainList[terrainList.GetN() - 1]->GetBoundingBox(bbx);
+			terrainList[terrainList.GetN() - 1]->SetBoundingBox(bbx); //I dunno why this is necessary but without it, bbx and bbxDiag are 0
+		}
+		shell = NULL;
+		while ((shell = todo[0]->FindNextShell(shell)) != NULL)
+		{
+			YsVec3 shellBbx[2];
+			terrainList.Add(&shell->dat);
+			shell->dat.GetBoundingBox(shellBbx);
+			terrainList[terrainList.GetN() - 1]->SetBoundingBox(shellBbx);
+		}
+
+		scn = NULL;
+		while ((scn = todo[0]->scnList.FindNext(scn)) != NULL)
+		{
+			todo.Append(&scn->dat);
+		}
+
+		todo.DeleteBySwapping(0);
+	}
+
+	YsMatrix4x4 mat;
+	double highest = 0.0;
+	YsVec3 bbx[2], current;
+	YsScenery* parent;
+
+	for (int i = 0; i < terrainList.GetN(); i++)
+	{
+		mat.Initialize();
+		parent = terrainList[i]->owner;
+		while (parent != NULL)
+		{
+			mat.Translate(parent->GetPosition());
+			mat.Rotate(parent->GetAttitude());
+			parent = parent->owner;
+		}
+		mat.Translate(terrainList[i]->GetPosition());
+		mat.Rotate(terrainList[i]->GetAttitude());
+		terrainList[i]->GetBoundingBox(bbx);
+		YsVec3 corner[8];
+		corner[0].Set(bbx[0].x(), bbx[0].y(), bbx[0].z());
+		corner[1].Set(bbx[1].x(), bbx[0].y(), bbx[0].z());
+		corner[2].Set(bbx[0].x(), bbx[1].y(), bbx[0].z());
+		corner[3].Set(bbx[1].x(), bbx[1].y(), bbx[0].z());
+		corner[4].Set(bbx[0].x(), bbx[0].y(), bbx[1].z());
+		corner[5].Set(bbx[1].x(), bbx[0].y(), bbx[1].z());
+		corner[6].Set(bbx[0].x(), bbx[1].y(), bbx[1].z());
+		corner[7].Set(bbx[1].x(), bbx[1].y(), bbx[1].z());
+
+		for (int i = 0; i < 8; i++)
+		{
+			mat.Mul(current, corner[i], 1.0);
+			if (current.y() > highest)
+			{
+				highest = current.y();
+			}
+		}
+	}
+	return highest;
+}
+
 double YsScenery::GetElevation(const YsSceneryItem *&evg,const YsVec3 &pos) const
 {
 	double elv;
@@ -3254,6 +3461,43 @@ YSRESULT YsScenery::GetElevation_Recursion(const YsSceneryItem *&itm,double &elv
 		}
 	}
 	return YSOK;
+}
+
+YSRESULT YsScenery::SearchElevationGridById(YsSceneryElevationGrid* grid, int id)
+{
+	YsArray <const YsScenery*, 16> todo;
+
+	todo.Append(this);
+	while (todo.GetN() > 0)
+	{
+		YsListItem <YsSceneryElevationGrid>* evg;
+		evg = NULL;
+		while ((evg = todo[0]->evgList.FindNext(evg)) != NULL)
+		{
+			printf("Check grid\n");
+			if (evg->dat.searchKey == id)
+			{
+				YsVec2i dim;
+				const YsElevationGrid *asd = evg->dat.GetGridData();
+				
+				dim = asd->GetNumBlock();
+				printf("Found grid %i (nbl %i %i)\n", evg->dat.searchKey,dim.x(), dim.y());
+				grid = &evg->dat;
+				return YSOK;
+			}
+		}
+
+		const YsListItem <YsScenery>* scn;
+		scn = NULL;
+		while ((scn = todo[0]->scnList.FindNext(scn)) != NULL)
+		{
+			todo.Append(&scn->dat);
+		}
+
+		todo.DeleteBySwapping(0);
+	}
+
+	return YSERR;
 }
 
 void YsScenery::GetElevationAndNormal(const YsSceneryItem *&evg,double &elv,YsVec3 &nom,const YsVec3 &pos)
