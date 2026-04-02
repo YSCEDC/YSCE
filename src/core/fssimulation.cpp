@@ -15,6 +15,7 @@
 #include "fssimulation.h"
 #include "fs.h"
 #include "fsradar.h"
+#include "fslivemap.h"
 #include "fsfilename.h"
 #include "fsinstpanel.h"
 #include "platform/common/fswindow.h"
@@ -192,6 +193,9 @@ FsSimulation::FsSimulation(FsWorld *w) : airplaneList(FsAirplaneAllocator),groun
 	focusGnd=NULL;
 	towerViewId=0;
 	towerViewPos=YsOrigin();
+
+	liveMapVisible=YSFALSE;
+	liveMapRange=0.0;
 
 	for(int i=0; i<FsMaxNumSubWindow; i++)
 	{
@@ -5738,6 +5742,50 @@ void FsSimulation::SimProcessButtonFunction(FSBUTTONFUNCTION fnc,FSUSERCONTROL u
 			userInput.ctlJettisonWeaponButtonExt = YSTRUE;
 		}
 		break;
+
+	case FSBTF_TOGGLELIVEMAP:
+		YsFlip(liveMapVisible);
+		if(liveMapVisible==YSTRUE)
+		{
+			liveMapRange=50.0*1609.34;
+		}
+		break;
+	case FSBTF_LIVEMAPZOOM:
+		if(liveMapVisible==YSTRUE)
+		{
+			static const double zoomSteps[]={
+				1.0*1609.34, 2.0*1609.34, 5.0*1609.34, 10.0*1609.34,
+				25.0*1609.34, 50.0*1609.34, 100.0*1609.34, 250.0*1609.34,
+				500.0*1609.34
+			};
+			static const int nSteps=sizeof(zoomSteps)/sizeof(zoomSteps[0]);
+			if(liveMapRange<=0.0)
+				liveMapRange=zoomSteps[5];
+			if(FsGetKeyState(FSKEY_SHIFT)==YSTRUE)
+			{
+				for(int i=0; i<nSteps-1; i++)
+				{
+					if(liveMapRange<zoomSteps[i+1]-1.0)
+					{
+						liveMapRange=zoomSteps[i+1];
+						break;
+					}
+				}
+			}
+			else
+			{
+				for(int i=nSteps-1; i>0; i--)
+				{
+					if(liveMapRange>zoomSteps[i-1]+1.0)
+					{
+						liveMapRange=zoomSteps[i-1];
+						break;
+					}
+				}
+			}
+		}
+		break;
+
 	case FSBTF_FIREGUN:                       //  Fire Machine Gun
 		if(FSUSC_SCRIPT==userControl)
 		{
@@ -7918,6 +7966,17 @@ void FsSimulation::SimDrawForeground(const ActualViewMode &actualViewMode,const 
 		}
 	}
 
+	if(liveMapVisible==YSTRUE && (NULL!=playerPlane || NULL!=playerGround))
+	{
+		if(YSTRUE==FsIsMainWindowActive() &&
+		   (actualViewMode.actualViewMode==FSCOCKPITVIEW ||
+		    actualViewMode.actualViewMode==FSADDITIONALAIRPLANEVIEW ||
+		    actualViewMode.actualViewMode==FSADDITIONALAIRPLANEVIEW_CABIN))
+		{
+			SimDrawLiveMap();
+		}
+	}
+
 #ifdef CRASHINVESTIGATION_SIMDRAWFOREGROUND
 	printf("SimDrawForeground-10\n");
 #endif
@@ -8181,6 +8240,19 @@ void FsSimulation::SimDrawRadar(const ActualViewMode &actualViewMode) const
 
 		radar.DrawBasic(this,x1,y1,x2,y2,radarRange,*playerGround,playerGround->GetPosition(),actualViewMode.viewAttitude,0,cfgPtr->radarAltitudeLimit);
 	}
+}
+
+void FsSimulation::SimDrawLiveMap(void) const
+{
+	FsLiveMap liveMap;
+	int wid,hei;
+	FsGetWindowSize(wid,hei);
+	long mapSize=wid/5;
+	long x1=10;
+	long y1=10;
+	long x2=10+mapSize;
+	long y2=10+mapSize;
+	liveMap.Draw(this,x1,y1,x2,y2,liveMapRange);
 }
 
 void FsSimulation::SimDrawInstPanel3d(const YsVec3 &fakeViewPos,const YsVec3 &localViewPos,const FsCockpitIndicationSet &cockpitIndicationSet) const

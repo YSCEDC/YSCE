@@ -169,6 +169,9 @@ enum FSBUTTONFUNCTION
 	FSBTF_SWITCHVIEWTARGET,              // Switch view target
 	FSBTF_TOGGLE_JETTISON_WEAPON,				 // Jettison current weapon
 
+	FSBTF_TOGGLELIVEMAP,                 // Toggle Live Map
+	FSBTF_LIVEMAPZOOM,                   // Live Map Zoom (Shift=out)
+
 	FSBTF_NUMBUTTONFUNCTION
 };
 

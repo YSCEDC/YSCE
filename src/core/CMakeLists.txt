@@ -34,6 +34,7 @@ add_library(${TARGET_NAME}
 	fsworld.cpp
 	fsapplyoption.cpp
 	fsradar.cpp
+	fslivemap.cpp
 	fssimextension.cpp
 	fssimextension_racing.cpp
 	fssimextension_endurance.cpp
@@ -78,6 +79,7 @@ add_library(${TARGET_NAME}
 	fsworld.h
 	fsapplyoption.h
 	fsradar.h
+	fslivemap.h
 	fssimextension.h
 	fssimextension_racing.h
 	fssimextension_endurance.h

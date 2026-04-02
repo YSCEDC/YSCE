@@ -1343,7 +1343,10 @@ static struct FsButtonFunctionString fsButtonFuncStr[]=
 	{FSBTF_SENSITIVITYUP,        "SENSITIVITYUP",        "Increase Sensitivity"},
 	{FSBTF_SENSITIVITYDOWN,      "SENSITIVITYDOWN",      "Decrease Sensitivity"},
 
-	{FSBTF_SWITCHVIEWTARGET,     "SWITCHVIEWTARGET",     "Switch View Target"}
+	{FSBTF_SWITCHVIEWTARGET,     "SWITCHVIEWTARGET",     "Switch View Target"},
+
+	{FSBTF_TOGGLELIVEMAP,        "TOGGLELIVEMAP",        "Toggle Live Map"},
+	{FSBTF_LIVEMAPZOOM,          "LIVEMAPZOOM",          "Live Map Zoom In/Out (Shift)"}
 };
 
 static struct FsKeyString fsKeyString[]=
@@ -1774,6 +1777,8 @@ void FsControlAssignment::SetDefaultKeyAssign(void)
 	AddKeyAssignment(FSKEY_WHEELUP, FSBTF_VIEWZOOM);
 	AddKeyAssignment(FSKEY_WHEELDOWN,FSBTF_VIEWMOOZ);
 	AddKeyAssignment(FSKEY_HOME,    FSBTF_SUPPLYDIALOG);
+	AddKeyAssignment(FSKEY_D,       FSBTF_TOGGLELIVEMAP);
+	AddKeyAssignment(FSKEY_E,       FSBTF_LIVEMAPZOOM);
 }
 
 void FsControlAssignment::BuildMapping(void)
