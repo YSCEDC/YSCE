@@ -7186,75 +7186,75 @@ void FsSimulation::SimDrawAirplane(const ActualViewMode &actualViewMode,const Fs
 }
 
 //FOV and screen size (pixels) check for draw culling purposes
+// Frustum culling: determines if an object is visible in the current viewport.
+// Uses a tangent-based approach instead of atan2 for better performance.
+//
+// The test works by comparing the object's lateral offset (x,y) in camera space
+// against the frustum edges at the object's depth (z):
+//
+//        frustum edge
+//       /
+//      /  <- tan(fov) * z
+//     /
+//    +--------+---> camera axis (Z)
+//    |        |
+//    |   obj  | <- |obj.x| - margin
+//    |        |
+//
+// If |obj.x| - margin > tan(horizFov) * z, the object is outside the frustum.
+// The margin is the bounding box diagonal, giving a conservative estimate
+// that prevents popping at screen edges.
+//
 bool FsSimulation::IsObjectVisible(FsExistence* obj, const ActualViewMode& actualViewMode, const FsProjection& proj) const
 {
-	//calculate object position in player's view
+	// Transform object position into camera space
 	YsVec3 objPosInCamSpace = actualViewMode.viewMat * obj->GetPosition();
 
-	//load visual bounding box corners
-	YsVec3 boxMin, boxMax;
-	obj->vis.GetBoundingBox(boxMin, boxMax);
-
-	//calculate span of bounding box
-	double boundingBoxDiag = ((boxMin - boxMax).GetLength());
-
-	//distance from object to camera (magnitude of obj position vector in camera space)
-	double objDistToCam = objPosInCamSpace.GetLength();
-
-	//compute obj size on screen
-	double apparentRadInPixels = boundingBoxDiag * proj.prjPlnDist / objDistToCam;
-
-	//if object is within 2x bounding box span length of cam, draw it regardless of viewport visibility
-	//(angular culling method below sometimes fails for extreme angles at close distances to camera)
-	if (objDistToCam < 2.0 * boundingBoxDiag)
-	{
-		return true;
-	}
-
-	//don't perform FOV check if obj too small to see
-	if (apparentRadInPixels < 1.0)
+	// Behind camera - not visible
+	double z = objPosInCamSpace.z();
+	if(z < 0.0)
 	{
 		return false;
 	}
 
-    // compute object's apparent angular radius:
-    // (angle between bounding box span and cam axis at object's Z distance)
-    //             .
-    //            /|
-    //           / |
-    //          /  |
-    //         /   | boundingBoxDiag
-    //        /    |
-    //       /x    |
-    //  cam /------+---> cam axis (+Z)
-    //      |      |
-    //     objPosInCamSpace.z()
-    //
-    // angular offset (x): x = atan2(boundingBoxDiag, abs(objPosInCamSpace.z()))
-	double objAngularRad = atan2(boundingBoxDiag, abs(objPosInCamSpace.z()));
+	// Bounding box diagonal used as conservative size estimate
+	YsVec3 boxMin, boxMax;
+	obj->vis.GetBoundingBox(boxMin, boxMax);
+	double boundingBoxDiag = (boxMin - boxMax).GetLength();
 
-    //compute view angles from camera axis
-    //      +X/+Y  . objPosInCamSpace
-    //      ^     /|
-    //      |    / |
-    //      |   /  |
-    //      |  /   | 
-    //      | /    |
-    //      |/a    | horizontal/vertical view angle (in XZ/YZ plane): a = atan2(objPosInCamSpace.x/y(), objPosInCamSpace.z())
-    // cam /------+---> cam axis (+Z)
-    //
-	double objHorizViewAngle = atan2(objPosInCamSpace.x(), objPosInCamSpace.z());
-	double objVertViewAngle = atan2(objPosInCamSpace.y(), objPosInCamSpace.z());
+	// Very close objects are always visible (avoids edge cases at short range)
+	if(z < 2.0 * boundingBoxDiag)
+	{
+		return true;
+	}
 
-	//determine FOV angles based on portrait or landscape aspect ratio
-	double horizFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fov : proj.fovSecondary;
-	double vertFovAngle = lastWindowWidth >= lastWindowHeight ? proj.fovSecondary : proj.fov;
+	// Sub-pixel objects are not visible
+	double apparentRadInPixels = boundingBoxDiag * proj.prjPlnDist / z;
+	if(apparentRadInPixels < 1.0)
+	{
+		return false;
+	}
 
-	//check if the object is within horizontal and vertical FOV +/- angular rad 
-	bool objIsInFov = objHorizViewAngle >= -horizFovAngle - objAngularRad && objHorizViewAngle <= horizFovAngle + objAngularRad &&
-		objVertViewAngle >= -vertFovAngle - objAngularRad && objVertViewAngle <= vertFovAngle + objAngularRad;
+	// Frustum check: compare object offset against frustum edge at depth z
+	double horizFov = lastWindowWidth >= lastWindowHeight ? proj.fov : proj.fovSecondary;
+	double vertFov = lastWindowWidth >= lastWindowHeight ? proj.fovSecondary : proj.fov;
+	double tanH = tan(horizFov);
+	double tanV = tan(vertFov);
+	double margin = boundingBoxDiag;
 
-	return objIsInFov;
+	double ax = fabs(objPosInCamSpace.x()) - margin;
+	double ay = fabs(objPosInCamSpace.y()) - margin;
+
+	if(ax > z * tanH)
+	{
+		return false;
+	}
+	if(ay > z * tanV)
+	{
+		return false;
+	}
+
+	return true;
 }
 
 void FsSimulation::SimDrawGround(const ActualViewMode &actualViewMode,const FsProjection &proj,unsigned int drawFlag) const
