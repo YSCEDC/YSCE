@@ -247,6 +247,11 @@ FsLazyWindowApplication::FsLazyWindowApplication()
 }
 /* virtual */ void FsLazyWindowApplication::BeforeTerminate(void)
 {
+	if(!runLoopPtr)
+	{
+		return;
+	}
+
 	FsTaskBarDeleteIcon();
 
 printf("Closing-1\n");
@@ -309,10 +314,13 @@ printf("Closing-11\n");
 }
 /* virtual */ bool FsLazyWindowApplication::UserWantToCloseProgram(void)
 {
-printf("%s %d\n",__FUNCTION__,__LINE__);
+	if(!runLoopPtr)
+	{
+		return true;
+	}
 	SaveWindowPositionAndSizeIfNecessary();
 	FsTaskBarDeleteIcon();
-	return true; // Returning true will just close the program.
+	return true;
 }
 /* virtual */ bool FsLazyWindowApplication::MustTerminate(void) const
 {
