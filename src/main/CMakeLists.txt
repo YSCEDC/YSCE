@@ -118,7 +118,7 @@ set(YSFLIGHT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT 
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.5)
 if("${CMAKE_CURRENT_SOURCE_DIR}" MATCHES "^${CMAKE_SOURCE_DIR}" AND
    "${CMAKE_BINARY_DIR}" MATCHES "^${CMAKE_SOURCE_DIR}")
 	message(FATAL_ERROR "In-source build prohibited.\nClear cache and Start cmake from somewhere else.")
@@ -201,8 +201,9 @@ elseif(APPLE)
 	#	my 2008 MacBook Pro if I still can (practically) use it with OSX 10.6, or if 10.9 is as efficient 
 	#	as 10.6.
 
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.9 -Wno-switch")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=10.9 -Wno-switch")
+	set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Build universal binary")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=11.0 -Wno-switch")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=11.0 -Wno-switch")
 elseif(UNIX)
 	# -Wl,--no-as-needed required for g++ 4.8.4 Confirmed unnecessary with 5.4.0
 	#  http://stackoverflow.com/questions/19463602/compiling-multithread-code-with-g
@@ -623,6 +624,41 @@ endforeach(ONE_TARGET)
 
 
 foreach(ONE_TARGET ${TARGET_NAME})
-	add_custom_command(TARGET ${ONE_TARGET} PRE_BUILD 
+	add_custom_command(TARGET ${ONE_TARGET} PRE_BUILD
 		COMMAND "python" "${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/runtime_timestamp.py" "${CMAKE_CURRENT_SOURCE_DIR}/../../runtime")
 endforeach(ONE_TARGET)
+
+if(APPLE)
+	set(DMG_APPS "")
+	set(DMG_SIGN_CMDS "")
+	foreach(ONE_TARGET ${TARGET_NAME})
+		list(APPEND DMG_APPS "${CMAKE_CURRENT_BINARY_DIR}/${ONE_TARGET}.app")
+	endforeach()
+
+	add_custom_target(dmg
+		DEPENDS ${TARGET_NAME}
+		COMMAND ${CMAKE_COMMAND} -E rm -rf "${CMAKE_CURRENT_BINARY_DIR}/dmg_temp" "${CMAKE_CURRENT_BINARY_DIR}/YSFLIGHT.dmg"
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/dmg_temp"
+		COMMENT "Creating signed DMG..."
+	)
+
+	foreach(ONE_TARGET ${TARGET_NAME})
+		add_custom_command(TARGET dmg POST_BUILD
+			COMMAND find "${CMAKE_CURRENT_BINARY_DIR}/${ONE_TARGET}.app" -name "*.dylib" -exec codesign --force --sign - {} +
+			COMMAND codesign --force --sign - "${CMAKE_CURRENT_BINARY_DIR}/${ONE_TARGET}.app"
+			COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/${ONE_TARGET}.app" "${CMAKE_CURRENT_BINARY_DIR}/dmg_temp/${ONE_TARGET}.app"
+		)
+	endforeach()
+
+	add_custom_command(TARGET dmg POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E create_symlink /Applications "${CMAKE_CURRENT_BINARY_DIR}/dmg_temp/Applications"
+		COMMAND hdiutil create -volname YSFLIGHT -srcfolder "${CMAKE_CURRENT_BINARY_DIR}/dmg_temp" -ov -format UDZO "${CMAKE_CURRENT_BINARY_DIR}/YSFLIGHT.dmg"
+		COMMAND ${CMAKE_COMMAND} -E rm -rf "${CMAKE_CURRENT_BINARY_DIR}/dmg_temp"
+	)
+
+	set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES
+		"${CMAKE_CURRENT_BINARY_DIR}/YSFLIGHT.dmg"
+		"${CMAKE_CURRENT_BINARY_DIR}/dmg_temp"
+		${DMG_APPS}
+	)
+endif()

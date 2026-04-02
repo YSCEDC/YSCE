@@ -48,7 +48,7 @@ set(DATA_FILE_LOCATION)
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT 
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.5)
 if("${CMAKE_CURRENT_SOURCE_DIR}" MATCHES "^${CMAKE_SOURCE_DIR}" AND
    "${CMAKE_BINARY_DIR}" MATCHES "^${CMAKE_SOURCE_DIR}")
 	message(FATAL_ERROR "In-source build prohibited.\nClear cache and Start cmake from somewhere else.")
@@ -131,8 +131,8 @@ elseif(APPLE)
 	#	my 2008 MacBook Pro if I still can (practically) use it with OSX 10.6, or if 10.9 is as efficient 
 	#	as 10.6.
 
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.9 -Wno-switch")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=10.9 -Wno-switch")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=11.0 -Wno-switch")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=11.0 -Wno-switch")
 elseif(UNIX)
 	# -Wl,--no-as-needed required for g++ 4.8.4 Confirmed unnecessary with 5.4.0
 	#  http://stackoverflow.com/questions/19463602/compiling-multithread-code-with-g
