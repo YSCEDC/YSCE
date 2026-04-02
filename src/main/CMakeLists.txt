@@ -201,6 +201,7 @@ elseif(APPLE)
 	#	my 2008 MacBook Pro if I still can (practically) use it with OSX 10.6, or if 10.9 is as efficient 
 	#	as 10.6.
 
+	set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Build universal binary")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=11.0 -Wno-switch")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=11.0 -Wno-switch")
 elseif(UNIX)
