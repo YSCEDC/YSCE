@@ -1,5 +1,11 @@
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
+#ifndef __APPLE__
+#include <GL/gl.h>
+#else
+#include <OpenGL/gl.h>
+#endif
 #include "fslivemap.h"
 #include "fssimulation.h"
 #include "graphics/common/fsopengl.h"
@@ -152,16 +158,23 @@ static void DrawMapElement(const Ys2DDrawingElement &elem, const YsMatrix4x4 &tf
 	if(type == Ys2DDrawingElement::POLYGON)
 	{
 		int n = (int)pts.GetN();
-		if(n > 256) n = 256;
 		int plg[512];
-		for(int k = 0; k < n; k++)
+		int kept = 0;
+		for(int k = 0; k < n && kept < 255; k++)
 		{
 			YsVec3 wp;
 			tfm.Mul(wp, YsVec3(pts[k].x(), 0.0, pts[k].y()), 1.0);
-			plg[k * 2] = (int)(cx + (wp.x() - px) * mag);
-			plg[k * 2 + 1] = (int)(cy - (wp.z() - pz) * mag);
+			int sx = (int)(cx + (wp.x() - px) * mag);
+			int sy = (int)(cy - (wp.z() - pz) * mag);
+			if(kept > 0 && k < n - 1 &&
+			   abs(sx - plg[(kept-1)*2]) < 4 && abs(sy - plg[(kept-1)*2+1]) < 4)
+				continue;
+			plg[kept*2] = sx;
+			plg[kept*2+1] = sy;
+			kept++;
 		}
-		DrawClippedPolygon(n, plg, x1, y1, x2, y2, col);
+		if(kept >= 3)
+			DrawClippedPolygon(kept, plg, x1, y1, x2, y2, col);
 	}
 	else if(type == Ys2DDrawingElement::TRIANGLES)
 	{
@@ -175,6 +188,9 @@ static void DrawMapElement(const Ys2DDrawingElement &elem, const YsMatrix4x4 &tf
 				plg[j * 2] = (int)(cx + (wp.x() - px) * mag);
 				plg[j * 2 + 1] = (int)(cy - (wp.z() - pz) * mag);
 			}
+			if(abs(plg[2]-plg[0]) < 4 && abs(plg[3]-plg[1]) < 4 &&
+			   abs(plg[4]-plg[0]) < 4 && abs(plg[5]-plg[1]) < 4)
+				continue;
 			DrawClippedPolygon(3, plg, x1, y1, x2, y2, col);
 		}
 	}
@@ -190,6 +206,10 @@ static void DrawMapElement(const Ys2DDrawingElement &elem, const YsMatrix4x4 &tf
 				plg[j * 2] = (int)(cx + (wp.x() - px) * mag);
 				plg[j * 2 + 1] = (int)(cy - (wp.z() - pz) * mag);
 			}
+			if(abs(plg[2]-plg[0]) < 4 && abs(plg[3]-plg[1]) < 4 &&
+			   abs(plg[4]-plg[0]) < 4 && abs(plg[5]-plg[1]) < 4 &&
+			   abs(plg[6]-plg[0]) < 4 && abs(plg[7]-plg[1]) < 4)
+				continue;
 			DrawClippedPolygon(4, plg, x1, y1, x2, y2, col);
 		}
 	}
@@ -207,6 +227,10 @@ static void DrawMapElement(const Ys2DDrawingElement &elem, const YsMatrix4x4 &tf
 			plg[4] = (int)(cx + (wp.x() - px) * mag); plg[5] = (int)(cy - (wp.z() - pz) * mag);
 			tfm.Mul(wp, YsVec3(pts[k + 2].x(), 0.0, pts[k + 2].y()), 1.0);
 			plg[6] = (int)(cx + (wp.x() - px) * mag); plg[7] = (int)(cy - (wp.z() - pz) * mag);
+			if(abs(plg[2]-plg[0]) < 4 && abs(plg[3]-plg[1]) < 4 &&
+			   abs(plg[4]-plg[0]) < 4 && abs(plg[5]-plg[1]) < 4 &&
+			   abs(plg[6]-plg[0]) < 4 && abs(plg[7]-plg[1]) < 4)
+				continue;
 			DrawClippedPolygon(4, plg, x1, y1, x2, y2, col);
 		}
 	}
@@ -254,8 +278,11 @@ static void DrawTerrainRecursive(const YsScenery *scn, const YsMatrix4x4 &parent
 
 void FsLiveMap::Draw(const FsSimulation *sim, int x1, int y1, int x2, int y2, double range) const
 {
-	FsDrawRect(x1, y1, x2, y2, YsColor(0, 0, 40), YSTRUE);
-	FsDrawRect(x1, y1, x2, y2, YsCyan(), YSFALSE);
+	static GLuint cacheTexId = 0;
+	static double cachedPx = 0, cachedPz = 0, cachedRange = 0;
+	static int cachedW = 0, cachedH = 0;
+	static int frameCounter = 0;
+	frameCounter++;
 
 	const FsField *fld = sim->GetField();
 	if(fld == NULL)
@@ -292,19 +319,73 @@ void FsLiveMap::Draw(const FsSimulation *sim, int x1, int y1, int x2, int y2, do
 			viewRange = 5000.0;
 	}
 
-	int mapSize = YsAbs(x2 - x1);
+	int mapW = x2 - x1;
+	int mapH = y2 - y1;
+	int mapSize = YsAbs(mapW);
 	double mag = (double)mapSize / (viewRange * 2.0);
 
 	double cx = (x1 + x2) / 2.0;
 	double cy = (y1 + y2) / 2.0;
 	YsVec2 w1(x1, y1), w2(x2, y2);
 
-	const YsScenery *scn = fld->GetFieldPtr();
-	if(scn != NULL)
+	YSBOOL dirty = YSFALSE;
+	if(cacheTexId == 0 || cachedRange != viewRange || mapW != cachedW || mapH != cachedH)
+		dirty = YSTRUE;
+	else if(frameCounter % 3 == 0 &&
+	        (playerPos.x() != cachedPx || playerPos.z() != cachedPz))
+		dirty = YSTRUE;
+
+	if(dirty == YSTRUE)
 	{
-		DrawTerrainRecursive(scn, YsIdentity4x4(),
-			cx, cy, mag, playerPos.x(), playerPos.z(), x1, y1, x2, y2);
+		FsDrawRect(x1, y1, x2, y2, YsColor(0, 0, 40), YSTRUE);
+		const YsScenery *scn = fld->GetFieldPtr();
+		if(scn != NULL)
+			DrawTerrainRecursive(scn, YsIdentity4x4(),
+				cx, cy, mag, playerPos.x(), playerPos.z(), x1, y1, x2, y2);
+
+		if(cacheTexId == 0)
+		{
+			glGenTextures(1, &cacheTexId);
+			glBindTexture(GL_TEXTURE_2D, cacheTexId);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
+		else
+		{
+			glBindTexture(GL_TEXTURE_2D, cacheTexId);
+		}
+		if(mapW != cachedW || mapH != cachedH)
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mapW, mapH, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+		GLint vp[4];
+		glGetIntegerv(GL_VIEWPORT, vp);
+		glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, x1, vp[3] - y2, mapW, mapH);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		cachedPx = playerPos.x();
+		cachedPz = playerPos.z();
+		cachedRange = viewRange;
+		cachedW = mapW;
+		cachedH = mapH;
 	}
+	else
+	{
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, cacheTexId);
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		glBegin(GL_QUADS);
+		glTexCoord2f(0.0f, 1.0f); glVertex2i(x1, y1);
+		glTexCoord2f(1.0f, 1.0f); glVertex2i(x2, y1);
+		glTexCoord2f(1.0f, 0.0f); glVertex2i(x2, y2);
+		glTexCoord2f(0.0f, 0.0f); glVertex2i(x1, y2);
+		glEnd();
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisable(GL_TEXTURE_2D);
+	}
+
+	FsDrawRect(x1, y1, x2, y2, YsCyan(), YSFALSE);
 
 	YsArray<const YsSceneryRectRegion *, 64> rgnList;
 	if(fld->SearchFieldRegionById(rgnList, FS_RGNID_AIRPORT_AREA) == YSOK)
