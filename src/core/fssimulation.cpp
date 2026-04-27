@@ -3425,7 +3425,8 @@ void FsSimulation::SimMove(const double &dt)
 			if(airplane->Prop().CheckHasJustTouchDown()==YSTRUE &&
 			   airplane->Prop().CheckSafeTouchDown(diedOf)!=YSTRUE)
 			{
-				AirplaneCrash(airplane,diedOf,1);
+				//AirplaneCrash(airplane,diedOf,1);
+				printf("Airplane crash\n");
 			}
 
 			// If it does not have an assigned home base, assign it >>

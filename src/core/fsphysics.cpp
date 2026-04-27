@@ -1,5 +1,6 @@
 #include "fsphysics.h"
 #include "fssimulation.h"
+#include "fsweapon.h"
 
 FsPhysics::FsPhysics()
 {
@@ -207,9 +208,9 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 	{
 		YsPlane pln;
 		YsVec3 tri[3], disregard[2];
-		tri[0].Set(1.0, 0.0, 0.0);
-		tri[1].Set(0.0, 0.0, 0.0);
-		tri[2].Set(0.0, 0.0, 1.0);
+		tri[0].Set(-99999999999.0, 0.0, 999999999999.0);
+		tri[1].Set(-999999999999.0, 0.0, -999999999999.0);
+		tri[2].Set(999999999999.0, 0.0, -999999999999.0);
 		
 		for (int q = 0; q < 3; q++)
 		{
@@ -236,6 +237,7 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 	candidateList.CleanUp();
 	candidateList.CopyFrom(sim->terrainList);
 	YsArray <YsArray <YsElvGridFaceId>> candidateIntersectingFaces;
+	YsArray <YsArray<YsVec3>> intersectingTris;
 	
 	for (int i = 0; i < candidateList.GetN(); i++)
 	{
@@ -274,13 +276,13 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 	{
 		if (candidateList[i]->GetObjType() == YsSceneryItem::ELEVATIONGRID)
 		{
-			const YsElevationGrid *gridData;
+			/*const YsElevationGrid *gridData;
 			YsSceneryElevationGrid* grid;
 			grid = candidateList[i]->GetElevationGrid();
 			gridData = grid->GetGridData();
 			YsVec2i xz = gridData->GetNumBlock();
 			YsVec3 p = candidateList[i]->GetGlobalPosition();
-			YsAtt3 a = candidateList[i]->GetGlobalAttitude();
+			YsAtt3 a = candidateList[i]->GetGlobalAttitude();*/
 
 			YsMatrix4x4 gridMat;
 			gridMat.Initialize();
@@ -288,13 +290,14 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 			gridMat.Rotate(candidateList[i]->GetGlobalAttitude());
 			YsArray <YsElvGridFaceId> intersectors;
 
-			if (CheckBoundingBoxTerrainIntersection(objBbx, obj->GetMatrix(), candidateList[i]->GetElevationGrid()->GetGridData(), gridMat, clearance, intersectors) == YSFALSE)
+			if (CheckBoundingBoxTerrainIntersection(objBbx, obj->GetMatrix(), candidateList[i]->GetElevationGrid()->GetGridData(), gridMat, clearance, intersectors,intersectingTris) == YSFALSE)
 			{
 				candidateList.Delete(i);
 				i--;
 			}
 			else
 			{
+				printf("bbx overlap\n");
 				candidateIntersectingFaces.Add(intersectors);
 			}
 		}
@@ -319,11 +322,24 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 			{
 				YsVec3 terTri[3];
 				candidateList[i]->GetElevationGrid()->GetGridData()->GetTriangle(terTri, candidateIntersectingFaces[i][j].x, candidateIntersectingFaces[i][j].z, candidateIntersectingFaces[i][j].tri);
+				YsMatrix4x4 terMat;
+				terMat.Initialize();
+				terMat.Translate(candidateList[i]->GetGlobalPosition());
+				terMat.Rotate(candidateList[i]->GetGlobalAttitude());
 
 				for (int q = 0; q < 3; q++)
 				{
-					obj->GetInverseMatrix().Mul(terTri[q], terTri[q], 1.0);
+					//printf("Grid-relative %i:%i:%i %f %f %f\n", i,j, q, terTri[q].x(), terTri[q].y(), terTri[q].z());
+					terMat.Mul(terTri[q], terTri[q], 1.0);
+					//printf("world-relative %i:%i:%i %f %f %f\n", i, j, q, terTri[q].x(), terTri[q].y(), terTri[q].z());
+					obj->GetMatrix().MulInverse(terTri[q], terTri[q], 1.0);
+					printf("obj-relative %i:%i:%i %f %f %f\n",i, j, q, terTri[q].x(), terTri[q].y(), terTri[q].z());
 				}
+
+				YsPlane pln;
+				pln.MakePlaneFromTriangle(terTri[0], terTri[1], terTri[2]);
+				printf("Testpos %f %f %f | %f\n", obj->GetPosition().x(), obj->GetPosition().y(), obj->GetPosition().z(), pln.GetDistance(YsOrigin()));
+				
 
 				FsVisualSrf coll;
 				YsShellPolygonHandle plHd;
@@ -332,7 +348,7 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 				{
 					obj->GetMatrix().Mul(collPosGlobal, collPosLocal, 1.0);
 					//Add collPosGlobal to list of all collPos
-					printf("Ter collision %f %f %f\n", collPosGlobal.x(), collPosGlobal.y(), collPosGlobal.z());
+					printf("Ter collision global %f %f %f | obj %f %f %f\n", collPosGlobal.x(), collPosGlobal.y(), collPosGlobal.z(), collPosLocal.x(), collPosLocal.y(), collPosLocal.z());
 				}
 				else
 				{
@@ -373,9 +389,10 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 	return YSFALSE;
 }
 
-YSBOOL FsPhysics::CheckBoundingBoxTerrainIntersection(YsVec3 bbx[2], YsMatrix4x4 bbxMat, const YsElevationGrid* grid, YsMatrix4x4 terMat, double clearance, YsArray <YsElvGridFaceId> &intersectors)
+YSBOOL FsPhysics::CheckBoundingBoxTerrainIntersection(YsVec3 bbx[2], YsMatrix4x4 bbxMat, const YsElevationGrid* grid, YsMatrix4x4 terMat, double clearance, YsArray <YsElvGridFaceId> &intersectors, YsArray <YsArray<YsVec3>>& intersectingTris)
 {
 	//This currently only handles .ter. Eventually it needs to handle surf terrain as well
+	//This doesn't yet do .ter walls correctly
 	double groundElev;
 	YsVec3 groundNom[8];
 	YsVec3 corner[9];
@@ -404,8 +421,10 @@ YSBOOL FsPhysics::CheckBoundingBoxTerrainIntersection(YsVec3 bbx[2], YsMatrix4x4
 	
 	YsVec2i dim = grid->GetNumBlock();
 	double elev;
+	YsVec3 faceTri[3];
 	int facex, facez, facedir;
 	int minX=dim.x(), maxX=0, minZ=dim.y(), maxZ=0;
+	YSBOOL checkSidewalls = YSFALSE;
 	
 	for (int i = 0; i < 9; i++)
 	{
@@ -435,19 +454,30 @@ YSBOOL FsPhysics::CheckBoundingBoxTerrainIntersection(YsVec3 bbx[2], YsMatrix4x4
 				cross.z = facez;
 				cross.tri = facedir;
 				intersectors.Add(cross);
+				grid->GetTriangle(faceTri, facex, facez, facedir);
+				YsArray <YsVec3> triArray;
+				triArray.Add(faceTri[0]);
+				triArray.Add(faceTri[1]);
+				triArray.Add(faceTri[2]);
+				intersectingTris.Add(triArray);
 			}
+		}
+		else
+		{
+			//checkSidewalls = YSTRUE;
 		}
 	}
 
 	int dx=0, dz=0;
-	for (;minX+dx<maxX;dx++)
+	for (; minX+dx < maxX; dx++)
 	{
 	}
 	for (; minZ + dz < maxZ; dz++)
 	{
 	}
 
-	YsVec3 faceTri[3];
+	//Check face intersection for all grid faces between bbx corners
+	YsVec3 mulTri[3];
 	YsMatrix4x4 nulMat;
 	nulMat.Initialize();
 	for (int i = 0; i < dx; i++)
@@ -458,37 +488,285 @@ YSBOOL FsPhysics::CheckBoundingBoxTerrainIntersection(YsVec3 bbx[2], YsMatrix4x4
 			grid->GetTriangle(faceTri, minX + i, minZ + j, 0);
 			for (int q = 0; q < 3; q++)
 			{
-				terToBbx.Mul(faceTri[q],faceTri[q],1.0);
+				terToBbx.Mul(mulTri[q],faceTri[q],1.0);
 			}
 
-			if (CheckTriangleBoundingBoxIntersection(bbx, bbxMat,faceTri, clearance) == YSTRUE)
+			if (CheckTriangleBoundingBoxIntersection(bbx, bbxMat,mulTri, clearance) == YSTRUE)
 			{
 				YsElvGridFaceId cross;
 				cross.x = minX + i;
 				cross.z = minZ + j;
 				cross.tri = 0;
 				intersectors.Add(cross);
+				YsArray <YsVec3> triArray;
+				triArray.Add(faceTri[0]);
+				triArray.Add(faceTri[1]);
+				triArray.Add(faceTri[2]);
+				intersectingTris.Add(triArray);
 			}
 
 			//Test second face direction
 			grid->GetTriangle(faceTri, minX + i, minZ + j, 1);
 			for (int q = 0; q < 3; q++)
 			{
-				terToBbx.Mul(faceTri[q], faceTri[q], 1.0);
+				terToBbx.Mul(mulTri[q], faceTri[q], 1.0);
 			}
 
-			if (CheckTriangleBoundingBoxIntersection(bbx, bbxMat, faceTri, clearance) == YSTRUE)
+			if (CheckTriangleBoundingBoxIntersection(bbx, bbxMat, mulTri, clearance) == YSTRUE)
 			{
 				YsElvGridFaceId cross;
 				cross.x = minX + i;
 				cross.z = minZ + j;
 				cross.tri = 1;
 				intersectors.Add(cross);
+				YsArray <YsVec3> triArray;
+				triArray.Add(faceTri[0]);
+				triArray.Add(faceTri[1]);
+				triArray.Add(faceTri[2]);
+				intersectingTris.Add(triArray);
 			}
 		}
 	}
 
-	if (intersectors.GetN() > 0)
+	//Check sidewalls
+	if (minX == 0 && grid->sideWall[3] == YSTRUE) //Left (-X) sidewall
+	{
+		printf("\nCheck minX sidewall\n============================\n");
+		for (int j = 0; j < dz; j++)
+		{
+			//Get Z column edge nodes. Make two tris with edge nodes and footer position. Test both tris
+			YsVec3 bL, bR, tL, tR, triA[3], triB[3];
+			grid->GetTriangle(triA, minX, minZ + j, 0);
+			grid->GetTriangle(triB, minX, minZ + j, 1);
+
+			//Figure out which of these six are actual edge nodes
+			printf("j %i: A0 %f %f %f\n", j, triA[0].x(), triA[0].y(), triA[0].z());
+			printf("j %i: A1 %f %f %f\n", j, triA[1].x(), triA[1].y(), triA[1].z());
+			printf("j %i: A2 %f %f %f\n", j, triA[2].x(), triA[2].y(), triA[2].z());
+			printf("j %i: B0 %f %f %f\n", j, triB[0].x(), triB[0].y(), triB[0].z());
+			printf("j %i: B1 %f %f %f\n", j, triB[1].x(), triB[1].y(), triB[1].z());
+			printf("j %i: B2 %f %f %f\n", j, triB[2].x(), triB[2].y(), triB[2].z());
+
+			YsVec3 verts[6],cen, leftMost, rightMost, working;
+			verts[0] = triA[0];
+			verts[1] = triA[1];
+			verts[2] = triA[2];
+			verts[3] = triB[0];
+			verts[4] = triB[1];
+			verts[5] = triB[2];
+			cen = (verts[0] + verts[1] + verts[2] + verts[3] + verts[4] + verts[5])/6;
+			for (int q = 1; q < 6; q++)
+			{
+				if (verts[q].x() < cen.x())
+				{
+					if (verts[q].z() < cen.z())
+					{
+						leftMost = verts[q];
+					}
+					else
+					{
+						rightMost = verts[q];
+					}
+				}
+			}
+
+			printf("Left %f %f %f Right %f %f %f\n", leftMost.x(), leftMost.y(), leftMost.z(), rightMost.x(), rightMost.y(), rightMost.z());
+
+
+			//Test first tri
+
+			if (CheckTriangleBoundingBoxIntersection(bbx, bbxMat, mulTri, clearance) == YSTRUE)
+			{
+				YsElvGridFaceId cross;
+				cross.x = minX + i;
+				cross.z = minZ + j;
+				cross.tri = 0;
+				intersectors.Add(cross);
+				YsArray <YsVec3> triArray;
+				triArray.Add(faceTri[0]);
+				triArray.Add(faceTri[1]);
+				triArray.Add(faceTri[2]);
+				intersectingTris.Add(triArray);
+			}
+
+			//Test second face direction
+			grid->GetTriangle(faceTri, minX + i, minZ + j, 1);
+			for (int q = 0; q < 3; q++)
+			{
+				terToBbx.Mul(mulTri[q], faceTri[q], 1.0);
+			}
+
+			if (CheckTriangleBoundingBoxIntersection(bbx, bbxMat, mulTri, clearance) == YSTRUE)
+			{
+				YsElvGridFaceId cross;
+				cross.x = minX + i;
+				cross.z = minZ + j;
+				cross.tri = 1;
+				intersectors.Add(cross);
+				YsArray <YsVec3> triArray;
+				triArray.Add(faceTri[0]);
+				triArray.Add(faceTri[1]);
+				triArray.Add(faceTri[2]);
+				intersectingTris.Add(triArray);
+			}
+		}
+
+		//////////////////////////////////////////////////
+		YsVec3 wallVert[3];
+		wallVert[0].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[0].z());
+		wallVert[1].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[1].z());
+		wallVert[2].Set(grid->bbx[0].x(), grid->bbx[1].y(), grid->bbx[1].z());
+		YsPlane wallPlane;
+		terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
+		terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
+		terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
+		wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
+
+		YsVec3 disregard1, disregard2;
+		if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
+		{
+			printf("Bbx crosses left -X wallPlane\n");
+		}
+	}
+	if (maxX == dim.x() && grid->sideWall[1] == YSTRUE) //Right (+X) sidewall
+	{
+		YsVec3 wallVert[3];
+		wallVert[0].Set(grid->bbx[1].x(), grid->bbx[0].y(), grid->bbx[0].z());
+		wallVert[1].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[0].z());
+		wallVert[2].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[1].z());
+		YsPlane wallPlane;
+		terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
+		terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
+		terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
+		wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
+
+		YsVec3 disregard1, disregard2;
+		if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
+		{
+			printf("Bbx crosses right +X wallPlane\n");
+		}
+	}
+	if (minZ == 0 && grid->sideWall[0] == YSTRUE) //Bottom (-Z) sidewall
+	{
+		YsVec3 wallVert[3];
+		wallVert[0].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[0].z());
+		wallVert[1].Set(grid->bbx[1].x(), grid->bbx[0].y(), grid->bbx[0].z());
+		wallVert[2].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[0].z());
+		YsPlane wallPlane;
+		terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
+		terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
+		terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
+		wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
+
+		YsVec3 disregard1, disregard2;
+		if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
+		{
+			printf("Bbx crosses bottom -Z wallPlane\n");
+		}
+	}
+	if (maxZ == dim.y() && grid->sideWall[2] == YSTRUE) //Top (+Z) sidewall
+	{
+		YsVec3 wallVert[3];
+		wallVert[0].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[1].z());
+		wallVert[1].Set(grid->bbx[1].x(), grid->bbx[0].y(), grid->bbx[1].z());
+		wallVert[2].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[1].z());
+		YsPlane wallPlane;
+		terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
+		terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
+		terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
+		wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
+
+		YsVec3 disregard1, disregard2;
+		if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
+		{
+			printf("Bbx crosses top +Z wallPlane\n");
+		}
+	}
+
+
+	if (checkSidewalls == YSTRUE)
+	{
+			if (grid->sideWall[0] == YSTRUE) //Bottom (-Z) sidewall
+			{
+				printf("Sidewall -Z exist\n");
+				YsVec3 wallVert[3];
+				wallVert[0].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[0].z());
+				wallVert[1].Set(grid->bbx[1].x(), grid->bbx[0].y(), grid->bbx[0].z());
+				wallVert[2].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[0].z());
+				YsPlane wallPlane;
+				terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
+				terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
+				terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
+				wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
+
+				YsVec3 disregard1, disregard2;
+				if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
+				{
+					printf("Bbx crosses bottom -Z wallPlane\n");
+				}
+			}
+			if (grid->sideWall[1] == YSTRUE) //Right (+X) sidewall
+			{
+				printf("Sidewall +X exist\n");
+				YsVec3 wallVert[3];
+				wallVert[0].Set(grid->bbx[1].x(), grid->bbx[0].y(), grid->bbx[0].z());
+				wallVert[1].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[0].z());
+				wallVert[2].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[1].z());
+				YsPlane wallPlane;
+				terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
+				terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
+				terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
+				wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
+
+				YsVec3 disregard1, disregard2;
+				if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
+				{
+					printf("Bbx crosses right +X wallPlane\n");
+				}
+			}
+			if (grid->sideWall[2] == YSTRUE) //Top (+Z) sidewall
+			{
+				printf("Sidewall +Z exist\n");
+				YsVec3 wallVert[3];
+				wallVert[0].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[1].z());
+				wallVert[1].Set(grid->bbx[1].x(), grid->bbx[0].y(), grid->bbx[1].z());
+				wallVert[2].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[1].z());
+				YsPlane wallPlane;
+				terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
+				terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
+				terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
+				wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
+
+				YsVec3 disregard1, disregard2;
+				if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
+				{
+					printf("Bbx crosses top +Z wallPlane\n");
+				}
+			}
+			if (grid->sideWall[3] == YSTRUE) //Left (-X) sidewall
+			{
+				printf("Sidewall -X exist\n");
+				YsVec3 wallVert[3];
+				wallVert[0].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[0].z());
+				wallVert[1].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[1].z());
+				wallVert[2].Set(grid->bbx[0].x(), grid->bbx[1].y(), grid->bbx[1].z());
+				YsPlane wallPlane;
+				terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
+				terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
+				terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
+				wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
+
+				YsVec3 disregard1, disregard2;
+				if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
+				{
+					printf("Bbx crosses left -X wallPlane\n");
+				}
+			}
+
+	}
+
+	//if (intersectors.GetN() > 0)
+	if (intersectingTris.GetN() > 0)
 	{
 		return YSTRUE;
 	}
@@ -603,6 +881,7 @@ YSBOOL FsPhysics::CheckTriangleBoundingBoxIntersection(YsVec3 bbx[2], YsMatrix4x
 			tri2[i].GetXZ(tri[i]);
 		}
 		YsGetNearestPointOnLine2(nearest, p1, p2, triCen);
+		
 		if (YsCheckInsideTriangle2(nearest, tri2) != YSOUTSIDE)
 		{
 			return YSTRUE;
@@ -713,108 +992,6 @@ YSBOOL FsPhysics::Check2BoundingBoxIntersection(YsVec3 bbx1[2], YsMatrix4x4 mat1
 	}
 
 	return YSTRUE;
-
-	/*
-	* FsSimulation MayCollideWithAir
-	const double objRad=selfPtr->GetApproximatedCollideRadius();
-
-	YsArray <FsAirplane *,256> airCandidate;
-	GetLattice().GetAirCollisionCandidate(airCandidate,objPos,objRad);
-	if(0<airCandidate.GetN())
-	{
-		YsMatrix4x4 objMat;
-		objMat.Multiply(objPos,objAtt);
-
-		YsMatrix4x4 objMatInverse;
-		objMatInverse.MultiplyInverse(objPos,objAtt);
-
-		for(int i=0; i<airCandidate.GetN(); i++)
-		{
-			const YsVec3 dif=objPos-airCandidate[i]->GetPosition();;
-			const double air2Rad=airCandidate[i]->Prop().GetOutsideRadius();
-			if(airCandidate[i]!=selfPtr &&
-			   YSTRUE!=YsIsIncluded <const FsExistence *> (nExclude,exclude,airCandidate[i]) && 
-			   dif.GetSquareLength()<=YsSqr((objRad+air2Rad)))
-			{
-				if(airCandidate[i]->MayCollideWith(airCandidate[i]->GetInverseMatrix(),*selfPtr,objMat,clearance) &&
-				   selfPtr->MayCollideWith(objMatInverse,*airCandidate[i],airCandidate[i]->GetMatrix(),clearance))
-				{
-					printf("Bbx may collide with %s\n",airCandidate[i]->GetIdentifier());
-					return YSTRUE;
-				}
-			}
-		}
-	}
-	return YSFALSE;*/
-
-	/*
-	YSBOOL FsExistence::MayCollideWith(const YsMatrix4x4 &ownInverseMat,const FsExistence &test,const YsMatrix4x4 &testMat,const double clearance) const
-{
-	YsVec3 corner[8];
-	corner[0].Set(test.collBbx[0].x(),test.collBbx[0].y(),test.collBbx[0].z());
-	corner[1].Set(test.collBbx[1].x(),test.collBbx[0].y(),test.collBbx[0].z());
-	corner[2].Set(test.collBbx[0].x(),test.collBbx[1].y(),test.collBbx[0].z());
-	corner[3].Set(test.collBbx[1].x(),test.collBbx[1].y(),test.collBbx[0].z());
-	corner[4].Set(test.collBbx[0].x(),test.collBbx[0].y(),test.collBbx[1].z());
-	corner[5].Set(test.collBbx[1].x(),test.collBbx[0].y(),test.collBbx[1].z());
-	corner[6].Set(test.collBbx[0].x(),test.collBbx[1].y(),test.collBbx[1].z());
-	corner[7].Set(test.collBbx[1].x(),test.collBbx[1].y(),test.collBbx[1].z());
-
-	YSBOOL allAbove=YSTRUE,allBelow=YSTRUE,allLeft=YSTRUE,allRight=YSTRUE,allAhead=YSTRUE,allBehind=YSTRUE;
-
-	const YsMatrix4x4 &thisMat=ownInverseMat;
-	YsMatrix4x4 tfm=thisMat*testMat;
-
-	const double &xMin=collBbx[0].x()-clearance,&xMax=collBbx[1].x()+clearance;
-	const double &yMin=collBbx[0].y()-clearance,&yMax=collBbx[1].y()+clearance;
-	const double &zMin=collBbx[0].z()-clearance,&zMax=collBbx[1].z()+clearance;
-
-	for(int i=0; i<8; i++)
-	{
-		YsVec3 tst;
-		tfm.Mul(tst,corner[i],1.0);
-
-		if(tst.x()<=xMax)
-		{
-			allRight=YSFALSE;
-		}
-		if(xMin<=tst.x())
-		{
-			allLeft=YSFALSE;
-		}
-
-		if(tst.y()<=yMax)
-		{
-			allAbove=YSFALSE;
-		}
-		if(yMin<=tst.y())
-		{
-			allBelow=YSFALSE;
-		}
-
-		if(tst.z()<=zMax)
-		{
-			allBehind=YSFALSE;
-		}
-		if(zMin<=tst.z())
-		{
-			allAhead=YSFALSE;
-		}
-	}
-
-	if(YSTRUE==allAbove || 
-	   YSTRUE==allBelow || 
-	   YSTRUE==allLeft || 
-	   YSTRUE==allRight || 
-	   YSTRUE==allBehind || 
-	   YSTRUE==allAhead)
-	{
-		return YSFALSE;
-	}
-
-	return YSTRUE;
-}*/
-
 }
 
 YSBOOL FsPhysics::CheckLineShellIntersection(FsVisualSrf shell, YsVec3 startPos, YsVec3 endPos, double clearance, YsVec3& collPos, YsShellPolygonHandle& plHd)
@@ -831,36 +1008,42 @@ YSBOOL FsPhysics::CheckLineShellIntersection(FsVisualSrf shell, YsVec3 startPos,
 
 YSBOOL FsPhysics::CheckTriangleShellIntersection(FsVisualSrf* shell1, double clearance, YsVec3& collPosLocal, YsVec3 tri[3], YsShellPolygonHandle& plHd)
 {
-	printf("Check tri/shell intc: ");
 	YsPlane pln;
 	pln.MakePlaneFromTriangle(tri[0], tri[1], tri[2]);
 
-	const YsVec3& o = pln.GetOrigin();
-	const YsVec3& n = pln.GetNormal();
-	const double on = o * n;
-	const double nx = n.x();
-	const double ny = n.y();
-	const double nz = n.z();
+	YsVec3 intersection;
+	YsArray <YsVec3> collisions;
+	shell1->EnableSearch();
 
-	for (auto vtHd : shell1->AllVertex())
+	for (auto edge : shell1->AllEdge())
 	{
-		YsVec3 pos;
-		shell1->GetVertexPosition(pos, vtHd);
+		YsShell::VertexHandle start, end;
+		shell1->GetEdge(start, end, edge);
+		YsVec3 startPos, endPos;
 
-		const double pxnx = pos.x() * nx;
-		const double pznz = pos.z() * nz;
-		const double py = (on - pxnx - pznz) / ny;
+		shell1->GetVertexPosition(startPos, start);
+		shell1->GetVertexPosition(endPos, end);
 
-		if (pos.y() < py - 0.2)   // 0.2 (^_^;)
+		if (pln.GetIntersection(intersection, startPos, endPos - startPos))
 		{
-			const YsShellVertex* vtx = shell1->GetVertex(vtHd);
-			collPosLocal = vtx->GetPosition();
-			printf("Tailstrike\n");
-			return YSTRUE;
-			//Have to then check if collPos is within the original tri
+			if (YsCheckInsideTriangle3(intersection, tri) != YSOUTSIDE && YsCheckInBetween3(intersection, startPos, endPos) == YSTRUE)
+			{
+				collisions.Add(intersection);
+			}
 		}
 	}
-	printf("none\n");
+
+	if (collisions.GetN() > 0)
+	{
+		YsVec3 net = YsOrigin();
+		for (int i = 0; i < collisions.GetN(); i++)
+		{
+			net += collisions[i];
+		}
+		collPosLocal = net/collisions.GetN();
+
+		return YSTRUE;
+	}
 	return YSFALSE;
 }
 
@@ -879,7 +1062,6 @@ YSBOOL FsPhysics::CheckShellShellIntersection(FsVisualSrf* shell1, FsVisualSrf* 
 
 	return YSFALSE;
 }
-
 
 //////////////////////////////////////////////////
 // Post-collision

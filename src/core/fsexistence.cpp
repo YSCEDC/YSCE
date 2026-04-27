@@ -2221,9 +2221,10 @@ YSBOOL FsAirplane::HitGround(
 
 		if(YSTRUE==field.GetFieldShellCollision(UntransformedCollisionShell().Conv(),GetMatrix()))
 		{
-			diedOf=FSDIEDOF_TERRAIN;
-			collType=2;
-			goto COLLIDE;
+			//diedOf=FSDIEDOF_TERRAIN;
+			//collType=2;
+			//goto COLLIDE;
+			printf("Collide with shell\n");
 		}
 		if(prop.IsOnGround()==YSTRUE)
 		{
@@ -2255,9 +2256,10 @@ YSBOOL FsAirplane::HitGround(
 					newPos.SetY(elv+YsTolerance);
 					prop.SetPosition(newPos);
 				}
-				diedOf=FSDIEDOF_TERRAIN;
-				collType=1;
-				goto COLLIDE;
+				//diedOf=FSDIEDOF_TERRAIN;
+				//collType=1;
+				//goto COLLIDE;
+				printf("Popped on terrain\n");
 			}
 		}
 
@@ -2296,7 +2298,7 @@ YSBOOL FsAirplane::HitGround(
 						areaType=field.GetAreaType(GetPosition());
 						printf("Touchdown\n");
 
-						if(areaType!=YSSCNAREA_LAND)
+						if(areaType==YSSCNAREA_WATER) //NOAREA was behaving like water when (areaType != YSSCNAREA_LAND)
 						{
 							YsPrintf("Splashed into the water.\n");
 							diedOf=FSDIEDOF_LANDEDOUTOFRUNWAY;
@@ -2352,7 +2354,7 @@ void FsAirplane::Crash(
 	}
 	if(takeCrash==YSTRUE)
 	{
-		prop.Crash(diedOf);
+		//prop.Crash(diedOf);
 	}
 }
 
