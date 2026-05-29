@@ -1,6 +1,6 @@
 # YSFlight Community Edition (YSCE)
 
-This repository is home to the YSFlight Community Edition fork of YSFlight. If you are interested in joining the project, please email Current Repository maintainer Nodoka Hanamura at nodo-at-kahanamura.com (temporary) or contact any of the current YSCEDC contributors on YSFlight Headquarters (https://www.ysfhq.com/).
+This repository is home to the YSFlight Community Edition fork of YSFlight. Here I have added compiled downloads to help those who couldn't compile it!
 
 # DISCLAIMER
 
@@ -28,7 +28,7 @@ Current YSCEDC Contributors (Code, Design, Advisory):
 * pasutisu (Mofumofu)
 * JOBBIN
 
-To compile YSCE at this time, please follow the instructions below.
+If you prefer compiling YSCE yourself (the downloads are much easier), here are the steps:
 
 ## Compile Instruction
 Prequisites are:
@@ -36,7 +36,7 @@ Prequisites are:
 * Any CMake-compatible compiler
 * The YSCE Public Libraries (Fork of YSFLIGHT Public Libraries)
 
-Open your preferred terminal client and input the following commands in your build area:
+Open your preferred terminal client and input the following commands in your build area (This is for Linux only):
 
 ```
 git clone https://github.com/YSCEDC/ysce_public.git

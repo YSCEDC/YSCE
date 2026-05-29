@@ -1,0 +1,34 @@
+name: Build YSCE Project
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Public Repository
+      uses: actions/checkout@v4
+      with:
+        repository: 'YSCEDC/ysce_public'
+        path: 'ysce_public'
+
+    - name: Checkout Forked Repository
+      uses: actions/checkout@v4
+      with:
+        path: 'YSCE'
+
+    - name: Configure CMake
+      run: |
+        cd YSCE
+        cmake -B build -S src
+
+    - name: Build Project
+      run: |
+        cd YSCE
+        cmake --build build --config Release --parallel $(nproc)
