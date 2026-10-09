@@ -775,6 +775,7 @@ public:
 
 	void SetPosition(const YsVec3 &vec);
 	void SetAttitude(const YsAtt3 &att);
+	void SetRotationSpeed(YsAtt3& rot);
 	void SetPositionAndAttitude(const YsVec3 &vec,const YsAtt3 &att);
 	void SetVelocity(const YsVec3 &vel);
 
@@ -801,7 +802,8 @@ public:
 	const double &GetThrustVector(void) const;
 	const double &GetRudderUserInput(void) const;
 	const double &GetRudderAutoCoordinator(void) const;
-	const double GetVelocity(void) const;
+	//GetVelocity is actually GetSpeed, and returns a double
+	const double GetSpeed(void) const;
 	const double GetHorizontalVelocity(void) const;
 	void GetVelocity(YsVec3 &vel) const;
 	void GetRotationSpeed(YsAtt3 &rot) const;
@@ -862,7 +864,12 @@ public:
 	void LoadFuel(const double fuel);
 	const double &GetFuelLeft(void) const;
 	const double &GetMaxFuelLoad(void) const;
+	//GetG() is actually GetLiftWeightRatio() where lift includes aero and engines
 	double GetG(void) const;
+	//Returns -G, limited to 0.
+	//1 - ((Thrust.y() + lift.y()) / weight / FsGravityConst)
+	double GetWeightOnWheels(void);
+	double GetWeightOnWheelsBounded(void);
 	const double &GetAOA(void) const;
 	const double &GetSSA(void) const;
 	double GetLateralForce(void) const;
@@ -888,6 +895,7 @@ public:
 
 	void GetTransformedRearGearPosition(YsVec3 &rgp) const;
 	void GetTransformedFrontGearPosition(YsVec3 &fgp) const;
+	void GetTransformedGearsPosition(YsVec3 gears[3]);
 	void GetTransformedArrestingHookPosition(YsVec3 &hook) const;
 	double GetGroundStandingHeight(void) const;
 	int GetNumSmokeGenerator(void) const;

@@ -66,7 +66,7 @@ unsigned int FsArgvToAllowedWeaponType(const YsConstArrayMask <YsString> &argv)
 
 const char *FsFlightStateToStr(FSFLIGHTSTATE sta)
 {
-	switch(sta)
+	switch (sta)
 	{
 	case FSFLYING:
 		return "FLYING";
@@ -84,6 +84,8 @@ const char *FsFlightStateToStr(FSFLIGHTSTATE sta)
 		return "GROUNDSTATIC";
 	case FSOVERRUN:
 		return "OVERRUN";
+	case FSBELLYLAND:
+		return "BELLYLAND";
 	}
 	return "Unknown";
 }

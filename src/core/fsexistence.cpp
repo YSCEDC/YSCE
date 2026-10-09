@@ -81,6 +81,14 @@ FsExistence::~FsExistence()
 	CleanUp();
 }
 
+FsExistence::Collision::Collision()
+{
+	objKey = -1;
+	pos = YsOrigin();
+	normal = YsOrigin();
+	hitObj = nullptr;
+}
+
 /* static */ const char *FsExistence::TypeToStr(FSEXISTENCETYPE t)
 {
 	if(FSEX_AIRPLANE==t)
@@ -480,7 +488,7 @@ void FsExistence::ResetDnmState(void)
 YSBOOL FsExistence::TestTailStrike(YsVec3 &collisionPosInLocalCoordinate) const
 {
 	const auto *collPtr=&TransformedCollisionShell();
-
+	
 	if(YsYVec()==terrainNom)
 	{
 		for(auto vtHd : collPtr->AllVertex())
@@ -1981,7 +1989,7 @@ YSBOOL FsAirplane::GetDamage(YSBOOL &killed,int dmg,FSDIEDOF diedOf)
 
 void FsAirplane::Bounce(const YsVec3 &collPos)
 {
-	if(Prop().GetVelocity()<Prop().GetSafeGroundSpeed())
+	if(Prop().GetSpeed()<Prop().GetSafeGroundSpeed())
 	{
 		YsVec3 bounceDir=Prop().GetPosition()-collPos;
 		bounceDir.SetY(0.0);
@@ -2210,22 +2218,9 @@ YSBOOL FsAirplane::HitGround(
 		pos=&prop.GetPosition();
 		double elv;
 		field.GetFieldElevation(elv, pos->x(), pos->z());
-		
-		if (prop.IsActive() == YSTRUE &&
-			pos->y() >= elv + YsTolerance + prop.GetOutsideRadius())    //Fix edge case where falling off carrier would kill player instead of dropping them
-		{																//Without HTRADIUS, landed aircraft will constantly HitGround but never enter landed state
-			prop.SetState(FSFLYING, FSDIEDOF_NULL);						//To do it properly, need to check the world position of the gears
-		}
 
 		isOnRunway=YSFALSE;
 
-		if(YSTRUE==field.GetFieldShellCollision(UntransformedCollisionShell().Conv(),GetMatrix()))
-		{
-			//diedOf=FSDIEDOF_TERRAIN;
-			//collType=2;
-			//goto COLLIDE;
-			printf("Collide with shell\n");
-		}
 		if(prop.IsOnGround()==YSTRUE)
 		{
 			YsArray <const YsSceneryRectRegion *,16> rgn;
@@ -2241,30 +2236,7 @@ YSBOOL FsAirplane::HitGround(
 					}
 				}
 			}
-		}
-
-		if(prop.IsOnGround()!=YSTRUE || canLandAnywhere==YSTRUE)
-		{
-			double elv;
-			field.GetFieldElevation(elv,pos->x(),pos->z());
-			if(pos->y()<=elv+YsTolerance)
-			{
-				if(takeCrash!=YSTRUE)
-				{
-					YsVec3 newPos;
-					newPos=*pos;
-					newPos.SetY(elv+YsTolerance);
-					prop.SetPosition(newPos);
-				}
-				//diedOf=FSDIEDOF_TERRAIN;
-				//collType=1;
-				//goto COLLIDE;
-				printf("Popped on terrain\n");
-			}
-		}
-
-		if(prop.IsOnGround()==YSTRUE)
-		{
+	
 			if(isOnRunway==YSTRUE)
 			{
 				prop.ClearNeedTouchdownCheck();  // <- Yes, it passes touchdown check.
@@ -2322,7 +2294,7 @@ YSBOOL FsAirplane::HitGround(
 		// This function will be called from FsSimulation.  -> Crash(ctime,takeCrash,explosion,diedOf);
 		return YSTRUE;
 	OVERRUN:
-		Overrun(ctime);
+		//Overrun(ctime); //20260805 No more overrun failure. Keeping it around for later
 		return YSFALSE;  // It's not considered a 'hitting a ground.'
 	}
 	return YSFALSE;
@@ -2335,12 +2307,12 @@ void FsAirplane::Crash(
 	const YsAtt3 *att;
 	att=&GetAttitude();
 	pos=&GetPosition();
-	if(att->p()<0.0)
+	/*if(att->p()<0.0)
 	{
 		YsAtt3 newAtt(*att);
 		newAtt.SetP(0.0);
 		prop.SetAttitude(newAtt);
-	}
+	}*/
 	if(explosion!=NULL)
 	{
 		if(areaType!=YSSCNAREA_WATER)

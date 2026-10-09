@@ -1296,7 +1296,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				//calculate max G based on current velocity (upper bound of gLimit*gLimitCorrection, lower bound of 4.0)
 				// 9.0 at 150.0 m/s (300kt)
 				// 4.0 at  75.0 m/s (150kt)
-				maxg=4.0+5.0*(air.Prop().GetVelocity()-75.0)/75.0;
+				maxg=4.0+5.0*(air.Prop().GetSpeed()-75.0)/75.0;
 				if(maxg>gLimit*gLimitCorrection)
 				{
 					maxg=gLimit*gLimitCorrection;
@@ -1353,9 +1353,9 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 					double targetDist = (target->GetPosition() - air.GetPosition()).GetLength();
 					if (targetDist <= 500.0 
 						&& (int)nextBreakClock % 2
-						&& target->Prop().GetVelocity() * 0.6 >= air.Prop().GetMinimumManeuvableSpeed())
+						&& target->Prop().GetSpeed() * 0.6 >= air.Prop().GetMinimumManeuvableSpeed())
 					{
-						air.Prop().SpeedController(target->Prop().GetVelocity() * 0.6);
+						air.Prop().SpeedController(target->Prop().GetSpeed() * 0.6);
 					}
 
 					air.Prop().SetAirTargetKey(YSNULLHASHKEY);
@@ -1500,7 +1500,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 						if(YsDegToRad(-70.0)<=air.GetAttitude().p() && air.GetAttitude().p()<YsDegToRad(70.0))
 						{
 							double v;
-							v=air.Prop().GetVelocity();
+							v=air.Prop().GetSpeed();
 							if(v>YsTolerance) //approx. equivalent to if (v > 0.0)
 							{
 								//tVel: target velocity
@@ -1634,7 +1634,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 						err=err*fabs(err)*50.0; // fabs to keep sign
 						spdDeviation=err*k+relativeMotion*b;
 						spdDeviation=YsBound <double> (spdDeviation,-50,100);
-						air.Prop().SpeedController(target->Prop().GetVelocity()+spdDeviation);
+						air.Prop().SpeedController(target->Prop().GetSpeed()+spdDeviation);
 					}
 // printf("TgtSpd:%lf  Dist:%lf  Correction:%lf  Feed:%lf\n",
 //     trg->Prop().GetVelocity(),rel1.z(),spdDeviation,trg->Prop().GetVelocity()+spdDeviation);
@@ -1642,7 +1642,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				else
 				{
 					//catch up to target 
-					air.Prop().SpeedController(target->Prop().GetVelocity()+10.0);
+					air.Prop().SpeedController(target->Prop().GetSpeed()+10.0);
 // printf("Spd Feed:target+10.0\n");
 				}
 			}
@@ -1681,19 +1681,19 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				targetDist=(target->GetPosition()-air.GetPosition()).GetLength();
 				if(targetDist>300.0)
 				{
-					air.Prop().SpeedController(target->Prop().GetVelocity()-50.0);
+					air.Prop().SpeedController(target->Prop().GetSpeed()-50.0);
 				}
 				if(targetDist>150.0)
 				{
-					air.Prop().SpeedController(target->Prop().GetVelocity()-10.0);
+					air.Prop().SpeedController(target->Prop().GetSpeed()-10.0);
 				}
 				else if(targetDist<100.0)
 				{
-					air.Prop().SpeedController(target->Prop().GetVelocity()+30.0);
+					air.Prop().SpeedController(target->Prop().GetSpeed()+30.0);
 				}
 				else
 				{
-					air.Prop().SpeedController(target->Prop().GetVelocity());
+					air.Prop().SpeedController(target->Prop().GetSpeed());
 				}
 			}
 			break;
@@ -1772,19 +1772,19 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 					//scale velocity based on target dist
 					if(targetDist>300.0)
 					{
-						air.Prop().SpeedController(target->Prop().GetVelocity()-50.0);
+						air.Prop().SpeedController(target->Prop().GetSpeed()-50.0);
 					}
 					if(targetDist>150.0)
 					{
-						air.Prop().SpeedController(target->Prop().GetVelocity()-10.0);
+						air.Prop().SpeedController(target->Prop().GetSpeed()-10.0);
 					}
 					else if(targetDist<100.0)
 					{
-						air.Prop().SpeedController(target->Prop().GetVelocity()+30.0);
+						air.Prop().SpeedController(target->Prop().GetSpeed()+30.0);
 					}
 					else
 					{
-						air.Prop().SpeedController(target->Prop().GetVelocity());
+						air.Prop().SpeedController(target->Prop().GetSpeed());
 					}
 				}
 			}
@@ -1802,7 +1802,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				target=GetWingmansTarget(air,sim);
 				if(target!=NULL)
 				{
-					air.Prop().SpeedController(target->Prop().GetVelocity());
+					air.Prop().SpeedController(target->Prop().GetSpeed());
 				}
 			}
 			break;
@@ -1830,7 +1830,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				target=GetWingmansTarget(air,sim);
 				if(target!=NULL)
 				{
-					air.Prop().SpeedController(target->Prop().GetVelocity());
+					air.Prop().SpeedController(target->Prop().GetSpeed());
 				}
 			}
 			break;
@@ -1854,7 +1854,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 				target=GetWingmansTarget(air,sim);
 				if(target!=NULL)
 				{
-					air.Prop().SpeedController(target->Prop().GetVelocity());
+					air.Prop().SpeedController(target->Prop().GetSpeed());
 				}
 			}
 			break;
@@ -1868,7 +1868,7 @@ YSRESULT FsDogfight::ApplyControl(FsAirplane &air,FsSimulation *sim,const double
 		//landing/gear logic
 		if(air.Prop().IsOnGround()==YSTRUE || air.GetPosition().y()<10.0)
 		{
-			if(air.Prop().IsOnGround()==YSTRUE && air.Prop().GetVelocity()<air.Prop().GetEstimatedLandingSpeed()*1.2)
+			if(air.Prop().IsOnGround()==YSTRUE && air.Prop().GetSpeed()<air.Prop().GetEstimatedLandingSpeed()*1.2)
 			{
 				air.Prop().TurnOffGController();
 				air.Prop().SetElevator(0.0);

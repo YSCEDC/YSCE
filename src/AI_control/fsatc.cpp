@@ -298,7 +298,7 @@ void FsAirTrafficController::ProcessApproach_Approach(class FsSimulation *sim,co
 		airTrafficInfo.IncrementWayPoint();
 		giveHeading=YSTRUE;
 		giveAltitude=YSTRUE;
-		if(airTrafficInfo.GetAssignedAirSpeed()+YsUnitConv::KTtoMPS(10.0)<air->Prop().GetVelocity())
+		if(airTrafficInfo.GetAssignedAirSpeed()+YsUnitConv::KTtoMPS(10.0)<air->Prop().GetSpeed())
 		{
 			giveAirSpeed=YSTRUE;
 		}
@@ -343,7 +343,7 @@ void FsAirTrafficController::ProcessApproach_Approach(class FsSimulation *sim,co
 		curPos.SetY(0.0);
 
 		const double distToNextFix=(nextFixPos-curPos).GetLength();
-		const double v=air->Prop().GetVelocity();
+		const double v=air->Prop().GetSpeed();
 
 		if(YsTolerance<v && distToNextFix/v<TimeToReduceSpeedBeforeIAF())
 		{
@@ -529,11 +529,11 @@ void FsAirTrafficController::ProcessApproach_Approach(class FsSimulation *sim,co
 
 			if(YSTRUE!=YsEqual(0.0,speedToAssign))
 			{
-				if(air->Prop().GetVelocity()>speedToAssign+YsUnitConv::KTtoMPS(10.0))
+				if(air->Prop().GetSpeed()>speedToAssign+YsUnitConv::KTtoMPS(10.0))
 				{
 					phrase.AddString(FSVOICE_GENERAL,"Reduce speed ");
 				}
-				else if(air->Prop().GetVelocity()<speedToAssign-YsUnitConv::KTtoMPS(10.0))
+				else if(air->Prop().GetSpeed()<speedToAssign-YsUnitConv::KTtoMPS(10.0))
 				{
 					phrase.AddString(FSVOICE_GENERAL,"Increase speed ");
 				}
@@ -1348,7 +1348,7 @@ YSBOOL FsAirTrafficInfo::AirplaneReachTurnPoint(FsAirplane *air) const
 {
 	if(currentPathIndex<path.GetN()-1)
 	{
-		const double Rturn=FsGetLevelTurnRadius(air->Prop().GetVelocity(),YsPi/9.0);
+		const double Rturn=FsGetLevelTurnRadius(air->Prop().GetSpeed(),YsPi/9.0);
 
 		YsVec3 nextLeg[2]={path[currentPathIndex].GetPosition(),path[currentPathIndex+1].GetPosition()};
 		nextLeg[0].SetY(0.0);

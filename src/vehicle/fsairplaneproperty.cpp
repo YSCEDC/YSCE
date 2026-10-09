@@ -873,6 +873,10 @@ YSRESULT FsAirplaneProperty::LoadProperty(const wchar_t fn[])
 	{
 		return FSOVERRUN;
 	}
+	if (0 == strcmp(str, "FSBELLYLAND"))
+	{
+		return FSBELLYLAND;
+	}
 	return FSDEAD;
 }
 
@@ -896,6 +900,8 @@ YSRESULT FsAirplaneProperty::LoadProperty(const wchar_t fn[])
 		return "FSGROUNDSTATIC";
 	case FSOVERRUN:
 		return "FSOVERRUN";
+	case FSBELLYLAND:
+		return "FSBELLYLAND";
 	default:
 		break;
 	}
@@ -1364,7 +1370,7 @@ YSBOOL FsAirplaneProperty::CheckTouchDownAndLayOnGround(double& gDistance)
 		deepest=YsSmaller(gDistWheel,gDistLeft);
 		deepest=YsSmaller(deepest,gDistRight);
 		deepest=-deepest;
-		airspeed=GetVelocity();
+		airspeed=GetSpeed();
 
 		if(YSTRUE!=diggingIn)
 		{
@@ -1412,6 +1418,13 @@ YSBOOL FsAirplaneProperty::CheckTouchDownAndLayOnGround(double& gDistance)
 		lateral=leftrt-rightrt;
 		uv=lateral^ev;
 
+		//Smoothly blend between pitch settling and flying by weight on wheels
+		YsVec3 evCurr, uvCurr, evOut, uvOut;
+		evCurr = staAttitude.GetForwardVector();
+		uvCurr = staAttitude.GetUpVector();
+
+		evOut = GetWeightOnWheels() * ev + (1 - GetWeightOnWheels()) * evCurr;
+		
 		staAttitude.SetTwoVector(ev,uv);
 
 		RemakeMatrix();
@@ -1705,7 +1718,7 @@ void FsAirplaneProperty::CalculateGravitationalForce(void)
 
 void FsAirplaneProperty::AdjustGravitationalForceForSlope(void)
 {
-	if(staState==FSGROUND || staState==FSGROUNDSTATIC)
+	if(staState==FSGROUND || staState==FSGROUNDSTATIC || staState == FSBELLYLAND)
 	{
 		const YsVec3 totalForce(0.0,staTotalAerodynamicForce.y()+staTotalGravityForce.y(),0.0);
 		if(staGndNormal*totalForce<0.0)
@@ -1890,7 +1903,7 @@ void FsAirplaneProperty::CalculateRotationalAcceleration(void)
 
 		if(IsOnGround()==YSTRUE && IsOutOfRunway()!=YSTRUE)
 		{
-			staVRoll=0.0;
+			staVRoll *= GetWeightOnWheelsBounded();
 		}
 
 		if(chClass==FSCL_AIRPLANE)
@@ -1902,7 +1915,8 @@ void FsAirplaneProperty::CalculateRotationalAcceleration(void)
 			staDVPitch=0.0;
 			if (IsOnGround() == YSTRUE) //Jankish fix for helicopter uncommanded pitch on touchdown
 			{
-				staVPitch = 0.0;
+				//staVPitch = 0.0;
+				staVPitch *= GetWeightOnWheelsBounded();
 			}
 		}
 
@@ -2184,10 +2198,10 @@ void FsAirplaneProperty::CalculateGround(const double &dt)
 	{
 		// Cheat:To Stabilize airplane on the ground
 		double dy,da;
-		da=(chManSpeed1-staV)/chManSpeed1;
-		if(da>0.0)
+		//da=(chManSpeed1-staV)/chManSpeed1; //20260801 replace airspeed-controlled with weight-on-wheels controlled ground settling
+		//if(IsOnGround() == YSTRUE)
 		{
-			dy=YsAbs(chMainGearR.x()-chMainGearL.x())*(YsPi/40.0)*da*dt;
+			dy=YsAbs(chMainGearR.x()-chMainGearL.x())*(YsPi/2.0)*GetWeightOnWheels()*dt;
 			staPosition.SetY(staPosition.y()-dy);
 			RemakeMatrix();
 		}
@@ -2195,7 +2209,7 @@ void FsAirplaneProperty::CalculateGround(const double &dt)
 		const double gndSpeedThr=8.0;
 		if(IsOutOfRunway()==YSTRUE && IsActive()==YSTRUE)
 		{
-			if(GetVelocity()>gndSpeedThr)
+			if(GetSpeed()>gndSpeedThr)
 			{
 				// Change in 0.2 sec is 100 %
 				// Change in dt sec is 100*(dt/0.2) %
@@ -2204,22 +2218,30 @@ void FsAirplaneProperty::CalculateGround(const double &dt)
 				if(rnd<dt/0.2)
 				{
 					double v;
-					v=GetVelocity()-gndSpeedThr;
+					v=GetSpeed()-gndSpeedThr;
 					if(staAttitude.p()>0.0)
 					{
-						staVPitch=-YsDegToRad(v*4.0);
+						staVPitch=-YsDegToRad(v*4.0) * GetWeightOnWheelsBounded();
 					}
 					else
 					{
-						staVPitch=YsDegToRad(v*4.0);
+						staVPitch=YsDegToRad(v*4.0) * GetWeightOnWheelsBounded();
 					}
 					if(staAttitude.b()>0.0)
 					{
-						staVRoll=-YsDegToRad(v*5.0);
+						staVRoll=-YsDegToRad(v*5.0) * GetWeightOnWheelsBounded();
 					}
 					else
 					{
-						staVRoll=YsDegToRad(v*5.0);
+						staVRoll=YsDegToRad(v*5.0) * GetWeightOnWheelsBounded();
+					}
+					if (staAttitude.h() > 0.0)
+					{
+						staVYaw = -YsDegToRad(v * 1.0) * GetWeightOnWheelsBounded();
+					}
+					else
+					{
+						staVYaw = YsDegToRad(v * 1.0) * GetWeightOnWheelsBounded();
 					}
 				}
 			}
@@ -2309,7 +2331,7 @@ void FsAirplaneProperty::CalculateGround(const double &dt)
 		groTransitionAlt = YsTolerance;
 	}
 
-	if((staState == FSGROUND || staState == FSGROUNDSTATIC) && gDist>groTransitionAlt && staState!=FSDEADSPIN && staState!=FSDEADFLATSPIN)
+	if((staState == FSGROUND || staState == FSGROUNDSTATIC || staState == FSBELLYLAND) && gDist>groTransitionAlt && staState!=FSDEADSPIN && staState!=FSDEADFLATSPIN)
 	{
 		SetState(FSFLYING,FSDIEDOF_NULL);
 	}
@@ -3868,7 +3890,7 @@ void FsAirplaneProperty::CalculateAutoPilot(const double &dt)
 	if(ctlAutoVgw==YSTRUE)
 	{
 		double v;
-		v=GetVelocity();
+		v=GetSpeed();
 		if(v<chAutoVgwSpeed1)
 		{
 			ctlVgw=1.0;
@@ -3916,7 +3938,7 @@ void FsAirplaneProperty::ControlSpeed(const double &spd,const double &dt)
 
 	double aoa,drag,lift,weight,grav,thr;
 	YsVec3 vDrag,vLift,vGrav,vTotal;
-	const double currentV=GetVelocity();
+	const double currentV=GetSpeed();
 
 	aoa=GetAOA();
 	aoa=YsBound(aoa,YsDegToRad(-89.0),YsDegToRad(89.0)); // Prevent div by 0
@@ -3941,7 +3963,7 @@ void FsAirplaneProperty::ControlSpeed(const double &spd,const double &dt)
 
 
 	// Accumulate Error
-	ctlIntegralSpdErr+=(spd-GetVelocity())*dt;
+	ctlIntegralSpdErr+=(spd-GetSpeed())*dt;
 	ctlIntegralSpdErr=YsBound(ctlIntegralSpdErr,-5.0,5.0);
 
 	// Calculate differential
@@ -5437,7 +5459,7 @@ YSBOOL FsAirplaneProperty::IsFiringGun(void) const
 
 YSBOOL FsAirplaneProperty::IsOnGround(void) const
 {
-	if(staState==FSGROUND || staState==FSGROUNDSTATIC || staState==FSOVERRUN)
+	if(staState==FSGROUND || staState==FSGROUNDSTATIC || staState==FSOVERRUN || staState == FSBELLYLAND)
 	{
 		return YSTRUE;
 	}
@@ -5469,7 +5491,7 @@ YSRESULT FsAirplaneProperty::BouncePitchByTailStrike(void)
 		if(staAttitude.p()>pitch)
 		{
 			staAttitude.SetP(pitch);
-			staVPitch=-YsPi/18.0; // 10 degree/sec
+			staVPitch=-YsPi/90.0; // 2 degree/sec
 		}
 	}
 	return YSOK;
@@ -5825,7 +5847,7 @@ const double &FsAirplaneProperty::GetRudderAutoCoordinator(void) const
 	return ctlRudderControl;
 }
 
-const double FsAirplaneProperty::GetVelocity(void) const
+const double FsAirplaneProperty::GetSpeed(void) const
 {
 	return staVelocity.GetLength();
 }
@@ -5843,6 +5865,13 @@ void FsAirplaneProperty::GetVelocity(YsVec3 &vel) const
 void FsAirplaneProperty::GetRotationSpeed(YsAtt3 &rot) const
 {
 	rot.Set(staVYaw,staVPitch,staVRoll);
+}
+
+void FsAirplaneProperty::SetRotationSpeed(YsAtt3& rot)
+{
+	staVYaw = rot.h();
+	staVPitch = rot.p();
+	staVRoll = rot.b();
 }
 
 void FsAirplaneProperty::GetAcceleration(YsVec3 &acc) const
@@ -10029,6 +10058,17 @@ double FsAirplaneProperty::GetG(void) const
 	return force/weight/FsGravityConst;
 }
 
+double FsAirplaneProperty::GetWeightOnWheels(void)
+{
+	//20260801 This currently only works because GetG counts lift and the vertical component of thrust and that's it
+	return YsGreater(0.0, 1 - GetG());
+}
+
+double FsAirplaneProperty::GetWeightOnWheelsBounded(void)
+{
+	return YsSmaller(YsGreater(0.0, 1 - GetG()), 1.0);
+}
+
 double FsAirplaneProperty::GetLateralForce(void) const
 {
 	YsVec3 trueTotalForce;
@@ -10225,6 +10265,13 @@ void FsAirplaneProperty::GetTransformedFrontGearPosition(YsVec3 &pos) const
 	pos=staMatrix*pos;
 }
 
+void FsAirplaneProperty::GetTransformedGearsPosition(YsVec3 gears[3])
+{
+	gears[0] = staMatrix * chWheel;
+	gears[1] = staMatrix * chMainGearR;
+	gears[2] = staMatrix * chMainGearL;
+}
+
 void FsAirplaneProperty::GetTransformedArrestingHookPosition(YsVec3 &hook) const
 {
 	hook=staMatrix*chArrestingHook;
@@ -10267,7 +10314,7 @@ void FsAirplaneProperty::GetVaporPosition(YsVec3 &vap) const
 
 YSBOOL FsAirplaneProperty::CheckHasJustTouchDown(void) const
 {
-	if(staPState!=FSGROUND && staPState!=FSGROUNDSTATIC && staPState!=FSOVERRUN && IsOnGround()==YSTRUE)
+	if(staPState!=FSGROUND && staPState!=FSGROUNDSTATIC && staPState!=FSOVERRUN && staPState != FSBELLYLAND && IsOnGround()==YSTRUE)
 	{
 		return YSTRUE;
 	}
@@ -10296,7 +10343,7 @@ YSBOOL FsAirplaneProperty::CheckSafeTouchDown(FSDIEDOF &diedOf) const
 
 YSBOOL FsAirplaneProperty::CheckHasJustAirborne(void) const
 {
-	if(staPState==FSGROUND && staState==FSFLYING)
+	if((staPState==FSGROUND || staPState == FSBELLYLAND) && staState==FSFLYING)
 	{
 		return YSTRUE;
 	}

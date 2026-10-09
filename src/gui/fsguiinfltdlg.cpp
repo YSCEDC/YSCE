@@ -884,7 +884,7 @@ void FsGuiAutoPilotDialog::Circle(void)
 		auto holdPos=playerPlane->GetPosition();
 		gp->SetSingleDestination(holdPos);
 		gp->speed=YsGreater(playerPlane->Prop().GetEstimatedLandingSpeed()*1.2,
-		                    playerPlane->Prop().GetVelocity());
+		                    playerPlane->Prop().GetSpeed());
 		gp->minAlt=0.0;
 		gp->straightFlightMode=YSFALSE;
 		playerPlane->SetAutopilot(gp);
@@ -900,7 +900,7 @@ void FsGuiAutoPilotDialog::Straight(void)
 		auto holdPos=playerPlane->GetPosition();
 		gp->SetSingleDestination(holdPos);
 		gp->speed=YsGreater(playerPlane->Prop().GetEstimatedLandingSpeed()*1.2,
-		                    playerPlane->Prop().GetVelocity());
+		                    playerPlane->Prop().GetSpeed());
 		gp->minAlt=0.0;
 		gp->straightFlightMode=YSTRUE;
 		playerPlane->SetAutopilot(gp);
@@ -962,7 +962,7 @@ void FsGuiAutoPilotDialog::FlyHeadingBug(void)
 		auto holdPos=playerPlane->GetPosition();
 		gp->SetSingleDestination(holdPos);
 		gp->speed=YsGreater(playerPlane->Prop().GetEstimatedLandingSpeed()*1.2,
-		                    playerPlane->Prop().GetVelocity());
+		                    playerPlane->Prop().GetSpeed());
 		gp->minAlt=0.0;
 		gp->flyHeadingBugMode=YSTRUE;
 		playerPlane->SetAutopilot(gp);

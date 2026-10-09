@@ -335,6 +335,8 @@ public:
 	YSRESULT SaveTer(const char fn[]) const;
 	YSRESULT SaveTer(YsTextOutputStream &textOut) const;
 
+	YSRESULT ConvertTerToShell(void);
+
 	YsVec2i GetNumBlock(void) const;
 	YSRESULT GetGridPosition(YsVec3 &pos,int x,int z) const;
 	YSRESULT GetTriangle(YsVec3 tri[3],int x,int z,int f) const;
@@ -546,7 +548,12 @@ protected:
 
 public:
 	YsSceneryElevationGrid();
+	YsVisualSrf collision;
+	YsVisualSrf collisionTransformed;
+	YSBOOL srfGenerated;
+	YSBOOL needTransform;
 
+	YSRESULT ConvertTerToShell(void);
 	YSRESULT Save(const char fn[]) const;
 	YSRESULT Save(YsTextOutputStream &textOut) const;
 	YsElevationGrid* GetGridData(void);

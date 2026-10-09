@@ -1224,6 +1224,8 @@ YSBOOL FsSimulation::SimTestCollision(const class FsVisualSrf &shl,const YsVec3 
 {
 	FsVisualSrf coll1, coll2;
 	YsMatrix4x4 mat;
+	YsShellPolygonHandle* face = nullptr; //This gets ignored here. There's no object to add 
+	YsVec3 collPos; //This gets ignored here
 
 	coll1=shl;
 	mat.Translate(pos);
@@ -1238,10 +1240,8 @@ YSBOOL FsSimulation::SimTestCollision(const class FsVisualSrf &shl,const YsVec3 
 	for(int i=0; i<airCandidate.GetN(); i++)
 	{
 		FsAirplane *air2=airCandidate[i];
-		YsVec3 collPos;
-		YsShellPolygonHandle plHd;
 		coll2 = air2->TransformedCollisionShell();
-		if (air2->IsAlive() == YSTRUE && phys->CheckShellShellIntersection(&coll1, &coll2, 0.0, collPos, plHd, plHd) == YSTRUE)
+		if (air2->IsAlive() == YSTRUE && phys->CheckShellShellIntersection(coll1, coll2, 0.0) == YSTRUE)
 		//if(YSTRUE==air2->IsAlive() && YSTRUE==CheckMidAir(collPos,coll1.Conv(),*air2))
 		{
 			return YSTRUE;
@@ -1253,10 +1253,8 @@ YSBOOL FsSimulation::SimTestCollision(const class FsVisualSrf &shl,const YsVec3 
 	for(int i=0; i<gndCandidate.GetN(); i++)
 	{
 		FsGround *gnd2=gndCandidate[i];
-		YsVec3 collPos;
-		YsShellPolygonHandle plHd;
 		coll2 = gnd2->TransformedCollisionShell();
-		if (YSTRUE == gnd2->IsAlive() && phys->CheckShellShellIntersection(&coll1, &coll2, 0.0, collPos, plHd, plHd) == YSTRUE)
+		if (YSTRUE == gnd2->IsAlive() && phys->CheckShellShellIntersection(coll1, coll2, 0.0) == YSTRUE)
 		//if(YSTRUE==gnd2->IsAlive() && YSTRUE==CheckMidAir(collPos,coll1.Conv(),*gnd2))
 		{
 			return YSTRUE;
@@ -2294,7 +2292,7 @@ void FsSimulation::SimulateOneStep(
 	#endif
 	RealTimeStep();
 	phys->UpdatePhysics(this);
-
+	
 	if(NULL==firstPlayer.GetObject(this) && NULL!=GetPlayerObject())
 	{
 		firstPlayer.SetObject(GetPlayerObject());
@@ -2310,16 +2308,25 @@ void FsSimulation::SimulateOneStep(
 	if (pause != YSTRUE && (replayMode != FSREPLAY_PAUSE && replayMode != FSREPLAY_FASTREWIND && replayMode != FSREPLAY_VERYFASTREWIND && replayMode != FSREPLAY_BACKWARD))
 	{
 		double deltaTime=YsSmaller(passedTime,3.0);
+		
+		SimClearCollisionList();
 
 		std::vector <std::function <void()> > taskArray;
 		taskArray.push_back(std::bind(&FsSimulation::SimCacheFieldElevation,this));
 		   // SimCacheFieldElevation should come first.  Otherwise, when passedTime is large,
 		   // airplanes may sink into a terrain on which they are placed.  //2008/01/21
 		taskArray.push_back(std::bind(&FsSimulation::SimCacheRectRegion,this));
-		taskArray.push_back(std::bind(&FsSimulation::SimComputeAirToObjCollision,this));
+		//taskArray.push_back(std::bind(&FsSimulation::SimProcessCollisionAndTerrain,this)); //Put all collisions into the thread list and see what breaks
+		taskArray.push_back(std::bind(&FsSimulation::SimCheckCollisionAircraftAircraft, this));
+		taskArray.push_back(std::bind(&FsSimulation::SimCheckCollisionAircraftGround, this));
+		taskArray.push_back(std::bind(&FsSimulation::SimCheckCollisionAircraftTerrain, this));
+		taskArray.push_back(std::bind(&FsSimulation::SimCheckCollisionFromGround, this));
 		threadPool.Run(taskArray.size(),taskArray.data());
+		
+		
 
-		SimProcessCollisionAndTerrain(passedTime);
+		SimProcessCollisionAndTerrain(); //Calls SimProcessCollisionList(), which introduces a thread race condition
+		//SimCheckTailStrike();
 
 		const double stepTime=0.025;
 		while(deltaTime>YsTolerance)
@@ -2337,7 +2344,9 @@ void FsSimulation::SimulateOneStep(
 			printf("S1\n");
 		#endif
 			SimMove(dt);
-
+			
+			//SimProcessCollisionAndTerrain();
+			
 		#ifdef CRASHINVESTIGATION
 			printf("S2\n");
 		#endif
@@ -2464,8 +2473,6 @@ void FsSimulation::SimulateOneStep(
 	#endif
 
 		SimProcessAirTrafficController();
-
-		SimCheckTailStrike();
 	}
 	else // if(pause==YSTRUE)
 	{
@@ -3317,6 +3324,8 @@ const char *FsSimulation::FinalAirplaneStateString(FSFLIGHTSTATE sta) const
 		return "DEAD";
 	case FSOVERRUN:
 		return "OVERRUN";
+	case FSBELLYLAND:
+		return "LANDED WITHOUT GEAR";
 	}
 	return "UNKNOWN";
 }
@@ -3565,6 +3574,7 @@ void FsSimulation::SimMove(const double &dt)
 
 		//airplane->SetTransformationToCollisionShell(airplane->Prop().GetMatrix());
 		//Collision shell is now only transformed when there is a possible collision, rather than every frame
+		//printf("transformCollThisStep = false\n");
 		airplane->transformedCollShellThisStep = YSFALSE;
 		airId++;
 
@@ -3606,6 +3616,10 @@ void FsSimulation::SimMove(const double &dt)
 			   (ground->motionPathOffset,ground->motionPathIndex,ground->useMotionPathOffset,
 			    ground->motionPathPnt.GetN(),ground->motionPathPnt,ground->motionPathIsLoop,
 			    dt);
+			//Make ground objects write velocity to CommonProp(). A dumb bandaid
+			YsVec3 v;
+			ground->Prop().GetVelocity(v);
+			ground->Prop().SetVelocity(v);
 		}
 
 		tallestGroundObjectHeight=YsGreater
@@ -3730,6 +3744,7 @@ void FsSimulation::SimMove(const double &dt)
 #endif
 }
 
+/*-/
 void FsSimulation::SimCheckTailStrike(void)
 {
 	FsAirplane *air=NULL;
@@ -3737,19 +3752,37 @@ void FsSimulation::SimCheckTailStrike(void)
 	{
 		if(air->IsAlive()==YSTRUE && air->isPlayingRecord!=YSTRUE && air->isNetSubstitute!=YSTRUE)
 		{
+			air->sceCollision.CleanUp();
 			YsVec3 untransformed;
-			YsVec3 collPos;
-			phys->CheckObjectTerrainCollision(air, 0.0, collPos);
+			
+			if (phys->CheckObjectTerrainCollision(air, 0.0) == YSTRUE)
+			{
+				YsVec3 prevV, nextV;
+				YSBOOL killed;
+				air->CommonProp().GetVelocity(prevV);
+				phys->PushObjectFromPointCollision(air);
+				air->CommonProp().GetVelocity(nextV);
+				int dmg = phys->DoDamageByDeltaV(nextV - prevV);
+				air->GetDamage(killed, dmg, FSDIEDOF_COLLISION);
+
+				//reduce velocity by timestep
+				YsVec3 newVel;
+				//double prevTime;
+				air->Prop().GetVelocity(newVel);
+				newVel -= newVel * 0.2 * (PassedTime());
+				printf(" %f sec\n", PassedTime());
+				//prevTime = PassedTime();
+				air->Prop().SetVelocity(newVel);
+			}
 			//if(YSTRUE==air->TestTailStrike(untransformed))
+			//if (air->airCollision.GetN() > 0)
 			//{
-			//	if(cfgPtr->noTailStrike==YSTRUE)
-			//	{
 			//		if(air==GetPlayerAirplane())
 			//		{
 			//			AddTimedMessage("Tail Strike!");
-			//			air->Prop().BouncePitchByTailStrike();
 			//		}
-			//	}
+			//		air->Prop().BouncePitchByTailStrike();
+			//}
 			//	else
 			//	{
 			//		if(untransformed.z()<-YsAbs(untransformed.x())*2.0)  // Really tail?
@@ -3764,7 +3797,7 @@ void FsSimulation::SimCheckTailStrike(void)
 			//}
 		}
 	}
-}
+}/-*/
 
 void FsSimulation::SimCacheFieldElevation(void)
 {
@@ -3843,7 +3876,7 @@ void FsSimulation::SimCacheRectRegion(void)
 	{
 		if(YSTRUE==airPtr->IsAlive())
 		{
-			if(YsTolerance<airPtr->Prop().GetVelocity() || YSTRUE!=airPtr->rectRgnCached)
+			if(YsTolerance<airPtr->Prop().GetSpeed() || YSTRUE!=airPtr->rectRgnCached)
 			{
 				field.GetFieldRegion(airPtr->rectRgnCache,airPtr->GetPosition().x(),airPtr->GetPosition().z());
 				airPtr->rectRgnCached=YSTRUE;
@@ -3905,106 +3938,404 @@ void FsSimulation::UpdateGroundTerrainElevationAndNormal(FsGround *gndPtr)
 	}
 }
 
-void FsSimulation::SimComputeAirToObjCollision(void)
+//void FsSimulation::SimComputeAirToObjCollision(void)
+//{
+//	YsArray <FsAirplane *,256> airCandidate;
+//	YsArray <FsGround *,256> gndCandidate;
+//
+//	for(FsAirplane *airPtr=NULL; NULL!=(airPtr=FindNextAirplane(airPtr)); )
+//	{
+//		airPtr->airCollision.CleanUp();
+//		airPtr->gndCollision.CleanUp();
+//	}
+//	
+//	int playerId = FsExistence::GetSearchKey(GetPlayerAirplane());
+//
+//	for(FsAirplane *air1=NULL; NULL!=(air1=FindNextAirplane(air1)); )
+//	{
+//		if (world->GetIsNetClient() == YSFALSE || air1->SearchKey() == playerId) //Skip collision check for non-player aircraft as client
+//		{
+//			if (air1->IsAlive() == YSTRUE)
+//			{
+//				GetLattice().GetAirCollisionCandidate(airCandidate, air1);
+//
+//				for (int j = 0; j < airCandidate.GetN(); j++)
+//				{
+//					FsAirplane* air2 = airCandidate[j];
+//					if (YSTRUE == cfgPtr->midAirCollision || YSTRUE == air2->Prop().IsRacingCheckPoint())
+//					{
+//						if ((air1->SearchKey() < air2->SearchKey() || world->GetIsNetClient() == YSTRUE) &&
+//							air2->IsAlive() == YSTRUE &&
+//							(air1->Prop().IsActive() == YSTRUE || air2->Prop().IsActive() == YSTRUE))  // 2005/03/03
+//						{
+//							//if (CheckMidAir(collPos, *air1, *air2) == YSTRUE)
+//							printf("Air-obj coll\n");
+//							if (phys->CheckObjectObjectCollision(air1, air2, 0.0) == YSTRUE)
+//							{
+//								phys->PushObjectFromPointCollision(air1);
+//								phys->PushObjectFromPointCollision(air2);
+//								/*air1->airCollision.Increment();
+//								air1->airCollision.Last().objKey = air2->SearchKey();
+//								air1->airCollision.Last().pos = collPos;
+//
+//								air2->airCollision.Increment();
+//								air2->airCollision.Last().objKey = air1->SearchKey();
+//								air2->airCollision.Last().pos = collPos;*/
+//							}
+//						}
+//					}
+//				}
+//			}
+//
+//			if (air1->GetPosition().y() - air1->GetApproximatedCollideRadius() < tallestGroundObjectHeight)
+//			{
+//				GetLattice().GetGndCollisionCandidate(gndCandidate, air1);
+//				for (int j = 0; j < gndCandidate.GetN(); j++)
+//				{
+//					FsGround* gnd2 = gndCandidate[j];
+//					if (YSTRUE == cfgPtr->midAirCollision || YSTRUE == gnd2->Prop().IsRacingCheckPoint())
+//					{
+//						if (gnd2->IsAlive() == YSTRUE)
+//						{
+//							YsVec3 collPos;
+//							//if (CheckMidAir(collPos, *air1, *gnd2) == YSTRUE)
+//							if (phys->CheckObjectObjectCollision(air1, gnd2, 0.0) == YSTRUE)
+//							{
+//								//20260802 Ground and air collisions both go into airCollision now because they're both objects
+//								phys->PushObjectFromPointCollision(air1);
+//								
+//								//Skip pushing ground objects around for now in case it messes with carriers
+//								//phys->PushObjectFromPointCollision(gnd2);
+//								
+//
+//								/*air1->gndCollision.Increment();
+//								air1->gndCollision.Last().objKey = gnd2->SearchKey();
+//								air1->gndCollision.Last().pos = collPos;
+//
+//								gnd2->airCollision.Increment();
+//								gnd2->airCollision.Last().objKey = air1->SearchKey();
+//								gnd2->airCollision.Last().pos = collPos;*/
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
+//}
+
+void FsSimulation::SimClearCollisionList()
 {
-	YsArray <FsAirplane *,256> airCandidate;
-	YsArray <FsGround *,256> gndCandidate;
+	collList.CleanUp();
+	collListAirAir.CleanUp();
+	collListAirGnd.CleanUp();
+	collListAirTer.CleanUp();
+	collListGnd.CleanUp();
+	doneAirAir = YSFALSE;
+	doneAirGnd = YSFALSE;
+	doneAirTer = YSFALSE;
+	doneGndGnd = YSFALSE;
+}
 
-	for(FsAirplane *airPtr=NULL; NULL!=(airPtr=FindNextAirplane(airPtr)); )
+void FsSimulation::SimProcessCollisionAndTerrain()
+{
+	//collList.CleanUp();
+
+
+	if (doneAirAir * doneAirGnd * doneAirTer * doneGndGnd == YSFALSE)
 	{
-		airPtr->airCollision.CleanUp();
-		airPtr->gndCollision.CleanUp();
+		printf("A thread failed the race condition and collisions are incomplete\n");
 	}
-	
-	int playerId = FsExistence::GetSearchKey(GetPlayerAirplane());
-
-	for(FsAirplane *air1=NULL; NULL!=(air1=FindNextAirplane(air1)); )
+	while (doneAirAir * doneAirGnd * doneAirTer * doneGndGnd == YSFALSE)
 	{
-		if (world->GetIsNetClient() == YSFALSE || air1->SearchKey() == playerId) //Skip collision check for non-player aircraft as client
+		FsSleep(1); //Give the threads another milisecond to think
+	}
+
+	bulletHolder.HitSomething(currentTime, field, &explosionHolder, this, tallestGroundObjectHeight);
+
+	//SimCheckCollisionFromAircraft();
+
+	//SimCheckCollisionFromGround();
+
+	SimProcessCollisionList();
+}
+
+//void FsSimulation::SimCheckCollisionFromAircraft()
+//{
+//	YsArray <FsAirplane*, 256> airCandidate;
+//	YsArray <FsGround*, 256> gndCandidate;
+//
+//	int playerId = FsExistence::GetSearchKey(GetPlayerAirplane());
+//	int air1Id, air2Id;
+//
+//	for (FsAirplane* air1 = NULL; NULL != (air1 = FindNextAirplane(air1)); )
+//	{
+//		air1Id = FsExistence::GetSearchKey(air1);
+//		if ((world->GetIsNetClient() == YSFALSE || air1->SearchKey() == playerId) && air1->isPlayingRecord != YSTRUE) //Skip collision check for non-player aircraft as client
+//		{
+//			if (air1->IsAlive() == YSTRUE)
+//			{
+//	//Aircraft collision with aircraft
+//				GetLattice().GetAirCollisionCandidate(airCandidate, air1);
+//				for (int j = 0; j < airCandidate.GetN(); j++)
+//				{
+//					FsAirplane* air2 = airCandidate[j];
+//					if ((YSTRUE == cfgPtr->midAirCollision || YSTRUE == air2->Prop().IsRacingCheckPoint()) && air1 != air2 &&
+//						air2->IsAlive() == YSTRUE && (air1->Prop().IsActive() == YSTRUE || air2->Prop().IsActive() == YSTRUE))
+//					{
+//						if (collList.GetN() > 0)
+//						{
+//							for (int i = 0; i < collList.GetN(); i++)
+//							{
+//								if (air1Id == collList[i].keyOne || air1Id == collList[i].keyTwo)
+//								{ //Already checked this collision from the other perspective
+//									goto SKIPTHISPLANE;
+//								}
+//							}
+//						}
+//
+//						collList.Increment();
+//						if (phys->CheckObjectObjectCollision(air1, air2, 0.0, &collList.Last()) != YSTRUE)
+//						{
+//							collList.DeleteLast();
+//						}
+//						else
+//						{
+//							printf("Air %i collide with air %i\n", collList.Last().keyOne, collList.Last().keyTwo);
+//						}
+//
+//					}
+//				SKIPTHISPLANE:
+//					;
+//				}
+//			}
+//	//Aircraft collision with ground object
+//			if (air1->GetPosition().y() - air1->GetApproximatedCollideRadius() < tallestGroundObjectHeight)
+//			{
+//				GetLattice().GetGndCollisionCandidate(gndCandidate, air1);
+//				for (int j = 0; j < gndCandidate.GetN(); j++)
+//				{
+//					FsGround* gnd2 = gndCandidate[j];
+//					if (YSTRUE /*== cfgPtr->midAirCollision*/ || YSTRUE == gnd2->Prop().IsRacingCheckPoint()) //Need a "air collision with ground" config toggle here
+//					{
+//						if (gnd2->IsAlive() == YSTRUE)
+//						{
+//							if (collList.GetN() > 0)
+//							{
+//								for (int i = 0; i < collList.GetN(); i++)
+//								{
+//									if (air1Id == collList[i].keyOne || air1Id == collList[i].keyTwo)
+//									{ //Already checked this collision from the other perspective
+//										goto SKIPTHISGROUND;
+//									}
+//								}
+//							}
+//
+//							collList.Increment();
+//							if (phys->CheckObjectObjectCollision(air1, gnd2, 0.0, &collList.Last()) != YSTRUE)
+//							{
+//								collList.DeleteLast();
+//							}
+//							else
+//							{
+//								printf("Air %i collide with gnd %i\n", collList.Last().keyOne, collList.Last().keyTwo);
+//							}
+//						}
+//					}
+//				SKIPTHISGROUND:
+//					;
+//				}
+//			}
+//
+//	//Aircraft collision with terrain
+//			//Old carrier touchdown handling
+//			int i;
+//			YsVec3 airPos;
+//			YSBOOL onCarrier = YSFALSE;
+//			if (air1->Prop().IsOnGround() == YSTRUE)
+//			{
+//				airPos = air1->GetPosition();
+//				YsVec3 gears[3];
+//				air1->Prop().GetTransformedGearsPosition(gears);
+//
+//				for (i = 0; i < aircraftCarrierList.GetN(); i++)
+//				{
+//					if (aircraftCarrierList[i]->IsAlive() == YSTRUE)
+//					{
+//						FsAircraftCarrierProperty* prop;
+//						prop = aircraftCarrierList[i]->Prop().GetAircraftCarrierProperty();
+//						YsVec3 cPos = aircraftCarrierList[i]->Prop().GetPosition();
+//						double cRadius = aircraftCarrierList[i]->Prop().GetOutsideRadius();
+//						YsVec3 difference = airPos - cPos;
+//						if (difference.GetLength() < cRadius)
+//						{
+//							if (prop->IsOnDeck(gears[0]) == YSTRUE || prop->IsOnDeck(gears[1]) == YSTRUE || prop->IsOnDeck(gears[2]) == YSTRUE)
+//							{
+//								// Even if flight state is FSGROUND and the airplane is not on
+//								// the runway, possibly the airplane is on the flight deck of
+//								// an aircraft carrier.
+//								air1->Prop().SetOutOfRunway(YSFALSE);
+//								onCarrier = YSTRUE;
+//								break;
+//							}
+//						}
+//					}
+//				}
+//			}
+//			if (onCarrier != YSTRUE)
+//			{
+//				collList.Increment();
+//				if (phys->CheckObjectGroundPlaneCollision(air1, 0.0, &collList.Last()) != YSTRUE)
+//				{
+//					collList.DeleteLast();
+//				}
+//				else
+//				{
+//					printf("Air %i collide with floor\n", collList.Last().keyOne);
+//				}
+//
+//				collList.Increment();
+//				if (phys->CheckObjectTerrainCollision(air1, 0.0, &collList.Last()) != YSTRUE)
+//				{
+//					collList.DeleteLast();
+//				}
+//				else
+//				{
+//					printf("Air %i collide with ter\n", collList.Last().keyOne);
+//				}
+//			}
+//		}
+//	}
+//}
+
+void FsSimulation::SimCheckCollisionAircraftAircraft()
+{
+	YsArray <FsAirplane*, 256> airCandidate;
+
+	int playerId = FsExistence::GetSearchKey(GetPlayerAirplane());
+	int air1Id, air2Id;
+
+	for (FsAirplane* air1 = NULL; NULL != (air1 = FindNextAirplane(air1)); )
+	{
+		air1Id = FsExistence::GetSearchKey(air1);
+		if ((world->GetIsNetClient() == YSFALSE || air1->SearchKey() == playerId) && air1->isPlayingRecord != YSTRUE) //Skip collision check for non-player aircraft as client
 		{
 			if (air1->IsAlive() == YSTRUE)
 			{
+				//Aircraft collision with aircraft
 				GetLattice().GetAirCollisionCandidate(airCandidate, air1);
-
 				for (int j = 0; j < airCandidate.GetN(); j++)
 				{
 					FsAirplane* air2 = airCandidate[j];
-					if (YSTRUE == cfgPtr->midAirCollision || YSTRUE == air2->Prop().IsRacingCheckPoint())
+					if ((YSTRUE == cfgPtr->midAirCollision || YSTRUE == air2->Prop().IsRacingCheckPoint()) && air1 != air2 &&
+						air2->IsAlive() == YSTRUE && (air1->Prop().IsActive() == YSTRUE || air2->Prop().IsActive() == YSTRUE))
 					{
-						if ((air1->SearchKey() < air2->SearchKey() || world->GetIsNetClient() == YSTRUE) &&
-							air2->IsAlive() == YSTRUE &&
-							(air1->Prop().IsActive() == YSTRUE || air2->Prop().IsActive() == YSTRUE))  // 2005/03/03
+						if (collListAirAir.GetN() > 0)
 						{
-							YsVec3 collPos;
-							//if (CheckMidAir(collPos, *air1, *air2) == YSTRUE)
-							if (phys->CheckObjectObjectCollision(air1, air2, 0.0, collPos) == YSTRUE)
+							for (int i = 0; i < collListAirAir.GetN(); i++)
 							{
-								air1->airCollision.Increment();
-								air1->airCollision.Last().objKey = air2->SearchKey();
-								air1->airCollision.Last().pos = collPos;
-
-								air2->airCollision.Increment();
-								air2->airCollision.Last().objKey = air1->SearchKey();
-								air2->airCollision.Last().pos = collPos;
+								if (air1Id == collListAirAir[i].keyOne || air1Id == collListAirAir[i].keyTwo)
+								{ //Already checked this collision from the other perspective
+									goto SKIPTHISPLANE;
+								}
 							}
 						}
+
+						collListAirAir.Increment();
+						if (phys->CheckObjectObjectCollision(air1, air2, 0.0, &collListAirAir.Last()) != YSTRUE)
+						{
+							collListAirAir.DeleteLast();
+						}
+						else
+						{
+							printf("Air %i collide with air %i\n", collListAirAir.Last().keyOne, collListAirAir.Last().keyTwo);
+						}
+
 					}
+				SKIPTHISPLANE:
+					;
 				}
 			}
+		}
+	}
+	doneAirAir = YSTRUE;
+}
 
+void FsSimulation::SimCheckCollisionAircraftGround()
+{
+	YsArray <FsGround*, 256> gndCandidate;
+
+	int playerId = FsExistence::GetSearchKey(GetPlayerAirplane());
+	int air1Id, air2Id;
+
+	for (FsAirplane* air1 = NULL; NULL != (air1 = FindNextAirplane(air1)); )
+	{
+		air1Id = FsExistence::GetSearchKey(air1);
+		if ((world->GetIsNetClient() == YSFALSE || air1->SearchKey() == playerId) && air1->isPlayingRecord != YSTRUE) //Skip collision check for non-player aircraft as client
+		{
+			//Aircraft collision with ground object
 			if (air1->GetPosition().y() - air1->GetApproximatedCollideRadius() < tallestGroundObjectHeight)
 			{
 				GetLattice().GetGndCollisionCandidate(gndCandidate, air1);
 				for (int j = 0; j < gndCandidate.GetN(); j++)
 				{
 					FsGround* gnd2 = gndCandidate[j];
-					if (YSTRUE == cfgPtr->midAirCollision || YSTRUE == gnd2->Prop().IsRacingCheckPoint())
+					if (YSTRUE /*== cfgPtr->midAirCollision*/ || YSTRUE == gnd2->Prop().IsRacingCheckPoint()) //Need a "air collision with ground" config toggle here
 					{
 						if (gnd2->IsAlive() == YSTRUE)
 						{
-							YsVec3 collPos;
-							//if (CheckMidAir(collPos, *air1, *gnd2) == YSTRUE)
-							if (phys->CheckObjectObjectCollision(air1, gnd2, 0.0, collPos) == YSTRUE)
+							if (collListAirGnd.GetN() > 0)
 							{
-								air1->gndCollision.Increment();
-								air1->gndCollision.Last().objKey = gnd2->SearchKey();
-								air1->gndCollision.Last().pos = collPos;
+								for (int i = 0; i < collListAirGnd.GetN(); i++)
+								{
+									if (air1Id == collListAirGnd[i].keyOne || air1Id == collListAirGnd[i].keyTwo)
+									{ //Already checked this collision from the other perspective
+										goto SKIPTHISGROUND;
+									}
+								}
+							}
 
-								gnd2->airCollision.Increment();
-								gnd2->airCollision.Last().objKey = air1->SearchKey();
-								gnd2->airCollision.Last().pos = collPos;
+							collListAirGnd.Increment();
+							if (phys->CheckObjectObjectCollision(air1, gnd2, 0.0, &collListAirGnd.Last()) != YSTRUE)
+							{
+								collListAirGnd.DeleteLast();
+							}
+							else
+							{
+								printf("Air %i collide with gnd %i\n", collListAirGnd.Last().keyOne, collListAirGnd.Last().keyTwo);
 							}
 						}
 					}
+				SKIPTHISGROUND:
+					;
 				}
 			}
+
 		}
 	}
+	doneAirGnd = YSTRUE;
 }
 
-void FsSimulation::SimProcessCollisionAndTerrain(const double & /*dt*/)
+void FsSimulation::SimCheckCollisionAircraftTerrain()
 {
-	
-	bulletHolder.HitSomething(currentTime, field, &explosionHolder, this, tallestGroundObjectHeight);
+	int playerId = FsExistence::GetSearchKey(GetPlayerAirplane());
+	int air1Id, air2Id;
 
-	YsArray <FsAirplane *,256> airCandidate;
-	YsArray <FsGround *,256> gndCandidate;
-
-	for(FsAirplane *airPtr=NULL; NULL!=(airPtr=FindNextAirplane(airPtr)); )
+	for (FsAirplane* air1 = NULL; NULL != (air1 = FindNextAirplane(air1)); )
 	{
-		if(airPtr->isPlayingRecord!=YSTRUE)
+		air1Id = FsExistence::GetSearchKey(air1);
+		if ((world->GetIsNetClient() == YSFALSE || air1->SearchKey() == playerId) && air1->isPlayingRecord != YSTRUE) //Skip collision check for non-player aircraft as client
 		{
+			//Aircraft collision with terrain
+					//Old carrier touchdown handling
 			int i;
 			YsVec3 airPos;
-			YSBOOL onCarrier;
-			if(airPtr->Prop().IsOnGround()==YSTRUE)
+			YSBOOL onCarrier = YSFALSE;
+			if (air1->Prop().IsOnGround() == YSTRUE)
 			{
-				airPos=airPtr->GetPosition();
-				onCarrier=YSFALSE;
-				YsVec3 nose, left, right;
-				nose = airPtr->Prop().GetTirePosition(2) + airPos; //This assumes aircraft is level at touchdown
-				left = airPtr->Prop().GetTirePosition(0) + airPos;
-				right = airPtr->Prop().GetTirePosition(1) + airPos;
+				airPos = air1->GetPosition();
+				YsVec3 gears[3];
+				air1->Prop().GetTransformedGearsPosition(gears);
 
 				for (i = 0; i < aircraftCarrierList.GetN(); i++)
 				{
@@ -4017,174 +4348,105 @@ void FsSimulation::SimProcessCollisionAndTerrain(const double & /*dt*/)
 						YsVec3 difference = airPos - cPos;
 						if (difference.GetLength() < cRadius)
 						{
-							if (prop->IsOnDeck(nose) == YSTRUE || prop->IsOnDeck(left) == YSTRUE || prop->IsOnDeck(right) == YSTRUE)
+							if (prop->IsOnDeck(gears[0]) == YSTRUE || prop->IsOnDeck(gears[1]) == YSTRUE || prop->IsOnDeck(gears[2]) == YSTRUE)
 							{
 								// Even if flight state is FSGROUND and the airplane is not on
 								// the runway, possibly the airplane is on the flight deck of
 								// an aircraft carrier.
-								airPtr->Prop().SetOutOfRunway(YSFALSE);
+								air1->Prop().SetOutOfRunway(YSFALSE);
 								onCarrier = YSTRUE;
 								break;
 							}
 						}
 					}
 				}
-
-				if(onCarrier==YSTRUE)
-				{
-					goto NEXTAIRPLANE;
-				}
 			}
-
-			FSDIEDOF diedOf;
-			int collType;
-			if(airPtr->HitGround(
-			    diedOf,collType,currentTime,field,cfgPtr->takeCrash,cfgPtr->canLandAnywhere,&explosionHolder)==YSTRUE)
+			if (onCarrier != YSTRUE)
 			{
-				AirplaneCrash(airPtr,diedOf,collType);
+				collListAirTer.Increment();
+				if (phys->CheckObjectGroundPlaneCollision(air1, 0.0, &collListAirTer.Last()) != YSTRUE)
+				{
+					collListAirTer.DeleteLast();
+				}
+				else
+				{
+					printf("Air %i collide with floor\n", collListAirTer.Last().keyOne);
+				}
+
+				collListAirTer.Increment();
+				if (phys->CheckObjectTerrainCollision(air1, 0.0, &collListAirTer.Last()) != YSTRUE)
+				{
+					collListAirTer.DeleteLast();
+				}
+				else
+				{
+					printf("Air %i collide with ter\n", collListAirTer.Last().keyOne);
+				}
 			}
 		}
-	NEXTAIRPLANE:
-		;
 	}
+	doneAirTer = YSTRUE;
+}
 
-	for(FsAirplane *air1=NULL; NULL!=(air1=FindNextAirplane(air1)); )
+void FsSimulation::SimCheckCollisionFromGround()
+{
+	YsArray <FsAirplane*, 256> airCandidate;
+	YsArray <FsGround*, 256> gndCandidate;
+
+//Ground object collision with aircraft
+	//Already checking in SimCheckCollisionFromAircraft()
+
+//Ground object collision with ground object
+	YsArray <FsExistence*, 128> bounced;
+	for (FsGround* gnd1 = NULL; NULL != (gnd1 = FindNextGround(gnd1)); )
 	{
-		if(air1->IsAlive()==YSTRUE)
+		if (gnd1->IsAlive() == YSTRUE)
 		{
-			for(auto air2Coll : air1->airCollision)
+			if ((YSTRUE != gnd1->Prop().IsStatic() || YSTRUE == gnd1->BouncedLastTime()) && YSTRUE != gnd1->Prop().SkipGroundToGroundCollisionCheck())
 			{
-				auto air2=FindAirplane(air2Coll.objKey);
-				if(nullptr!=air2 && (cfgPtr->midAirCollision==YSTRUE || YSTRUE==air2->Prop().IsRacingCheckPoint()))
+				GetLattice().GetGndCollisionCandidate(gndCandidate, gnd1);
+				for (auto j = gndCandidate.GetN() - 1; j >= 0; j--)
 				{
-					if(air1->SearchKey()<air2->SearchKey() &&
-					   air2->IsAlive()==YSTRUE &&
-					  (air1->Prop().IsActive()==YSTRUE || air2->Prop().IsActive()==YSTRUE))  // 2005/03/03
-					{
-						Explode(*air1,YSTRUE);  // Sound=YSTRUE
-						Explode(*air2,YSFALSE); // Sound=YSFALSE
-						YSBOOL killed;
-						air1->GetDamage(killed,12,FSDIEDOF_COLLISION);
-						if(killed==YSTRUE)
-						{
-							bulletHolder.ThrowMultiDebris
-							   (5,currentTime,air1->GetPosition(),air1->GetAttitude(),60.0);
-						}
+					FsGround* gnd2 = gndCandidate[j];
 
-						air2->GetDamage(killed,12,FSDIEDOF_COLLISION);
-						if(killed==YSTRUE)
-						{
-							bulletHolder.ThrowMultiDebris
-							   (5,currentTime,air2->GetPosition(),air2->GetAttitude(),60.0);
-						}
-					}
-				}
-			}
-			for(auto gnd2Coll : air1->gndCollision)
-			{
-				auto gnd2=FindGround(gnd2Coll.objKey);
-				if(nullptr!=gnd2 && (cfgPtr->midAirCollision==YSTRUE || YSTRUE==gnd2->Prop().IsRacingCheckPoint()))
-				{
-					if(gnd2->IsAlive()==YSTRUE)
+					if (NULL == GetPlayerGround())
 					{
-						if(YSTRUE==gnd2->Prop().IsRacingCheckPoint())
+						goto CARRIERCHECK;
+					}
+
+					if ((YSTRUE != gnd2->Prop().IsStatic() || YSTRUE == gnd2->BouncedLastTime()) && gnd1 > gnd2)
+					{
+						goto CARRIERCHECK;
+					}
+					if (YSTRUE == gnd2->Prop().SkipGroundToGroundCollisionCheck())
+					{
+						goto CARRIERCHECK;
+					}
+					if ((gnd1->Prop().OnThisCarrier() == gnd2 && gnd1->Prop().GetVelocity() < YsTolerance) ||
+						(gnd2->Prop().OnThisCarrier() == gnd1 && gnd2->Prop().GetVelocity() < YsTolerance))
+					{
+						goto CARRIERCHECK;
+					}
+
+					if (gnd2 != gnd1 && YSTRUE == gnd2->IsAlive())
+					{
+						collListGnd.Increment();
+						if (phys->CheckObjectObjectCollision(gnd1, gnd2, 0.0, &collListGnd.Last()) == YSTRUE)
 						{
-							FsSoundSetOneTime(FSSND_ONETIME_NOTICE);
-							gnd2->Prop().SetState(FSGNDDEAD);
+							//Use Soji's bounce for now. Only happens with groundobs collide
+							//gnd1->Bounce(collPos);
+							//gnd2->Bounce(collPos);
+							//bounced.Append(gnd1);
+							//bounced.Append(gnd2);
 						}
 						else
 						{
-							Explode(*air1,YSTRUE);  // Sound=YSTRUE
-							Explode(*gnd2,YSFALSE); // Sound=YSFALSE
-
-							YSBOOL killed;
-							air1->GetDamage(killed,12,FSDIEDOF_COLLISION);
-							if(killed==YSTRUE)
-							{
-								bulletHolder.ThrowMultiDebris
-								   (5,currentTime,air1->GetPosition(),air1->GetAttitude(),60.0);
-							}
-
-							if(gnd2->Prop().GetAircraftCarrierProperty()!=NULL)
-							{
-								air1->GetDamage(killed,100,FSDIEDOF_COLLISION);
-								air1->Prop().SetFlightState(FSDEAD,FSDIEDOF_COLLISION);
-							}
-							gnd2->GetDamage(killed,12,FSDIEDOF_COLLISION);
-							if(killed==YSTRUE)
-							{
-								bulletHolder.ThrowMultiDebris
-								   (5,currentTime,gnd2->GetPosition(),gnd2->GetAttitude(),60.0);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	YsArray <FsExistence *,128> bounced;
-	for(FsGround *gnd1=NULL; NULL!=(gnd1=FindNextGround(gnd1)); )
-	{
-		if(gnd1->IsAlive()==YSTRUE)
-		{
-			if((YSTRUE!=gnd1->Prop().IsStatic() || YSTRUE==gnd1->BouncedLastTime()) && YSTRUE!=gnd1->Prop().SkipGroundToGroundCollisionCheck())
-			{
-				// GetLattice().GetAirCollisionCandidate(airCandidate,gnd1);
-
-				// for(int j=0; j<airCandidate.GetN(); j++)
-				// {
-				// 	FsAirplane *air2=airCandidate[j];
-				// 	if(YSTRUE==air2->IsAlive())
-				// 	{
-				// 		YsVec3 collPos;
-				// 		if(YSTRUE==CheckMidAir(collPos,*gnd1,*air2))
-				// 		{
-				// 			gnd1->Bounce(collPos);
-				// 			bounced.Append(gnd1);
-				// 		}
-				// 	}
-				// }
-
-				GetLattice().GetGndCollisionCandidate(gndCandidate,gnd1);
-				for(auto j=gndCandidate.GetN()-1; j>=0; j--)
-				{
-					FsGround *gnd2=gndCandidate[j];
-
-					if(NULL==GetPlayerGround())
-					{
-						goto CARRIERCHECK;
-					}
-
-					if((YSTRUE!=gnd2->Prop().IsStatic() || YSTRUE==gnd2->BouncedLastTime()) && gnd1>gnd2)
-					{
-						goto CARRIERCHECK;
-					}
-					if(YSTRUE==gnd2->Prop().SkipGroundToGroundCollisionCheck())
-					{
-						goto CARRIERCHECK;
-					}
-					if((gnd1->Prop().OnThisCarrier()==gnd2 && gnd1->Prop().GetVelocity()<YsTolerance) ||
-					   (gnd2->Prop().OnThisCarrier()==gnd1 && gnd2->Prop().GetVelocity()<YsTolerance))
-					{
-						goto CARRIERCHECK;
-					}
-
-					if(gnd2!=gnd1 && YSTRUE==gnd2->IsAlive())
-					{
-						YsVec3 collPos;
-						//if(YSTRUE==CheckMidAir(collPos,*gnd1,*gnd2))
-						if (phys->CheckObjectObjectCollision(gnd1, gnd2, 0.0, collPos) == YSTRUE)
-						{
-							gnd1->Bounce(collPos);
-							gnd2->Bounce(collPos);
-							bounced.Append(gnd1);
-							bounced.Append(gnd2);
+							collListGnd.DeleteLast();
 						}
 					}
 
 				CARRIERCHECK:
-					if(NULL==gndCandidate[j]->Prop().GetAircraftCarrierProperty())
+					if (NULL == gndCandidate[j]->Prop().GetAircraftCarrierProperty())
 					{
 						gndCandidate.DeleteBySwapping(j);
 					}
@@ -4192,24 +4454,234 @@ void FsSimulation::SimProcessCollisionAndTerrain(const double & /*dt*/)
 
 				// At this line, gndCandidate contains aircraft carrier candidates.
 
-				UpdateGroundCarrierLoading(gnd1,gndCandidate.GetN(),gndCandidate);
+				UpdateGroundCarrierLoading(gnd1, gndCandidate.GetN(), gndCandidate);
 			}
 		}
 	}
 
-	for(FsAirplane *air1=NULL; NULL!=(air1=FindNextAirplane(air1)); )
+	for (FsAirplane* air1 = NULL; NULL != (air1 = FindNextAirplane(air1)); )
 	{
 		air1->ClearBouncedLastTimeFlag();
 	}
-	for(FsGround *gnd1=NULL; NULL!=(gnd1=FindNextGround(gnd1)); )
+	for (FsGround* gnd1 = NULL; NULL != (gnd1 = FindNextGround(gnd1)); )
 	{
 		gnd1->ClearBouncedLastTimeFlag();
 	}
 
-	for(int i=0; i<bounced.GetN(); i++)
+	for (int i = 0; i < bounced.GetN(); i++)
 	{
 		bounced[i]->SetBouncedLastTimeFlag();
 	}
+
+	doneGndGnd = YSTRUE;
+	//Ground object collision with terrain
+
+
+}
+
+
+void FsSimulation::SimCheckCollisionGroundGround()
+{
+}
+
+void FsSimulation::SimCheckCollisionGroundTerrain()
+{
+}
+
+void FsSimulation::SimProcessCollisionList()
+{
+	for (int i = 0; i < collListAirAir.GetN(); i++)
+	{
+		collList.Add(collListAirAir[i]);
+	}
+	for (int i = 0; i < collListAirGnd.GetN(); i++)
+	{
+		collList.Add(collListAirGnd[i]);
+	}
+	for (int i = 0; i < collListAirTer.GetN(); i++)
+	{
+		collList.Add(collListAirTer[i]);
+	}
+	for (int i = 0; i < collListGnd.GetN(); i++)
+	{
+		collList.Add(collListGnd[i]);
+	}
+
+	double m1 = NULL, m2 = NULL;
+	double side1 = 0.0, side2 = 0.0;
+	YsVec3 dV[2];
+
+	for (int i = 0; i < collList.GetN(); i++)
+	{
+		if (collList[i].keyOne >= 0 && collList[i].objOne != nullptr)
+		{
+			if (collList[i].objOne->IsAirplane())
+			{
+				m1 = FindAirplane(collList[i].objOne->SearchKey())->Prop().GetTotalWeight();
+			}
+		}
+
+		if (collList[i].keyTwo >= 0 && collList[i].objTwo != nullptr)
+		{
+			if (collList[i].objTwo->IsAirplane())
+			{
+				m2 = FindAirplane(collList[i].objTwo->SearchKey())->Prop().GetTotalWeight();
+			}
+		}
+
+		if (m1 != NULL)
+		{
+			if (m2 != NULL)
+			{
+				side1 = 1 - (m1 / (m1 + m2));
+				side2 = 1 - (m2 / (m1 + m2));
+			}
+			else
+			{
+				side1 = 1.0;
+				side2 = 0.0;
+			}
+		}
+		else if (m2 != NULL)
+		{
+			side1 = 0.0;
+			side2 = 1.0;
+		}
+		collList[i].pushOne = side1;
+		collList[i].pushTwo = side2;
+
+		phys->PushObjectsFromCollision(&collList[i], dV);
+		printf("Push dv %f %f %f\n", dV[0].x(), dV[0].y(), dV[0].z());
+		double dmg = phys->DoDamageByDeltaV(dV[0] + dV[1]);
+		YSBOOL killed = YSFALSE;
+		if (collList[i].objOne != nullptr)
+		{
+			collList[i].objOne->GetDamage(killed, dmg, FSDIEDOF_COLLISION);
+			if ((FsAirplane*)collList[i].objOne == GetPlayerAirplane())
+			{
+				if (dmg > 0)
+				{
+					FsSoundSetOneTime(FSSND_ONETIME_HIT);
+				}
+			}
+		}
+		if (killed == YSTRUE && collList[i].objOne->IsAirplane() == YSTRUE && collList[i].objTwo == nullptr)
+		{
+			//AirplaneCrash is only object-terrain interaction. In these collisions, objTwo is always nullptr
+			AirplaneCrash((FsAirplane*)collList[i].objOne, FSDIEDOF_COLLISION, 0, YsOrigin());
+		}
+
+		killed = YSFALSE;
+		if (collList[i].objTwo != nullptr)
+		{
+			collList[i].objTwo->GetDamage(killed, dmg, FSDIEDOF_COLLISION);
+			if ((FsAirplane*)collList[i].objTwo == GetPlayerAirplane())
+			{
+				if (dmg > 0)
+				{
+					FsSoundSetOneTime(FSSND_ONETIME_HIT);
+				}
+			}
+		}
+	}
+	
+
+
+//Consequences of collision
+	//for (FsAirplane* air1 = NULL; NULL != (air1 = FindNextAirplane(air1)); )
+	//{
+	//	if (air1->IsAlive() == YSTRUE)
+	//	{
+	//		for (auto air2Coll : air1->airCollision)
+	//		{
+	//			auto air2 = FindAirplane(air2Coll.objKey);
+	//			if (nullptr != air2 && (cfgPtr->midAirCollision == YSTRUE || YSTRUE == air2->Prop().IsRacingCheckPoint()))
+	//			{
+	//				if (air1->SearchKey() < air2->SearchKey() &&
+	//					air2->IsAlive() == YSTRUE &&
+	//					(air1->Prop().IsActive() == YSTRUE || air2->Prop().IsActive() == YSTRUE))  // 2005/03/03
+	//				{
+	//					Explode(*air1, YSTRUE);  // Sound=YSTRUE
+	//					Explode(*air2, YSFALSE); // Sound=YSFALSE
+	//					YSBOOL killed;
+	//					air1->GetDamage(killed, 12, FSDIEDOF_COLLISION);
+	//					if (killed == YSTRUE)
+	//					{
+	//						bulletHolder.ThrowMultiDebris
+	//						(5, currentTime, air1->GetPosition(), air1->GetAttitude(), 60.0);
+	//					}
+
+	//					air2->GetDamage(killed, 12, FSDIEDOF_COLLISION);
+	//					if (killed == YSTRUE)
+	//					{
+	//						bulletHolder.ThrowMultiDebris
+	//						(5, currentTime, air2->GetPosition(), air2->GetAttitude(), 60.0);
+	//					}
+	//				}
+	//			}
+	//		}
+	//		for (auto gnd2Coll : air1->gndCollision)
+	//		{
+	//			auto gnd2 = FindGround(gnd2Coll.objKey);
+	//			if (nullptr != gnd2 && (/*cfgPtr->midAirCollision==YSTRUE ||*/ YSTRUE == gnd2->Prop().IsRacingCheckPoint()))
+	//			{
+	//				if (gnd2->IsAlive() == YSTRUE)
+	//				{
+	//					if (YSTRUE == gnd2->Prop().IsRacingCheckPoint())
+	//					{
+	//						FsSoundSetOneTime(FSSND_ONETIME_NOTICE);
+	//						gnd2->Prop().SetState(FSGNDDEAD);
+	//					}
+	//					else
+	//					{
+	//						Explode(*air1, YSTRUE);  // Sound=YSTRUE
+	//						Explode(*gnd2, YSFALSE); // Sound=YSFALSE
+
+	//						YSBOOL killed;
+	//						air1->GetDamage(killed, 12, FSDIEDOF_COLLISION);
+	//						if (killed == YSTRUE)
+	//						{
+	//							bulletHolder.ThrowMultiDebris
+	//							(5, currentTime, air1->GetPosition(), air1->GetAttitude(), 60.0);
+	//						}
+
+	//						if (gnd2->Prop().GetAircraftCarrierProperty() != NULL)
+	//						{
+	//							air1->GetDamage(killed, 100, FSDIEDOF_COLLISION);
+	//							air1->Prop().SetFlightState(FSDEAD, FSDIEDOF_COLLISION);
+	//						}
+	//						gnd2->GetDamage(killed, 12, FSDIEDOF_COLLISION);
+	//						if (killed == YSTRUE)
+	//						{
+	//							bulletHolder.ThrowMultiDebris
+	//							(5, currentTime, gnd2->GetPosition(), gnd2->GetAttitude(), 60.0);
+	//						}
+	//					}
+	//				}
+	//			}
+	//		}
+
+	//		for (auto sce2Coll : air1->sceCollision)
+	//		{
+	//			YsVec3 prevV, nextV;
+	//			YSBOOL killed;
+	//			air1->CommonProp().GetVelocity(prevV);
+
+	//			//Call the old runway/overrun check
+	//			FSDIEDOF diedOf = FSDIEDOF_COLLISION;
+	//			int collType;
+	//			air1->HitGround(diedOf, collType, currentTime, field, cfgPtr->takeCrash, cfgPtr->canLandAnywhere, &explosionHolder);
+
+	//			//Crash physics, calculate damage, make explosions
+	//			air1->CommonProp().GetVelocity(nextV);
+	//			AirplaneCrash(air1, diedOf, collType, nextV - prevV);
+
+	//			//Check aircraft centerpoint hasn't passed through the face
+	//		}
+	//	}
+	//}
+
+	collList.CleanUp();
 }
 
 //YSBOOL FsSimulation::MayCollide(const YsVec3 &objPos,const double objRad,const FsExistence *selfPtr,const int nExclude,const FsExistence * const exclude[]) const
@@ -4308,7 +4780,7 @@ YSBOOL FsSimulation::MayCollideWithAir(const YsVec3 &objPos,const YsAtt3 &objAtt
 				bbx1[1] = selfPtr->GetCollisionShellBbx()[1];
 				bbx2[0] = airCandidate[i]->GetCollisionShellBbx()[0];
 				bbx2[1] = airCandidate[i]->GetCollisionShellBbx()[1];
-				if (phys->Check2BoundingBoxIntersection(bbx1, futureMat, bbx2, airCandidate[i]->GetMatrix(), clearance) == YSTRUE)
+				if (phys->Check2BoundingBoxIntersect(bbx1, futureMat, bbx2, airCandidate[i]->GetMatrix(), clearance) == YSTRUE)
 				{
 					return YSTRUE;
 				}
@@ -4351,7 +4823,7 @@ YSBOOL FsSimulation::MayCollideWithGround(const YsVec3 &objPos,const YsAtt3 &obj
 				bbx1[1] = selfPtr->GetCollisionShellBbx()[1];
 				bbx2[0] = gndCandidate[i]->GetCollisionShellBbx()[0];
 				bbx2[1] = gndCandidate[i]->GetCollisionShellBbx()[1];
-				if (phys->Check2BoundingBoxIntersection(bbx1, selfPtr->GetMatrix(), bbx2, gndCandidate[i]->GetMatrix(), clearance) == YSTRUE)
+				if (phys->Check2BoundingBoxIntersect(bbx1, selfPtr->GetMatrix(), bbx2, gndCandidate[i]->GetMatrix(), clearance) == YSTRUE)
 				{
 					return YSTRUE;
 				}
@@ -4939,7 +5411,7 @@ void FsSimulation::SendAircraftTrouble(FsAirplane &air,FSAIRCRAFTTROUBLE trouble
 		break;
 	case FSAIRTROUBLE_AIRSPEED:
 		printf("Airspeed inop\n");
-		air.Prop().MakeUpAircraftTroubleCommand(troubleCmd,trouble,air.GetPosition().y(),air.Prop().GetVelocity(),0.0);
+		air.Prop().MakeUpAircraftTroubleCommand(troubleCmd,trouble,air.GetPosition().y(),air.Prop().GetSpeed(),0.0);
 		break;
 	case FSAIRTROUBLE_ALTIMETER:
 		printf("Altimeter inop\n");
@@ -5705,7 +6177,7 @@ void FsSimulation::SimMakeUpCockpitIndicationSet(class FsCockpitIndicationSet &c
 		}
 		else
 		{
-			cockpitIndicationSet.inst.airSpeed=playerPlane->Prop().GetVelocity();
+			cockpitIndicationSet.inst.airSpeed=playerPlane->Prop().GetSpeed();
 		}
 
 		cockpitIndicationSet.inst.Vfe=playerPlane->Prop().GetEstimatedLandingSpeed()*1.8;
@@ -8334,10 +8806,10 @@ void FsSimulation::SimDrawContainer(const FsViewPort &viewPort) const
 					continue;
 				}
 
-				spd=air->Prop().GetVelocity();
+				spd=air->Prop().GetSpeed();
 				if(FSEX_AIRPLANE==playerObj->GetType())
 				{
-					spd=spd-((FsAirplane *)playerObj)->Prop().GetVelocity();
+					spd=spd-((FsAirplane *)playerObj)->Prop().GetSpeed();
 				}
 				spd=spd*3600.0/1800.0;
 
@@ -8664,6 +9136,16 @@ void FsSimulation::SimBlastSound(YSBOOL demoMode)
 			}
 		}
 
+		YSBOOL stallMute = YSFALSE, gearMute = YSFALSE;
+		if (playerPlane->Prop().GetMinimumManeuvableSpeed()/2 > playerPlane->Prop().GetSpeed())
+		{
+			stallMute = YSTRUE;
+		}
+		if (playerPlane->Prop().GetMinimumManeuvableSpeed() > playerPlane->Prop().GetSpeed())
+		{
+			gearMute = YSTRUE;
+		}
+
 		if(bulletHolder.IsLockedOn(playerPlane)==YSTRUE)
 		{
 			FsSoundSetAlarm(FSSND_ALARM_MISSILE);
@@ -8672,18 +9154,21 @@ void FsSimulation::SimBlastSound(YSBOOL demoMode)
 		        YSTRUE!=isInVTOLMode &&
 		        FSCL_HELICOPTER!=playerPlane->Prop().GetAircraftClass() &&
 		        playerPlane->Prop().HasStallHorn()==YSTRUE &&
+				stallMute == YSFALSE &&
 		        playerPlane->Prop().GetAOA()>playerPlane->Prop().GetCriticalAOA()-YsPi/60.0)
 		{
 			FsSoundSetAlarm(FSSND_ALARM_STALL);
 		}
 		else if(YSTRUE!=demoMode &&
 		        playerPlane->Prop().HasGearHorn()==YSTRUE &&
+				gearMute == YSFALSE &&
 		        playerPlane->Prop().GetAGL()<152.4 &&        // Less than 500ft
 		        playerPlane->Prop().GetLandingGear()<0.99 && // Gear is not down and locked
 		        0.0>playerPlane->Prop().GetClimbRatio() &&   // Descending
-		       (playerPlane->Prop().GetThrottle()<0.2 ||     // Less than 20% power
-		        playerPlane->Prop().GetFlap()>0.60 ||        // Flap down more than 60%
-		        playerPlane->Prop().GetVelocity()<playerPlane->Prop().GetEstimatedLandingSpeed()*1.1))  // Slower than 110% of landing speed
+		        playerPlane->Prop().GetThrottle()<0.2 &&     // Less than 20% power
+		        playerPlane->Prop().GetFlap()>0.60 &&        // Flap down more than 60%
+		        playerPlane->Prop().GetSpeed()<playerPlane->Prop().GetEstimatedLandingSpeed()*1.1 &&// Slower than 110% of landing speed
+			    playerPlane->Prop().GetSpeed() > playerPlane->Prop().GetMinimumManeuvableSpeed())
 		{
 			FsSoundSetAlarm(FSSND_ALARM_TERRAIN);
 		}
@@ -9271,7 +9756,7 @@ void FsSimulation::RadioCommSendHoldingPattern(FsAirplane *target,FsAirplane * /
 	gp=FsGotoPosition::Create();
 	gp->SetSingleDestination(target->GetPosition());
 	gp->destination.GetEnd().SetY(1000.0+double(rand()%3)*165.0);
-	gp->speed=YsGreater(target->Prop().GetEstimatedLandingSpeed()*1.2,target->Prop().GetVelocity());
+	gp->speed=YsGreater(target->Prop().GetEstimatedLandingSpeed()*1.2,target->Prop().GetSpeed());
 	gp->minAlt=0.0;
 	gp->straightFlightMode=YSFALSE;
 	target->SetAutopilot(gp);
@@ -9818,38 +10303,49 @@ void FsSimulation::SimCalculateShadowMap(FsViewPort& callBackVP, YsVec2i drawing
 	SimDecideViewpointAndCheckIsInCloud(callBackVP, drawingAreaSize);
 }
 
-void FsSimulation::AirplaneCrash(FsAirplane *crashedPlane,FSDIEDOF diedOf,int collType)
+void FsSimulation::AirplaneCrash(FsAirplane *crashedPlane,FSDIEDOF diedOf,int collType, YsVec3 deltaV)
 {
-	YSSCNAREATYPE areaType;
-	if(collType==0 || collType==1)
+	//Explode or splash
+	YSSCNAREATYPE areaType = GetAreaType(crashedPlane->GetPosition());
+	
+	if (areaType != YSSCNAREA_WATER)
 	{
-		areaType=GetAreaType(crashedPlane->GetPosition());
-	}
-	else
-	{
-		areaType=YSSCNAREA_LAND;
-	}
+		crashedPlane->Crash(currentTime, cfgPtr->takeCrash, &explosionHolder, diedOf, areaType);
 
-	crashedPlane->Crash(currentTime,cfgPtr->takeCrash,&explosionHolder,diedOf,areaType);
-
-	if(IsPlayerAirplane(crashedPlane)==YSTRUE)
-	{
-		FsSoundStopAll();
+		if (IsPlayerAirplane(crashedPlane) == YSTRUE)
+		{
+			FsSoundStopAll();
 #ifndef WIN32
-		// In Linux, there is no way to force OSS driver to play sound in the playback buffer
-		// unless filling the buffer up.  (Or, playback will be blocking.)  So, I need to play
-		// silent background sound.  Isn't it ridiculous?
+			// In Linux, there is no way to force OSS driver to play sound in the playback buffer
+			// unless filling the buffer up.  (Or, playback will be blocking.)  So, I need to play
+			// silent background sound.  Isn't it ridiculous?
 
-		// This will set internal background sound to silence.
-		FsSoundSetEngine(FSSND_ENGINE_SILENT,0,0.0);
-		FsSoundSetMachineGun(FSSND_MACHINEGUN_SILENT);
-		FsSoundSetAlarm(FSSND_ALARM_SILENT);
+			// This will set internal background sound to silence.
+			FsSoundSetEngine(FSSND_ENGINE_SILENT, 0, 0.0);
+			FsSoundSetMachineGun(FSSND_MACHINEGUN_SILENT);
+			FsSoundSetAlarm(FSSND_ALARM_SILENT);
 #endif
-		FsSoundSetOneTime(FSSND_ONETIME_BLAST2);
+			FsSoundSetOneTime(FSSND_ONETIME_BLAST2);
+		}
+		else
+		{
+			FsSoundSetOneTime(FSSND_ONETIME_BLAST);
+		}
 	}
 	else
 	{
-		FsSoundSetOneTime(FSSND_ONETIME_BLAST);
+		crashedPlane->Crash(currentTime, cfgPtr->takeCrash, &explosionHolder, diedOf, areaType);
+		crashedPlane->Prop().SetState(FSDEAD, diedOf);
+		if (IsPlayerAirplane(crashedPlane) == YSTRUE)
+		{
+			FsSoundStopAll();
+#ifndef WIN32
+			FsSoundSetEngine(FSSND_ENGINE_SILENT, 0, 0.0);
+			FsSoundSetMachineGun(FSSND_MACHINEGUN_SILENT);
+			FsSoundSetAlarm(FSSND_ALARM_SILENT);
+#endif
+			FsSoundSetOneTime(FSSND_ONETIME_BLAST2);
+		}
 	}
 }
 
@@ -10988,7 +11484,7 @@ YSRESULT FsSimulation::FindRunwayClearingPathCandidate(
 		if(YSTRUE==obj.IsAirplane())
 		{
 			const FsAirplane *air=(FsAirplane *)&obj;
-			turnRadiusOffset=att.GetForwardVector()*air->Prop().CalculateTurnRatiusOnGround(air->Prop().GetVelocity());
+			turnRadiusOffset=att.GetForwardVector()*air->Prop().CalculateTurnRatiusOnGround(air->Prop().GetSpeed());
 		}
 		const YsVec3 &pos=obj.GetPosition()+turnRadiusOffset;
 

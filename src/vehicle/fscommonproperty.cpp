@@ -169,16 +169,41 @@ YsVec3 &FsVehicleProperty::GetPosition(YsVec3 &vec) const
 	return vec;
 }
 
+YSRESULT FsVehicleProperty::SetPosition(YsVec3 pos)
+{
+	staPosition = pos;
+	return YSOK;
+}
+
 YsAtt3 &FsVehicleProperty::GetAttitude(YsAtt3 &att) const
 {
 	att=staAttitude;
 	return att;
 }
 
+YSRESULT FsVehicleProperty::SetAttitude(YsAtt3 rot)
+{
+	staAttitude = rot;
+	return YSOK;
+}
+
 YsVec3 &FsVehicleProperty::GetVelocity(YsVec3& vec) const
 {
 	vec = staVelocity;
 	return vec;
+}
+
+YsVec3& FsVehicleProperty::GetVelocity(void) const
+{
+	YsVec3 vec;
+	vec = staVelocity;
+	return vec;
+}
+
+YSRESULT FsVehicleProperty::SetVelocity(YsVec3 vel)
+{
+	staVelocity = vel;
+	return YSOK;
 }
 
 const YsMatrix4x4 &FsVehicleProperty::GetMatrix(void) const

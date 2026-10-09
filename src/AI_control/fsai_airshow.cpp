@@ -1027,7 +1027,7 @@ YSRESULT FsAirshowControl::ApplyControlCorkScrew(FsAirplane &air,FsSimulation *s
 					YsVec3 relPosToRefAirplane;
 					double refAirSpd,desiredAxialSpeed;
 					leader->Prop().GetMatrix().MulInverse(relPosToRefAirplane,pos,1.0);
-					refAirSpd=leader->Prop().GetVelocity();
+					refAirSpd=leader->Prop().GetSpeed();
 
 					desiredAxialSpeed=refAirSpd+(-60.0-relPosToRefAirplane.z());
 					desiredAxialSpeed=YsBound(desiredAxialSpeed,refAirSpd-30.0,refAirSpd+30.0);
@@ -1720,7 +1720,7 @@ YSRESULT FsAirshowControl::ApplyControlLoop(FsAirplane &air,FsSimulation *sim,co
 		air.Prop().SetAileron(-0.7);
 		if(fomPosition!=1 && leader!=NULL)
 		{
-			air.Prop().SpeedController(leader->Prop().GetVelocity());
+			air.Prop().SpeedController(leader->Prop().GetSpeed());
 		}
 		break;
 	case 12:
@@ -1740,7 +1740,7 @@ YSRESULT FsAirshowControl::ApplyControlLoop(FsAirplane &air,FsSimulation *sim,co
 		air.Prop().SetThrottle(loopThr);
 		if(fomPosition!=1 && leader!=NULL)
 		{
-			air.Prop().SpeedController(leader->Prop().GetVelocity());
+			air.Prop().SpeedController(leader->Prop().GetSpeed());
 		}
 
 		break;
@@ -1764,7 +1764,7 @@ YSRESULT FsAirshowControl::MakeDecision360Turn(FsAirplane &air,FsSimulation *,co
 
 	if(turnEntrySpeed<YsTolerance)
 	{
-		turnEntrySpeed=air.Prop().GetVelocity();
+		turnEntrySpeed=air.Prop().GetSpeed();
 	}
 
 	switch(turnMode)
@@ -1959,7 +1959,7 @@ YSRESULT FsAirshowControl::MakeDecision4ShipBombBurst(FsAirplane &air,FsSimulati
 						{
 							show=(FsAirshowControl *)ap;
 							show->bombBurstEntryPoint=bombBurstEntryPoint;
-							show->bombBurstEntrySpeed=air.Prop().GetVelocity();
+							show->bombBurstEntrySpeed=air.Prop().GetSpeed();
 							for(j=0; j<9; j++)
 							{
 								show->bombBurstClimbPath[j]=air.GetPosition();
@@ -2049,7 +2049,7 @@ YSRESULT FsAirshowControl::MakeDecision4ShipBombBurst(FsAirplane &air,FsSimulati
 			if(att.p()<YsDegToRad(3.0))
 			{
 				bombBurstMode=4;
-				bombBurstLevelSpeed=air.Prop().GetVelocity();
+				bombBurstLevelSpeed=air.Prop().GetSpeed();
 				waitTimer=10.0;
 			}
 			break;
@@ -2192,7 +2192,7 @@ YSRESULT FsAirshowControl::MakeDecision4ShipBombBurst(FsAirplane &air,FsSimulati
 			break;
 		case 3:  // Vertical Climb Roll
 			waitTimer-=dt;
-			if(waitTimer<YsTolerance || air.Prop().GetVelocity()<air.Prop().GetFullyManeuvableSpeed()*2.0)
+			if(waitTimer<YsTolerance || air.Prop().GetSpeed()<air.Prop().GetFullyManeuvableSpeed()*2.0)
 			{
 				bombBurstMode=4;
 			}
@@ -2358,13 +2358,13 @@ YSRESULT FsAirshowControl::ApplyControl4ShipBombBurst(FsAirplane &air,FsSimulati
 		case 1:   // Break -> Rolling (1)
 			air.Prop().GController(0.0); // leader->Prop().GetG());
 			air.Prop().BankController(bombBurstDesigUv1);
-			air.Prop().SpeedController(leader->Prop().GetVelocity());
+			air.Prop().SpeedController(leader->Prop().GetSpeed());
 			air.Prop().SetSmokeButton(YSTRUE);
 			break;
 		case 2:  // Break -> Rolling (2)
 			air.Prop().GController(0.0); // leader->Prop().GetG());
 			air.Prop().BankController(bombBurstDesigUv2);
-			air.Prop().SpeedController(leader->Prop().GetVelocity());
+			air.Prop().SpeedController(leader->Prop().GetSpeed());
 			air.Prop().SetSmokeButton(YSTRUE);
 			break;
 		case 3:
@@ -2374,13 +2374,13 @@ YSRESULT FsAirshowControl::ApplyControl4ShipBombBurst(FsAirplane &air,FsSimulati
 //			air.Prop().SetAileron(0.0);
 
 			air.Prop().GController(leader->Prop().GetG());
-			air.Prop().SpeedController(leader->Prop().GetVelocity());
+			air.Prop().SpeedController(leader->Prop().GetSpeed());
 			air.Prop().SetSmokeButton(YSTRUE);
 			break;
 		case 4:
 			ControlGForAltitude(air,sim,leader->GetPosition().y(),0.0);
 			air.Prop().BankController(0.0);
-			air.Prop().SpeedController(leader->Prop().GetVelocity());
+			air.Prop().SpeedController(leader->Prop().GetSpeed());
 			air.Prop().SetFireWeaponButton(YSFALSE);
 			air.Prop().SetSmokeButton(YSFALSE);
 			break;
@@ -2399,7 +2399,7 @@ YSRESULT FsAirshowControl::ApplyControl4ShipBombBurst(FsAirplane &air,FsSimulati
 			}
 			else if(leader!=NULL)
 			{
-				air.Prop().SpeedController(leader->Prop().GetVelocity());
+				air.Prop().SpeedController(leader->Prop().GetSpeed());
 			}
 			else
 			{
@@ -2525,7 +2525,7 @@ YSRESULT FsAirshowControl::MakeDecisionChangeOverTurn(FsAirplane &air,FsSimulati
 
 				waitTimer=5.0;
 				changeOverTurnMode=1;
-				changeOverTurnEntrySpeed=air.Prop().GetVelocity();
+				changeOverTurnEntrySpeed=air.Prop().GetSpeed();
 				for(i=1; i<6; i++)
 				{
 					FsAirshowControl *fom;
@@ -2648,7 +2648,7 @@ YSRESULT FsAirshowControl::MakeDecisionCubanEight(FsAirplane &air,FsSimulation *
 		{
 			loopMode=1;
 			entryAlt=pos.y();
-			loopPathAltitude[0]=air.Prop().GetVelocity();
+			loopPathAltitude[0]=air.Prop().GetSpeed();
 		}
 		break;
 
@@ -2930,7 +2930,7 @@ YSRESULT FsAirshowControl::ApplyControlBontonRoll(FsAirplane &air,FsSimulation *
 
 		if(fomPosition!=1 && leader!=NULL)
 		{
-			air.Prop().SpeedController(leader->Prop().GetVelocity());
+			air.Prop().SpeedController(leader->Prop().GetSpeed());
 		}
 
 		break;
@@ -2942,7 +2942,7 @@ YSRESULT FsAirshowControl::ApplyControlBontonRoll(FsAirplane &air,FsSimulation *
 		}
 		else if(leader!=NULL)
 		{
-			air.Prop().SpeedController(leader->Prop().GetVelocity());
+			air.Prop().SpeedController(leader->Prop().GetSpeed());
 		}
 		ControlGForVerticalSpeed(air,sim,0.0);
 		air.Prop().BankController(0.0,YsPi/5.0);
@@ -2970,7 +2970,7 @@ YSRESULT FsAirshowControl::MakeDecisionBombBurstDownward(FsAirplane &air,FsSimul
 			{
 				bombBurstMode=1;
 				bombBurstEntryPoint=pos;
-				bombBurstLevelSpeed=air.Prop().GetVelocity();
+				bombBurstLevelSpeed=air.Prop().GetSpeed();
 			}
 			break;
 		case 1:  // Loop
@@ -3435,7 +3435,7 @@ YSRESULT FsAirshowControl::MakeDecisionDiamondTakeoff(FsAirplane &air,FsSimulati
 
 			if(pos.y()<dtoStartAlt+10.0)
 			{
-				dtoSpeed=air.Prop().GetVelocity();
+				dtoSpeed=air.Prop().GetSpeed();
 			}
 
 			break;
@@ -3474,7 +3474,7 @@ YSRESULT FsAirshowControl::ApplyControlDiamondTakeoff(FsAirplane &air,FsSimulati
 		double g;
 		g=1.0+(5.0-YsRadToDeg(att.p()))*0.1;
 		g=YsBound(g,0.9,1.1);
-		if(air.Prop().GetVelocity()>air.Prop().GetEstimatedLandingSpeed()*1.5)
+		if(air.Prop().GetSpeed()>air.Prop().GetEstimatedLandingSpeed()*1.5)
 		{
 			air.Prop().GController(g);
 			if(air.Prop().IsOnGround()==YSTRUE)
@@ -3662,7 +3662,7 @@ YSRESULT FsAirshowControl::MakeDecisionRollOnTakeoff(FsAirplane &air,FsSimulatio
 				dtoStartAlt=pos.y();
 			}
 			headingIntegrator=att.h()+YsPi;
-			if(air.Prop().GetVelocity()>speedThr)
+			if(air.Prop().GetSpeed()>speedThr)
 			{
 				dtoMode=1;
 			}
@@ -3740,7 +3740,7 @@ YSRESULT FsAirshowControl::MakeDecisionRollOnTakeoff(FsAirplane &air,FsSimulatio
 			}
 			break;
 		case 1:
-			if(air.Prop().GetVelocity()>speedThr)
+			if(air.Prop().GetSpeed()>speedThr)
 			{
 				dtoMode=2;
 			}
@@ -3941,7 +3941,7 @@ YSRESULT FsAirshowControl::MakeDecisionTackCrossAndVerticalClimbRoll
 			case 0:
 				if(entrySpeed<YsTolerance)
 				{
-					entrySpeed=air.Prop().GetVelocity();
+					entrySpeed=air.Prop().GetSpeed();
 					entryAlt=pos.y();
 				}
 
@@ -4094,7 +4094,7 @@ YSRESULT FsAirshowControl::MakeDecisionTackCrossAndVerticalClimbRoll
 		break;
 	case 7:
 		waitTimer-=dt;
-		if(waitTimer<YsTolerance || air.Prop().GetVelocity()<air.Prop().GetFullyManeuvableSpeed()*2.0)
+		if(waitTimer<YsTolerance || air.Prop().GetSpeed()<air.Prop().GetFullyManeuvableSpeed()*2.0)
 		{
 			tcMode=8;
 		}
@@ -4400,7 +4400,7 @@ YSRESULT FsAirshowControl::MakeDecisionBigHeart(FsAirplane &air,FsSimulation *si
 			att.Mul(p,p);
 			bombBurstRefPoint=bombBurstBreakPoint+p;
 
-			entrySpeed=air.Prop().GetVelocity();
+			entrySpeed=air.Prop().GetSpeed();
 			bombBurstMode=3;
 			pitchIntegrator=0.0;
 		}
@@ -5117,7 +5117,7 @@ YSRESULT FsAirshowControl::MakeDecisionRockWing(FsAirplane &air,FsSimulation *,c
 	case 0:
 		if(entrySpeed<YsTolerance)
 		{
-			entrySpeed=air.Prop().GetVelocity();
+			entrySpeed=air.Prop().GetSpeed();
 		}
 		if(entryAlt<YsTolerance)
 		{
@@ -5204,7 +5204,7 @@ YSRESULT FsAirshowControl::MakeDecisionLetterEight(FsAirplane &air,FsSimulation 
 		case 0:
 			if(entrySpeed<YsTolerance)
 			{
-				entrySpeed=air.Prop().GetVelocity();
+				entrySpeed=air.Prop().GetSpeed();
 			}
 			if(entryAlt<YsTolerance)
 			{
@@ -5342,7 +5342,7 @@ YSRESULT FsAirshowControl::MakeDecisionLetterEight(FsAirplane &air,FsSimulation 
 				rel+=leader->GetPosition();
 				att.MulInverse(rel,rel-pos);
 
-				dv=air.Prop().GetVelocity()-leader->Prop().GetVelocity();
+				dv=air.Prop().GetSpeed()-leader->Prop().GetSpeed();
 
 				FsAirshowControl *ap;
 				ap=GetAirshowAP(leader);
@@ -5579,7 +5579,7 @@ YSRESULT FsAirshowControl::MakeDecisionStarCross(FsAirplane &air,FsSimulation *s
 		{
 			if(entrySpeed<YsTolerance)
 			{
-				entrySpeed=air.Prop().GetVelocity();
+				entrySpeed=air.Prop().GetSpeed();
 			}
 
 			if(fomPosition==1)
@@ -5973,7 +5973,7 @@ YSRESULT FsAirshowControl::MakeDecisionLevelOpener(FsAirplane &air,FsSimulation 
 	case 0:
 		if(entrySpeed<YsTolerance)
 		{
-			entrySpeed=air.Prop().GetVelocity();
+			entrySpeed=air.Prop().GetSpeed();
 		}
 
 		if(fomPosition==1)
@@ -6161,7 +6161,7 @@ YSRESULT FsAirshowControl::MakeDecisionFormationBreak(FsAirplane &air,FsSimulati
 	case 0:
 		if(entrySpeed<YsTolerance)
 		{
-			entrySpeed=air.Prop().GetVelocity();
+			entrySpeed=air.Prop().GetSpeed();
 		}
 
 		if(fomPosition==1)
@@ -6288,7 +6288,7 @@ YSRESULT FsAirshowControl::MakeDecisionDoubleFarvel(FsAirplane &air,FsSimulation
 		entryHeading=att.h();
 		if(entrySpeed<YsTolerance)
 		{
-			entrySpeed=air.Prop().GetVelocity();
+			entrySpeed=air.Prop().GetSpeed();
 		}
 		if(entryAlt<YsTolerance)
 		{
@@ -6666,7 +6666,7 @@ YSRESULT FsAirshowControl::MakeDecisionDiamond9ToSwanBend(FsAirplane &air,FsSimu
 			{
 				waitTimer=5.0;
 				changeOverTurnMode=1;
-				changeOverTurnEntrySpeed=air.Prop().GetVelocity();
+				changeOverTurnEntrySpeed=air.Prop().GetSpeed();
 			}
 			break;
 		case 1:

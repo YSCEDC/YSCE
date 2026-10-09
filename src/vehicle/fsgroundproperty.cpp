@@ -2020,7 +2020,7 @@ void FsGroundProperty::SetupVisual(FsVisualDnm &vis,const YsVec3 &viewPoint,cons
 	{
 		staTurret[i].SetupVisual(vis,chTurret[i]);
 	}
-
+	
 	vis.CacheTransformation();
 }
 
@@ -2171,16 +2171,19 @@ void FsGroundProperty::PutOnGround(void)
 void FsGroundProperty::GetVelocity(YsVec3 &vel) const
 {
 	staAttitude.Mul(vel,staSpeed);
+	//vel = staVelocity;
 }
 
 void FsGroundProperty::SetVelocity(const YsVec3 &newVel)
 {
+	staVelocity = newVel;
 	staAttitude.MulInverse(staSpeed,newVel);
 }
 
 void FsGroundProperty::SetRelativeVelocity(const YsVec3 &newVel)
 {
 	staSpeed=newVel;
+	staAttitude.MulInverse(staVelocity, newVel);
 }
 
 const double FsGroundProperty::GetMaxSpeed(void) const

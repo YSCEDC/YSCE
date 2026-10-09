@@ -2310,6 +2310,10 @@ YSRESULT FsWeaponHolder::Save(FILE *fp,FsSimulation *sim,int wpnPosPrecision,int
 			double t;
 
 			const FsWeaponRecord *rec=toPlay->GetElement(t,i);
+			if (rec->type == FSWEAPON_SMOKE || rec->type == FSWEAPON_FLAREPOD || rec->type == FSWEAPON_DEBRIS || rec->type == FSWEAPON_NULL)
+			{
+				continue;
+			}
 
 			fprintf(fp,format, //  "%g %d %.2f %.2f %.2f %.2f %.2f %.2f\n",
 			    t,rec->type,rec->x,rec->y,rec->z,rec->h,rec->p,rec->b);

@@ -704,6 +704,7 @@ const wchar_t *FsGuiResultDialogClass::FinalAirplaneStateString(YsColor &col,YsW
 		str.Set(FSGUI_RESULTDLG_FINALSTATE_FLYING);
 		break;
 	case FSGROUND:
+	case FSBELLYLAND:
 		col=YsWhite();
 		str.Set(FSGUI_RESULTDLG_FINALSTATE_LANDED);
 		break;

@@ -810,7 +810,7 @@ YSBOOL FsMissionAutopilot::CheckReturnToBaseCondition(FsAirplane &air,FsSimulati
 		// Some airplanes start just a little bit off the ground, and the initial state will be settled in the first second.
 		if(0.9<air.Prop().GetLandingGear() &&
 		   air.GetApproximatedCollideRadius()>air.GetAGL() &&
-		   air.Prop().GetVelocity()<0.5 &&
+		   air.Prop().GetSpeed()<0.5 &&
 		   YSTRUE!=air.Prop().IsOnGround())
 		{
 			state=STATE_WAITING_FOR_SETTLING;

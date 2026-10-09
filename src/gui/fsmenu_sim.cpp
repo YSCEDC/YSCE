@@ -262,7 +262,7 @@ void FsGuiMainCanvas::Sim_CreateFlight_Create(FsNewFlightDialogInfo &info)
 		world->SettleAirplane(*air, info.playerAirInfo.startPos);
 
 
-		if (air->Prop().GetVelocity() > YsTolerance &&
+		if (air->Prop().GetSpeed() > YsTolerance &&
 			air->Prop().GetLandingGear() < YsTolerance)
 		{
 			inTheAir = YSTRUE;
@@ -351,7 +351,7 @@ void FsGuiMainCanvas::Sim_CreateFlight_Create(FsNewFlightDialogInfo &info)
 					wingman->SendCommand(cmd);
 					wingman->SendCommand("CTLLDGEA FALSE");
 
-					sprintf(cmd,"INITSPED %.2lfm/s",air->Prop().GetVelocity());
+					sprintf(cmd,"INITSPED %.2lfm/s",air->Prop().GetSpeed());
 					wingman->SendCommand(cmd);
 
 					wingman->AutoSendCommand(info.playerAirInfo.weaponConfig.GetN(),info.playerAirInfo.weaponConfig,info.playerAirInfo.fuel);
@@ -1352,7 +1352,7 @@ void FsGuiMainCanvas::Sim_RacingMode_Create(FsNewFlightDialogInfo &info)
 	world->SettleAirplane(*air,info.playerAirInfo.startPos);
 
 
-	if(air->Prop().GetVelocity()>YsTolerance &&
+	if(air->Prop().GetSpeed()>YsTolerance &&
 	   air->Prop().GetLandingGear()<YsTolerance)
 	{
 		inTheAir=YSTRUE;
@@ -1438,7 +1438,7 @@ void FsGuiMainCanvas::Sim_RacingMode_Create(FsNewFlightDialogInfo &info)
 					wingman->SendCommand(cmd);
 					wingman->SendCommand("CTLLDGEA FALSE");
 
-					sprintf(cmd,"INITSPED %.2lfm/s",air->Prop().GetVelocity());
+					sprintf(cmd,"INITSPED %.2lfm/s",air->Prop().GetSpeed());
 					wingman->SendCommand(cmd);
 
 					wingman->AutoSendCommand(info.playerAirInfo.weaponConfig.GetN(),info.playerAirInfo.weaponConfig,info.playerAirInfo.fuel);

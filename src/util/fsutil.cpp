@@ -100,6 +100,7 @@ void FsCompressNumberInString(char str[])
 
 YSBOOL FsTestKeyWordMatch(const YsString &str,YSSIZE_T ac,const YsString av[])
 {
+	printf("TestKeyWordMatch\n");
 	if(ac==0)
 	{
 		return YSTRUE;
@@ -630,6 +631,179 @@ double FsGetRandomBetween(double min, double max)
 	double random = ((double)rand()) / (double)RAND_MAX;
 	double range = max - min;
 	return (random * range) + min;
+}
+
+int YsSign(int in)
+{
+	return YsSign((double)in);
+}
+int YsSign(double in)
+{
+	return ((0.0 <= in) - (in < 0.0));
+}
+int YsSignInv(int in)
+{
+	return YsSign((double)in) * -1;
+}
+int YsSignInv(double in)
+{
+	return YsSign(in) * -1;
+}
+
+YsArray <YsVec3*> GetStandardPerpendicularVector(YsVec3 in)
+{
+	YsVec3 out[12];
+	YsArray <YsVec3*> stdA;
+	
+	printf("GET STD PERP\n");
+	out[0] = in;
+	printf("0 %f %f %f | ", out[0].x(), out[0].y(), out[0].z());
+	out[0].RotateXY(YsDegToRad(90)); //1
+	out[0].RotateYZ(YsDegToRad(90)); //2
+	out[0].RotateZX(YsDegToRad(90)); //3
+	stdA.Add(&out[0]);
+	printf("%f %f %f\n", out[0].x(), out[0].y(), out[0].z());
+
+	out[1] = in;
+	printf("1 %f %f %f | ", out[1].x(), out[1].y(), out[1].z());
+	out[1].RotateYZ(YsDegToRad(90)); //2
+	out[1].RotateZX(YsDegToRad(90)); //3
+	out[1].RotateXY(YsDegToRad(90));//1
+	stdA.Add(&out[1]);
+	printf("%f %f %f\n", out[1].x(), out[1].y(), out[1].z());
+
+	out[2] = in;
+	printf("2 %f %f %f | ", out[2].x(), out[2].y(), out[2].z());
+	out[2].RotateZX(YsDegToRad(90));//3
+	out[2].RotateXY(YsDegToRad(90));//1
+	out[2].RotateYZ(YsDegToRad(90));//2
+	stdA.Add(&out[2]);
+	printf("%f %f %f\n", out[2].x(), out[2].y(), out[2].z());
+	
+	out[3] = in;
+	printf("3 %f %f %f | ", out[3].x(), out[3].y(), out[3].z());
+	out[3].RotateZX(YsDegToRad(90));//3
+	out[3].RotateYZ(YsDegToRad(90));//2
+	out[3].RotateXY(YsDegToRad(90));//1
+	stdA.Add(&out[3]);
+	printf("%f %f %f\n", out[3].x(), out[3].y(), out[3].z());
+
+	out[4] = in;
+	printf("4 %f %f %f | ", out[4].x(), out[4].y(), out[4].z());
+	out[4].RotateYZ(YsDegToRad(90));//2
+	out[4].RotateXY(YsDegToRad(90));//1
+	out[4].RotateZX(YsDegToRad(90));//3
+	stdA.Add(&out[4]);
+	printf("%f %f %f\n", out[4].x(), out[4].y(), out[4].z());
+
+	out[5] = in;
+	printf("5 %f %f %f | ", out[5].x(), out[5].y(), out[5].z());
+	out[5].RotateXY(YsDegToRad(90));//1
+	out[5].RotateZX(YsDegToRad(90));//3
+	out[5].RotateYZ(YsDegToRad(90));//2
+	stdA.Add(&out[5]);
+	printf("%f %f %f\n", out[5].x(), out[5].y(), out[5].z());
+
+	out[6] = in;
+	printf("6 %f %f %f | ", out[6].x(), out[6].y(), out[6].z());
+	out[6].RotateXY(YsDegToRad(90)); //1
+	out[6].RotateYZ(YsDegToRad(90)); //2
+	out[6].RotateZX(YsDegToRad(90)); //3
+	stdA.Add(&out[6]);
+	printf("%f %f %f\n", out[6].x(), out[6].y(), out[6].z());
+
+	out[7] = in;
+	printf("7 %f %f %f | ", out[7].x(), out[7].y(), out[7].z());
+	out[7].RotateYZ(YsDegToRad(90)); //2
+	out[7].RotateZX(YsDegToRad(90)); //3
+	out[7].RotateXY(YsDegToRad(90));//1
+	stdA.Add(&out[7]);
+	printf("%f %f %f\n", out[7].x(), out[7].y(), out[7].z());
+
+	out[8] = in;
+	printf("8 %f %f %f | ", out[8].x(), out[8].y(), out[8].z());
+	out[8].RotateZX(YsDegToRad(90));//3
+	out[8].RotateXY(YsDegToRad(90));//1
+	out[8].RotateYZ(YsDegToRad(90));//2
+	stdA.Add(&out[8]);
+	printf("%f %f %f\n", out[8].x(), out[8].y(), out[8].z());
+
+	out[9] = in;
+	printf("9 %f %f %f | ", out[9].x(), out[9].y(), out[9].z());
+	out[9].RotateZX(YsDegToRad(90));//3
+	out[9].RotateYZ(YsDegToRad(90));//2
+	out[9].RotateXY(YsDegToRad(90));//1
+	stdA.Add(&out[9]);
+	printf("%f %f %f\n", out[9].x(), out[9].y(), out[9].z());
+
+	out[10] = in;
+	printf("10 %f %f %f | ", out[10].x(), out[10].y(), out[10].z());
+	out[10].RotateYZ(YsDegToRad(90));//2
+	out[10].RotateXY(YsDegToRad(90));//1
+	out[10].RotateZX(YsDegToRad(90));//3
+	stdA.Add(&out[10]);
+	printf("%f %f %f\n", out[10].x(), out[10].y(), out[10].z());
+
+	out[11] = in;
+	printf("11 %f %f %f | ", out[11].x(), out[11].y(), out[11].z());
+	out[11].RotateXY(YsDegToRad(90));//1
+	out[11].RotateZX(YsDegToRad(90));//3
+	out[11].RotateYZ(YsDegToRad(90));//2
+	stdA.Add(&out[11]);
+	printf("%f %f %f\n", out[11].x(), out[11].y(), out[11].z());
+
+
+	//printf("Standard Perpendicular: in %f %f %f | out %f %f %f\n", in.x(), in.y(), in.z(), out.x(), out.y(), out.z());
+	return stdA;
+
+	/*YsVec3 vec;
+	if (fabs(z()) < fabs(y()) && fabs(z()) < fabs(z()))
+	{
+		vec.Set(-y(), x(), 0.0);
+	}
+	else if (fabs(y()) < fabs(x()))
+	{
+		vec.Set(-z(), 0.0, x());
+	}
+	else
+	{
+		vec.Set(0.0, -z(), y());
+	}*/
+
+
+	//	double x,y,z;
+	//	x=value[0];
+	//	y=value[1];
+	//	z=value[2];
+	//	vec.Set(y-z+y*z,z-x-2*x*z,x-y+x*y);
+	//	vec.Normalize();
+
+	//	if(YsEqual(x(),0.0)==YSTRUE)
+	//	{
+	//		vec.Set(1.0,0.0,0.0);
+	//	}
+	//	else if(YsEqual(y(),0.0)==YSTRUE)
+	//	{
+	//		vec.Set(0.0,1.0,0.0);
+	//	}
+	//	else if(YsEqual(z(),0.0)==YSTRUE)
+	//	{
+	//		vec.Set(0.0,0.0,1.0);
+	//	}
+	//	else
+	//	{
+	//		double a,b,c;
+	//		/* (a,b,c)(d,e,f) -> ad+be+cf=0                */
+	//		/* P= ad ,Q=  be,R=  cf -> P+Q+R=0             */
+	//		/* P=2abc,Q=-abc,R=-abc -> P+Q+R=0             */
+	//	    /*   -> d=2bc,e=-ac,f=-ab                      */
+	//		a=x();
+	//		b=y();
+	//		c=z();
+	//		vec.Set(2.0*b*c,-a*c,-a*b);
+	//		vec.Normalize();
+	//	}
+	//return vec;
 }
 
 ////////////////////////////////////////////////////////////

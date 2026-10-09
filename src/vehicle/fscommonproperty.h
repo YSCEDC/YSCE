@@ -72,7 +72,7 @@ protected:
 	// State
 	YsVec3 staPosition;
 	YsAtt3 staAttitude;
-	YsVec3 staVelocity;
+	YsVec3 staVelocity; //This should be global coords but I'm not sure it is
 	YsMatrix4x4 staMatrix;
 	YsMatrix4x4 staInverseMatrix;
 
@@ -128,10 +128,13 @@ public:
 	YSBOOL IsRacingCheckPoint(void) const;
 	void SetIsRacingCheckPoint(YSBOOL flg);
 
-
+	YSRESULT SetPosition(YsVec3 pos);
+	YSRESULT SetAttitude(YsAtt3 rot);
+	YSRESULT SetVelocity(YsVec3 vel);
 	YsVec3 &GetPosition(YsVec3 &vec) const;
 	YsAtt3 &GetAttitude(YsAtt3 &att) const;
 	YsVec3 &GetVelocity(YsVec3 &vec) const;
+	YsVec3& GetVelocity(void) const;
 	const YsVec3 &GetPosition(void) const;
 	const YsAtt3 &GetAttitude(void) const;
 

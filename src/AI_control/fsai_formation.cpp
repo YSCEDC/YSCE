@@ -514,7 +514,7 @@ YSRESULT FsFormation::ApplyControl(FsAirplane &air,FsSimulation *sim,const doubl
 
 	if(leader!=NULL)
 	{
-		if(leader->Prop().GetVelocity()<=0.5 && air.Prop().GetVelocity()<=0.5)
+		if(leader->Prop().GetSpeed()<=0.5 && air.Prop().GetSpeed()<=0.5)
 		{
 			air.Prop().SetBrake(1.0);
 			air.Prop().SpeedController(0.0);
@@ -659,7 +659,7 @@ YSRESULT FsFormation::ApplyControl(FsAirplane &air,FsSimulation *sim,const doubl
 
 			const double d=(goal-air.GetPosition()).GetLength();
 			const double vCorrection=YsBound((d-backOff)/denomi,0.0,50.0);
-			air.Prop().SpeedController(leader->Prop().GetVelocity()+vCorrection);
+			air.Prop().SpeedController(leader->Prop().GetSpeed()+vCorrection);
 
 			air.Prop().SetRudder(0.0);
 			air.Prop().SmartRudder(dt);
@@ -687,7 +687,7 @@ YSRESULT FsFormation::ApplyControl(FsAirplane &air,FsSimulation *sim,const doubl
 
 			air.Prop().BankController(bank);
 			ControlGForAltitude(air,sim,YsGreater(yMin,goal.y()),0.0,maxG);
-			air.Prop().SpeedController(leader->Prop().GetVelocity()+100.0);
+			air.Prop().SpeedController(leader->Prop().GetSpeed()+100.0);
 
 			air.Prop().SetRudder(0.0);
 			air.Prop().SmartRudder(dt);
@@ -699,7 +699,7 @@ YSRESULT FsFormation::ApplyControl(FsAirplane &air,FsSimulation *sim,const doubl
 
 			air.Prop().BankController(bnk);
 			air.Prop().GController(maxG);
-			air.Prop().SpeedController(leader->Prop().GetVelocity()+100.0);
+			air.Prop().SpeedController(leader->Prop().GetSpeed()+100.0);
 
 			air.Prop().SetRudder(0.0);
 			air.Prop().SmartRudder(dt);
@@ -815,7 +815,7 @@ void FsFormation::Mode0SpeedControl(FsAirplane &wingman,FsAirplane &leader,const
 	{
 		if(Vl*Va<YsCos80deg)
 		{
-			spd=leader.Prop().GetVelocity();
+			spd=leader.Prop().GetSpeed();
 		}
 		else if(spd<wingman.Prop().GetMinimumManeuvableSpeed())
 		{
@@ -833,7 +833,7 @@ void FsFormation::Mode0LateralControl(FsAirplane &wingman,FsAirplane &leader,con
 	double pathAngle,dPathAngle,eHdg,dEHdg,dX,bnk;
 	YsAtt3 leaderAtt;
 
-	if(leader.Prop().GetVelocity()<1.0)
+	if(leader.Prop().GetSpeed()<1.0)
 	{
 		leaderAtt=leader.GetAttitude();
 	}
@@ -869,10 +869,10 @@ void FsFormation::Mode0LateralControl(FsAirplane &wingman,FsAirplane &leader,con
 		double damping;
 
 		damping=1.0;
-		if(wingman.Prop().GetVelocity()>150.0 || wingman.Prop().GetG()>1.0)
+		if(wingman.Prop().GetSpeed()>150.0 || wingman.Prop().GetG()>1.0)
 		{
 			double r;
-			r=wingman.Prop().GetVelocity()/150.0;
+			r=wingman.Prop().GetSpeed()/150.0;
 			damping=9.0*(r+(1.0+wingman.Prop().GetG()/10.0));
 		}
 		bnk=eHdg*0.0-dPathAngle*damping;  // <- coefficient is from experiments
@@ -1154,7 +1154,7 @@ void FsFormation::Mode0VerticalControl(FsAirplane &wingman,FsAirplane &leader,co
 	// A little better controller than the above.
 	{
 		double coeff;
-		coeff=wingman.Prop().GetVelocity()*0.4/wingman.Prop().GetEstimatedLandingSpeed();   // Vlanding -> 0.4;
+		coeff=wingman.Prop().GetSpeed()*0.4/wingman.Prop().GetEstimatedLandingSpeed();   // Vlanding -> 0.4;
 		coeff=YsBound(coeff,0.4,1.0);
 		// Why is this coefficient required?
 		//    This damping referes to the pitch angle.  And, the physics tells ommega=a*v,

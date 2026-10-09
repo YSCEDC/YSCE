@@ -4,11 +4,13 @@
 
 FsPhysics::FsPhysics()
 {
+	sim = nullptr;
+	timeStep = 0.0;
 }
 void FsPhysics::UpdatePhysics(FsSimulation* currentSim)
 {
 	sim = currentSim;
-	//timeStep = sim->GetTimeStep();
+	timeStep = sim->GetTimeStep();
 	//userInput = sim->GetUserInput();
 	//cfg = sim->GetConfig();
 }
@@ -22,12 +24,12 @@ YSBOOL FsPhysics::CheckLineObjectCollision(YsVec3 start, YsVec3 end, FsExistence
 	YsVec3 bbx[2];
 	bbx[0] = obj->GetCollisionShellBbx()[0];
 	bbx[1] = obj->GetCollisionShellBbx()[1];
-	if (CheckLineSegmentBoundingBoxIntersection(bbx, obj->GetMatrix(), start, end, clearance) == YSTRUE)
+	if (CheckLineSegmentBoundingBoxIntersect(bbx, obj->GetMatrix(), start, end, clearance) == YSTRUE)
 	{
-		YsShellPolygonHandle plHd;
+		YsShellPolygonHandle* hitFace = nullptr;
 		FsVisualSrf shell = obj->TransformedCollisionShell();
 
-		if (CheckLineShellIntersection(shell, start, end, clearance, collPos, plHd) == YSTRUE)
+		if (CheckLineShellIntersect(shell, start, end, clearance, collPos, hitFace) == YSTRUE)
 		{
 			return YSTRUE;
 		}
@@ -35,8 +37,15 @@ YSBOOL FsPhysics::CheckLineObjectCollision(YsVec3 start, YsVec3 end, FsExistence
 	return YSFALSE;
 }
 
-YSBOOL FsPhysics::CheckObjectObjectCollision(FsExistence* obj1, FsExistence* obj2, double clearance, YsVec3& collPos)
+YSBOOL FsPhysics::CheckObjectObjectCollision(FsExistence* obj1, FsExistence* obj2, double clearance, CollisionEvent* coll)
 {
+	if (obj1 == obj2)
+	{
+		return YSFALSE;
+	}
+	
+	YsVec3 collPos;
+	YsShellPolygonHandle face1, face2;
 	YsVec3 pos1, pos2, bbx1[2], bbx2[2];
 	double rad1, rad2;
 	YsMatrix4x4 mat1, mat2;
@@ -46,12 +55,11 @@ YSBOOL FsPhysics::CheckObjectObjectCollision(FsExistence* obj1, FsExistence* obj
 	rad1 = obj1->GetApproximatedCollideRadius();
 	rad2 = obj2->GetApproximatedCollideRadius();
 
-	if (CheckRadiusIntersection(pos1, rad1, pos2, rad2, clearance) == YSFALSE)
+	if (CheckRadiusIntersect(pos1, rad1, pos2, rad2, clearance) == YSFALSE)
 	{
 		return YSFALSE;
 	}
-	//printf("Two objects both alike in being within each others' HTRADII\n");
-
+	
 	bbx1[0] = obj1->GetCollisionShellBbx()[0];
 	bbx1[1] = obj1->GetCollisionShellBbx()[1];
 	bbx2[0] = obj2->GetCollisionShellBbx()[0];
@@ -59,122 +67,103 @@ YSBOOL FsPhysics::CheckObjectObjectCollision(FsExistence* obj1, FsExistence* obj
 	mat1 = obj1->GetMatrix();
 	mat2 = obj2->GetMatrix();	
 
-	if (Check2BoundingBoxIntersection(bbx1, mat1, bbx2, mat2, clearance) == YSFALSE)
+	//Check the bounding boxes from their coordinates
+	if (Check2BoundingBoxIntersect(bbx1, mat1, bbx2, mat2, clearance) == YSFALSE)
 	{
 		return YSFALSE;
 	}
-	//printf("Bbxes overlap\n");
-
-	obj1->SetTransformationToCollisionShell(obj1->GetMatrix());
-	obj2->SetTransformationToCollisionShell(obj2->GetMatrix());
-	FsVisualSrf shell1, shell2;
-	YsShellPolygonHandle plHd1, plHd2;
-	shell1 = obj1->TransformedCollisionShell();
-	shell2 = obj2->TransformedCollisionShell();
-
-	if (CheckShellShellIntersection(&shell1, &shell2, clearance, collPos, plHd1, plHd2) == YSTRUE)
+	
+	//Convert bounding boxes to SURF and check intersection
+	//FsVisualSrf bbx1Local, bbx1Trans, bbx2Local, bbx2Trans;
+	//ConvertBbxToShell(bbx1, mat1, bbx1Local, bbx1Trans);
+	//ConvertBbxToShell(bbx2, mat2, bbx2Local, bbx2Trans);
+	//if (CheckShellShellIntersect(bbx1Trans, bbx2Trans, clearance, collPos, face1, face2) == YSFALSE)
+	//{
+	//	return YSFALSE;
+	//}
+	
+	if (obj1->transformedCollShellThisStep != YSTRUE)
 	{
-		//Transform collPos into each obj's matrix and save in CommonProp to be used for collision physics calcs in a later step
-		//Currently it's stored as global coords in FsAirplane airCollision
-		return YSTRUE;
+		obj1->CommonProp().RemakeMatrix();
+		obj1->SetTransformationToCollisionShell(obj1->GetMatrix());
 	}
-	//printf("No shell intersection\n");
-	/*
-	YSBOOL FsSimulation::CheckMidAir(YsVec3 &collisionPos,FsExistence &ex1,FsExistence &ex2)
+	if (obj2->transformedCollShellThisStep != YSTRUE)
 	{
-	const YsVec3 *p1=&ex1.GetPosition();
-	const YsVec3 *p2=&ex2.GetPosition();
-	const double r1=ex1.GetApproximatedCollideRadius();
-	const double r2=ex2.GetApproximatedCollideRadius();
-
-	if((*p1-*p2).GetSquareLength()<(r1+r2)*(r1+r2))
-	{
-		YsShellPolygonHandle plHd1,plHd2;
-		if(YSTRUE==ex1.MayCollideWith(ex2) && YSTRUE==ex2.MayCollideWith(ex1))
-		{
-			if(YsCheckShellCollisionEx(collisionPos,plHd1,plHd2,ex1.TransformedCollisionShell().Conv(),ex2.TransformedCollisionShell().Conv())==YSTRUE)
-			{
-				return YSTRUE;
-			}
-		}
-	}
-	return YSFALSE;
-}*/
-	/*
-	FsSimulation::SimComputeAirToObjCollision(void)
-	{
-	YsArray <FsAirplane *,256> airCandidate;
-	YsArray <FsGround *,256> gndCandidate;
-
-	for(FsAirplane *airPtr=NULL; NULL!=(airPtr=FindNextAirplane(airPtr)); )
-	{
-		airPtr->airCollision.CleanUp();
-		airPtr->gndCollision.CleanUp();
+		obj2->CommonProp().RemakeMatrix();
+		obj2->SetTransformationToCollisionShell(obj2->GetMatrix());
 	}
 	
-	int playerId = FsExistence::GetSearchKey(GetPlayerAirplane());
-
-	for(FsAirplane *air1=NULL; NULL!=(air1=FindNextAirplane(air1)); )
+	double vD1, vD2;
+	if (CheckShellShellIntersectAndDepth(obj1->TransformedCollisionShell(), obj2->TransformedCollisionShell(), clearance, collPos, face1, face2, vD1, vD2) == YSTRUE)
 	{
-		if (world->GetIsNetClient() == YSFALSE || air1->SearchKey() == playerId) //Skip collision check for non-player aircraft as client
+		//Get normals
+		YsVec3 n1, n2;
+
+		n1 = obj1->TransformedCollisionShell().GetNormal(face1);
+		n2 = obj2->TransformedCollisionShell().GetNormal(face2);
+		
+			//Alternate method to get normal just in case
+		if (n1 == YsOrigin())
 		{
-			if (air1->IsAlive() == YSTRUE)
-			{
-				GetLattice().GetAirCollisionCandidate(airCandidate, air1);
-
-				for (int j = 0; j < airCandidate.GetN(); j++)
-				{
-					FsAirplane* air2 = airCandidate[j];
-					if (YSTRUE == cfgPtr->midAirCollision || YSTRUE == air2->Prop().IsRacingCheckPoint())
-					{
-						if ((air1->SearchKey() < air2->SearchKey() || world->GetIsNetClient() == YSTRUE) &&
-							air2->IsAlive() == YSTRUE &&
-							(air1->Prop().IsActive() == YSTRUE || air2->Prop().IsActive() == YSTRUE))  // 2005/03/03
-						{
-							YsVec3 collPos;
-							if (CheckMidAir(collPos, *air1, *air2) == YSTRUE)
-							{
-								air1->airCollision.Increment();
-								air1->airCollision.Last().objKey = air2->SearchKey();
-								air1->airCollision.Last().pos = collPos;
-
-								air2->airCollision.Increment();
-								air2->airCollision.Last().objKey = air1->SearchKey();
-								air2->airCollision.Last().pos = collPos;
-							}
-						}
-					}
-				}
-			}
-
-			if (air1->GetPosition().y() - air1->GetApproximatedCollideRadius() < tallestGroundObjectHeight)
-			{
-				GetLattice().GetGndCollisionCandidate(gndCandidate, air1);
-				for (int j = 0; j < gndCandidate.GetN(); j++)
-				{
-					FsGround* gnd2 = gndCandidate[j];
-					if (YSTRUE == cfgPtr->midAirCollision || YSTRUE == gnd2->Prop().IsRacingCheckPoint())
-					{
-						if (gnd2->IsAlive() == YSTRUE)
-						{
-							YsVec3 collPos;
-							if (CheckMidAir(collPos, *air1, *gnd2) == YSTRUE)
-							{
-								air1->gndCollision.Increment();
-								air1->gndCollision.Last().objKey = gnd2->SearchKey();
-								air1->gndCollision.Last().pos = collPos;
-
-								gnd2->airCollision.Increment();
-								gnd2->airCollision.Last().objKey = air1->SearchKey();
-								gnd2->airCollision.Last().pos = collPos;
-							}
-						}
-					}
-				}
-			}
+			const YsShellVertexHandle* vt;
+			n1 = obj1->TransformedCollisionShell().GetPolygon(face1)->GetNormal();
 		}
+		if (n2 == YsOrigin())
+		{
+			const YsShellVertexHandle* vt;
+			n2 = obj2->TransformedCollisionShell().GetPolygon(face2)->GetNormal();
+		}
+		n1.Normalize();
+		n2.Normalize();
+
+		//Point normals toward colliding object
+		YsMatrix4x4 mat;
+		YsVec3 facepos;
+		YsAtt3 att;
+		int direc;
+
+		mat.Initialize();
+		att.SetUpVector(n2.GetArbitraryPerpendicularVector());
+		att.SetForwardVector(n2);
+		mat.Rotate(att);
+		
+		facepos = obj1->GetPosition() - collPos;
+		mat.MulInverse(facepos, facepos, 1.0);
+		direc = YsSign(facepos.z());
+		n2 *= direc;
+
+		mat.Initialize();
+		att.SetUpVector(n1.GetArbitraryPerpendicularVector());
+		att.SetForwardVector(n1);
+		mat.Rotate(att);
+
+		facepos = obj2->GetPosition() - collPos;
+		mat.MulInverse(facepos, facepos, 1.0);
+		direc = YsSign(facepos.z());
+		n1 *= direc;
+
+		coll->collPos = collPos;
+		coll->objOne = obj1;
+		coll->objTwo = obj2;
+		coll->keyOne = obj1->SearchKey();
+		coll->keyTwo = obj2->SearchKey();
+		coll->handleOne = face1;
+		coll->handleTwo = face2;
+		coll->nomOne = n1;
+		coll->nomTwo = n2;
+		if (obj1 != nullptr)
+		{
+			coll->vertDepthOne = abs(vD1);
+		}
+		if (obj2 != nullptr)
+		{
+			coll->vertDepthTwo = abs(vD2);
+		}
+		
+		coll->totalPush = coll->nomTwo * coll->vertDepthOne + coll->nomOne * coll->vertDepthTwo;
+
+		return YSTRUE;
 	}
-}*/
 	return YSFALSE;
 }
 
@@ -187,8 +176,11 @@ YSBOOL FsPhysics::CheckObjectObjectCollision(FsExistence* obj1, FsExistence* obj
 	//Check line overlap with terrain (ter, p1, p2)
 	//Check point inside terrain (ter, p1) [this is functionally GetElevationAtPoint compared with p1]
 	//Check point inside surf terrain [this one is more complicated because terrain surfs may not be solid. Can steal from IsInCloud though]
-YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance, YsVec3& collPosGlobal)
+YSBOOL FsPhysics::CheckObjectGroundPlaneCollision(FsExistence* obj, double clearance, CollisionEvent* coll)
 {
+	YsVec3 collPos = YsOrigin();
+	YsShellPolygonHandle face1, face2;
+
 	YsVec3 objPos, collPosLocal;
 	double objRad;
 	objPos = obj->GetPosition();
@@ -197,39 +189,95 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 	objBbx[0] = obj->GetCollisionShellBbx()[0];
 	objBbx[1] = obj->GetCollisionShellBbx()[1];
 
+	if (objPos.y() > objRad + clearance) //too high to intersect
+	{
+		return YSFALSE;
+	}
+	else
+	{
+		if (obj->GetPosition().y() < 0.0)
+		{
+			YsVec3 plop;
+			plop.Set(obj->GetPosition().x(), 0.0, obj->GetPosition().z());
+			obj->CommonProp().SetPosition(plop);
+			obj->CommonProp().RemakeMatrix();
+		}
+		
+		YsVec3 floorBbx[2];
+		floorBbx[0].Set(-9999.0, -9999.0, -9999.0);
+		floorBbx[1].Set(9999.0, 0.0, 9999.0);
+		
+		YsMatrix4x4 floorMat;
+		floorMat.Initialize();
+		floorMat.Translate(obj->GetPosition().x(), 0.0, obj->GetPosition().z());
+		FsVisualSrf floorSrf, bbxLocal, bbxTrans;
+
+		YsVec3 vtx[4];
+		YsShellVertexHandle vt[4];
+		vtx[0].Set(-9999, 0, -9999); //50000m is too big for YsCheckInsidePolygon3() to correctly resolve
+		vtx[1].Set(9999, 0, -9999);
+		vtx[2].Set(9999, 0, 9999);
+		vtx[3].Set(-9999, 0, 9999);
+		for (int c = 0; c < 4; c++)
+		{
+			vt[c] = floorSrf.AddVertex(vtx[c]);
+		}
+		
+		floorSrf.AddPolygon(4, vt);
+		floorSrf.SetMatrix(floorMat);
+
+		//ConvertBbxToShell(objBbx, obj->GetMatrix(), bbxLocal, bbxTrans);
+
+		if (Check2BoundingBoxIntersect(objBbx, obj->GetMatrix(), floorBbx, floorMat, clearance) == YSTRUE)
+		{
+			if (obj->transformedCollShellThisStep != YSTRUE)
+			{
+				obj->CommonProp().RemakeMatrix();
+				obj->SetTransformationToCollisionShell(obj->GetMatrix());
+			}
+		
+			double depth1, depth2;
+			obj->sceCollision.Increment();
+			if (CheckShellShellIntersectAndDepth(obj->TransformedCollisionShell(), floorSrf, clearance, collPos, face1, face2, depth1, depth2) == YSTRUE)
+			{
+				coll->collPos = collPos;
+				coll->objOne = obj;
+				coll->objTwo = nullptr;
+				coll->keyOne = obj->SearchKey();
+				coll->keyTwo = -1;
+				coll->handleOne = face1;
+				coll->handleTwo = nullptr;
+				coll->nomOne = obj->TransformedCollisionShell().GetNormal(face1);
+				coll->nomTwo.Set(0.0, 1.0, 0.0);
+				coll->vertDepthOne = depth1;
+				coll->vertDepthTwo = 0.0;
+				coll->totalPush = coll->nomTwo * coll->vertDepthOne;
+
+				return YSTRUE;
+			}
+		}
+	}
+}
+
+YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance, CollisionEvent* coll)
+{
+	//Need to check the line between obj current pos and prev pos, see if it intersects the tershell
+	//Currently with enough speed you can clip through terrain/buildings
+	YsVec3 collPos = YsOrigin();
+	YsShellPolygonHandle face1, face2;
+	
+	YsVec3 objPos, collPosLocal;
+	double objRad;
+	objPos = obj->GetPosition();
+	objRad = obj->GetApproximatedCollideRadius();
+	YsVec3 objBbx[2];
+	objBbx[0] = obj->GetCollisionShellBbx()[0];
+	objBbx[1] = obj->GetCollisionShellBbx()[1];
+	
 	//Check if obj is too high to intersect anything
 	if (objPos.y() > sim->highestTerrainHeight + objRad + clearance)
 	{
 		return YSFALSE;
-	}
-
-	//Check ground plane intersection
-	if (objPos.y() < objRad + clearance)
-	{
-		YsPlane pln;
-		YsVec3 tri[3], disregard[2];
-		tri[0].Set(-99999999999.0, 0.0, 999999999999.0);
-		tri[1].Set(-999999999999.0, 0.0, -999999999999.0);
-		tri[2].Set(999999999999.0, 0.0, -999999999999.0);
-		
-		for (int q = 0; q < 3; q++)
-		{
-			obj->GetMatrix().MulInverse(tri[q], tri[q], 1.0);
-		}
-
-		pln.MakePlaneFromTriangle(tri[0], tri[1], tri[2]);
-		if (CheckPlaneBoundingBoxIntersection(objBbx, obj->GetMatrix(), pln, clearance, disregard[0],disregard[1]) == YSTRUE)
-		{	
-			FsVisualSrf coll;
-			YsShellPolygonHandle plHd;
-			coll = obj->UntransformedCollisionShell();
-			if (CheckTriangleShellIntersection(&coll, clearance, collPosLocal, tri, plHd) == YSTRUE)
-			{
-				obj->GetMatrix().Mul(collPosGlobal, collPosLocal, 1.0);
-				//Add collPosGlobal to list of collPos
-			}
-		}
-
 	}
 
 	//Check terrain items
@@ -241,7 +289,7 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 	
 	for (int i = 0; i < candidateList.GetN(); i++)
 	{
-		if (CheckRadiusIntersection(objPos, objRad, candidateList[i]->GetGlobalCenterPosition(), candidateList[i]->GetBbxDiag(), clearance) == YSFALSE)
+		if (CheckRadiusIntersect(objPos, objRad, candidateList[i]->GetGlobalCenterPosition(), candidateList[i]->GetBbxDiag(), clearance) == YSFALSE)
 		{
 			candidateList.Delete(i);
 			i--;
@@ -251,7 +299,9 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 	{
 		return YSFALSE;
 	}
-	
+
+	FsVisualSrf bbxLoc, bbxTrans, terrLoc, terrTrans;
+	ConvertBbxToShell(objBbx, obj->GetMatrix(), bbxLoc, bbxTrans); //This should be cached in the aircraft object eventually
 	//Check bounding box overlap with terrain item bbxes
 	for (int i = 0; i < candidateList.GetN(); i++)
 	{
@@ -260,7 +310,12 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 		terMat.Translate(candidateList[i]->GetGlobalPosition());
 		terMat.Rotate(candidateList[i]->GetGlobalAttitude());
 		candidateList[i]->GetBoundingBox(terBbx);
-		if (Check2BoundingBoxIntersection(objBbx, obj->GetMatrix(), terBbx, terMat, clearance) == YSFALSE)
+
+		ConvertBbxToShell(terBbx, terMat, terrLoc, terrTrans);
+
+		//if (Check2BoundingBoxIntersect(objBbx, obj->GetMatrix(), terBbx, terMat, clearance) == YSFALSE) //This function is weirdly slow. It's cheaper to convert to srf and check collision than to run it
+		if (CheckPointBoundingBoxIntersect(terBbx, terMat, obj->GetPosition(), obj->GetApproximatedCollideRadius()) == YSFALSE &&
+			CheckShellShellIntersect(bbxTrans, terrTrans, 0, collPos, face1, face2) == YSFALSE)
 		{
 			candidateList.Delete(i);
 			i--;
@@ -272,114 +327,107 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 	}
 
 	//Check bounding box overlap with terrain item geometry
+	YsVisualSrf *meshLink;
 	for (int i = 0; i < candidateList.GetN(); i++)
 	{
 		if (candidateList[i]->GetObjType() == YsSceneryItem::ELEVATIONGRID)
 		{
-			/*const YsElevationGrid *gridData;
-			YsSceneryElevationGrid* grid;
-			grid = candidateList[i]->GetElevationGrid();
-			gridData = grid->GetGridData();
-			YsVec2i xz = gridData->GetNumBlock();
-			YsVec3 p = candidateList[i]->GetGlobalPosition();
-			YsAtt3 a = candidateList[i]->GetGlobalAttitude();*/
-
-			YsMatrix4x4 gridMat;
-			gridMat.Initialize();
-			gridMat.Translate(candidateList[i]->GetGlobalPosition());
-			gridMat.Rotate(candidateList[i]->GetGlobalAttitude());
-			YsArray <YsElvGridFaceId> intersectors;
-
-			if (CheckBoundingBoxTerrainIntersection(objBbx, obj->GetMatrix(), candidateList[i]->GetElevationGrid()->GetGridData(), gridMat, clearance, intersectors,intersectingTris) == YSFALSE)
+			if (candidateList[i]->GetElevationGrid()->srfGenerated != YSTRUE)
 			{
-				candidateList.Delete(i);
-				i--;
+				candidateList[i]->GetElevationGrid()->ConvertTerToShell();
 			}
-			else
+			if (candidateList[i]->GetElevationGrid()->needTransform == YSTRUE)
 			{
-				printf("bbx overlap\n");
-				candidateIntersectingFaces.Add(intersectors);
+				YsMatrix4x4 mat;
+				mat.Initialize();
+				mat.Rotate(candidateList[i]->GetGlobalAttitude());
+				mat.Translate(candidateList[i]->GetGlobalPosition());
+
+				candidateList[i]->GetElevationGrid()->collisionTransformed = candidateList[i]->GetElevationGrid()->collision;
+				candidateList[i]->GetElevationGrid()->collisionTransformed.SetMatrix(mat);
+				candidateList[i]->GetElevationGrid()->needTransform = YSFALSE;
 			}
+			terrTrans.CopyFrom(candidateList[i]->GetElevationGrid()->collisionTransformed);
 		}
 		else if (candidateList[i]->GetObjType() == YsSceneryItem::SHELL)
 		{
-			//Skip handling surf terrain for now and assume true. Figure out how to handle that later
-			//Probably easiest to construct a shell in the bbx coords then check shell/shell intersect on it
+			terrTrans.CopyFrom(candidateList[i]->GetTerrainShell()->GetTransformedCollisionShell());
+		}
+		if (CheckShellShellIntersect(bbxTrans, terrTrans, 0, collPos, face1, face2) == YSFALSE)
+		{
+			candidateList.Delete(i);
+			i--;
+			
 		}
 	}
 	if (candidateList.GetN() < 1)
 	{
 		return YSFALSE;
 	}
-	
 
 	//Check object geometry collision with terrain geometry:
+	if (obj->transformedCollShellThisStep != YSTRUE)
+	{
+		obj->CommonProp().RemakeMatrix();
+		obj->SetTransformationToCollisionShell(obj->GetMatrix());
+	}
 	for (int i = 0; i < candidateList.GetN(); i++)
 	{
 		if (candidateList[i]->GetObjType() == YsSceneryItem::ELEVATIONGRID)
 		{
-			for (int j = 0; j < candidateIntersectingFaces[i].GetN(); j++)
-			{
-				YsVec3 terTri[3];
-				candidateList[i]->GetElevationGrid()->GetGridData()->GetTriangle(terTri, candidateIntersectingFaces[i][j].x, candidateIntersectingFaces[i][j].z, candidateIntersectingFaces[i][j].tri);
-				YsMatrix4x4 terMat;
-				terMat.Initialize();
-				terMat.Translate(candidateList[i]->GetGlobalPosition());
-				terMat.Rotate(candidateList[i]->GetGlobalAttitude());
+			terrTrans.CopyFrom(candidateList[i]->GetElevationGrid()->collisionTransformed);
+			meshLink = &candidateList[i]->GetElevationGrid()->collisionTransformed;
 
-				for (int q = 0; q < 3; q++)
-				{
-					//printf("Grid-relative %i:%i:%i %f %f %f\n", i,j, q, terTri[q].x(), terTri[q].y(), terTri[q].z());
-					terMat.Mul(terTri[q], terTri[q], 1.0);
-					//printf("world-relative %i:%i:%i %f %f %f\n", i, j, q, terTri[q].x(), terTri[q].y(), terTri[q].z());
-					obj->GetMatrix().MulInverse(terTri[q], terTri[q], 1.0);
-					printf("obj-relative %i:%i:%i %f %f %f\n",i, j, q, terTri[q].x(), terTri[q].y(), terTri[q].z());
-				}
-
-				YsPlane pln;
-				pln.MakePlaneFromTriangle(terTri[0], terTri[1], terTri[2]);
-				printf("Testpos %f %f %f | %f\n", obj->GetPosition().x(), obj->GetPosition().y(), obj->GetPosition().z(), pln.GetDistance(YsOrigin()));
-				
-
-				FsVisualSrf coll;
-				YsShellPolygonHandle plHd;
-				coll = obj->UntransformedCollisionShell();
-				if (CheckTriangleShellIntersection(&coll, clearance, collPosLocal, terTri, plHd) == YSTRUE)
-				{
-					obj->GetMatrix().Mul(collPosGlobal, collPosLocal, 1.0);
-					//Add collPosGlobal to list of all collPos
-					printf("Ter collision global %f %f %f | obj %f %f %f\n", collPosGlobal.x(), collPosGlobal.y(), collPosGlobal.z(), collPosLocal.x(), collPosLocal.y(), collPosLocal.z());
-				}
-				else
-				{
-					candidateIntersectingFaces.Delete(i);
-					candidateList.Delete(i);
-					i--;
-				}
-			}
 		}
 		else if (candidateList[i]->GetObjType() == YsSceneryItem::SHELL)
 		{
-			FsVisualSrf objShell;
-			YsShellPolygonHandle plHd1, plHd2;
-			obj->SetTransformationToCollisionShell(obj->GetMatrix());
-			objShell = obj->TransformedCollisionShell();
+			terrTrans.CopyFrom(candidateList[i]->GetTerrainShell()->GetTransformedCollisionShell());
+			meshLink = &candidateList[i]->GetElevationGrid()->collisionTransformed;
+		}
+		
+		double depth1, depth2;
+		if (CheckShellShellIntersectAndDepth(obj->TransformedCollisionShell(), terrTrans, 0, collPos, face1, face2, depth1, depth2) == YSTRUE)
+		{
+			//Get normals
+			YsVec3 n1, n2;
 
-			//Terrain surf uses YsVisualSrf but object surf uses FsVisualSurf, so this mess is needed to convert
-			FsVisualSrf terShell;			
-			terShell.CopyFrom((YsShellExt)candidateList[i]->GetTerrainShell()->GetTransformedCollisionShell().Conv());
+			n1 = obj->TransformedCollisionShell().GetNormal(face1);
+			n2 = terrTrans.GetNormal(face2);
+			n1.Normalize();
+			n2.Normalize();
 
-			if (CheckShellShellIntersection(&objShell, &terShell, clearance, collPosGlobal, plHd1, plHd2) != YSTRUE)
-			{
-				//Add collPosGlobal to list of all collPos
-				printf("Srf collision %f %f %f\n", collPosGlobal.x(), collPosGlobal.y(), collPosGlobal.z());
-			}
-			else
-			{
-				candidateIntersectingFaces.Delete(i);
-				candidateList.Delete(i);
-				i--;
-			}
+			//Point normals toward colliding object
+			YsMatrix4x4 mat;
+			YsVec3 facepos;
+			YsAtt3 att;
+			int direc;
+
+			mat.Initialize();
+			att.SetUpVector(n2.GetArbitraryPerpendicularVector());
+			att.SetForwardVector(n2);
+			mat.Rotate(att);
+
+			facepos = obj->GetPosition() - collPos;
+			mat.MulInverse(facepos, facepos, 1.0);
+			direc = YsSign(facepos.z());
+			n2 *= direc;
+
+			coll->collPos = collPos;
+			coll->handleOne = face1;
+			coll->handleTwo = face2;
+			coll->keyOne = obj->SearchKey();
+			coll->keyTwo = -1;
+			coll->nomOne = n1;
+			coll->nomTwo = n2;
+			coll->objOne = obj;
+			coll->vertDepthOne = depth1;
+			coll->vertDepthTwo = depth2;
+			coll->totalPush = coll->nomTwo * coll->vertDepthOne + coll->nomOne * coll->vertDepthTwo;
+		}
+		else
+		{
+			candidateList.Delete(i);
+			i--;
 		}
 	}
 	if (candidateList.GetN() > 0)
@@ -389,389 +437,21 @@ YSBOOL FsPhysics::CheckObjectTerrainCollision(FsExistence* obj, double clearance
 	return YSFALSE;
 }
 
-YSBOOL FsPhysics::CheckBoundingBoxTerrainIntersection(YsVec3 bbx[2], YsMatrix4x4 bbxMat, const YsElevationGrid* grid, YsMatrix4x4 terMat, double clearance, YsArray <YsElvGridFaceId> &intersectors, YsArray <YsArray<YsVec3>>& intersectingTris)
+YSBOOL FsPhysics::CheckBoundingBoxTerrainIntersect(YsVec3 bbx[2], YsMatrix4x4 bbxMat, const YsElevationGrid* grid, YsMatrix4x4 terMat, double clearance, YsArray <YsElvGridFaceId> &intersectors, YsArray <YsArray<YsVec3>>& intersectingTris)
 {
-	//This currently only handles .ter. Eventually it needs to handle surf terrain as well
-	//This doesn't yet do .ter walls correctly
-	double groundElev;
-	YsVec3 groundNom[8];
-	YsVec3 corner[9];
-	
-	corner[0].Set(bbx[0].x() - clearance, bbx[0].y() - clearance, bbx[0].z() - clearance);
-	corner[1].Set(bbx[1].x() + clearance, bbx[0].y() - clearance, bbx[0].z() - clearance);
-	corner[2].Set(bbx[0].x() - clearance, bbx[1].y() + clearance, bbx[0].z() - clearance);
-	corner[3].Set(bbx[1].x() + clearance, bbx[1].y() + clearance, bbx[0].z() - clearance);
-	corner[4].Set(bbx[0].x() - clearance, bbx[0].y() - clearance, bbx[1].z() + clearance);
-	corner[5].Set(bbx[1].x() + clearance, bbx[0].y() - clearance, bbx[1].z() + clearance);
-	corner[6].Set(bbx[0].x() - clearance, bbx[1].y() + clearance, bbx[1].z() + clearance);
-	corner[7].Set(bbx[1].x() + clearance, bbx[1].y() + clearance, bbx[1].z() + clearance);
-	corner[8].Set((bbx[0].x() + bbx[1].x()) / 2, (bbx[0].y() + bbx[1].y()) / 2, (bbx[0].z() + bbx[1].z()) / 2);
-
-	YsMatrix4x4 bbxToTer, terMatInv, terToBbx, bbxMatInv;
-	terMatInv = terMat;
-	terMatInv.Invert();
-	bbxToTer = terMatInv * bbxMat;
-	bbxMatInv = bbxMat;
-	bbxMatInv.Invert();
-	terToBbx = bbxMatInv * terMat;
-	for (int i = 0; i < 9; i++)
-	{
-		bbxToTer.Mul(corner[i], corner[i], 1.0);
-	}
-	
-	YsVec2i dim = grid->GetNumBlock();
-	double elev;
-	YsVec3 faceTri[3];
-	int facex, facez, facedir;
-	int minX=dim.x(), maxX=0, minZ=dim.y(), maxZ=0;
-	YSBOOL checkSidewalls = YSFALSE;
-	
-	for (int i = 0; i < 9; i++)
-	{
-		if (grid->GetElevation(elev, facex, facez, facedir, corner[i]) == YSOK)
-		{
-			if (facex < minX)
-			{
-				minX = facex;
-			}
-			if (facex > maxX)
-			{
-				maxX = facex;
-			}
-			if (facez < minZ)
-			{
-				minZ = facez;
-			}
-			if (facez > maxZ)
-			{
-				maxZ = facez;
-			}
-
-			if (corner[i].y() < elev)
-			{
-				YsElvGridFaceId cross;
-				cross.x = facex;
-				cross.z = facez;
-				cross.tri = facedir;
-				intersectors.Add(cross);
-				grid->GetTriangle(faceTri, facex, facez, facedir);
-				YsArray <YsVec3> triArray;
-				triArray.Add(faceTri[0]);
-				triArray.Add(faceTri[1]);
-				triArray.Add(faceTri[2]);
-				intersectingTris.Add(triArray);
-			}
-		}
-		else
-		{
-			//checkSidewalls = YSTRUE;
-		}
-	}
-
-	int dx=0, dz=0;
-	for (; minX+dx < maxX; dx++)
-	{
-	}
-	for (; minZ + dz < maxZ; dz++)
-	{
-	}
-
-	//Check face intersection for all grid faces between bbx corners
-	YsVec3 mulTri[3];
-	YsMatrix4x4 nulMat;
-	nulMat.Initialize();
-	for (int i = 0; i < dx; i++)
-	{
-		for (int j = 0; j < dz; j++)
-		{
-			//Test first face direction
-			grid->GetTriangle(faceTri, minX + i, minZ + j, 0);
-			for (int q = 0; q < 3; q++)
-			{
-				terToBbx.Mul(mulTri[q],faceTri[q],1.0);
-			}
-
-			if (CheckTriangleBoundingBoxIntersection(bbx, bbxMat,mulTri, clearance) == YSTRUE)
-			{
-				YsElvGridFaceId cross;
-				cross.x = minX + i;
-				cross.z = minZ + j;
-				cross.tri = 0;
-				intersectors.Add(cross);
-				YsArray <YsVec3> triArray;
-				triArray.Add(faceTri[0]);
-				triArray.Add(faceTri[1]);
-				triArray.Add(faceTri[2]);
-				intersectingTris.Add(triArray);
-			}
-
-			//Test second face direction
-			grid->GetTriangle(faceTri, minX + i, minZ + j, 1);
-			for (int q = 0; q < 3; q++)
-			{
-				terToBbx.Mul(mulTri[q], faceTri[q], 1.0);
-			}
-
-			if (CheckTriangleBoundingBoxIntersection(bbx, bbxMat, mulTri, clearance) == YSTRUE)
-			{
-				YsElvGridFaceId cross;
-				cross.x = minX + i;
-				cross.z = minZ + j;
-				cross.tri = 1;
-				intersectors.Add(cross);
-				YsArray <YsVec3> triArray;
-				triArray.Add(faceTri[0]);
-				triArray.Add(faceTri[1]);
-				triArray.Add(faceTri[2]);
-				intersectingTris.Add(triArray);
-			}
-		}
-	}
-
-	//Check sidewalls
-	if (minX == 0 && grid->sideWall[3] == YSTRUE) //Left (-X) sidewall
-	{
-		printf("\nCheck minX sidewall\n============================\n");
-		for (int j = 0; j < dz; j++)
-		{
-			//Get Z column edge nodes. Make two tris with edge nodes and footer position. Test both tris
-			YsVec3 bL, bR, tL, tR, triA[3], triB[3];
-			grid->GetTriangle(triA, minX, minZ + j, 0);
-			grid->GetTriangle(triB, minX, minZ + j, 1);
-
-			//Figure out which of these six are actual edge nodes
-			printf("j %i: A0 %f %f %f\n", j, triA[0].x(), triA[0].y(), triA[0].z());
-			printf("j %i: A1 %f %f %f\n", j, triA[1].x(), triA[1].y(), triA[1].z());
-			printf("j %i: A2 %f %f %f\n", j, triA[2].x(), triA[2].y(), triA[2].z());
-			printf("j %i: B0 %f %f %f\n", j, triB[0].x(), triB[0].y(), triB[0].z());
-			printf("j %i: B1 %f %f %f\n", j, triB[1].x(), triB[1].y(), triB[1].z());
-			printf("j %i: B2 %f %f %f\n", j, triB[2].x(), triB[2].y(), triB[2].z());
-
-			YsVec3 verts[6],cen, leftMost, rightMost, working;
-			verts[0] = triA[0];
-			verts[1] = triA[1];
-			verts[2] = triA[2];
-			verts[3] = triB[0];
-			verts[4] = triB[1];
-			verts[5] = triB[2];
-			cen = (verts[0] + verts[1] + verts[2] + verts[3] + verts[4] + verts[5])/6;
-			for (int q = 1; q < 6; q++)
-			{
-				if (verts[q].x() < cen.x())
-				{
-					if (verts[q].z() < cen.z())
-					{
-						leftMost = verts[q];
-					}
-					else
-					{
-						rightMost = verts[q];
-					}
-				}
-			}
-
-			printf("Left %f %f %f Right %f %f %f\n", leftMost.x(), leftMost.y(), leftMost.z(), rightMost.x(), rightMost.y(), rightMost.z());
-
-
-			//Test first tri
-
-			if (CheckTriangleBoundingBoxIntersection(bbx, bbxMat, mulTri, clearance) == YSTRUE)
-			{
-				YsElvGridFaceId cross;
-				cross.x = minX + i;
-				cross.z = minZ + j;
-				cross.tri = 0;
-				intersectors.Add(cross);
-				YsArray <YsVec3> triArray;
-				triArray.Add(faceTri[0]);
-				triArray.Add(faceTri[1]);
-				triArray.Add(faceTri[2]);
-				intersectingTris.Add(triArray);
-			}
-
-			//Test second face direction
-			grid->GetTriangle(faceTri, minX + i, minZ + j, 1);
-			for (int q = 0; q < 3; q++)
-			{
-				terToBbx.Mul(mulTri[q], faceTri[q], 1.0);
-			}
-
-			if (CheckTriangleBoundingBoxIntersection(bbx, bbxMat, mulTri, clearance) == YSTRUE)
-			{
-				YsElvGridFaceId cross;
-				cross.x = minX + i;
-				cross.z = minZ + j;
-				cross.tri = 1;
-				intersectors.Add(cross);
-				YsArray <YsVec3> triArray;
-				triArray.Add(faceTri[0]);
-				triArray.Add(faceTri[1]);
-				triArray.Add(faceTri[2]);
-				intersectingTris.Add(triArray);
-			}
-		}
-
-		//////////////////////////////////////////////////
-		YsVec3 wallVert[3];
-		wallVert[0].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[0].z());
-		wallVert[1].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[1].z());
-		wallVert[2].Set(grid->bbx[0].x(), grid->bbx[1].y(), grid->bbx[1].z());
-		YsPlane wallPlane;
-		terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
-		terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
-		terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
-		wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
-
-		YsVec3 disregard1, disregard2;
-		if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
-		{
-			printf("Bbx crosses left -X wallPlane\n");
-		}
-	}
-	if (maxX == dim.x() && grid->sideWall[1] == YSTRUE) //Right (+X) sidewall
-	{
-		YsVec3 wallVert[3];
-		wallVert[0].Set(grid->bbx[1].x(), grid->bbx[0].y(), grid->bbx[0].z());
-		wallVert[1].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[0].z());
-		wallVert[2].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[1].z());
-		YsPlane wallPlane;
-		terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
-		terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
-		terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
-		wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
-
-		YsVec3 disregard1, disregard2;
-		if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
-		{
-			printf("Bbx crosses right +X wallPlane\n");
-		}
-	}
-	if (minZ == 0 && grid->sideWall[0] == YSTRUE) //Bottom (-Z) sidewall
-	{
-		YsVec3 wallVert[3];
-		wallVert[0].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[0].z());
-		wallVert[1].Set(grid->bbx[1].x(), grid->bbx[0].y(), grid->bbx[0].z());
-		wallVert[2].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[0].z());
-		YsPlane wallPlane;
-		terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
-		terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
-		terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
-		wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
-
-		YsVec3 disregard1, disregard2;
-		if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
-		{
-			printf("Bbx crosses bottom -Z wallPlane\n");
-		}
-	}
-	if (maxZ == dim.y() && grid->sideWall[2] == YSTRUE) //Top (+Z) sidewall
-	{
-		YsVec3 wallVert[3];
-		wallVert[0].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[1].z());
-		wallVert[1].Set(grid->bbx[1].x(), grid->bbx[0].y(), grid->bbx[1].z());
-		wallVert[2].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[1].z());
-		YsPlane wallPlane;
-		terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
-		terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
-		terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
-		wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
-
-		YsVec3 disregard1, disregard2;
-		if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
-		{
-			printf("Bbx crosses top +Z wallPlane\n");
-		}
-	}
-
-
-	if (checkSidewalls == YSTRUE)
-	{
-			if (grid->sideWall[0] == YSTRUE) //Bottom (-Z) sidewall
-			{
-				printf("Sidewall -Z exist\n");
-				YsVec3 wallVert[3];
-				wallVert[0].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[0].z());
-				wallVert[1].Set(grid->bbx[1].x(), grid->bbx[0].y(), grid->bbx[0].z());
-				wallVert[2].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[0].z());
-				YsPlane wallPlane;
-				terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
-				terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
-				terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
-				wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
-
-				YsVec3 disregard1, disregard2;
-				if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
-				{
-					printf("Bbx crosses bottom -Z wallPlane\n");
-				}
-			}
-			if (grid->sideWall[1] == YSTRUE) //Right (+X) sidewall
-			{
-				printf("Sidewall +X exist\n");
-				YsVec3 wallVert[3];
-				wallVert[0].Set(grid->bbx[1].x(), grid->bbx[0].y(), grid->bbx[0].z());
-				wallVert[1].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[0].z());
-				wallVert[2].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[1].z());
-				YsPlane wallPlane;
-				terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
-				terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
-				terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
-				wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
-
-				YsVec3 disregard1, disregard2;
-				if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
-				{
-					printf("Bbx crosses right +X wallPlane\n");
-				}
-			}
-			if (grid->sideWall[2] == YSTRUE) //Top (+Z) sidewall
-			{
-				printf("Sidewall +Z exist\n");
-				YsVec3 wallVert[3];
-				wallVert[0].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[1].z());
-				wallVert[1].Set(grid->bbx[1].x(), grid->bbx[0].y(), grid->bbx[1].z());
-				wallVert[2].Set(grid->bbx[1].x(), grid->bbx[1].y(), grid->bbx[1].z());
-				YsPlane wallPlane;
-				terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
-				terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
-				terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
-				wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
-
-				YsVec3 disregard1, disregard2;
-				if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
-				{
-					printf("Bbx crosses top +Z wallPlane\n");
-				}
-			}
-			if (grid->sideWall[3] == YSTRUE) //Left (-X) sidewall
-			{
-				printf("Sidewall -X exist\n");
-				YsVec3 wallVert[3];
-				wallVert[0].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[0].z());
-				wallVert[1].Set(grid->bbx[0].x(), grid->bbx[0].y(), grid->bbx[1].z());
-				wallVert[2].Set(grid->bbx[0].x(), grid->bbx[1].y(), grid->bbx[1].z());
-				YsPlane wallPlane;
-				terToBbx.Mul(wallVert[0], wallVert[0], 1.0);
-				terToBbx.Mul(wallVert[1], wallVert[1], 1.0);
-				terToBbx.Mul(wallVert[2], wallVert[2], 1.0);
-				wallPlane.MakePlaneFromTriangle(wallVert[0], wallVert[1], wallVert[2]);
-
-				YsVec3 disregard1, disregard2;
-				if (CheckPlaneBoundingBoxIntersection(bbx, bbxMat, wallPlane, 0.0, disregard1, disregard2) == YSTRUE)
-				{
-					printf("Bbx crosses left -X wallPlane\n");
-				}
-			}
-
-	}
-
-	//if (intersectors.GetN() > 0)
-	if (intersectingTris.GetN() > 0)
+	FsVisualSrf bbxLocal, bbxTrans, ter;
+	YsVec3 collPos;
+	YsShellPolygonHandle discard;
+	ConvertBbxToShell(bbx, bbxMat, bbxLocal, bbxTrans);
+	ter = ConvertYsVisToFsVis(&grid->owner->collisionTransformed);
+	if (CheckShellShellIntersect(bbxTrans, ter, clearance, collPos, discard, discard))
 	{
 		return YSTRUE;
-	}
+	}	
+
 	return YSFALSE;
 }
+
 
 
 /////////////////// Common functions /////////////////////////
@@ -784,7 +464,7 @@ YSBOOL FsPhysics::CheckBoundingBoxTerrainIntersection(YsVec3 bbx[2], YsMatrix4x4
 //Check shell overlap (srf, matrix, srf, matrix)
 //Convert ter to surf
 //Exclude shell faces if vertex is beyond htradius
-YSBOOL FsPhysics::CheckRadiusIntersection(YsVec3 pos1, double rad1, YsVec3 pos2, double rad2, double clearance)
+YSBOOL FsPhysics::CheckRadiusIntersect(YsVec3 pos1, double rad1, YsVec3 pos2, double rad2, double clearance)
 {
 	YsVec3 dif;
 	dif = pos1 - pos2;
@@ -795,7 +475,7 @@ YSBOOL FsPhysics::CheckRadiusIntersection(YsVec3 pos1, double rad1, YsVec3 pos2,
 	return YSFALSE;
 }
 
-YSBOOL FsPhysics::CheckPointBoundingBoxIntersection(YsVec3 bbx[2], YsMatrix4x4 mat, YsVec3 pos, double clearance)
+YSBOOL FsPhysics::CheckPointBoundingBoxIntersect(YsVec3 bbx[2], YsMatrix4x4 mat, YsVec3 pos, double clearance)
 {
 	YsMatrix4x4 localMat = mat;
 	localMat.Invert();
@@ -816,9 +496,9 @@ YSBOOL FsPhysics::CheckPointBoundingBoxIntersection(YsVec3 bbx[2], YsMatrix4x4 m
 	return YSTRUE;
 }
 
-YSBOOL FsPhysics::CheckLineSegmentBoundingBoxIntersection(YsVec3 bbx[2], YsMatrix4x4 mat, YsVec3 startPos, YsVec3 endPos, double clearance)
+YSBOOL FsPhysics::CheckLineSegmentBoundingBoxIntersect(YsVec3 bbx[2], YsMatrix4x4 mat, YsVec3 startPos, YsVec3 endPos, double clearance)
 {
-	if (CheckPointBoundingBoxIntersection(bbx, mat, startPos, clearance) == YSTRUE || CheckPointBoundingBoxIntersection(bbx, mat, endPos, clearance) == YSTRUE)
+	if (CheckPointBoundingBoxIntersect(bbx, mat, startPos, clearance) == YSTRUE || CheckPointBoundingBoxIntersect(bbx, mat, endPos, clearance) == YSTRUE)
 	{
 		return YSTRUE;
 	}
@@ -834,7 +514,7 @@ YSBOOL FsPhysics::CheckLineSegmentBoundingBoxIntersection(YsVec3 bbx[2], YsMatri
 	//Reset the matrix before passing it so it doesn't transform nearest
 	localMat.Initialize();
 
-	if (CheckPointBoundingBoxIntersection(bbx, localMat, nearest, clearance) == YSTRUE)
+	if (CheckPointBoundingBoxIntersect(bbx, localMat, nearest, clearance) == YSTRUE)
 	{
 		return YSTRUE;
 	}
@@ -842,7 +522,7 @@ YSBOOL FsPhysics::CheckLineSegmentBoundingBoxIntersection(YsVec3 bbx[2], YsMatri
 	return YSFALSE;
 }
 
-YSBOOL FsPhysics::CheckInfiniteLineBoundingBoxIntersection(YsVec3 bbx[2], YsMatrix4x4 mat, YsVec3 origin, YsVec3 direction, double clearance)
+YSBOOL FsPhysics::CheckInfiniteLineBoundingBoxIntersect(YsVec3 bbx[2], YsMatrix4x4 mat, YsVec3 origin, YsVec3 direction, double clearance)
 {
 	YsMatrix4x4 localMat = mat;
 	YsVec3 localStart, localEnd, nearest, bbxCen;
@@ -855,7 +535,7 @@ YSBOOL FsPhysics::CheckInfiniteLineBoundingBoxIntersection(YsVec3 bbx[2], YsMatr
 	//Reset the matrix before passing it so it doesn't transform nearest
 	localMat.Initialize();
 
-	if (CheckPointBoundingBoxIntersection(bbx, localMat, nearest, clearance) == YSTRUE)
+	if (CheckPointBoundingBoxIntersect(bbx, localMat, nearest, clearance) == YSTRUE)
 	{
 		return YSTRUE;
 	}
@@ -863,14 +543,14 @@ YSBOOL FsPhysics::CheckInfiniteLineBoundingBoxIntersection(YsVec3 bbx[2], YsMatr
 	return YSFALSE;
 }
 
-YSBOOL FsPhysics::CheckTriangleBoundingBoxIntersection(YsVec3 bbx[2], YsMatrix4x4 mat, YsVec3 tri[3], double clearance)
+YSBOOL FsPhysics::CheckTriangleBoundingBoxIntersect(YsVec3 bbx[2], YsMatrix4x4 mat, YsVec3 tri[3], double clearance)
 {
 	//This currently expects everything in bbx reference frame
 	YsVec3 lineOrig, lineDir;
 	YsPlane pln;
 	pln.MakePlaneFromTriangle(tri[0],tri[1],tri[2]);
 
-	if (CheckPlaneBoundingBoxIntersection(bbx, mat, pln, clearance, lineOrig, lineDir) == YSTRUE)
+	if (CheckPlaneBoundingBoxIntersect(bbx, mat, pln, clearance, lineOrig, lineDir) == YSTRUE)
 	{
 		YsVec2 nearest, p1, p2, triCen, tri2[3];
 		p1.GetXZ(lineOrig);
@@ -890,7 +570,7 @@ YSBOOL FsPhysics::CheckTriangleBoundingBoxIntersection(YsVec3 bbx[2], YsMatrix4x
 	return YSFALSE;
 }
 
-YSBOOL FsPhysics::CheckPlaneBoundingBoxIntersection(YsVec3 bbx[2], YsMatrix4x4 mat, YsPlane pln, double clearance, YsVec3& lineOrig, YsVec3& lineDir)
+YSBOOL FsPhysics::CheckPlaneBoundingBoxIntersect(YsVec3 bbx[2], YsMatrix4x4 mat, YsPlane pln, double clearance, YsVec3& lineOrig, YsVec3& lineDir)
 {
 	//This currently expects everything in bbx reference frame
 	YsVec3 corner[8];
@@ -917,7 +597,7 @@ YSBOOL FsPhysics::CheckPlaneBoundingBoxIntersection(YsVec3 bbx[2], YsMatrix4x4 m
 	{
 		if (YsGetTwoPlaneCrossLine(lineOrig, lineDir, bbxPlane[i], pln) == YSOK)
 		{
-			if (CheckInfiniteLineBoundingBoxIntersection(bbx, nulMat, lineOrig,lineDir,clearance) == YSTRUE)
+			if (CheckInfiniteLineBoundingBoxIntersect(bbx, nulMat, lineOrig,lineDir,clearance) == YSTRUE)
 			{
 				return YSTRUE;
 			}
@@ -926,7 +606,7 @@ YSBOOL FsPhysics::CheckPlaneBoundingBoxIntersection(YsVec3 bbx[2], YsMatrix4x4 m
 	return YSFALSE;
 }
 
-YSBOOL FsPhysics::Check2BoundingBoxIntersection(YsVec3 bbx1[2], YsMatrix4x4 mat1, YsVec3 bbx2[2], YsMatrix4x4 mat2, double clearance)
+YSBOOL FsPhysics::Check2BoundingBoxIntersect(YsVec3 bbx1[2], YsMatrix4x4 mat1, YsVec3 bbx2[2], YsMatrix4x4 mat2, double clearance)
 {
 	//This uses untransformed bounding box min/max
 	YsVec3 corner[8];
@@ -994,19 +674,20 @@ YSBOOL FsPhysics::Check2BoundingBoxIntersection(YsVec3 bbx1[2], YsMatrix4x4 mat1
 	return YSTRUE;
 }
 
-YSBOOL FsPhysics::CheckLineShellIntersection(FsVisualSrf shell, YsVec3 startPos, YsVec3 endPos, double clearance, YsVec3& collPos, YsShellPolygonHandle& plHd)
+YSBOOL FsPhysics::CheckLineShellIntersect(FsVisualSrf shell, YsVec3 startPos, YsVec3 endPos, double clearance, YsVec3& collPos, YsShellPolygonHandle* face)
 {
 	//This uses TransformedCollisionShell and is in global matrix
-	plHd = shell.ShootRayH(collPos, startPos, endPos - startPos);
+	YsShell::PolygonHandle* plHd = &shell.ShootRayH(collPos, startPos, endPos - startPos);
 
 	if (plHd != NULL && YsCheckInBetween3(collPos, endPos, startPos) == YSTRUE)
 	{
+		face = plHd;
 		return YSTRUE;
 	}
 	return YSFALSE;
 }
 
-YSBOOL FsPhysics::CheckTriangleShellIntersection(FsVisualSrf* shell1, double clearance, YsVec3& collPosLocal, YsVec3 tri[3], YsShellPolygonHandle& plHd)
+YSBOOL FsPhysics::CheckTriangleShellIntersect(FsVisualSrf* shell1, double clearance, YsVec3& collPosLocal, YsVec3 tri[3], YsShellPolygonHandle* face)
 {
 	YsPlane pln;
 	pln.MakePlaneFromTriangle(tri[0], tri[1], tri[2]);
@@ -1047,20 +728,863 @@ YSBOOL FsPhysics::CheckTriangleShellIntersection(FsVisualSrf* shell1, double cle
 	return YSFALSE;
 }
 
-YSBOOL FsPhysics::CheckShellShellIntersection(FsVisualSrf* shell1, FsVisualSrf* shell2, double clearance, YsVec3& collPos, YsShellPolygonHandle& plHd1, YsShellPolygonHandle& plHd2)
+YSBOOL FsPhysics::CheckShellShellIntersect(const FsVisualSrf& shell1, const FsVisualSrf& shell2,
+	double clearance, YsVec3& collPos, YsShellPolygonHandle& face1, YsShellPolygonHandle& face2)
 {
 	//This uses TransformedCollisionShell and is in global matrix
-	YsShellExt::Converter conv1, conv2;
+	//YsShellCollisionEx returns the first found intersection point of:
+	//  An edge of obj1-poly1 intersect obj2-poly1
+	//  An edge of obj2-poly1 intersect obj1-poly1
+	//  An edge of obj1-poly2 intersect obj2-poly1 etc
+	//This means the intersection point could be on either side of the true midpoint between objects
+	
+	YsShellExt::ConstConverter conv1, conv2;
+	conv1 = shell1.Conv();
+	conv2 = shell2.Conv();
 
-	conv1 = shell1->Conv();
-	conv2 = shell2->Conv();
 
-	if (YsCheckShellCollisionEx(collPos, plHd1, plHd2, conv1, conv2) == YSTRUE)
+	//20260804 Pulled from ysshell.cpp YsCheckShellCollisionEx() and modified
+	//Eventually these changes should go back to ysshell.cpp, but it's in ysce_public and I am lazy
+	
+	//For some reason this is only returning one collision per wizard using coll shell, but bbx shell calcs four collisions per wizard
+	YsShellPolygonHandle plHd1, plHd2;
+	int nv1, nv2;
+	YsArray <YsVec3, 256> v1, v2;
+	YsCollisionOfPolygon wizard;
+
+	collPos = YsOrigin();
+	face1 = NULL;
+	face2 = NULL;
+
+	YsArray <YsVec3> points;
+	YsVec3 hold;
+	points.CleanUp();
+
+	plHd1 = NULL;
+	while ((plHd1 = shell1.FindNextPolygon(plHd1)) != NULL)
+	{
+		nv1 = shell1.GetNumVertexOfPolygon(plHd1);
+		shell1.GetVertexListOfPolygon(v1, plHd1);
+		wizard.SetPolygon1(nv1, v1);
+		YsVec3 v;
+		shell1.GetCenterOfPolygon(v, plHd1);
+	
+		plHd2 = NULL;
+		while ((plHd2 = shell2.FindNextPolygon(plHd2)) != NULL)
+		{
+			shell2.GetCenterOfPolygon(v, plHd2);
+	
+			nv2 = shell2.GetNumVertexOfPolygon(plHd2);
+			shell2.GetVertexListOfPolygon(v2, plHd2);
+			wizard.SetPolygon2(nv2, v2);
+
+			if (wizard.CheckCollision(hold) == YSTRUE)
+			{
+				face1 = plHd1;
+				face2 = plHd2;
+				points.Add(hold);
+				collPos = hold;
+			}
+		}
+	}
+	
+	if (points.GetN() > 0)
 	{
 		return YSTRUE;
 	}
-
 	return YSFALSE;
+}
+
+YSBOOL FsPhysics::CheckShellShellIntersectAndDepth(const FsVisualSrf& shell1, const FsVisualSrf& shell2, double clearance, YsVec3& collPosGlobal, YsShellPolygonHandle& face1, YsShellPolygonHandle& face2, double& depth1, double& depth2)
+{
+	YsShellPolygonHandle hold1, hold2, plHd1, plHd2;
+	hold1 = plHd1;
+	if (CheckShellShellIntersect(shell1, shell2, clearance, collPosGlobal, plHd1, plHd2) != YSTRUE)
+	{
+		return YSFALSE;
+	}
+
+	const YsShell::VertexHandle* vtHd1, * vtHd2;
+	const YsShellVertex* vtx;
+	YsArray <YsVec3> verts1, verts2, vertTrans;
+	const YsShellPolygon* plg1 = nullptr;
+	const YsShellPolygon* plg2 = nullptr;
+
+	if (hold1 != plHd1) //If equal, plHd1 hasn't been updated by CheckShellShellItc
+	{
+		plg1 = shell1.GetPolygon(plHd1);
+
+		if (plg1 != nullptr)
+		{
+			vtHd1 = plg1->GetVertexArray();
+			vtx = shell1.GetVertex(vtHd1[0]);
+			
+			for (int i = 0; i < plg1->GetNumVertex(); i++)
+			{
+				verts1.Increment();
+				verts1.Last() = shell1.GetVertexPosition(vtHd1[i]);
+			}
+		}
+	}
+
+	if (hold2 != plHd2)
+	{
+		plg2 = shell2.GetPolygon(plHd2);
+		if (plg2 != nullptr)
+		{
+			vtHd2 = plg2->GetVertexArray();
+			vtx = shell2.GetVertex(vtHd2[0]);
+			
+			for (int i = 0; i < plg2->GetNumVertex(); i++)
+			{
+				verts2.Increment();
+				verts2.Last() = shell2.GetVertexPosition(vtHd2[i]);
+			}
+		}
+	}
+
+	if (plg1 != nullptr && plg2 != nullptr)
+	{
+		YsMatrix4x4 mat;
+		YsAtt3 att;
+		double farPos, farNeg;
+
+		mat.Initialize();
+		att.SetUpVector(shell2.GetNormal(plHd2)); //shell2.GetNormal() returns in global matrix. plg2->GetNormal() returns in local matrix
+		att.SetForwardVector(shell2.GetNormal(plHd2).GetArbitraryPerpendicularVector());
+		mat.Rotate(att);
+		vertTrans.CleanUp();
+		vertTrans.Increment();
+		mat.Mul(vertTrans.Last(), verts1[0] - collPosGlobal, 1.0);
+		farPos = vertTrans.Last().y();
+		farNeg = vertTrans.Last().y();
+		
+		for (int i = 1; i < verts1.GetN(); i++)
+		{
+			vertTrans.Increment();
+			mat.Mul(vertTrans[i], verts1[i] - collPosGlobal, 1.0);
+			
+			if (YsCheckInsidePolygon3(vertTrans.Last(), verts2.GetN(), verts2))
+			{
+				farPos = YsGreater(vertTrans.Last().y(), farPos);
+				farNeg = YsSmaller(vertTrans.Last().y(), farNeg);				
+			}
+		}
+		depth1 = abs(farPos) > abs(farNeg) ? abs(farNeg) : abs(farPos);
+		
+		mat.Initialize();
+		att.SetUpVector(shell1.GetNormal(plHd1));
+		att.SetForwardVector(shell1.GetNormal(plHd1).GetArbitraryPerpendicularVector());
+		mat.Rotate(att);
+		vertTrans.CleanUp();
+		vertTrans.Increment();
+		mat.Mul(vertTrans.Last(), verts2[0] - collPosGlobal, 1.0);
+		farPos = vertTrans.Last().y();
+		farNeg = vertTrans.Last().y();
+		for (int i = 1; i < verts2.GetN(); i++)
+		{
+			mat.Mul(vertTrans.Last(), verts2[i] - collPosGlobal, 1.0);
+			
+			if (YsCheckInsidePolygon3(vertTrans.Last(), verts1.GetN(), verts1))
+			{
+				farPos = YsGreater(vertTrans.Last().y(), farPos);
+				farNeg = YsSmaller(vertTrans.Last().y(), farNeg);
+			}
+		}
+		depth2 = abs(farPos) > abs(farNeg) ? abs(farNeg) : abs(farPos);
+		YsVec3 p1, p2, pt;
+		p1 = depth1 * shell2.GetNormal(plHd2);
+		p2 = depth2 * shell1.GetNormal(plHd1);
+		pt = p1 + p2;
+	}
+	face1 = plHd1;
+	face2 = plHd2;
+	return YSTRUE;
+}
+
+YSBOOL FsPhysics::CheckShellShellIntersection(const FsVisualSrf& shell1, const FsVisualSrf& shell2, double clearance)
+{
+	YsVec3 unusedPos;
+	YsShellPolygonHandle unusedHandle;
+	double unusedDouble;
+	return CheckShellShellIntersectAndDepth(shell1, shell2, clearance, unusedPos, unusedHandle, unusedHandle, unusedDouble, unusedDouble);
+}
+
+YSRESULT FsPhysics::ConvertBbxToShell(YsVec3 bbx[2], YsMatrix4x4 transform, FsVisualSrf& localShell, FsVisualSrf& transformedShell)
+{
+	YsVec3 corner[8];
+	corner[0].Set(bbx[0].x(), bbx[0].y(), bbx[0].z());
+	corner[1].Set(bbx[1].x(), bbx[0].y(), bbx[0].z());
+	corner[2].Set(bbx[0].x(), bbx[1].y(), bbx[0].z());
+	corner[3].Set(bbx[1].x(), bbx[1].y(), bbx[0].z());
+	corner[4].Set(bbx[0].x(), bbx[0].y(), bbx[1].z());
+	corner[5].Set(bbx[1].x(), bbx[0].y(), bbx[1].z());
+	corner[6].Set(bbx[0].x(), bbx[1].y(), bbx[1].z());
+	corner[7].Set(bbx[1].x(), bbx[1].y(), bbx[1].z());
+
+	YsShellVertexHandle verts[4];
+	YsShellPolygonHandle hdl;
+	YsVec3 nom;
+	//Front: 4, 5, 6, 7
+	verts[0].CopyFrom(localShell.AddVertex(corner[4]));
+	verts[1].CopyFrom(localShell.AddVertex(corner[5]));
+	verts[2].CopyFrom(localShell.AddVertex(corner[6]));
+	verts[3].CopyFrom(localShell.AddVertex(corner[7]));
+	hdl = localShell.AddPolygon(4,verts);
+	nom.Set(0.0, 0.0, 1.0);
+	localShell.SetPolygonNormal(hdl, nom);
+
+	//Back: 0, 1, 2, 3
+	verts[0].CopyFrom(localShell.AddVertex(corner[0]));
+	verts[1].CopyFrom(localShell.AddVertex(corner[1]));
+	verts[2].CopyFrom(localShell.AddVertex(corner[2]));
+	verts[3].CopyFrom(localShell.AddVertex(corner[3]));
+	hdl = localShell.AddPolygon(4, verts);
+	nom.Set(0.0, 0.0, -1.0);
+	localShell.SetPolygonNormal(hdl, nom);
+	
+	//Right: 0, 2, 4, 6
+	verts[0].CopyFrom(localShell.AddVertex(corner[0]));
+	verts[1].CopyFrom(localShell.AddVertex(corner[2]));
+	verts[2].CopyFrom(localShell.AddVertex(corner[4]));
+	verts[3].CopyFrom(localShell.AddVertex(corner[6]));
+	hdl = localShell.AddPolygon(4, verts);
+	nom.Set(1.0, 0.0, 0.0);
+	localShell.SetPolygonNormal(hdl, nom);
+	
+	//Left: 1, 3, 5, 7
+	verts[0].CopyFrom(localShell.AddVertex(corner[1]));
+	verts[1].CopyFrom(localShell.AddVertex(corner[3]));
+	verts[2].CopyFrom(localShell.AddVertex(corner[5]));
+	verts[3].CopyFrom(localShell.AddVertex(corner[7]));
+	hdl = localShell.AddPolygon(4, verts);
+	nom.Set(-1.0, 0.0, 0.0);
+	localShell.SetPolygonNormal(hdl, nom);
+	
+	//Top: 2, 3, 6, 7
+	verts[0].CopyFrom(localShell.AddVertex(corner[2]));
+	verts[1].CopyFrom(localShell.AddVertex(corner[3]));
+	verts[2].CopyFrom(localShell.AddVertex(corner[6]));
+	verts[3].CopyFrom(localShell.AddVertex(corner[7]));
+	hdl = localShell.AddPolygon(4, verts);
+	nom.Set(0.0, 1.0, 0.0);
+	localShell.SetPolygonNormal(hdl, nom);
+	
+	//Bottom: 0, 1, 4, 5
+	verts[0].CopyFrom(localShell.AddVertex(corner[0]));
+	verts[1].CopyFrom(localShell.AddVertex(corner[1]));
+	verts[2].CopyFrom(localShell.AddVertex(corner[4]));
+	verts[3].CopyFrom(localShell.AddVertex(corner[5]));
+	hdl = localShell.AddPolygon(4, verts);
+	nom.Set(0.0, -1.0, 0.0);
+	localShell.SetPolygonNormal(hdl, nom);
+
+	// Transformed //////////////////////////////////////////////////
+
+	for (int i = 0; i < 8; i++)
+	{
+		transform.Mul(corner[i], corner[i], 1.0);
+	}
+
+	//Front: 4, 5, 6, 7
+	verts[0].CopyFrom(transformedShell.AddVertex(corner[4]));
+	verts[1].CopyFrom(transformedShell.AddVertex(corner[5]));
+	verts[2].CopyFrom(transformedShell.AddVertex(corner[6]));
+	verts[3].CopyFrom(transformedShell.AddVertex(corner[7]));
+	transformedShell.AddPolygon(4, verts);
+
+	//Back: 0, 1, 2, 3
+	verts[0].CopyFrom(transformedShell.AddVertex(corner[0]));
+	verts[1].CopyFrom(transformedShell.AddVertex(corner[1]));
+	verts[2].CopyFrom(transformedShell.AddVertex(corner[2]));
+	verts[3].CopyFrom(transformedShell.AddVertex(corner[3]));
+	transformedShell.AddPolygon(4, verts);
+
+	//Right: 0, 2, 4, 6
+	verts[0].CopyFrom(transformedShell.AddVertex(corner[0]));
+	verts[1].CopyFrom(transformedShell.AddVertex(corner[2]));
+	verts[2].CopyFrom(transformedShell.AddVertex(corner[4]));
+	verts[3].CopyFrom(transformedShell.AddVertex(corner[6]));
+	transformedShell.AddPolygon(4, verts);
+
+	//Left: 1, 3, 5, 7
+	verts[0].CopyFrom(transformedShell.AddVertex(corner[1]));
+	verts[1].CopyFrom(transformedShell.AddVertex(corner[3]));
+	verts[2].CopyFrom(transformedShell.AddVertex(corner[5]));
+	verts[3].CopyFrom(transformedShell.AddVertex(corner[7]));
+	transformedShell.AddPolygon(4, verts);
+
+	//Top: 2, 3, 6, 7
+	verts[0].CopyFrom(transformedShell.AddVertex(corner[2]));
+	verts[1].CopyFrom(transformedShell.AddVertex(corner[3]));
+	verts[2].CopyFrom(transformedShell.AddVertex(corner[6]));
+	verts[3].CopyFrom(transformedShell.AddVertex(corner[7]));
+	transformedShell.AddPolygon(4, verts);
+
+	//Bottom: 0, 1, 4, 5
+	verts[0].CopyFrom(transformedShell.AddVertex(corner[0]));
+	verts[1].CopyFrom(transformedShell.AddVertex(corner[1]));
+	verts[2].CopyFrom(transformedShell.AddVertex(corner[4]));
+	verts[3].CopyFrom(transformedShell.AddVertex(corner[5]));
+	transformedShell.AddPolygon(4, verts);
+
+	return YSOK;
+}
+
+YsVisualSrf FsPhysics::ConvertFsVisToYsVis(FsVisualSrf* in)
+{
+	YsVisualSrf result;
+	result.CopyFrom(*in);
+
+	return result;
+}
+
+FsVisualSrf FsPhysics::ConvertYsVisToFsVis(YsVisualSrf* in)
+{
+	FsVisualSrf result;
+	result.CopyFrom(*in);
+
+	return result;
+}
+
+YSRESULT FsPhysics::PushObjectsFromCollision(CollisionEvent* coll, YsVec3 out[2])
+{
+	//Currently only works with a single face in a collmesh because of how Soji's collision detection works	
+	//This also doesn't properly handle two one-face wings meeting at their leading edges
+	//Have to factor in relative velocity rather than normal for the push direction
+	//And also have a small settling nudge in normal direction so overlapping faces smoothly deconflict over multiple steps
+
+	double cF = 0.05; //coefficient of friction for collision
+	double cR = 0.01; //coefficient of restitution; how bouncy is the collision?
+	double hardness = 1.0; //damage scaler, apply to dV after setting velocity
+	double roughness = 0.0; //Add random bounce to vel and att
+
+	if (coll->objTwo == nullptr) //objOne hit terrain
+	{
+		YSSCNAREATYPE areaType = sim->GetAreaType(coll->objOne->GetPosition());
+
+
+		//Calculate something that vaguely resembles friction
+		const FsField* fld;
+		fld = sim->GetField();
+
+		if (areaType == YSSCNAREA_WATER)
+		{ //Unpaved water
+			cF = 0.2;
+			cR = 0.0;
+			hardness = -1.0;
+			roughness = 0.2;
+		}
+		else
+		{ //Unpaved land
+			cF = 0.5;
+			cR = 0.01;
+			hardness = 0.75;
+			roughness = 0.25;
+		}
+
+		YsArray <const YsSceneryRectRegion*, 16> rgn;
+		if (fld->GetFieldRegion(rgn, coll->objOne->GetPosition().x(), coll->objOne->GetPosition().z()) == YSOK)
+		{
+			int i;
+			for (i = 0; i < rgn.GetN(); i++)
+			{
+				if (sim->IsSafeTerrainRegionId(rgn[i]->GetId()) == YSTRUE)
+				{
+					//Paved, whether LAND or WATER
+					cF = 0.1;
+					cR = 0.05;
+					hardness = 1.0;
+					roughness = 0.01;
+					break;
+				}
+			}
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	YsMatrix4x4 mat;
+	YsAtt3 att, rotVel1, rotVel2;
+	YsVec3 initVel, faceVel, bounceVel, outVel;
+	YsVec3 deltaV1 = YsOrigin();
+	YsVec3 deltaV2 = YsOrigin();
+	double bounce;
+	YsVec3 inVel1, inVel2, pointVel1, pointVel2, netVel1, netVel2, totalVel;
+	YsVec3 locPos1, locPos2;
+	YsVec3 roughnessVel;
+	YsAtt3 roughnessAtt;
+
+	if (coll->objOne != nullptr)
+	{
+		coll->objOne->CommonProp().GetVelocity(inVel1);
+
+		if (coll->objOne->IsAirplane() == YSTRUE)
+		{
+			FsAirplane* air = (FsAirplane*)coll->objOne;
+			air->Prop().GetRotationSpeed(rotVel1);
+		}
+		else
+		{
+			FsGround* gnd = (FsGround*)coll->objOne;
+			rotVel1 = YsZeroAtt();
+			rotVel1.SetH(gnd->Prop().GetRotation()); //This only returns rotation around vertical axis
+			//Need a new function to output: staRotation, chConstHeadingRotation, chConstPitchRotation, chConstBankRotation
+		}
+
+		//Get collpos tangential velocity
+		coll->objOne->GetMatrix().MulInverse(locPos1, coll->collPos, 1.0);
+		pointVel1 = ConvertAngularToLinearVelocity(rotVel1, locPos1);
+
+		//translate out of local coords
+		mat.Initialize();
+		mat.Rotate(coll->objOne->GetAttitude());
+		mat.Mul(pointVel1, pointVel1, 1.0);
+	}
+	else
+	{
+		inVel1 = YsOrigin();
+		rotVel1 = YsZeroAtt();
+		pointVel1 = YsOrigin();
+	}
+
+	if (coll->objTwo != nullptr)
+	{
+		coll->objTwo->CommonProp().GetVelocity(inVel2);
+		if (coll->objTwo->IsAirplane() == YSTRUE)
+		{
+			FsAirplane* air = (FsAirplane*)coll->objTwo;
+			air->Prop().GetRotationSpeed(rotVel2);
+		}
+		else
+		{
+			FsGround* gnd = (FsGround*)coll->objTwo;
+			rotVel2 = YsZeroAtt();
+			rotVel2.SetH(gnd->Prop().GetRotation());
+		}
+
+		YsVec3 locPos;
+		coll->objTwo->GetMatrix().MulInverse(locPos, coll->collPos, 1.0);
+		pointVel2 = ConvertAngularToLinearVelocity(rotVel2, locPos);
+
+		mat.Initialize();
+		mat.Rotate(coll->objTwo->GetAttitude());
+		mat.Mul(pointVel2, pointVel2, 1.0);
+	}
+	else
+	{
+		inVel2 = YsOrigin();
+		rotVel2 = YsZeroAtt();
+		pointVel2 = YsOrigin();
+	}
+
+	netVel1 = inVel1 + pointVel1;
+	netVel2 = inVel2 + pointVel2;
+
+	if (coll->objOne != nullptr)
+	{
+		mat.Initialize();
+		att.SetUpVector(coll->nomTwo.GetArbitraryPerpendicularVector());
+		att.SetForwardVector(coll->nomTwo);
+		mat.Rotate(att);
+		
+		//When aircraft is over carrier deck, GetVelocity returns velocity relative to carrier for some reason
+		if (coll->objOne->CommonProp().IsOnCarrier() == YSTRUE)
+		{
+			totalVel = netVel1 - pointVel2;
+		}
+		else
+		{
+			totalVel = netVel1 - netVel2;
+		}
+		mat.MulInverse(faceVel, totalVel, 1.0);
+
+		//If collPos is moving away from the face, don't bounce
+		//Normal+ is toward obj, set when coll data is written
+		if (faceVel.z() < 0.0)
+		{
+			//Calculate push
+			YsVec3 push;
+			push = coll->nomTwo * coll->vertDepthOne * coll->pushOne;
+
+			//Compute rotation
+			//Use closing speed (totalVel) in obj1 coordinates:
+			YsVec3 localVel;
+			YsMatrix4x4 forwardMat;
+			forwardMat.Initialize();
+			forwardMat.Rotate(coll->objOne->GetAttitude());
+			forwardMat.MulInverse(localVel, totalVel, 1.0);
+			localVel *= -1; //Switch from object velocity to point velocity
+
+			YsVec3 dV, bbx[2];
+			YsAtt3 torque;
+			coll->objOne->GetMatrix().MulInverse(locPos1, coll->collPos, 1.0);
+			
+			const YsVec3* aaa = coll->objOne->GetCollisionShellBbx();
+			bbx[0] = aaa[0];
+			bbx[1] = aaa[1];
+			
+			//Janky scaling to account for friction torque rather than impact torque
+			localVel *= YsSmaller(abs(faceVel.z()) / 10,1.0);
+
+			ConvertLinearToAngularVelocity(torque, locPos1, localVel, bbx, dV);
+			
+			torque.SetH(torque.h() * 0.95); //fake some energy loss
+			torque.SetP(torque.p() * 0.95);
+			torque.SetB(torque.b() * 0.95);
+			
+			//Push position
+			coll->objOne->CommonProp().SetPosition(coll->objOne->CommonProp().GetPosition() + push);
+			coll->objOne->CommonProp().RemakeMatrix();
+
+			//Push attitude
+			//Once multi-point collisions exist, need to settle attitude so all points are on their colliding faces
+			
+			//Apply rotation velocity
+			if (coll->objOne->IsAirplane() == YSTRUE)
+			{
+				FsAirplane* air = (FsAirplane*)coll->objOne;
+				YsAtt3 old = rotVel1;
+				//Attenuate angular velocity for eventual static stability when sitting on surface
+				old.SetH(old.h() * 0.99);
+				old.SetP(old.p() * 0.99);
+				old.SetB(old.b() * 0.99);
+
+				roughnessAtt.SetH((((double)(rand() % 10000) / 5000.0) - 1) * roughness);
+				roughnessAtt.SetP((((double)(rand() % 10000) / 5000.0) - 1) * roughness);
+				roughnessAtt.SetB((((double)(rand() % 10000) / 5000.0) - 1) * roughness);
+				torque.SetH(torque.h() * (1 + roughnessAtt.h()));
+				torque.SetP(torque.p() * (1 + roughnessAtt.p()));
+				torque.SetB(torque.b() * (1 + roughnessAtt.b()));
+
+				old.NoseUp(torque.p()); //Why does att3 + att3 syntax not exist?
+				old.YawLeft(torque.h());
+				old.AddB(torque.b());
+				air->Prop().SetRotationSpeed(old);
+			}
+			else
+			{
+				//No rotation for you right now
+			}
+
+			//Bounce velocity
+			forwardMat.Mul(dV, dV, 1.0); //dV in global
+			YsVec3 dVface;
+			mat.MulInverse(dVface, dV, 1.0); //dV in facemat
+			
+			bounce = dVface.z() * (1 - coll->pushOne - cR * coll->pushOne);
+
+			bounceVel.SetZ((faceVel.z() + bounce)* -1);
+
+			if (hardness < 0.0) //hit water. Scale hardness with normal velocity
+			{
+				hardness = YsSmaller(bounceVel.z(), 10.0) / 10.0;
+			}
+
+			//Friction force
+			//Because we're using velocity instead of force, friction force is very low when sitting on a surface
+			//You gotta crank those numbers up. Those are rookie numbers
+			double slow = YsGreater(cF * (bounce - dVface.z()), cF);
+			bounceVel.SetX(YsSmaller(slow, abs(dVface.x())) * YsSign(dVface.x()));
+			bounceVel.SetY(YsSmaller(slow, abs(dVface.y())) * YsSign(dVface.y()));
+
+			roughnessVel.SetX((((double)(rand() % 10000) / 5000.0) - 1) * roughness);
+			roughnessVel.SetY((((double)(rand() % 10000) / 5000.0) - 1) * roughness);
+			roughnessVel.SetZ((((double)(rand() % 10000) / 20000.0) - 0.1) * roughness); // -0.1 to +0.4 * roughness
+
+			bounceVel.MulX(1 + roughnessVel.x());
+			bounceVel.MulY(1 + roughnessVel.y());
+			bounceVel.MulZ(1 + roughnessVel.z());
+
+			mat.Mul(bounceVel, bounceVel, 1.0);
+
+			outVel = inVel1;
+			outVel.AddX(YsSmaller(abs(inVel1.x()), abs(bounceVel.x())) * YsSignInv(totalVel.x()));
+			outVel.AddY(YsSmaller(abs(inVel1.y()), abs(bounceVel.y())) * YsSignInv(totalVel.y()));
+			outVel.AddZ(YsSmaller(abs(inVel1.z()), abs(bounceVel.z())) * YsSignInv(totalVel.z()));		
+			coll->objOne->CommonProp().SetVelocity(outVel);
+			deltaV1 = bounceVel * hardness;
+		}
+	}
+
+	if (coll->objTwo != nullptr)
+	{
+		mat.Initialize();
+		att.SetUpVector(coll->nomOne.GetArbitraryPerpendicularVector());
+		att.SetForwardVector(coll->nomOne);
+		mat.Rotate(att);
+
+		//When aircraft is over carrier deck, GetVelocity returns velocity relative to carrier for some reason
+		if (coll->objTwo->CommonProp().IsOnCarrier() == YSTRUE)
+		{
+			totalVel = netVel2 - pointVel1;
+		}
+		else
+		{
+			totalVel = netVel2 - netVel1;
+		}
+		mat.MulInverse(faceVel, totalVel, 1.0);
+
+		//If collPos is moving away from the face, don't bounce
+		//Normal+ is toward obj, set when coll data is written
+		if (faceVel.z() < 0.0)
+		{
+			//Calculate push
+			YsVec3 push;
+			push = coll->nomOne * coll->vertDepthTwo * coll->pushTwo;
+
+			//Compute rotation
+			//Use closing speed (totalVel) in obj1 coordinates:
+			YsVec3 localVel;
+			YsMatrix4x4 forwardMat;
+			forwardMat.Initialize();
+			forwardMat.Rotate(coll->objTwo->GetAttitude());
+			forwardMat.MulInverse(localVel, totalVel, 1.0);
+			localVel *= -1; //Switch from object velocity to point velocity
+
+			YsVec3 dV, bbx[2];
+			YsAtt3 torque;
+			coll->objTwo->GetMatrix().MulInverse(locPos2, coll->collPos, 1.0);
+
+			const YsVec3* aaa = coll->objTwo->GetCollisionShellBbx();
+			bbx[0] = aaa[0];
+			bbx[1] = aaa[1];
+
+			//Janky scaling to account for friction torque rather than impact torque
+			localVel *= YsSmaller(abs(faceVel.z()) / 10, 1.0);
+
+			ConvertLinearToAngularVelocity(torque, locPos2, localVel, bbx, dV);
+
+			torque.SetH(torque.h() * 0.95); //fake some energy loss
+			torque.SetP(torque.p() * 0.95);
+			torque.SetB(torque.b() * 0.95);
+
+			//Push position
+			coll->objTwo->CommonProp().SetPosition(coll->objTwo->CommonProp().GetPosition() + push);
+			coll->objTwo->CommonProp().RemakeMatrix();
+
+			//Push attitude
+			//Once multi-point collisions exist, need to settle attitude so all points are on their colliding faces
+
+			//Apply rotation velocity
+			if (coll->objTwo->IsAirplane() == YSTRUE)
+			{
+				FsAirplane* air = (FsAirplane*)coll->objTwo;
+				YsAtt3 old = rotVel2;
+				//Attenuate angular velocity for eventual static stability when sitting on surface
+				old.SetH(old.h() * 0.99);
+				old.SetP(old.p() * 0.99);
+				old.SetB(old.b() * 0.99);
+
+				roughnessAtt.SetH((((double)(rand() % 10000) / 5000.0) - 1) * roughness);
+				roughnessAtt.SetP((((double)(rand() % 10000) / 5000.0) - 1) * roughness);
+				roughnessAtt.SetB((((double)(rand() % 10000) / 5000.0) - 1) * roughness);
+				torque.SetH(torque.h() * (1 + roughnessAtt.h()));
+				torque.SetP(torque.p() * (1 + roughnessAtt.p()));
+				torque.SetB(torque.b() * (1 + roughnessAtt.b()));
+
+				old.NoseUp(torque.p()); //Why does att3 + att3 syntax not exist?
+				old.YawLeft(torque.h());
+				old.AddB(torque.b());
+				air->Prop().SetRotationSpeed(old);
+			}
+			else
+			{
+				//No rotation for you right now
+			}
+
+			//Bounce velocity
+			forwardMat.Mul(dV, dV, 1.0); //dV in global
+			YsVec3 dVface;
+			mat.MulInverse(dVface, dV, 1.0); //dV in facemat
+
+			bounce = dVface.z() * (1 - coll->pushTwo - cR * coll->pushTwo);
+
+			bounceVel.SetZ((faceVel.z() + bounce) * -1);
+
+			if (hardness < 0.0) //hit water. Scale hardness with normal velocity
+			{
+				hardness = YsSmaller(bounceVel.z(), 10.0) / 10.0;
+			}
+
+			//Friction force
+			//Because we're using velocity instead of force, friction force is very low when sitting on a surface
+			//You gotta crank those numbers up. Those are rookie numbers
+			double slow = YsGreater(cF * (bounce - dVface.z()), cF);
+			bounceVel.SetX(YsSmaller(slow, abs(dVface.x())) * YsSign(dVface.x()));
+			bounceVel.SetY(YsSmaller(slow, abs(dVface.y())) * YsSign(dVface.y()));
+
+			roughnessVel.SetX((((double)(rand() % 10000) / 5000.0) - 1) * roughness);
+			roughnessVel.SetY((((double)(rand() % 10000) / 5000.0) - 1) * roughness);
+			roughnessVel.SetZ((((double)(rand() % 10000) / 20000.0) - 0.1) * roughness); // -0.1 to +0.4 * roughness
+
+			bounceVel.MulX(1 + roughnessVel.x());
+			bounceVel.MulY(1 + roughnessVel.y());
+			bounceVel.MulZ(1 + roughnessVel.z());
+
+			mat.Mul(bounceVel, bounceVel, 1.0);
+
+			outVel = inVel2;
+			outVel.AddX(YsSmaller(abs(inVel2.x()), abs(bounceVel.x())) * YsSignInv(totalVel.x()));
+			outVel.AddY(YsSmaller(abs(inVel2.y()), abs(bounceVel.y())) * YsSignInv(totalVel.y()));
+			outVel.AddZ(YsSmaller(abs(inVel2.z()), abs(bounceVel.z())) * YsSignInv(totalVel.z()));
+			coll->objTwo->CommonProp().SetVelocity(outVel);
+			deltaV2 = bounceVel * hardness;
+		}
+	}
+	
+	out[0] = deltaV1;
+	out[1] = deltaV2;
+
+	//Soji's rotate-until-gear-on-deck code
+	/*YsVec3 nose, left, right;
+	YsVec3 nosevc, leftvc, rightvc;
+	YsVec3 nosert, leftrt, rightrt;
+	YsVec3 tail, lateral, ev, uv;
+	double dy;
+
+	nose = staMatrix * chWheel;
+	left = staMatrix * chMainGearL;
+	right = staMatrix * chMainGearR;
+
+	nosevc.Set(0.0, chWheel.y(), 0.0);
+	leftvc.Set(0.0, chMainGearL.y(), 0.0);
+	rightvc.Set(0.0, chMainGearR.y(), 0.0);
+	nosevc = staMatrix * nosevc;
+	leftvc = staMatrix * leftvc;
+	rightvc = staMatrix * rightvc;
+
+	const double gDistLeft = left.y() - staFootAtMainGearL.y();
+	const double gDistRight = right.y() - staFootAtMainGearR.y();
+	const double gDistWheel = nose.y() - staFootAtWheel.y();
+
+	if (YsTolerance < gDistWheel &&
+		YsTolerance < gDistLeft &&
+		YsTolerance < gDistRight)
+	{
+		gDistance = YsSmaller(gDistWheel, gDistLeft);
+		gDistance = YsSmaller(gDistance, gDistRight);
+		return YSFALSE;
+	}
+	else
+	{
+		YSBOOL diggingIn = YSFALSE;
+		// Digging In?
+		{
+			const YsVec3 v1 = staFootAtMainGearR - staFootAtWheel;
+			const YsVec3 v2 = staFootAtMainGearL - staFootAtWheel;
+
+			YsVec3 gndNom = v1 ^ v2;
+			if (gndNom.y() < 0.0)
+			{
+				gndNom = -gndNom;
+			}
+			gndNom.Normalize();
+
+			YsVec3 vNom;
+			GetVelocity(vNom);
+			vNom.Normalize();
+
+			if (cos(YsPi * 91.0 / 180.0) > vNom * gndNom)
+			{
+				diggingIn = YSTRUE;
+			}
+		}
+
+
+
+		gDistance = 0.0;
+
+		//Phase 1 If airspeed is faster than chManSpeed1, allow airplane to be lifted a little bit.
+		double deepest, airspeed;
+		deepest = YsSmaller(gDistWheel, gDistLeft);
+		deepest = YsSmaller(deepest, gDistRight);
+		deepest = -deepest;
+		airspeed = GetVelocity();
+
+		if (YSTRUE != diggingIn)
+		{
+			if (airspeed > chManSpeed2)
+			{
+				staPosition.SetY(staPosition.y() + deepest);
+				return YSTRUE;
+			}
+			else if (airspeed > chManSpeed1)
+			{
+				double dy;
+				dy = deepest * (airspeed - chManSpeed1) / (chManSpeed2 - chManSpeed1);
+				staPosition.SetY(staPosition.y() + dy);
+			}
+		}
+
+
+		//Phase 2 Adjust attitude
+		nose = chWheel;  // Force symmetric
+		nose.SetX((chMainGearL.x() + chMainGearR.x()) / 2.0);
+		nose = staMatrix * nose;
+
+		nose.Set(nose.x(), YsGreater(nose.y(), staFootAtWheel.y()), nose.z());
+		left.Set(left.x(), YsGreater(left.y(), staFootAtMainGearL.y()), left.z());
+		right.Set(right.x(), YsGreater(right.y(), staFootAtMainGearR.y()), right.z());
+
+		nosert = nose - nosevc;
+		leftrt = left - leftvc;
+		rightrt = right - rightvc;
+
+		tail = (leftrt + rightrt) / 2.0;
+
+		if (chWheel.z() > chMainGearL.z())
+		{
+			ev = nosert - tail;
+		}
+		else
+		{
+			ev = tail - nosert;
+		}
+
+		YsVec3 vSave;
+		staInverseMatrix.Mul(vSave, staVelocity, 0.0);
+
+		lateral = leftrt - rightrt;
+		uv = lateral ^ ev;
+
+		//Smoothly blend between pitch settling and flying by weight on wheels
+		YsVec3 evCurr, uvCurr, evOut, uvOut;
+		evCurr = staAttitude.GetForwardVector();
+		uvCurr = staAttitude.GetUpVector();
+
+		evOut = GetWeightOnWheels() * ev + (1 - GetWeightOnWheels()) * evCurr;
+
+		staAttitude.SetTwoVector(ev, uv);
+
+		RemakeMatrix();
+
+		staMatrix.Mul(staVelocity, vSave, 0.0);
+
+
+
+		// Phase 3 Adjust Position
+		nose = staMatrix * chWheel;
+		left = staMatrix * chMainGearL;
+		right = staMatrix * chMainGearR;
+
+		dy = 0.0;
+		if (nose.y() < staFootAtWheel.y())
+		{
+			dy = YsGreater(staFootAtWheel.y() - nose.y(), dy);
+		}
+		if (left.y() < staFootAtMainGearL.y())
+		{
+			dy = YsGreater(staFootAtMainGearL.y() - left.y(), dy);
+		}
+		if (right.y() < staFootAtMainGearR.y())
+		{
+			dy = YsGreater(staFootAtMainGearR.y() - right.y(), dy);
+		}
+		staPosition.SetY(staPosition.y() + dy);
+		RemakeMatrix();
+		*/
+	return YSOK;
 }
 
 //////////////////////////////////////////////////
@@ -1147,3 +1671,124 @@ YSBOOL FsPhysics::CheckShellShellIntersection(FsVisualSrf* shell1, FsVisualSrf* 
 //FsAirplaneProperty::ComputeEstimatedBombLandingPosition
 //FsAirplaneProperty::AutoComputeTailStrikePitchAngle //fsairplaneproperty
 //FsAirplaneProperty::CalculateCurrentState
+
+int FsPhysics::DoDamageByDeltaV(YsVec3 deltaV)
+{
+	if (timeStep == 0.0)
+	{
+		return 0;
+	}
+	int damage;
+	double len , frac, noDamageSpeed;
+	len = deltaV.GetLength() * 0.1;
+	damage = (int)floor(len);
+	frac = (double)len - damage;
+	noDamageSpeed = 0.1; //0.1m/s, 2kt
+
+	if (frac > noDamageSpeed && FsGetRandomBetween(0.0, 1.0) * frac > 0.5)
+	{
+		damage += 1;
+	}
+	return damage;
+}
+
+YsVec3 FsPhysics::ConvertAngularToLinearVelocity(YsAtt3 rot, YsVec3 pos)
+{
+	YsVec3 vel = YsOrigin();
+	double h, p, b;
+	h = tan(rot.h());
+	vel.AddX(pos.z() * h * -1);
+	vel.AddZ(pos.x() * h);
+
+	p = tan(rot.p());
+	vel.AddY(pos.z() * p);
+	vel.AddZ(pos.y() * p * -1);
+
+	b = tan(rot.b());
+	vel.AddX(pos.y() * b * -1);
+	vel.AddY(pos.x() * b);
+	
+	return vel;
+}
+
+void FsPhysics::ConvertLinearToAngularVelocity(YsAtt3& rot, YsVec3 pos, YsVec3 vel, YsVec3 bbx[2], YsVec3& deltaV)
+{
+	YsVec3 limit;
+	YsAtt3 torque = YsZeroAtt();
+	//For a given push position
+	//Scale translation vs rotation ratio as a function of distance to edge of bbx
+	YsVec3 ratio; //Ratio high means more rotation. Low is more translation
+	limit.SetX(YsGreatestOf(abs(bbx[0].x()), abs(bbx[1].x()), -1.0));
+	limit.SetY(YsGreatestOf(abs(bbx[0].y()), abs(bbx[1].y()), -1.0));
+	limit.SetZ(YsGreatestOf(abs(bbx[0].z()), abs(bbx[1].z()), -1.0));
+
+	ratio.SetX(abs(pos.x() / limit.x()));
+	ratio.SetY(abs(pos.y() / limit.y()));
+	ratio.SetZ(abs(pos.z() / limit.z()));
+	
+	//Get velocity normal to lever arm
+	//Make matrix with forward vector along line of origin to pos
+	YsMatrix4x4 mat;
+	mat.Initialize();
+	YsAtt3 m;
+	m.SetForwardVector(pos);
+	m.SetUpVector(pos.GetArbitraryPerpendicularVector());
+	mat.Rotate(m);
+
+	//Rotate velocity into matrix. Take x and y as tangentials. Z is radial
+	YsVec3 v, tangential, radial;
+	mat.MulInverse(v, vel, 1.0);
+	tangential = v;
+	tangential.SetZ(0.0);
+	radial = v;
+	radial.SetX(0.0);
+	radial.SetY(0.0);
+
+	//Translate tangential and radial back to obj matrix (global mat here)
+	mat.Mul(tangential, tangential, 1.0);
+	mat.Mul(radial, radial, 1.0);
+
+	//Distribute force between rotation and movement
+	deltaV = radial;
+	deltaV.AddX(tangential.x() * (1 - ratio.x()));
+	deltaV.AddY(tangential.y() * (1 - ratio.y()));
+	deltaV.AddZ(tangential.z() * (1 - ratio.z()));
+	
+	//Maximum rates
+	double yawX, yawZ, pitchY, pitchZ, rollX, rollY;
+	yawX =   atan(abs(tangential.z()) / limit.x());
+	yawZ =   atan(abs(tangential.x()) / limit.z());
+	pitchY = atan(abs(tangential.z()) / limit.y());
+	pitchZ = atan(abs(tangential.y()) / limit.z());
+	rollX =  atan(abs(tangential.y()) / limit.x());
+	rollY =  atan(abs(tangential.x()) / limit.y());
+
+	//Scale rates and set direction. Positive is pitch up, yaw left, roll left
+	yawX *=   YsSign(pos.x()) * YsSign(tangential.z()) * ratio.x();
+	yawZ *=   YsSign(pos.z()) * YsSign(tangential.x()) * ratio.z() * -1;
+	pitchY *= YsSign(pos.y()) * YsSign(tangential.z()) * ratio.y() * -1;
+	pitchZ *= YsSign(pos.z()) * YsSign(tangential.y()) * ratio.z();
+	rollX *=  YsSign(pos.x()) * YsSign(tangential.y()) * ratio.x();
+	rollY *=  YsSign(pos.y()) * YsSign(tangential.x()) * ratio.y() * -1;
+	
+	torque.SetH(yawX + yawZ);
+	torque.SetP(pitchY + pitchZ);
+	torque.SetB(rollX + rollY);
+
+	rot = torque;
+}
+
+FsPhysics::CollisionEvent::CollisionEvent()
+{
+	keyOne = -1;
+	keyTwo = -1;
+	objOne = nullptr;
+	objTwo = nullptr;
+	nomOne = YsOrigin();
+	nomTwo = YsOrigin();
+	vertDepthOne = 0;
+	vertDepthTwo = 0;
+	collPos = YsOrigin();
+	pushOne = 0;
+	pushTwo = 0;
+}

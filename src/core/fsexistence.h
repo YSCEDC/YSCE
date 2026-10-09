@@ -11,6 +11,7 @@
 #include "fsgroundproperty.h"
 #include "fsatc.h"
 #include "fssiminfo.h" // Need FsSimInfo::AirBase  
+#include "fsphysics.h"
 
 
 class FsAutopilot;
@@ -53,10 +54,19 @@ public:
 	{
 	public:
 		YSHASHKEY objKey;
-		YsVec3 pos;
+		YsVec3 pos; //Position of collision in global coordinates
+		YsVec3 normal; //Normal of hitObj's colliding face
+		YsShellPolygonHandle handle; //Handle of hitObj's colliding face
+		FsExistence* hitObj; //Who did you hit
+		double vertexDepth; //How far through the plane is the nearest vertex?
+
+		Collision();
+		//Ultimately, collisions should be a sim-level list that objects just point to, and an object's airCollision is just a list of pointers to the global list
 	};
 	YsArray <Collision,8> airCollision;
 	YsArray <Collision,8> gndCollision;
+	YsArray <Collision, 8> objCollision;
+	YsArray <Collision, 8> sceCollision;
 	// Cached in SimComputeAirToObjCollision <<
 
 	mutable class FsVisualDnm vis;

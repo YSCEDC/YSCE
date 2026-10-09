@@ -297,7 +297,8 @@ enum FSFLIGHTSTATE
 	FSDEADSPIN,
 	FSDEADFLATSPIN,
 	FSGROUNDSTATIC,
-	FSOVERRUN
+	FSOVERRUN,
+	FSBELLYLAND
 	// For the compatibility of the flight record,
 	// Always add new state at the bottom.
 

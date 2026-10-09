@@ -12,6 +12,19 @@ double FsNumerical2ndDifferentiation(const double &t1,const double &v1,const dou
 int FsGetRandomBetween(int min, int max);
 double FsGetRandomBetween(double min, double max);
 
+//Return the sign of the value: Positive includes 0
+int YsSign(int in);
+//Return the sign of the value: Positive includes 0
+int YsSign(double in);
+//Return the opposite sign of the value: Positive includes 0
+int YsSignInv(int in);
+//Return the opposite sign of the value: Positive includes 0
+int YsSignInv(double in);
+
+
+//Return the perpendicular rotated in all positive directions. Same output every time. A consistent alternative to GetArbitraryPerpendicularVector
+YsArray <YsVec3*> GetStandardPerpendicularVector(YsVec3 in);
+
 double FsGetLevelTurnRadius(const double v,const double bank);
 
 

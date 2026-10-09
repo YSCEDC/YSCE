@@ -208,7 +208,7 @@ YSBOOL FsSimulation::DemoModeOneStep(FsDemoModeInfo &info,YSBOOL drawSmokeAndVap
 				return YSFALSE;
 			}
 
-			if(ap->landingPhase==FsLandingAutopilot::PHASE_CLEARINGRUNWAY_WITH_TAXIPATH /*10*/ || player->Prop().GetVelocity()<=0.5)
+			if(ap->landingPhase==FsLandingAutopilot::PHASE_CLEARINGRUNWAY_WITH_TAXIPATH /*10*/ || player->Prop().GetSpeed()<=0.5)
 			{
 				info.terminateByUser=YSFALSE;
 				return YSFALSE;

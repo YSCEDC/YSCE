@@ -1234,7 +1234,7 @@ const void YsSceneryItem::CacheGlobalPositionAndAttitude(void)
 	uv.Set(0.0, 1.0, 0.0);
 	bbxDiag = (bbx[1] - bbx[0]).GetLength() / 2;
 	centerGlobal = (bbx[0] + bbx[1]) / 2;
-	printf("Cache global %f %f %f | %f\n", bbx[1].x(), bbx[1].y(), bbx[1].z(),bbxDiag);
+	printf("Grid: cached %fm", bbx[1].y());
 	
 	attMat.Initialize();
 	attMat.Rotate(att);
@@ -1269,6 +1269,19 @@ const void YsSceneryItem::CacheGlobalPositionAndAttitude(void)
 		YsSceneryShell* shl = GetTerrainShell();
 		shl->TransformCollisionShell(mat);
 	}
+
+	if (objType == ELEVATIONGRID && GetElevationGrid()->srfGenerated != YSTRUE && GetElevationGrid()->ConvertTerToShell() == YSOK)
+	{
+		printf(", generated collision srf");
+		mat.Initialize();
+		mat.Translate(posGlobal);
+		mat.Rotate(attGlobal);
+		GetElevationGrid()->collisionTransformed = GetElevationGrid()->collision;
+		GetElevationGrid()->collisionTransformed.SetMatrix(mat);
+		GetElevationGrid()->needTransform = YSFALSE;
+		printf(" and rotated");
+	}
+	printf("\n");
 }
 
 const double& YsSceneryItem::GetBbxDiag(void) const
@@ -1591,7 +1604,359 @@ void YsSceneryElevationGrid::Initialize(void)
 YsSceneryElevationGrid::YsSceneryElevationGrid()
 {
 	evg.owner=this;
+	srfGenerated = YSFALSE;
+	needTransform = YSTRUE;
+	collision.CleanUp();
+	collisionTransformed.CleanUp();
 }
+
+YSRESULT YsSceneryElevationGrid::ConvertTerToShell(void)
+{
+	printf("======== convert ter to shell ==========\n");
+	//YsElevationGrid grid = evg;
+	YsVisualSrf shell;
+	YsShellVertexHandle vertList[1024]; //Hardcodes a maximum size for grid at 1000x1000 faces. Not ideal
+	int vertN;
+	YsShellPolygonHandle plgHdl;
+
+	YsVec3 bbx[2];
+	bbx[0] = evg.bbx[0];
+	bbx[1] = evg.bbx[1];
+
+	YsVec3 hold[3], moreHold[4];
+	YsVec3* triVerts = hold;
+	YsVec3* faceVerts = moreHold;
+
+	YsArray <YsVec3> sidewallVerts;
+	YsArray <YsShell::VertexHandle> vtxHdls;
+	YsVec3 plgNom;
+	YsVec3 working;
+	int dim1, dim2;
+
+	/*helicopter on cliff scenario:
+roll is responding to weight on wheels correctly
+pitch is rotating at a stabilizing rate, maybe proportional to WoW, with no active control
+
+
+one sidewall is working*/
+
+	//Sidewalls [0] -Z [1] +X [2] +Z [3] -X
+	if (evg.sideWall[1] == YSTRUE) //+X side
+	{
+		//This doesn;t properly return all edge verts because it's skipping the +x +y -z corner
+		working.Set(0.0,0.0,YsTolerance);
+		vtxHdls.CleanUp();
+		printf("+X sidewall: %f %f %f\n", bbx[1].x(), bbx[1].y(), bbx[1].z());
+		//Edge nodes
+		for (int j = 0; j < evg.nz; j++)
+		{
+			evg.GetTriangle(triVerts, evg.nx - 1, j, 0);
+			faceVerts[0] = triVerts[0];
+			faceVerts[1] = triVerts[1];
+			faceVerts[2] = triVerts[2];
+
+			evg.GetTriangle(triVerts, evg.nx - 1, j, 1);
+			for (int c = 0; c < 3; c++)
+			{
+				if (triVerts[c] != faceVerts[0] && triVerts[c] != faceVerts[1] && triVerts[c] != faceVerts[2])
+				{
+					faceVerts[3] = triVerts[c];
+				}
+			}
+
+
+			for (int i = 0; i < 4; i++)
+			{
+				if (faceVerts[i].x() == bbx[1].x()) //Is edge node
+				{
+					if (faceVerts[i].z() < working.z())
+					{
+						sidewallVerts.Add(faceVerts[i]);
+						printf("     %f %f %f\n", faceVerts[i].x(), faceVerts[i].y(), faceVerts[i].z());
+					}
+				}
+				working = faceVerts[i];
+			}
+		}
+
+		//Bottom right corner
+		working.Set(bbx[1].x(), bbx[0].y(), bbx[1].z());
+		sidewallVerts.Add(working);
+		printf("BR   %f %f %f\n", working.x(), working.y(), working.z());
+
+		//Bottom left corner
+		working.Set(bbx[1].x(), bbx[0].y(), bbx[0].z());
+		sidewallVerts.Add(working);
+		printf("BL   %f %f %f\n", working.x(), working.y(), working.z());
+
+		////Top left corner
+		//grid.GetTriangle(triVerts, grid.nx - 1, 0, 0);
+		//for (int i = 0; i < 3; i++)
+		//{
+		//	if (triVerts[i].x() == bbx[1].x())
+		//	{
+		//		if (triVerts[i].z() == bbx[0].z())
+		//		{
+		//			sidewallVerts.Add(triVerts[i]);
+		//			printf("TR   %f %f %f\n", triVerts[i].x(), triVerts[i].y(), triVerts[i].z());
+		//			break;
+		//		}
+		//	}
+		//}
+		//grid.GetTriangle(triVerts, grid.nx - 1, 0, 1);
+		//for (int i = 0; i < 3; i++)
+		//{
+		//	if (triVerts[i].x() == bbx[1].x())
+		//	{
+		//		if (triVerts[i].z() == bbx[0].z())
+		//		{
+		//			sidewallVerts.Add(triVerts[i]);
+		//			printf("TR   %f %f %f\n", triVerts[i].x(), triVerts[i].y(), triVerts[i].z());
+		//			break;
+		//		}
+		//	}
+		//}
+
+
+		//Make one big face
+		vertN = sidewallVerts.GetN();
+
+		for (int i = 0; i < vertN; i++)
+		{
+			YsShell::VertexHandle vtx = shell.AddVertex(sidewallVerts[i]);
+			vtxHdls.Add(vtx);
+		}
+	
+		plgHdl = shell.AddPolygon(vtxHdls);
+		plgNom.Set(1.0, 0.0, 0.0); //+X in grid coords, to ensure it points out
+		YsMatrix4x4 mat;
+		mat.Rotate(attGlobal);
+		mat.Mul(plgNom, plgNom, 1.0);
+		shell.SetPolygonNormal(plgHdl, plgNom);
+	}
+	
+	if (evg.sideWall[3] == YSTRUE) //-X side
+	{
+		printf("-X side\n");
+		working.Set(YsOrigin());
+		vtxHdls.CleanUp();
+		//Edge nodes
+		for (int j = 0; j < evg.nz; j++)
+		{
+			evg.GetTriangle(triVerts, 0, j, 0);
+			for (int i = 0; i < 3; i++)
+			{
+				if (triVerts[i].x() == bbx[0].x()) //Is edge node
+				{
+					if (triVerts[i].z() > working.z())
+					{
+						sidewallVerts.Add(triVerts[i]);
+						printf("     %f %f %f\n", triVerts[i].x(), triVerts[i].y(), triVerts[i].z());
+					}
+					working = triVerts[i];
+				}
+			}
+		}
+
+		//Bottom left corner
+		working.Set(bbx[0].x(), bbx[0].y(), bbx[1].z());
+		sidewallVerts.Add(working);
+		printf("     %f %f %f\n", working.x(), working.y(), working.z());
+
+		//Bottom right corner
+		working.Set(bbx[0].x(), bbx[0].y(), bbx[0].z());
+		sidewallVerts.Add(working);
+		printf("     %f %f %f\n", working.x(), working.y(), working.z());
+
+		//Top right corner
+		evg.GetTriangle(triVerts, 0, 0, 0);
+		for (int i = 0; i < 3; i++)
+		{
+			if (triVerts[i].x() == bbx[1].x())
+			{
+				if (triVerts[i].z() == bbx[1].z())
+				{
+					sidewallVerts.Add(triVerts[i]);
+					printf("     %f %f %f\n", triVerts[i].x(), triVerts[i].y(), triVerts[i].z());
+					break;
+				}
+			}
+		}
+
+		//Make one big face
+		vertN = sidewallVerts.GetN();
+
+		for (int i = 0; i < vertN; i++)
+		{
+			YsShell::VertexHandle vtx = shell.AddVertex(sidewallVerts[i]);
+			vtxHdls.Add(vtx);
+		}
+		plgHdl = shell.AddPolygon(vtxHdls);
+
+		plgNom.Set(-1.0, 0.0, 0.0); //-X in grid coords, to ensure it points out
+		YsMatrix4x4 mat;
+		mat.Rotate(attGlobal);
+		mat.Mul(plgNom, plgNom, 1.0);
+		shell.SetPolygonNormal(plgHdl, plgNom);
+	}
+	
+	//if (grid.sideWall[0] == YSTRUE) //-Z side
+	//{
+	//	//Edge nodes
+	//	for (int j = 0; j < grid.nz; j++)
+	//	{
+	//		working.Set(9999999, 9999999, 9999999);
+	//		grid.GetTriangle(triVerts, j, 0, 0);
+	//		for (int i = 0; i < 3; i++)
+	//		{
+	//			if (triVerts[i].x() == bbx[0].z()) //Is edge node
+	//			{
+	//				if (triVerts[i].x() < working.x())
+	//				{
+	//					working = triVerts[i];
+	//				}
+	//			}
+	//		}
+	//		sidewallVerts.Add(working);
+	//	}
+
+	//	//Top right corner
+	//	grid.GetTriangle(triVerts, grid.nx - 1, 0, 0);
+	//	for (int i = 0; i < 3; i++)
+	//	{
+	//		if (triVerts[i].x() == bbx[0].x())
+	//		{
+	//			if (triVerts[i].z() == bbx[0].z())
+	//			{
+	//				sidewallVerts.Add(triVerts[i]);
+	//				break;
+	//			}
+	//		}
+	//	}
+
+	//	//Bottom right corner
+	//	working.Set(bbx[0].x(), bbx[0].y(), bbx[0].z());
+	//	sidewallVerts.Add(working);
+
+	//	//Bottom left corner
+	//	working.Set(bbx[0].x(), bbx[0].y(), bbx[1].z());
+	//	sidewallVerts.Add(working);
+
+	//	//Make one big face
+	//	vertN = sidewallVerts.GetN();
+
+	//	YsArray <YsShell::VertexHandle> hdls;
+	//	for (int i = 0; i < vertN; i++)
+	//	{
+	//		YsShell::VertexHandle vtx = shell.AddVertex(sidewallVerts[i]);
+	//		hdls.Add(vtx);
+	//	}
+	//	shell.AddPolygon(hdls);
+	//}
+
+	//if (grid.sideWall[3] == YSTRUE) //+Z side
+	//{
+	//	//Edge nodes
+	//	for (int j = 0; j < grid.nz; j++)
+	//	{
+	//		working.Set(9999999, 9999999, 9999999);
+	//		grid.GetTriangle(triVerts, j, grid.nz - 1, 0);
+	//		for (int i = 0; i < 3; i++)
+	//		{
+	//			if (triVerts[i].x() == bbx[1].z()) //Is edge node
+	//			{
+	//				if (triVerts[i].x() < working.x())
+	//				{
+	//					working = triVerts[i];
+	//				}
+	//			}
+	//		}
+	//		sidewallVerts.Add(working);
+	//	}
+
+	//	//Top right corner
+	//	grid.GetTriangle(triVerts, 0, grid.nz-1, 0);
+	//	for (int i = 0; i < 3; i++)
+	//	{
+	//		if (triVerts[i].x() == bbx[0].x())
+	//		{
+	//			if (triVerts[i].z() == bbx[1].z())
+	//			{
+	//				sidewallVerts.Add(triVerts[i]);
+	//				break;
+	//			}
+	//		}
+	//	}
+
+	//	//Bottom right corner
+	//	working.Set(bbx[0].x(), bbx[0].y(), bbx[1].z());
+	//	sidewallVerts.Add(working);
+
+	//	//Bottom left corner
+	//	working.Set(bbx[1].x(), bbx[0].y(), bbx[1].z());
+	//	sidewallVerts.Add(working);
+
+	//	//Make one big face
+	//	vertN = sidewallVerts.GetN();
+
+	//	YsArray <YsShell::VertexHandle> hdls;
+	//	for (int i = 0; i < vertN; i++)
+	//	{
+	//		YsShell::VertexHandle vtx = shell.AddVertex(sidewallVerts[i]);
+	//		hdls.Add(vtx);
+	//	}
+	//	shell.AddPolygon(hdls);
+	//}
+
+	///////////////////////////////////////////////
+	//Top surface
+	YsShellVertexHandle verts[3];
+	//printf("Top surface\n");
+	for (int i = 0; i < evg.nx; i++)
+	{
+		//printf("Row %i:==================================\n", i);
+		for (int j = 0; j < evg.nz; j++)
+		{
+			//printf("Blo %i:0\n", j);
+			evg.GetTriangle(triVerts, i, j, 0);
+			/*printf("triVerts[0] %f %f %f\n", triVerts[0].x(), triVerts[0].y(), triVerts[0].z());
+			printf("triVerts[1] %f %f %f\n", triVerts[1].x(), triVerts[1].y(), triVerts[1].z());
+			printf("triVerts[2] %f %f %f\n", triVerts[2].x(), triVerts[2].y(), triVerts[2].z());*/
+			verts[0].CopyFrom(shell.AddVertex(triVerts[0]));
+			verts[1].CopyFrom(shell.AddVertex(triVerts[1]));
+			verts[2].CopyFrom(shell.AddVertex(triVerts[2]));
+			plgHdl = shell.AddPolygon(3, verts);
+			YsGetAverageNormalVector(plgNom, 3, triVerts);
+			if (plgNom.y() < 0.0) //Make sure it points up
+			{
+				plgNom *= -1.0;
+			}
+			shell.SetPolygonNormal(plgHdl, plgNom);
+
+			evg.GetTriangle(triVerts, i, j, 1);
+			verts[0].CopyFrom(shell.AddVertex(triVerts[0]));
+			verts[1].CopyFrom(shell.AddVertex(triVerts[1]));
+			verts[2].CopyFrom(shell.AddVertex(triVerts[2]));
+			//verts[0].CopyFrom(shell.AddVertex(triVerts[0]));
+			//verts[1].CopyFrom(shell.AddVertex(triVerts[1]));
+			//verts[2].CopyFrom(shell.AddVertex(triVerts[2]));
+			plgHdl = shell.AddPolygon(3, verts);
+			YsGetAverageNormalVector(plgNom, 3, triVerts);
+			if (plgNom.y() < 0.0) //Make sure it points up
+			{
+				plgNom *= -1.0;
+			}
+			shell.SetPolygonNormal(plgHdl, plgNom);
+		}
+	}
+	printf(" : %i faces\n", shell.GetNumPolygon());
+
+	collision = shell;
+	srfGenerated = YSTRUE;
+	needTransform = YSTRUE;
+	return YSOK;
+}
+
 
 YSRESULT YsSceneryElevationGrid::Save(const char fn[]) const
 {

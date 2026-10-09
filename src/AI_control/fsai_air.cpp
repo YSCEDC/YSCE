@@ -544,7 +544,7 @@ YSRESULT FsAutopilot::MakePriorityDecision(FsAirplane &air)
 	YsVec3 dir;
 	FSFLIGHTSTATE sta;
 
-	vel=air.Prop().GetVelocity();
+	vel=air.Prop().GetSpeed();
 	sta=air.Prop().GetFlightState();
 	spd1=air.Prop().GetMinimumManeuvableSpeed();
 
@@ -617,7 +617,7 @@ YSRESULT FsAutopilot::RecoverFromLowAltitude(FsAirplane &air,const double &alt,c
 		if(pos->y()>33.0)
 		{
 			double pit,spd;
-			spd=air.Prop().GetVelocity();
+			spd=air.Prop().GetSpeed();
 			pit=15.0+spd-60.0;
 			pit=YsBound(pit,15.0,30.0);
 			pit=YsDegToRad(pit);
@@ -742,7 +742,7 @@ YSRESULT FsAutopilot::RecoverFromStall(FsAirplane &air)
 
 	double vel,spd1;
 	FSFLIGHTSTATE sta;
-	vel=air.Prop().GetVelocity();
+	vel=air.Prop().GetSpeed();
 	sta=air.Prop().GetFlightState();
 	spd1=air.Prop().GetMinimumManeuvableSpeed();
 
@@ -891,7 +891,7 @@ YSRESULT FsAutopilot::ControlGForAltitude
 	// Calculation of the maximum climb angle = acos(G/LiftMax(v))
 	double G,Lmax,Amax,maxClimbAngle,loadMax;
 	Amax=air.Prop().GetCriticalAOA()*0.8;
-	Lmax=air.Prop().GetLift(Amax,air.Prop().GetVelocity());
+	Lmax=air.Prop().GetLift(Amax,air.Prop().GetSpeed());
 	G=air.Prop().GetTotalWeight()*FsGravityConst;
 	Lmax=Lmax*cos(att.b());
 
@@ -1025,7 +1025,7 @@ YSRESULT FsAutopilot::ControlGForRollOut
 	air.Prop().GetVelocity(vel);
 	vAtt.SetTwoVector(vel,uv);
 
-	v=air.Prop().GetVelocity();
+	v=air.Prop().GetSpeed();
 
 
 	gMax=maxGLimit*cos(air.GetAttitude().b());
@@ -1210,7 +1210,7 @@ void FsAutopilot::ShallowPursuit
 		r=1.0-relAlt*0.2/100.0;
 		r=YsBound(r,0.9,1.1);
 
-		if(air.Prop().GetVelocity()<100.0 && r>1.0)  // Gain Speed
+		if(air.Prop().GetSpeed()<100.0 && r>1.0)  // Gain Speed
 		{
 			r=1.0;
 		}
@@ -1719,9 +1719,9 @@ YSBOOL FsAutopilot::NeedImmediateRecoveryFromLowAltitude(FsAirplane &air,const d
 
 	double descendingAngle,angularVelocity,t,r;
 	descendingAngle=atan2(-vv,vh);
-	angularVelocity=(gLimit*FsGravityConst)/air.Prop().GetVelocity();   // ommega=a/v  (from high school physics)
+	angularVelocity=(gLimit*FsGravityConst)/air.Prop().GetSpeed();   // ommega=a/v  (from high school physics)
 	t=descendingAngle/angularVelocity;
-	r=YsSqr(air.Prop().GetVelocity())/(gLimit*FsGravityConst);
+	r=YsSqr(air.Prop().GetSpeed())/(gLimit*FsGravityConst);
 
 	// Now, t is the time required for the airplane to reach the bottom of the turn,
 	// and r is the radius of the turn if there's no gravity.
@@ -1759,7 +1759,7 @@ YSRESULT FsAutopilot::VTOLHover(FsAirplane &air,FsSimulation *,const YsVec3 &des
 		if(air.Prop().GetAircraftClass()!=FSCL_HELICOPTER)
 		{
 			double v,aoa;
-			v=air.Prop().GetVelocity();
+			v=air.Prop().GetSpeed();
 			aoa=air.Prop().GetAOA();
 			wingLift=air.Prop().GetLift(aoa,v);
 			wingLift*=cos(air.Prop().GetAttitude().p())*cos(air.Prop().GetAttitude().b());
@@ -1831,7 +1831,7 @@ YSRESULT FsAutopilot::VTOLHover(FsAirplane &air,FsSimulation *,const YsVec3 &des
 		bnk+=zeroB;
 		pch+=zeroP;
 		if(air.Prop().GetAircraftClass()==FSCL_HELICOPTER ||
-		   air.Prop().GetVelocity()<=air.Prop().GetMinimumManeuvableSpeed())
+		   air.Prop().GetSpeed()<=air.Prop().GetMinimumManeuvableSpeed())
 		{
 			air.Prop().TurnOffPitchController();
 			air.Prop().TurnOffBankController();
@@ -1960,7 +1960,7 @@ YSBOOL FsAutopilot::DangerOfCollision(FsAirplane &air1,FsAirplane &air2) const
 
 	rel=air1.GetPosition()-air2.GetPosition();
 	air2.GetAttitude().MulInverse(rel,rel);
-	if(rel.z()<YsTolerance || air2.Prop().GetVelocity()*2.0<rel.z())
+	if(rel.z()<YsTolerance || air2.Prop().GetSpeed()*2.0<rel.z())
 	{
 		return YSFALSE;
 	}
@@ -1974,7 +1974,7 @@ YSBOOL FsAutopilot::DangerOfCollision(FsAirplane &air1,FsAirplane &air2) const
 
 	rel=air2.GetPosition()-air1.GetPosition();
 	air1.GetAttitude().MulInverse(rel,rel);
-	if(rel.z()<YsTolerance || air1.Prop().GetVelocity()*2.0<rel.z())
+	if(rel.z()<YsTolerance || air1.Prop().GetSpeed()*2.0<rel.z())
 	{
 		return YSFALSE;
 	}
@@ -2234,7 +2234,7 @@ YSRESULT FsTaxiingAutopilot::MakePriorityDecision(FsAirplane & /*air*/ )
 
 YSRESULT FsTaxiingAutopilot::MakeDecision(FsAirplane &air,FsSimulation *sim,const double & /*dt*/ )
 {
-	const double v=air.Prop().GetVelocity();
+	const double v=air.Prop().GetSpeed();
 	// const double brakeForce=air.Prop().CalculateForceByBrake(1.0);
 
 
@@ -2637,13 +2637,13 @@ YSRESULT FsTaxiingAutopilot::ApplyControl(FsAirplane &air,FsSimulation *,const d
 		//else  // Last leg very moderate speed control.
 		{
 			air.Prop().TurnOffSpeedController();
-			if(air.Prop().GetVelocity()<this->desiredTaxiSpeed)
+			if(air.Prop().GetSpeed()<this->desiredTaxiSpeed)
 			{
-				const double diff=(this->desiredTaxiSpeed-0.25-air.Prop().GetVelocity());
+				const double diff=(this->desiredTaxiSpeed-0.25-air.Prop().GetSpeed());
 				air.Prop().SetBrake(0.0);
 				air.Prop().SetThrottle(YsSmaller(0.1,diff));
 			}
-			else if(air.Prop().GetVelocity()>this->desiredTaxiSpeed)
+			else if(air.Prop().GetSpeed()>this->desiredTaxiSpeed)
 			{
 				air.Prop().SetBrake(1.0);
 				air.Prop().SetThrottle(0.0);
@@ -3172,9 +3172,9 @@ YSRESULT FsGotoPosition::ApplyControl(FsAirplane &air,FsSimulation *sim,const do
 			    FSAC_FIGHTER==air.Prop().GetAirplaneCategory() ||
 			    FSAC_ATTACKER==air.Prop().GetAirplaneCategory() ||
 			    FSAC_TRAINER==air.Prop().GetAirplaneCategory()) &&
-			    YsUnitConv::KTtoMPS(250.0)<air.Prop().GetVelocity())
+			    YsUnitConv::KTtoMPS(250.0)<air.Prop().GetSpeed())
 			{
-				bankLimit+=YsDegToRad(40.0)*(air.Prop().GetVelocity()-YsUnitConv::KTtoMPS(250.0))/YsUnitConv::KTtoMPS(100.0);
+				bankLimit+=YsDegToRad(40.0)*(air.Prop().GetSpeed()-YsUnitConv::KTtoMPS(250.0))/YsUnitConv::KTtoMPS(100.0);
 				if(YsDegToRad(76.0)<bankLimit)  // 4G turn (75.522488)
 				{
 					bankLimit=YsDegToRad(76.0);
@@ -3640,7 +3640,7 @@ YSBOOL FsLandingAutopilot::CanMakeStraightIn(const FsAirplane &air)
 	air.Prop().GetVelocity(v0);
 	rwAtt.MulInverse(v0,v0);
 
-	v=air.Prop().GetVelocity();
+	v=air.Prop().GetSpeed();
 	y0=air.GetPosition().y();
 	yGS=p0.z()*tan(glideSlope);
 
@@ -4059,7 +4059,7 @@ double FsLandingAutopilot::GetHeadingCorrection(FsAirplane &air,FsSimulation *si
 		double d,Va;
 		Vcr.RotateXZ(-courseHeading);
 		d=Vcr.x();
-		Va=air.Prop().GetVelocity();
+		Va=air.Prop().GetSpeed();
 		if(Va>YsTolerance)
 		{
 			return asin(YsBound(d/Va,-1.0,1.0));  // YsBound added 2008/02/24
@@ -4161,7 +4161,7 @@ printf("Elv %lf  Trim %lf\n",air.Prop().GetElevator(),air.Prop().GetElvTrim());
 
 	if(landingPhase==PHASE_EMERGENCY_STALL) // -2
 	{
-		if(air.Prop().GetVelocity()>=air.Prop().GetFullyManeuvableSpeed() &&
+		if(air.Prop().GetSpeed()>=air.Prop().GetFullyManeuvableSpeed() &&
 		   airPos.y()>=trafficPatternAltitude)
 		{
 			landingPhase=PHASE_TAKING_DISTANCE; // 2
@@ -4214,7 +4214,7 @@ printf("Elv %lf  Trim %lf\n",air.Prop().GetElevator(),air.Prop().GetElvTrim());
 		// printf("Mode 0: D=%.2lf R=%.2lf\n",dist,entryTurnRadius);
 
 		if(dist<YsMeterPerNm*5.0 && // 2007/09/14
-		   (air.Prop().GetVelocity()<entrySpeed*0.8 ||
+		   (air.Prop().GetSpeed()<entrySpeed*0.8 ||
 		    /* air.Prop().GetVelocity()>entrySpeed*1.2 || 2013/05/21 Disabled.  Some airplanes accelerate during descend to TPA. */
 		    airPos.y()>trafficPatternAltitude+verticalSeparation+33.0 ||
 		    airPos.y()<trafficPatternAltitude-33.0))
@@ -4275,8 +4275,8 @@ printf("Elv %lf  Trim %lf\n",air.Prop().GetElevator(),air.Prop().GetElvTrim());
 	}
 	else if(landingPhase==PHASE_GOING_TO_TPA)
 	{
-		if(air.Prop().GetVelocity()>=entrySpeed*0.9 &&
-		   air.Prop().GetVelocity()<=entrySpeed*1.1 &&
+		if(air.Prop().GetSpeed()>=entrySpeed*0.9 &&
+		   air.Prop().GetSpeed()<=entrySpeed*1.1 &&
 		   airPos.y()>=trafficPatternAltitude+verticalSeparation-20.0 &&
 		   airPos.y()<=trafficPatternAltitude+verticalSeparation+20.0)
 		{
@@ -4574,7 +4574,7 @@ printf("Elv %lf  Trim %lf\n",air.Prop().GetElevator(),air.Prop().GetElvTrim());
 
 		gndAirAtt.MulInverse(aimingDir,aimingDir);
 
-		if(autoClearRunway==YSTRUE && air.Prop().GetVelocity()<taxi.fastTaxiSpeed)
+		if(autoClearRunway==YSTRUE && air.Prop().GetSpeed()<taxi.fastTaxiSpeed)
 		{
 			nextTaxiwayScanTime-=dt;
 			YsArray <YsVec3,16> clearRwyPath;
@@ -4724,7 +4724,7 @@ printf("Elv %lf  Trim %lf\n",air.Prop().GetElevator(),air.Prop().GetElvTrim());
 	}
 	else if(landingPhase==PHASE_CLEARINGRUNWAY_SEARCHTAXIWAY)
 	{
-		const double v=air.Prop().GetVelocity();
+		const double v=air.Prop().GetSpeed();
 		if(YsTolerance>v)
 		{
 			const FsGround *carrier=air.Prop().OnThisCarrier();
@@ -4967,7 +4967,7 @@ YSRESULT FsLandingAutopilot::ApplyControl(FsAirplane &air,FsSimulation *sim,cons
 		speedCorrection=YsBound(speedCorrection,1.0,1.25);
 
 		const double yErr=air.GetPosition().y()-(trafficPatternAltitude+verticalSeparation);
-		const double speedErr=air.Prop().GetVelocity()-entrySpeed;
+		const double speedErr=air.Prop().GetSpeed()-entrySpeed;
 
 		const int c=(int)(phaseTimer/20.0);
 
@@ -5901,10 +5901,10 @@ YSRESULT FsTakeOffAutopilot::ApplyControl(FsAirplane &air,FsSimulation *sim,cons
 			air.Prop().SpeedController(air.Prop().GetEstimatedCruiseSpeed());
 			air.Prop().SetBrake(0.0);
 
-			if(air.Prop().GetVelocity()>=air.Prop().GetEstimatedLandingSpeed())
+			if(air.Prop().GetSpeed()>=air.Prop().GetEstimatedLandingSpeed())
 			{
 				double t,aoa;
-				t=(air.Prop().GetVelocity()/air.Prop().GetEstimatedLandingSpeed())-1.0;
+				t=(air.Prop().GetSpeed()/air.Prop().GetEstimatedLandingSpeed())-1.0;
 				t/=0.2;  // <- V/Vldg==1.2 makes 1.0
 				t=YsBound(t,0.0,0.95);
 				aoa=air.Prop().GetTailStrikePitchAngle(t);
@@ -5933,7 +5933,7 @@ YSRESULT FsTakeOffAutopilot::ApplyControl(FsAirplane &air,FsSimulation *sim,cons
 			const double spdWindow=YsUnitConv::KTtoMPS(10.0);
 			const double minSpd=air.Prop().GetEstimatedLandingSpeed()-spdWindow;
 
-			const double t=YsBound((air.Prop().GetVelocity()-minSpd)/(spdWindow*2.0),0.0,1.0);
+			const double t=YsBound((air.Prop().GetSpeed()-minSpd)/(spdWindow*2.0),0.0,1.0);
 
 			const double p=air.Prop().GetCriticalAOA()*t;
 
@@ -6079,7 +6079,7 @@ YSRESULT FsHoveringAutopilot::ApplyControl(FsAirplane &air,FsSimulation *sim,con
 
 YSBOOL FsHoveringAutopilot::MissionAccomplished(FsAirplane &air,FsSimulation *) const
 {
-	if(air.Prop().GetVelocity()<0.5 &&
+	if(air.Prop().GetSpeed()<0.5 &&
 	   YsAbs(air.Prop().GetPosition().y()-desigPos.y())<0.5)
 	{
 		return YSTRUE;
@@ -6653,7 +6653,7 @@ YSRESULT FsAirRouteAutopilot::MakeDecision(FsAirplane &air,FsSimulation *sim,con
 		// Some airplanes start just a little bit off the ground, and the initial state will be settled in the first second.
 		if(0.9<air.Prop().GetLandingGear() &&
 		   air.GetApproximatedCollideRadius()>air.GetAGL() &&
-		   air.Prop().GetVelocity()<0.5 &&
+		   air.Prop().GetSpeed()<0.5 &&
 		   YSTRUE!=air.Prop().IsOnGround())
 		{
 			state=STATE_WAITING_UNTIL_SETTLE;
